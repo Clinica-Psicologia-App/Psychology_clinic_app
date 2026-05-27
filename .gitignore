@@ -1,0 +1,24 @@
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Flutter / Dart (mobile/)
+mobile/.dart_tool/
+mobile/build/
+mobile/.pub-cache/
+mobile/.pub/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/env.local.json
+
+# Supabase local (secrets)
+supabase/.branches/
+supabase/.temp/
+
+# Env / secrets
+.env
+.env.*
+!.env.example

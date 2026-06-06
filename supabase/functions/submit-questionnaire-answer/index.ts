@@ -10,6 +10,7 @@ import {
 } from "../_shared/http.ts";
 import { logger } from "../_shared/logger.ts";
 import {
+  assertResponseContextForAnswer,
   assertQuestionInQuestionnaire,
   loadResponseForUpdate,
   validateAnswerValue,
@@ -20,6 +21,7 @@ type SubmitAnswerBody = {
   response_id: string;
   question_id: string;
   answer_value: number;
+  response_context_id?: string;
 };
 
 const FN = "submit-questionnaire-answer";
@@ -44,6 +46,12 @@ serve(async (req) => {
       questionId,
       response.questionnaire_id,
     );
+    const responseContext = await assertResponseContextForAnswer(
+      client,
+      responseId,
+      body.response_context_id,
+      response.questionnaire?.code as string? ?? null,
+    );
 
     validateAnswerValue(
       body.answer_value,
@@ -51,31 +59,70 @@ serve(async (req) => {
       question.scale_max,
     );
 
-    const { data: answer, error: upsertError } = await client
-      .from("questionnaire_answers")
-      .upsert(
-        {
-          response_id: responseId,
-          question_id: questionId,
-          answer_value: body.answer_value,
-        },
-        { onConflict: "response_id,question_id" },
-      )
-      .select("id, response_id, question_id, answer_value, created_at, updated_at")
-      .single();
+    const existing = responseContext == null
+      ? await client
+        .from("questionnaire_answers")
+        .select("id")
+        .eq("response_id", responseId)
+        .eq("question_id", questionId)
+        .is("response_context_id", null)
+        .maybeSingle()
+      : await client
+        .from("questionnaire_answers")
+        .select("id")
+        .eq("response_id", responseId)
+        .eq("question_id", questionId)
+        .eq("response_context_id", responseContext.id)
+        .maybeSingle();
 
-    if (upsertError) {
+    if (existing.error) {
+      throw new AppError(
+        "INTERNAL_ERROR",
+        "Failed to load existing answer",
+        500,
+        { hint: existing.error.message },
+      );
+    }
+
+    const payload = {
+      response_id: responseId,
+      question_id: questionId,
+      answer_value: body.answer_value,
+      response_context_id: responseContext?.id ?? null,
+    };
+
+    const saveResult = existing.data?.id
+      ? await client
+        .from("questionnaire_answers")
+        .update(payload)
+        .eq("id", existing.data.id)
+        .select(
+          "id, response_id, question_id, response_context_id, answer_value, created_at, updated_at",
+        )
+        .single()
+      : await client
+        .from("questionnaire_answers")
+        .insert(payload)
+        .select(
+          "id, response_id, question_id, response_context_id, answer_value, created_at, updated_at",
+        )
+        .single();
+
+    if (saveResult.error) {
       throw new AppError(
         "INTERNAL_ERROR",
         "Failed to save answer",
         500,
-        { hint: upsertError.message },
+        { hint: saveResult.error.message },
       );
     }
+
+    const answer = saveResult.data;
 
     logger.info(`${FN}.success`, {
       response_id: responseId,
       question_id: questionId,
+      response_context_id: responseContext?.id ?? null,
       answer_id: answer.id,
     });
 

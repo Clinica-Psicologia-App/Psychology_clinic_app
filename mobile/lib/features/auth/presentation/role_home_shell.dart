@@ -6,8 +6,10 @@ import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../patients/presentation/patient_routes.dart';
+import '../../patient_journey/presentation/patient_journey_routes.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../profile/domain/user_profile.dart';
+import '../../questionnaires/presentation/questionnaire_routes.dart';
 import '../providers/auth_providers.dart';
 
 class RoleHomeShell extends ConsumerWidget {
@@ -101,16 +103,36 @@ class _HomeBody extends StatelessWidget {
                 onTap: () => context.push(PatientRoutes.list(role)),
               ),
             ),
+            if (role == ProfileRole.admin)
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.assignment_ind_outlined),
+                  title: const Text('Acesso a questionários'),
+                  subtitle: const Text(
+                    'Liberar ou bloquear instrumentos por profissional.',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.push(QuestionnaireRoutes.adminAccess),
+                ),
+              ),
           ],
           if (role == ProfileRole.patient) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: 8),
             Text(
-              'Área do paciente',
-              style: Theme.of(context).textTheme.bodyLarge,
+              'Jornada',
+              style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Questionários e recursos terapêuticos estarão disponíveis em breve.',
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.route_outlined),
+                title: const Text('Meu plano terapêutico'),
+                subtitle: const Text(
+                  'Trilha com questionários, monitor, biblioteca e próximos módulos.',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push(PatientJourneyRoutes.journey),
+              ),
             ),
           ],
         ],

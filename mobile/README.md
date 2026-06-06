@@ -1,60 +1,85 @@
 # Terapia do Esquema — Mobile (Flutter)
 
+MVP mobile da Plataforma Terapia do Esquema.
+
+## Demo
+
+Siga na raiz do repositório:
+
+- [docs/demo-checklist.md](../docs/demo-checklist.md)
+- [docs/demo-script.md](../docs/demo-script.md)
+
 ## Pré-requisitos
 
 - Flutter SDK 3.16+
-- Supabase local (`supabase start`) ou projeto remoto
+- Supabase local (`supabase start`) ou projeto remoto com seed aplicada
 
 ## Configuração
 
-1. Copie `env.example.json` → `env.local.json` e ajuste URL/anon key.
-2. Instale dependências e gere pastas de plataforma (primeira vez):
-
 ```bash
 cd mobile
+cp env.example.json env.local.json
 flutter pub get
-flutter create . --project-name terapia_esquema
 ```
 
-> `flutter create .` preserva `lib/` e adiciona `android/`, `ios/`, etc.
+Use `env.local.json` com URL e **anon key** do seu Supabase. A chave padrão embutida é só para `supabase start` local.
 
 ## Executar
 
-O projeto suporta **Android, iOS, Windows e Web**. Sem emulador, use Windows ou Chrome:
+```bash
+# iOS Simulator
+flutter run -d "iPhone 16 Pro" --dart-define-from-file=env.local.json
 
-```powershell
-cd mobile
-supabase start
-
-# Windows (recomendado no PC)
-flutter run -d windows --dart-define-from-file=env.local.json
-
-# Ou Chrome
-flutter run -d chrome --dart-define-from-file=env.local.json
-
-# Android (emulador: URL 10.0.2.2 automática no EnvConfig)
+# Android emulador (127.0.0.1 → 10.0.2.2 automático)
 flutter run -d android --dart-define-from-file=env.local.json
 ```
 
-Listar dispositivos: `flutter devices`
+**Backend:** em outro terminal, `supabase functions serve` (questionários e cadastro de paciente).
 
-## Contas seed (local)
+## Contas demo (seed)
 
-| Perfil | E-mail | Senha |
-|--------|--------|-------|
-| Admin | `admin@clinicateste-mvp.example` | `TesteMVP2025!` |
-| Psicólogo | `psicologo@clinicateste-mvp.example` | `TesteMVP2025!` |
-| Paciente | `paciente.login@clinicateste-mvp.example` | `TesteMVP2025!` |
+Senha: **`TesteMVP2025!`**
 
-Na tela de login, use os chips **Admin / Psicólogo / Paciente** para preencher.
+| Perfil | E-mail |
+|--------|--------|
+| Admin | `admin@clinicateste-mvp.example` |
+| Psicólogo | `psicologo@clinicateste-mvp.example` |
+| Paciente | `paciente.login@clinicateste-mvp.example` |
 
-## Estrutura
+Chips na tela de login preenchem e-mail e senha.
+
+## Build Android (APK debug)
+
+| Campo | Valor |
+|-------|--------|
+| `applicationId` | `br.com.terapiaesquema.mvp` |
+| Nome no launcher | Terapia do Esquema |
+| Ícone | Padrão Flutter (`ic_launcher`) |
+
+```bash
+flutter build apk --debug --dart-define-from-file=env.local.json
+```
+
+Artefato: `build/app/outputs/flutter-apk/app-debug.apk`
+
+Em **dispositivo físico**, troque `127.0.0.1` no `env.local.json` pelo IP da máquina na rede (Supabase acessível na LAN).
+
+## Testes
+
+```bash
+flutter test
+```
+
+## Módulos
 
 ```text
-lib/
-  core/          config, errors, router, supabase, theme
-  shared/        widgets reutilizáveis
-  features/
-    auth/        login, sessão, homes placeholder
-    profile/     leitura do profile (RLS)
+lib/features/
+  auth/                 login, sessão, homes
+  patients/             staff — listagem, detalhe, create-patient (Edge)
+  questionnaires/       Edge Functions
+  results/              staff — leitura RLS + snapshot
+  therapy_resources/    staff + paciente
+  daily_monitors/       paciente + histórico staff
 ```
+
+Documentação: [docs/mobile-app.md](../docs/mobile-app.md)

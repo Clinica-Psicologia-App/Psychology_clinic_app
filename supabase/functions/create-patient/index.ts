@@ -30,6 +30,15 @@ type CreatePatientBody = {
   cpf?: string;
   birth_date?: string;
   gender?: string;
+  relationship_status?: string;
+  education_level?: string;
+  occupation?: string;
+  country_birth?: string;
+  state_birth?: string;
+  religious_orientation?: string;
+  ethnic_group?: string;
+  sexual_orientation?: string;
+  has_children?: boolean;
   email_patient?: string;
   phone_patient?: string;
 };
@@ -127,6 +136,15 @@ serve(async (req) => {
         cpf: body.cpf ?? null,
         birth_date: body.birth_date ?? null,
         gender: body.gender ?? null,
+        relationship_status: body.relationship_status ?? null,
+        education_level: body.education_level ?? null,
+        occupation: body.occupation ?? null,
+        country_birth: body.country_birth ?? null,
+        state_birth: body.state_birth ?? null,
+        religious_orientation: body.religious_orientation ?? null,
+        ethnic_group: body.ethnic_group ?? null,
+        sexual_orientation: body.sexual_orientation ?? null,
+        has_children: body.has_children ?? null,
       })
       .select(
         "id, clinic_id, profile_id, responsible_psychologist_id, full_name, email, created_at",

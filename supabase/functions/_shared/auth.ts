@@ -95,26 +95,42 @@ export async function assertPsychologistInClinic(
   psychologistId: string,
   clinicId: string,
 ): Promise<void> {
+  await assertProfileInClinic(
+    client,
+    psychologistId,
+    clinicId,
+    "responsible_psychologist_id",
+    ["psychologist"],
+  );
+}
+
+export async function assertProfileInClinic(
+  client: SupabaseClient,
+  profileId: string,
+  clinicId: string,
+  fieldName: string,
+  allowedRoles: ProfileRole[],
+): Promise<void> {
   const { data, error } = await client
     .from("profiles")
     .select("id, role, clinic_id")
-    .eq("id", psychologistId)
+    .eq("id", profileId)
     .maybeSingle();
 
   if (error) {
-    throw new AppError("INTERNAL_ERROR", "Failed to validate psychologist", 500);
+    throw new AppError("INTERNAL_ERROR", "Failed to validate profile", 500);
   }
 
   if (
     !data ||
-    data.role !== "psychologist" ||
+    !allowedRoles.includes(data.role as ProfileRole) ||
     data.clinic_id !== clinicId
   ) {
     throw new AppError(
       "VALIDATION_ERROR",
-      "responsible_psychologist_id must be a psychologist in your clinic",
+      `${fieldName} must belong to an allowed staff profile in your clinic`,
       400,
-      { responsible_psychologist_id: psychologistId },
+      { [fieldName]: profileId },
     );
   }
 }

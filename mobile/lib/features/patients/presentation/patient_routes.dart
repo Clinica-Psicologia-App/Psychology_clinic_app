@@ -1,4 +1,6 @@
+import '../../../core/router/route_access.dart';
 import '../../profile/domain/profile_role.dart';
+import '../../patient_invitations/presentation/patient_invitation_routes.dart';
 
 /// Rotas do módulo de pacientes por role (staff apenas).
 abstract final class PatientRoutes {
@@ -18,20 +20,17 @@ abstract final class PatientRoutes {
   static String detail(ProfileRole role, String patientId) =>
       '${list(role)}/$patientId';
 
+  static String invitationList(ProfileRole role) =>
+      PatientInvitationRoutes.list(role);
+
+  static String invitationCreate(ProfileRole role) =>
+      PatientInvitationRoutes.create(role);
+
   static bool isStaffPatientsPath(String location) {
     return location.startsWith('/admin/patients') ||
         location.startsWith('/psychologist/patients');
   }
 
-  static bool pathMatchesRole(String location, ProfileRole role) {
-    switch (role) {
-      case ProfileRole.admin:
-        return location == '/admin' || location.startsWith('/admin/');
-      case ProfileRole.psychologist:
-        return location == '/psychologist' ||
-            location.startsWith('/psychologist/');
-      case ProfileRole.patient:
-        return location == '/patient' || location.startsWith('/patient/');
-    }
-  }
+  static bool pathMatchesRole(String location, ProfileRole role) =>
+      RouteAccess.isAllowed(location, role);
 }

@@ -24,6 +24,12 @@ class PatientsPage extends ConsumerWidget {
     return AppScaffold(
       title: 'Pacientes',
       actions: [
+        if (profile != null && role.isStaff)
+          IconButton(
+            tooltip: 'Convidar paciente',
+            onPressed: () => context.push(PatientRoutes.invitationCreate(role)),
+            icon: const Icon(Icons.mark_email_unread_outlined),
+          ),
         IconButton(
           tooltip: 'Atualizar',
           onPressed: () =>

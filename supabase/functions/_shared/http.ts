@@ -26,6 +26,20 @@ export function jsonResponse(
   });
 }
 
+export function pdfResponse(
+  bytes: Uint8Array,
+  filename = "relatorio-clinico.pdf",
+): Response {
+  return new Response(bytes, {
+    status: 200,
+    headers: {
+      ...corsHeaders,
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `attachment; filename="${filename}"`,
+    },
+  });
+}
+
 export function handleOptions(req: Request): Response | null {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });

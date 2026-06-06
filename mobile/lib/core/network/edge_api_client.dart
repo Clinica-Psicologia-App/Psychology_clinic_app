@@ -25,10 +25,12 @@ class EdgeApiClient {
 
       final parsed = _parseBody(response.data);
 
-      if (response.status >= 400 && parsed['ok'] == false && parsed['error'] is Map) {
-        throw _errorFromPayload(
+      if (response.status >= 400 &&
+          parsed['ok'] == false &&
+          parsed['error'] is Map) {
+        throw mapEdgeErrorPayload(
           Map<String, dynamic>.from(parsed['error'] as Map),
-          status: response.status,
+          httpStatus: response.status,
         );
       }
 
@@ -40,9 +42,9 @@ class EdgeApiClient {
       }
 
       if (parsed['ok'] == false && parsed['error'] is Map) {
-        throw _errorFromPayload(
+        throw mapEdgeErrorPayload(
           Map<String, dynamic>.from(parsed['error'] as Map),
-          status: response.status,
+          httpStatus: response.status,
         );
       }
 
@@ -68,42 +70,4 @@ Map<String, dynamic> _parseBody(dynamic data) {
     if (decoded is Map) return Map<String, dynamic>.from(decoded);
   }
   return {};
-}
-
-AppException _errorFromPayload(
-  Map<String, dynamic> error, {
-  required int status,
-}) {
-  final code = error['code']?.toString() ?? AppExceptionCodes.unknown;
-  final apiMessage = error['message']?.toString();
-  return AppException(
-    code: code,
-    message: _messageForApiCode(code, apiMessage),
-    details: {
-      if (error['details'] is Map)
-        'details': Map<String, dynamic>.from(error['details'] as Map),
-      'httpStatus': status,
-    },
-  );
-}
-
-String _messageForApiCode(String code, String? apiMessage) {
-  switch (code) {
-    case 'VALIDATION_ERROR':
-      return apiMessage ?? 'Dados inválidos. Revise o formulário.';
-    case 'UNAUTHORIZED':
-      return 'Sessão expirada. Faça login novamente.';
-    case 'FORBIDDEN':
-      return apiMessage ?? 'Você não tem permissão para esta ação.';
-    case 'NOT_FOUND':
-      return apiMessage ?? 'Registro não encontrado.';
-    case 'CONFLICT':
-      return apiMessage?.contains('Email') == true
-          ? 'Este e-mail já está em uso na clínica.'
-          : (apiMessage ?? 'Conflito ao salvar. Verifique os dados.');
-    case 'INTERNAL_ERROR':
-      return 'Erro no servidor. Tente novamente em instantes.';
-    default:
-      return apiMessage ?? 'Ocorreu um erro. Tente novamente.';
-  }
 }

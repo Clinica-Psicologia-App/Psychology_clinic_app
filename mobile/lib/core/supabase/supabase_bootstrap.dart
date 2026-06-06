@@ -10,6 +10,7 @@ abstract final class SupabaseBootstrap {
       anonKey: EnvConfig.supabaseAnonKey,
       authOptions: const FlutterAuthClientOptions(
         authFlowType: AuthFlowType.pkce,
+        autoRefreshToken: true,
       ),
     );
   }

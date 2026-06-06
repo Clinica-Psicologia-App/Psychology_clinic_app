@@ -15,6 +15,18 @@ class AuthRepository {
 
   Stream<AuthState> get authStateChanges => _client.auth.onAuthStateChange;
 
+  bool get hasSession => currentSession != null;
+
+  /// Renova access token quando possível (PKCE + refresh token).
+  Future<Session?> refreshSession() async {
+    try {
+      final response = await _client.auth.refreshSession();
+      return response.session;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<Session> signInWithEmail({
     required String email,
     required String password,
@@ -35,9 +47,10 @@ class AuthRepository {
     }
   }
 
+  /// Encerra sessão local e remota (global).
   Future<void> signOut() async {
     try {
-      await _client.auth.signOut();
+      await _client.auth.signOut(scope: SignOutScope.global);
     } catch (e) {
       throw mapToAppException(e);
     }

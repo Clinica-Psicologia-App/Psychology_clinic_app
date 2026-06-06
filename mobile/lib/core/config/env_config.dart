@@ -8,6 +8,8 @@ abstract final class EnvConfig {
   static const String _urlDefine = String.fromEnvironment('SUPABASE_URL');
   static const String _anonKeyDefine = String.fromEnvironment('SUPABASE_ANON_KEY');
 
+  /// Chave anon padrão do Supabase **local** (`supabase start`). Em staging/produção
+  /// use sempre `env.local.json` / CI — nunca a demo key do projeto remoto.
   static const String _defaultAnonKey =
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0';
 

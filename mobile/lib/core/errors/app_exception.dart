@@ -18,6 +18,7 @@ class AppException implements Exception {
 
 class AppExceptionCodes {
   static const unauthorized = 'UNAUTHORIZED';
+  static const sessionExpired = 'SESSION_EXPIRED';
   static const profileNotFound = 'PROFILE_NOT_FOUND';
   static const invalidCredentials = 'INVALID_CREDENTIALS';
   static const network = 'NETWORK_ERROR';

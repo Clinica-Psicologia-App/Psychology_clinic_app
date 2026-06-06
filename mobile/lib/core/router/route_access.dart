@@ -1,0 +1,38 @@
+import '../../features/profile/domain/profile_role.dart';
+
+/// Controle de acesso a rotas por `profiles.role` (defesa em profundidade no router).
+abstract final class RouteAccess {
+  static const publicPaths = {
+    '/',
+    '/login',
+    '/accept-invitation',
+    '/professional-sign-up',
+  };
+
+  static bool isPublic(String location) => publicPaths.contains(location);
+
+  static bool isAllowed(String location, ProfileRole role) {
+    if (isPublic(location)) return true;
+
+    switch (role) {
+      case ProfileRole.admin:
+        return location == '/admin' || location.startsWith('/admin/');
+      case ProfileRole.psychologist:
+        return location == '/psychologist' ||
+            location.startsWith('/psychologist/');
+      case ProfileRole.patient:
+        return location == '/patient' || location.startsWith('/patient/');
+    }
+  }
+
+  static String homeFor(ProfileRole role) {
+    switch (role) {
+      case ProfileRole.admin:
+        return '/admin';
+      case ProfileRole.psychologist:
+        return '/psychologist';
+      case ProfileRole.patient:
+        return '/patient';
+    }
+  }
+}

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/router/app_router.dart';
 import '../../../shared/widgets/error_banner.dart' show showErrorBanner;
 import '../../../shared/widgets/loading_overlay.dart';
 import '../providers/auth_providers.dart';
@@ -19,6 +21,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final msg = ref.read(authRedirectMessageProvider);
+      if (msg != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg)),
+        );
+        ref.read(authControllerProvider.notifier).clearRedirectMessage();
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
@@ -28,15 +44,17 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    await ref.read(authControllerProvider.notifier).signIn(
-          _emailController.text,
-          _passwordController.text,
-        );
+    final notifier = ref.read(authControllerProvider.notifier);
+    await notifier.signIn(
+      _emailController.text,
+      _passwordController.text,
+    );
+
+    if (!mounted) return;
 
     final state = ref.read(authControllerProvider);
-    if (state.hasError && mounted) {
-      final err = state.error!;
-      showErrorBanner(context, err);
+    if (state.hasError) {
+      showErrorBanner(context, state.error!);
     }
   }
 
@@ -48,6 +66,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
+    final redirectMsg = ref.watch(authRedirectMessageProvider);
     final isLoading = authState.isLoading;
 
     return Stack(
@@ -75,6 +94,22 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
+                        if (redirectMsg != null) ...[
+                          const SizedBox(height: 16),
+                          MaterialBanner(
+                            backgroundColor:
+                                Theme.of(context).colorScheme.secondaryContainer,
+                            content: Text(redirectMsg),
+                            actions: [
+                              TextButton(
+                                onPressed: () => ref
+                                    .read(authControllerProvider.notifier)
+                                    .clearRedirectMessage(),
+                                child: const Text('OK'),
+                              ),
+                            ],
+                          ),
+                        ],
                         const SizedBox(height: 32),
                         TextFormField(
                           controller: _emailController,
@@ -124,6 +159,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             padding: EdgeInsets.symmetric(vertical: 12),
                             child: Text('Entrar'),
                           ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextButton(
+                          onPressed: isLoading
+                              ? null
+                              : () => context.push(AppRoutes.professionalSignUp),
+                          child: const Text('Sou profissional, criar conta'),
                         ),
                         const SizedBox(height: 24),
                         Text(

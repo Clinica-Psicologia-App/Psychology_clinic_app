@@ -42,7 +42,7 @@ serve(async (req) => {
     const crp = body.crp?.trim() || null;
     const mode = body.mode;
 
-    if (!email || !email.contains("@")) {
+    if (!email || !email.includes("@")) {
       throw new AppError("VALIDATION_ERROR", "Email inválido.", 400);
     }
 
@@ -75,7 +75,7 @@ serve(async (req) => {
     }
 
     const clinicEmail = body.clinic?.email?.trim().toLowerCase() || null;
-    if (clinicEmail != null && !clinicEmail.contains("@")) {
+    if (clinicEmail != null && !clinicEmail.includes("@")) {
       throw new AppError("VALIDATION_ERROR", "E-mail da clínica inválido.", 400);
     }
 

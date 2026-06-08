@@ -26,9 +26,12 @@ Planilhas Excel **não** são fonte de verdade. Documentos de extração antigos
 | Seed DEMO global (`supabase/seed.sql` §16) | **Implementado** — não é instrumento clínico validado |
 | Carga YSQ planilha (`20250531140014_seed_real_ysq_foundation.sql`) | **Implementado** — `YSQ_FOUNDATION_V1`; ver [ysq-import-report.md](./ysq-import-report.md) |
 | Carga YAMI modos (`20250531150015_seed_yami_modes_foundation.sql`) | **Implementado** — `YAMI_MODES_FOUNDATION_V1`; modos em `schemas`; ver [yami-import-report.md](./yami-import-report.md) |
+| Carga ATTACHMENT (`20250607120026_attachment_styles_scoring.sql`) | **Implementado** — `ATTACHMENT_STYLES_V1`; 3 estilos em `schemas`; sem `severity_ranges` por falta de fonte documentada |
+| Carga YCI (`20250607123027_yci_scoring.sql`) | **Implementado** — `YCI_FOUNDATION_V1`; modelado como `YCI Geral` em `schemas`; sem `severity_ranges` por falta de fonte documentada |
+| Carga YRAI (`20250607124028_yrai_scoring.sql`) | **Implementado** — `YRAI_FOUNDATION_V1`; modelado como `YRAI Geral` em `schemas`; sem `severity_ranges` por falta de fonte documentada |
 | Período de referência (`20250531160016_questionnaire_reference_period.sql`) | **Implementado** — YSQ `last_year`, YAMI `last_month`, MVP `unspecified`; exibido no Flutter antes de iniciar |
 | Cálculo DEMO (`finish-questionnaire` + `_shared/scoring/`) | **Implementado** (v1; sem interpretação clínica) |
-| Flutter / dashboard | **Não alterados** |
+| Flutter / dashboard | **Implementado** para YSQ, YAMI, ATTACHMENT, YCI e YRAI; demais instrumentos seguem parciais/placeholders |
 
 ## Seed DEMO (seção 16)
 
@@ -72,6 +75,54 @@ Cobre: `reverse_score`, soma ponderada, média, agrupamento schema/domain, looku
 | [clinical-validation-checklist.md](./clinical-validation-checklist.md) | **Checklist de validação clínica** YSQ + YAMI (catálogo / licença) |
 | [clinical-homologation.md](./clinical-homologation.md) | **Homologação** — roteiro psicólogo (responder + revisar snapshot) |
 | [mvp-placeholder-only.md](./mvp-placeholder-only.md) | Comportamento atual do `finish-questionnaire` (legado) |
+
+## ATTACHMENT_STYLES_V1
+
+- `questionnaire_id`: `b3faabc0-c64b-5b9b-b227-5dac19e1be71`
+- `questionnaire_version_id`: `23796291-f46e-53ed-b6e1-c336c5a6e7ef`
+- Escala: binária `0–1`
+- Estrutura clínica modelada:
+  - domínio global `ATTACHMENT_DOMAIN_STYLES`
+  - `schemas`: `Ansioso`, `Seguro`, `Evitante`
+- Regras: `42` entradas em `question_scoring_rules`, uma por pergunta, derivadas do mapeamento legado já existente em `question_category_items`
+- Peso / reverse:
+  - `weight = 1` reaproveitando o valor explícito já registrado no legado
+  - `reverse_score = false` por ausência de evidência documentada em contrário
+- `severity_ranges`: **não cadastradas** nesta etapa; ver [severity-ranges.md](./severity-ranges.md). O repositório não contém cortes clínicos publicados para este instrumento e a diretriz vigente é não inventar faixas.
+
+## YCI_FOUNDATION_V1
+
+- `questionnaire_id`: `82d52b66-30d1-581c-8d17-0265d4b754a4`
+- `questionnaire_version_id`: `06574dd1-63b7-5a5f-9184-b96c2284a64f`
+- Escala: Likert `1–6`
+- Estrutura clínica modelada:
+  - domínio global `COPING_DOMAIN_STYLES`
+  - `schemas`: `YCI Geral`
+- Regras: `48` entradas em `question_scoring_rules`, uma por pergunta, derivadas do mapeamento legado já existente em `question_category_items`
+- Peso / reverse:
+  - `weight = 1` reaproveitando o valor explícito já registrado no legado
+  - `reverse_score = false` por ausência de evidência documentada em contrário
+- Ausência clínica documentada:
+  - o repositório atual não documenta subestilos nomeados para o YCI, apenas o agrupamento `YCI_TOTAL`
+  - por isso a modelagem estruturada desta etapa preserva `YCI Geral` sem inventar subdivisões
+- `severity_ranges`: **não cadastradas** nesta etapa; ver [severity-ranges.md](./severity-ranges.md). O repositório não contém cortes clínicos publicados para este instrumento e a diretriz vigente é não inventar faixas.
+
+## YRAI_FOUNDATION_V1
+
+- `questionnaire_id`: `24ca2f90-40b6-5f74-b7f7-7de4321588fe`
+- `questionnaire_version_id`: `8cab086f-0eb5-5c79-b4f3-23e5831d9289`
+- Escala: Likert `1–6`
+- Estrutura clínica modelada:
+  - domínio global `COPING_DOMAIN_STYLES`
+  - `schemas`: `YRAI Geral`
+- Regras: `40` entradas em `question_scoring_rules`, uma por pergunta, derivadas do mapeamento legado já existente em `question_category_items`
+- Peso / reverse:
+  - `weight = 1` reaproveitando o valor explícito já registrado no legado
+  - `reverse_score = false` por ausência de evidência documentada em contrário
+- Ausência clínica documentada:
+  - o repositório atual não documenta subestilos nomeados para o YRAI, apenas o agrupamento `YRAI_TOTAL`
+  - por isso a modelagem estruturada desta etapa preserva `YRAI Geral` sem inventar subdivisões
+- `severity_ranges`: **não cadastradas** nesta etapa; ver [severity-ranges.md](./severity-ranges.md). O repositório não contém cortes clínicos publicados para este instrumento e a diretriz vigente é não inventar faixas.
 
 ## Templates SQL (instrumento real)
 

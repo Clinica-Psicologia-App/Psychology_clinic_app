@@ -2,8 +2,9 @@
 
 Visão consolidada do produto: materiais de wireframe/diagrama (referência cliente) × implementação atual do MVP no repositório.
 
-**Última revisão:** 2026-05-31  
-**Fontes:** ver [sources/README.md](./sources/README.md) · técnico: [next-steps.md](../next-steps.md), [mobile-app.md](../mobile-app.md), [scoring-engine/README.md](../scoring-engine/README.md)
+**Última revisão:** 2026-06-07  
+**Fontes:** ver [sources/README.md](./sources/README.md) · técnico: [next-steps.md](../next-steps.md), [mobile-app.md](../mobile-app.md), [scoring-engine/README.md](../scoring-engine/README.md)  
+**Specs v3 (visão clínica):** [dashboard-v3-spec.md](./dashboard-v3-spec.md) · [mental-map-v3-spec.md](./mental-map-v3-spec.md)
 
 ---
 
@@ -58,8 +59,8 @@ Visão consolidada do produto: materiais de wireframe/diagrama (referência clie
 | **YSQ** | Inventário de esquemas iniciais (`YSQ_FOUNDATION_V1`, 90 itens, período último ano) | W+D | **Parcial** | Catálogo + motor OK; homologação clínica e licença pendentes | P0 | Alto (clínico/legal) |
 | **YAMI** | Modos esquemáticos (`YAMI_MODES_FOUNDATION_V1`, 124 itens, último mês) | W+D | **Parcial** | Idem YSQ; typos/duplicatas no catálogo (checklist P04–P10) | P0 | Alto (clínico/legal) |
 | **Estilos Parentais** | Instrumento com múltiplas figuras parentais (`Mãe`, `Pai`, `Outro`) e progresso separado por contexto | W+D | **Parcial** | `questionnaire_response_contexts`, `response_context_id`, snapshot `parental-context-v1`; sem dashboard específico | P2 | Alto (conteúdo + licença) |
-| **Estilos de Apego** | Instrumento da aba correspondente na planilha | W+D | **Não iniciado** | Importação + regras de apuração | P2 | Alto |
-| **Estilos de Enfrentamento** | Instrumento de coping/enfrentamento (validar nome exato no PDF) | W+D | **Não iniciado** | *Decisão pendente:* confirmar se existe aba separada na planilha ou só no diagrama | P2 | Médio |
+| **Estilos de Apego** | Instrumento da aba correspondente na planilha | W+D | **Implementado** | Catálogo + `question_scoring_rules`; painel real no dashboard; sem `severity_ranges` por falta de fonte documentada | P2 | Alto |
+| **Estilos de Enfrentamento** | Instrumento de coping/enfrentamento (validar nome exato no PDF) | W+D | **Implementado** | `YCI_FOUNDATION_V1` e `YRAI_FOUNDATION_V1` com `question_scoring_rules`, painéis reais no dashboard e nó contextual compartilhado no mapa mental; sem `severity_ranges` por falta de fonte documentada | P2 | Médio |
 | **Perguntas de Personalidade** | Bloco de personalidade na planilha do projeto | W+D | **Não iniciado** | Mapeamento pergunta → constructo; possível escala distinta | P2 | Alto |
 
 ### Apuração, visão clínica e conteúdo
@@ -67,9 +68,9 @@ Visão consolidada do produto: materiais de wireframe/diagrama (referência clie
 | Módulo | Descrição funcional | PDF/tela | Status | Dependências técnicas | Prioridade | Risco |
 |--------|---------------------|----------|--------|----------------------|------------|-------|
 | **Motor de Apuração** | Cálculo estruturado por versão, esquemas/domínios, severidades; snapshot JSON | D (+ W staff) | **Implementado** | `questionnaire_versions`, regras, `finish-questionnaire`, `_shared/scoring/` | — | Médio (validação) |
-| **Dashboarding / validação** | Gráficos, percentuais, comparação entre aplicações e instrumentos para staff | D (+ W) | **Parcial** | Dashboard home mobile com seções YSQ/YAMI + placeholders para instrumentos futuros; sem web/PDF/comparativo | P1 | Médio |
+| **Dashboarding / validação** | Gráficos, percentuais, comparação entre aplicações e instrumentos para staff | D (+ W) | **Parcial** | v2 mobile entregue; **v3 especificado** ([dashboard-v3-spec.md](./dashboard-v3-spec.md)): visão orientada ao caso, parentais por figura, comparativo longitudinal client-side, domínios YSQ — sem alterar banco/scoring | P1 | Médio |
 | **Catálogo e liberação de instrumentos** | Mostrar autor/versão/licença e controlar quais instrumentos cada profissional pode usar | D | **Implementado (v1)** | `questionnaire_professional_access`, metadados em `questionnaires`, tela admin mobile | P1 | Médio |
-| **Mapa Mental** | Visão integrada de esquemas, modos, estilos e problemas | W+D | **Parcial** | Mapa mental v1.1 mobile com hub radial navegável + resumo read-only; sem tabelas novas nem IA | P2 | Alto (escopo) |
+| **Mapa Mental** | Visão integrada de esquemas, modos, problemas, objetivos, eventos e genograma em formulação visual do caso | W+D | **Parcial (v3 mobile)** | v3 M1–M5 entregue ([mental-map-v3-spec.md](./mental-map-v3-spec.md)): hub 8 nós, tabs Núcleo/História/Plano, sparkline, bottom sheet — sem tabelas novas, sem IA e sem inferência automática | P2 | Alto (escopo) |
 | **Biblioteca** | Acervo de materiais da clínica; liberação e consumo pelo paciente | W+D | **Parcial** | `therapy_resources`, `patient_resource_access` — sem catálogo público nem busca avançada do wireframe | P1 | Baixo |
 | **Sugestão Terapêutica** | Recomendações de intervenção/recursos com base em resultados; revisão do psicólogo | W+D | **Não iniciado** | Motor de regras (sem IA inicial); workflow de aprovação | P2 | Alto (clínico) |
 
@@ -87,7 +88,7 @@ Visão consolidada do produto: materiais de wireframe/diagrama (referência clie
 - Fluxo completo de questionários (intro com `reference_period`, resposta, finalização)
 - Catálogo com `autor`, `versão`, `período de referência` e observações internas de licença para staff
 - Liberação de questionários por profissional, com gestão pelo admin
-- Catálogo e apuração: `MVP_DEMO`, `YSQ_FOUNDATION_V1`, `YAMI_MODES_FOUNDATION_V1`
+- Catálogo e apuração: `MVP_DEMO`, `YSQ_FOUNDATION_V1`, `YAMI_MODES_FOUNDATION_V1`, `ATTACHMENT_STYLES_V1`
 - `PARENTAL_STYLES_V1` com seleção prévia de figuras parentais e progresso por contexto
 - Resultados para staff: snapshot `scoring-demo-1`, banners por instrumento
 - Recursos terapêuticos: biblioteca da clínica, liberação/revogação, progresso do paciente
@@ -102,7 +103,7 @@ Visão consolidada do produto: materiais de wireframe/diagrama (referência clie
 | Catálogo de instrumentos | Metadados e acesso por profissional no mobile | Sem billing e gestão de equipe |
 | Cadastro / aceite | Convite mínimo + aceite público implementados; onboarding público de profissional com clínica opcional | Sem e-mail real, termos explícitos, reset de senha e MFA |
 | Biblioteca | Liberação 1:1 | Wireframe pode prever catálogo maior, categorias, busca — **validar no PDF** |
-| Dashboard | Home por instrumento + YSQ/YAMI com barras | Estilos Parentais ainda sem dashboard específico por figura |
+| Dashboard | Home por instrumento + YSQ/YAMI/ATTACHMENT com barras | v3 spec cobre parentais por figura e comparativo; implementação pendente |
 | Login | E-mail/senha seed | Sem recuperação de senha, MFA ou branding do wireframe — **validar no PDF** |
 | Home paciente | Card da trilha + módulos de jornada | Hub clínico ainda concentrado em Mapa Mental e Dashboard |
 
@@ -110,8 +111,7 @@ Visão consolidada do produto: materiais de wireframe/diagrama (referência clie
 
 - Anamnese, trilha central, genograma, linha do tempo
 - Objetivos da terapia, check-in dedicado, problemas
-- Estilos Parentais, Apego, Enfrentamento, Personalidade
-- Mapa mental integrado
+- Estilos Parentais, Enfrentamento, Personalidade
 - Sugestão terapêutica automatizada (regras + revisão humana)
 
 ### Implementado de forma diferente do wireframe (hipóteses — validar nos PDFs)
@@ -165,24 +165,43 @@ Visão consolidada do produto: materiais de wireframe/diagrama (referência clie
 
 **Dependências:** decisão de escopo mínimo vs editor completo do wireframe.
 
-### Fase 5 — Mapa mental (P2) — v1 entregue
+### Fase 5 — Mapa mental (P2)
+
+**v2 — entregue**
 
 - [x] Agregação read-only (`features/mental_map/`) sem nova migration
-- [x] YSQ/YAMI (últimos resultados + top scores), problemas/objetivos ativos, check-in, monitor, timeline, genograma
-- [x] Hub radial/estrela responsivo aproximando o wireframe original, sem alterar banco nem scoring
-- [ ] Grafo interativo avançado e IA (fora de escopo v1.1)
+- [x] Formulação Visual do Caso com centro clínico, camada principal e camada contextual
+- [x] YSQ/YAMI/ATTACHMENT (últimos resultados + top scores), problemas/objetivos ativos, check-in, timeline e genograma integrados ao mapa
+- [x] Hub radial responsivo com fallback em grid, navegação por nós e estados vazios
 
-**Dependências:** módulos base da trilha (implementados).
+**v3 — entregue (2026-06-07)** ([mental-map-v3-spec.md](./mental-map-v3-spec.md))
+
+- [x] Hub 8 nós em anéis principal + contextual (M1)
+- [x] Legenda preenchido/pendente + indicador visual nos nós
+- [x] Nó parentais + resumo estilo dominante por figura (`snapshot.contexts[]`)
+- [x] Bottom sheet detalhe do nó (M5) com CTA para módulo
+- [x] Tabs Núcleo / História / Plano (M2–M4)
+- [x] Sparkline check-in (7 dias) na camada Plano
+- [ ] Grafo interativo avançado, IA e relações inferidas automaticamente (fora de escopo)
+
+**Dependências:** módulos base da trilha (implementados). **Sem** migration, scoring ou Edge Functions.
 
 ### Fase 6 — Dashboard clínico (P1–P2)
 
-- [x] v1 mobile: barras YSQ/YAMI a partir de `snapshot`, histórico básico, trilha + staff (sem recálculo)
-- [x] Dashboard home com seções YSQ, YAMI, Estilos Parentais, Estilos de Apego, Estilos de Enfrentamento e Personalidade
-- [ ] Gráficos avançados e dashboard web
-- [ ] Percentuais e evolução entre aplicações
-- [ ] Comparação entre instrumentos no mesmo paciente
+**v2 — entregue**
 
-**Dependências:** snapshots estáveis; definição de métricas com equipe clínica.
+- [x] v1 mobile: barras YSQ/YAMI/ATTACHMENT a partir de `snapshot`, histórico básico, trilha + staff (sem recálculo)
+- [x] Dashboard home com seções YSQ, YAMI, Estilos Parentais, Estilos de Apego, Estilos de Enfrentamento e Personalidade
+
+**v3 — fatia 1 entregue (2026-06-07)** ([dashboard-v3-spec.md](./dashboard-v3-spec.md))
+
+- [x] Visão clínica do caso (KPI + prioridades + destaques YSQ/YAMI/apego/enfrentamento)
+- [x] Estilos parentais por figura a partir de `snapshot.contexts[]` (D3)
+- [x] Sinais recentes, callouts orientativos, detalhes colapsáveis por instrumento
+- [ ] Painéis por instrumento expandidos com agrupamento por domínio (D2/D5)
+- [ ] Comparativo longitudinal client-side, staff only (D4)
+
+**Dependências:** snapshots estáveis; regra staff vs paciente (DP-03).
 
 ### Fase 7 — Sugestão terapêutica (P2)
 
@@ -217,6 +236,8 @@ Visão consolidada do produto: materiais de wireframe/diagrama (referência clie
 | Questionários | `mobile/lib/features/questionnaires/` |
 | Motor | `supabase/functions/_shared/scoring/`, `finish-questionnaire` |
 | Resultados | `mobile/lib/features/results/` |
+| Mapa mental | `mobile/lib/features/mental_map/`, [mental-map-v3-spec.md](./mental-map-v3-spec.md) |
+| Dashboard clínico | `mobile/lib/features/clinical_dashboard/`, [dashboard-v3-spec.md](./dashboard-v3-spec.md) |
 | Biblioteca | `mobile/lib/features/therapy_resources/` |
 | Monitor | `mobile/lib/features/daily_monitors/` |
 
@@ -228,4 +249,7 @@ Análise de gaps detalhada: [gap-analysis-from-wireframes.md](./gap-analysis-fro
 
 | Data | Alteração |
 |------|-----------|
+| 2026-06-07 | Mapa Mental v3 fatia 2 (M2–M4): tabs, sparkline, recursos |
+| 2026-06-07 | Mapa Mental v3 fatia 1 (M1+M5): hub 8 nós, bottom sheet, parentais |
+| 2026-06-07 | Specs Dashboard v3 e Mapa Mental v3; fases 5–6 atualizadas |
 | 2026-05-31 | Versão inicial do master roadmap (PDFs não no repo; inventário por especificação + estado do código) |

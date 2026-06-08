@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
-import '../../../shared/widgets/homologation_ui.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../results/presentation/result_routes.dart';
 import '../domain/clinical_dashboard_data.dart';
@@ -30,8 +29,7 @@ class PatientClinicalDashboardPage extends ConsumerWidget {
       ],
       body: AsyncStateBody<ClinicalDashboardData>(
         asyncValue: dataAsync,
-        onRetry: () =>
-            ref.read(myClinicalDashboardProvider.notifier).refresh(),
+        onRetry: () => ref.read(myClinicalDashboardProvider.notifier).refresh(),
         dataBuilder: (data) => RefreshIndicator(
           onRefresh: () async {
             await ref.read(myClinicalDashboardProvider.notifier).refresh();
@@ -104,95 +102,68 @@ class DashboardHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = MaterialLocalizations.of(context);
+    final isStaff = role != ProfileRole.patient;
 
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
         const ClinicalDashboardDisclaimerBanner(),
         const SizedBox(height: 16),
-        const HomologationSectionHeader(
-          icon: Icons.insights_outlined,
-          title: 'Dashboard home',
-          subtitle: 'Instrumentos atuais e áreas reservadas aos próximos ciclos',
-        ),
-        const SizedBox(height: 12),
-        if (data.ysq != null)
-          InstrumentDashboardCard(
-            title: 'YSQ — esquemas iniciais',
-            panel: data.ysq!,
-            icon: Icons.psychology_outlined,
-          )
+        ClinicalExecutiveHeader(summary: data.caseSummary),
+        ClinicalPriorityGrid(summary: data.caseSummary),
+        ClinicalRecentSignalsCard(summary: data.caseSummary),
+        ClinicalDashboardCalloutsSection(callouts: data.callouts),
+        if (data.parental != null && data.parental!.figures.isNotEmpty)
+          ParentalStylesDashboardSection(dashboard: data.parental!)
         else
           const ClinicalDashboardEmptyInstrumentCard(
-            title: 'YSQ — esquemas iniciais',
+            title: 'Estilos parentais',
             message:
-                'Nenhuma resposta YSQ concluída com snapshot estruturado.',
-            icon: Icons.psychology_outlined,
+                'Nenhuma resposta de estilos parentais concluída. Aplique o '
+                'instrumento na trilha selecionando as figuras parentais.',
+            icon: Icons.family_restroom_outlined,
           ),
-        if (data.yami != null)
-          InstrumentDashboardCard(
-            title: 'YAMI — modos',
-            panel: data.yami!,
-            icon: Icons.self_improvement_outlined,
-          )
-        else
-          const ClinicalDashboardEmptyInstrumentCard(
-            title: 'YAMI — modos',
-            message:
-                'Nenhuma resposta YAMI concluída com snapshot estruturado.',
-            icon: Icons.self_improvement_outlined,
-          ),
-        const ClinicalDashboardFutureSectionCard(
-          title: 'Estilos parentais',
-          icon: Icons.family_restroom_outlined,
-        ),
-        const ClinicalDashboardFutureSectionCard(
-          title: 'Estilos de apego',
-          icon: Icons.favorite_border,
-        ),
-        const ClinicalDashboardFutureSectionCard(
-          title: 'Estilos de enfrentamento',
-          icon: Icons.shield_outlined,
-        ),
+        ClinicalInstrumentDetailsSection(data: data),
         const ClinicalDashboardFutureSectionCard(
           title: 'Personalidade',
           icon: Icons.psychology_alt_outlined,
         ),
-        ClinicalDashboardHistoryCard(
-          historyTiles: data.history.map((entry) {
-            return ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(
-                entry.hasResults
-                    ? Icons.check_circle_outline
-                    : Icons.hourglass_empty,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              title: Text(entry.questionnaireName),
-              subtitle: Text(
-                [
-                  entry.questionnaireCode,
-                  if (entry.completedAt != null)
-                    loc.formatFullDate(entry.completedAt!.toLocal()),
-                  entry.hasResults ? 'Com resultados' : 'Sem resultados',
-                ].join(' · '),
-              ),
-              trailing: role != ProfileRole.patient && patientId != null
-                  ? IconButton(
-                      icon: const Icon(Icons.chevron_right),
-                      tooltip: 'Ver resposta',
-                      onPressed: () => context.push(
-                        ResultRoutes.detail(
-                          role: role,
-                          patientId: patientId!,
-                          responseId: entry.responseId,
+        if (isStaff)
+          ClinicalDashboardHistoryCard(
+            historyTiles: data.history.map((entry) {
+              return ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  entry.hasResults
+                      ? Icons.check_circle_outline
+                      : Icons.hourglass_empty,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                title: Text(entry.questionnaireName),
+                subtitle: Text(
+                  [
+                    entry.questionnaireCode,
+                    if (entry.completedAt != null)
+                      loc.formatFullDate(entry.completedAt!.toLocal()),
+                    entry.hasResults ? 'Com resultados' : 'Sem resultados',
+                  ].join(' · '),
+                ),
+                trailing: patientId != null
+                    ? IconButton(
+                        icon: const Icon(Icons.chevron_right),
+                        tooltip: 'Ver resposta',
+                        onPressed: () => context.push(
+                          ResultRoutes.detail(
+                            role: role,
+                            patientId: patientId!,
+                            responseId: entry.responseId,
+                          ),
                         ),
-                      ),
-                    )
-                  : null,
-            );
-          }).toList(),
-        ),
+                      )
+                    : null,
+              );
+            }).toList(),
+          ),
       ],
     );
   }

@@ -8,9 +8,10 @@ import '../../profile/domain/profile_role.dart';
 import '../../../shared/widgets/homologation_ui.dart';
 import '../domain/mental_map_check_in_summary.dart';
 import '../domain/mental_map_data.dart';
-import '../domain/mental_map_questionnaire_block.dart';
+import '../domain/mental_map_hub_builder.dart';
 import '../providers/mental_map_providers.dart';
 import 'mental_map_navigation_targets.dart';
+import 'widgets/mental_map_formulation_widgets.dart';
 import 'widgets/mental_map_widgets.dart';
 
 class PatientMentalMapPage extends ConsumerWidget {
@@ -120,11 +121,15 @@ class _MentalMapBody extends StatelessWidget {
         MentalMapValidationBanner(summary: data.validationSummary),
         const SizedBox(height: 16),
         MentalMapVisualHub(
-          patientName: data.patientName,
-          activeProblemsCount: data.activeProblems.length,
-          activeGoalsCount: data.activeGoals.length,
-          lastQuestionnaireLabel: _latestQuestionnaireLabel(),
+          caseMap: data.caseMap,
           nodes: _buildHubNodes(context),
+        ),
+        MentalMapFormulationTabs(
+          clinicalCore: data.clinicalCore,
+          historyLinks: data.historyLinks,
+          therapyPlan: data.therapyPlan,
+          role: role,
+          patientId: patientId,
         ),
         MentalMapCaseSummaryCard(summary: data.caseSummary),
         if (!data.hasRelevantData) ...[
@@ -132,7 +137,8 @@ class _MentalMapBody extends StatelessWidget {
           const HomologationEmptyPanel(
             icon: Icons.hub_outlined,
             title: 'Mapa ainda em formação',
-            message: 'Ainda há poucos dados clínicos registrados para este caso.',
+            message:
+                'Ainda há poucos dados clínicos registrados para este caso.',
             hint:
                 'Os módulos abaixo vão ganhando densidade conforme a jornada é preenchida.',
           ),
@@ -402,106 +408,70 @@ class _MentalMapBody extends StatelessWidget {
     return () => context.push(path);
   }
 
-  String _latestQuestionnaireLabel() {
-    MentalMapQuestionnaireBlock? latest;
-    for (final block in data.questionnaires) {
-      if (latest == null) {
-        latest = block;
-        continue;
-      }
-      final currentDate = block.completedAt;
-      final latestDate = latest.completedAt;
-      if (currentDate != null &&
-          (latestDate == null || currentDate.isAfter(latestDate))) {
-        latest = block;
-      }
-    }
-
-    if (latest == null) {
-      return 'Nenhum concluído';
-    }
-    return latest.questionnaireName;
-  }
-
   List<MentalMapHubNodeData> _buildHubNodes(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    return data.caseMap.allNodes.map((node) {
+      final detail = buildMentalMapNodeDetail(
+        node: node,
+        role: role,
+        patientId: patientId,
+      );
 
-    return [
-      MentalMapHubNodeData(
-        title: 'Esquemas',
-        icon: Icons.psychology_outlined,
-        accentColor: colors.primary,
-        onTap: _route(
-          MentalMapNavigationTargets.clinicalDashboard(
+      final icon = switch (node.id) {
+        'schemas' => Icons.psychology_outlined,
+        'modes' => Icons.self_improvement_outlined,
+        'problems' => Icons.report_problem_outlined,
+        'attachment' => Icons.favorite_border,
+        'coping' => Icons.shield_outlined,
+        'parental' => Icons.family_restroom_outlined,
+        'goals' => Icons.flag_outlined,
+        'history' => Icons.timeline_outlined,
+        _ => Icons.hub_outlined,
+      };
+
+      final accentColor = switch (node.id) {
+        'schemas' => colors.primary,
+        'modes' => colors.tertiary,
+        'problems' => colors.error,
+        'attachment' => colors.primary,
+        'coping' => colors.secondary,
+        'parental' => colors.tertiary,
+        'goals' => colors.secondary,
+        'history' => colors.primary,
+        _ => colors.primary,
+      };
+
+      return MentalMapHubNodeData(
+        id: node.id,
+        title: node.title,
+        subtitle: node.shortLabel,
+        items: node.items,
+        emptyLabel: node.emptyLabel,
+        icon: icon,
+        accentColor: accentColor,
+        isFilled: node.isFilled,
+        onTap: () {
+          final primaryRoute = resolvePrimaryRoute(
+            detail: detail,
             role: role,
             patientId: patientId,
-          ),
-          context,
-        ),
-      ),
-      MentalMapHubNodeData(
-        title: 'Modos',
-        icon: Icons.self_improvement_outlined,
-        accentColor: colors.tertiary,
-        onTap: _route(
-          MentalMapNavigationTargets.clinicalDashboard(
+          );
+          final secondaryRoute = resolveSecondaryRoute(
+            detail: detail,
             role: role,
             patientId: patientId,
-          ),
-          context,
-        ),
-      ),
-      MentalMapHubNodeData(
-        title: 'Problemas',
-        icon: Icons.report_problem_outlined,
-        accentColor: colors.error,
-        onTap: _route(
-          MentalMapNavigationTargets.problems(
-            role: role,
-            patientId: patientId,
-          ),
-          context,
-        ),
-      ),
-      MentalMapHubNodeData(
-        title: 'Objetivos',
-        icon: Icons.flag_outlined,
-        accentColor: colors.secondary,
-        onTap: _route(
-          MentalMapNavigationTargets.therapyGoals(
-            role: role,
-            patientId: patientId,
-          ),
-          context,
-        ),
-      ),
-      MentalMapHubNodeData(
-        title: 'Timeline',
-        icon: Icons.timeline_outlined,
-        accentColor: colors.primary,
-        onTap: _route(
-          MentalMapNavigationTargets.timeline(
-            role: role,
-            patientId: patientId,
-          ),
-          context,
-        ),
-      ),
-      MentalMapHubNodeData(
-        title: 'Genograma',
-        icon: Icons.family_restroom_outlined,
-        accentColor: colors.secondary,
-        onTap: _route(
-          MentalMapNavigationTargets.genogram(
-            role: role,
-            patientId: patientId,
-          ),
-          context,
-        ),
-      ),
-    ];
+          );
+
+          showMentalMapNodeDetailSheet(
+            context: context,
+            detail: detail,
+            onPrimaryTap: _route(primaryRoute, context),
+            onSecondaryTap: _route(secondaryRoute, context),
+          );
+        },
+      );
+    }).toList(growable: false);
   }
-
 }
 
 class _CheckInScores extends StatelessWidget {

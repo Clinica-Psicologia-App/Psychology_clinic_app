@@ -212,6 +212,173 @@ void main() {
         'Demo — Moderado');
   });
 
+  test('ResultSnapshot parses attachment structured schemas safely', () {
+    final snap = ResultSnapshot.fromJson({
+      'version': 'scoring-demo-1',
+      'category_code': 'ATTACHMENT_ANXIOUS',
+      'category_name': 'Ansioso',
+      'answer_count': 42,
+      'total_weighted_score': 14,
+      'average_score': 0.33,
+      'summary': {
+        'weighted_score': 14,
+        'average_score': 0.33,
+        'answered_items': 42,
+        'max_possible_score': 42,
+      },
+      'domains': [
+        {
+          'id': 'd-attachment',
+          'code': 'ATTACHMENT_DOMAIN_STYLES',
+          'name': 'Estilos de Apego',
+          'weighted_score': 14,
+          'average_score': 0.33,
+          'answered_items': 42,
+          'max_possible_score': 42,
+          'severity': null,
+        },
+      ],
+      'schemas': [
+        {
+          'id': 's-anxious',
+          'code': 'ATTACHMENT_STYLE_ANXIOUS',
+          'name': 'Ansioso',
+          'weighted_score': 8,
+          'average_score': 0.57,
+          'answered_items': 14,
+          'max_possible_score': 14,
+          'severity': null,
+        },
+        {
+          'id': 's-secure',
+          'code': 'ATTACHMENT_STYLE_SECURE',
+          'name': 'Seguro',
+          'weighted_score': 4,
+          'average_score': 0.29,
+          'answered_items': 14,
+          'max_possible_score': 14,
+          'severity': null,
+        },
+      ],
+      'items': const [],
+    });
+
+    expect(snap.isScoringDemo, isTrue);
+    expect(snap.scoring?.domains.single.name, 'Estilos de Apego');
+    expect(snap.scoring?.schemas.first.name, 'Ansioso');
+    expect(snap.scoring?.schemas.first.hasSeverity, isFalse);
+  });
+
+  test('ResultSnapshot parses YCI structured schema safely', () {
+    final snap = ResultSnapshot.fromJson({
+      'version': 'scoring-demo-1',
+      'category_code': 'YCI_TOTAL',
+      'category_name': 'YCI Geral',
+      'answer_count': 48,
+      'total_weighted_score': 215,
+      'average_score': 4.48,
+      'questionnaire_version': {
+        'version': 'v1',
+        'scoring_method': 'legacy_category_average',
+        'scale_min': 1,
+        'scale_max': 6,
+      },
+      'summary': {
+        'weighted_score': 215,
+        'average_score': 4.48,
+        'answered_items': 48,
+        'max_possible_score': 288,
+      },
+      'domains': [
+        {
+          'id': 'd-yci',
+          'code': 'COPING_DOMAIN_STYLES',
+          'name': 'Estilos de Enfrentamento',
+          'weighted_score': 215,
+          'average_score': 4.48,
+          'answered_items': 48,
+          'max_possible_score': 288,
+          'severity': null,
+        },
+      ],
+      'schemas': [
+        {
+          'id': 's-yci',
+          'code': 'YCI_TOTAL',
+          'name': 'YCI Geral',
+          'weighted_score': 215,
+          'average_score': 4.48,
+          'answered_items': 48,
+          'max_possible_score': 288,
+          'severity': null,
+        },
+      ],
+      'items': const [],
+    });
+
+    expect(snap.isScoringDemo, isTrue);
+    expect(snap.scoring?.domains.single.name, 'Estilos de Enfrentamento');
+    expect(snap.scoring?.schemas.single.code, 'YCI_TOTAL');
+    expect(snap.scoring?.schemas.single.name, 'YCI Geral');
+    expect(snap.scoring?.schemas.single.averageScore, 4.48);
+    expect(snap.scoring?.scaleMax, 6);
+  });
+
+  test('ResultSnapshot parses YRAI structured schema safely', () {
+    final snap = ResultSnapshot.fromJson({
+      'version': 'scoring-demo-1',
+      'category_code': 'YRAI_TOTAL',
+      'category_name': 'YRAI Geral',
+      'answer_count': 40,
+      'total_weighted_score': 154,
+      'average_score': 3.85,
+      'questionnaire_version': {
+        'version': 'v1',
+        'scoring_method': 'legacy_category_average',
+        'scale_min': 1,
+        'scale_max': 6,
+      },
+      'summary': {
+        'weighted_score': 154,
+        'average_score': 3.85,
+        'answered_items': 40,
+        'max_possible_score': 240,
+      },
+      'domains': [
+        {
+          'id': 'd-yrai',
+          'code': 'COPING_DOMAIN_STYLES',
+          'name': 'Estilos de Enfrentamento',
+          'weighted_score': 154,
+          'average_score': 3.85,
+          'answered_items': 40,
+          'max_possible_score': 240,
+          'severity': null,
+        },
+      ],
+      'schemas': [
+        {
+          'id': 's-yrai',
+          'code': 'YRAI_TOTAL',
+          'name': 'YRAI Geral',
+          'weighted_score': 154,
+          'average_score': 3.85,
+          'answered_items': 40,
+          'max_possible_score': 240,
+          'severity': null,
+        },
+      ],
+      'items': const [],
+    });
+
+    expect(snap.isScoringDemo, isTrue);
+    expect(snap.scoring?.domains.single.name, 'Estilos de Enfrentamento');
+    expect(snap.scoring?.schemas.single.code, 'YRAI_TOTAL');
+    expect(snap.scoring?.schemas.single.name, 'YRAI Geral');
+    expect(snap.scoring?.schemas.single.averageScore, 3.85);
+    expect(snap.scoring?.scaleMax, 6);
+  });
+
   test('CategoryResult derives parental figure and compact label', () {
     final mother = CategoryResult.fromJson({
       'id': 'r-m',

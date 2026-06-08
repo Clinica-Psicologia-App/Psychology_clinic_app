@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:terapia_esquema/features/mental_map/domain/mental_case_map.dart';
 import 'package:terapia_esquema/features/mental_map/domain/mental_map_case_summary.dart';
 import 'package:terapia_esquema/features/mental_map/domain/mental_map_check_in_summary.dart';
 import 'package:terapia_esquema/features/mental_map/domain/mental_map_data.dart';
@@ -8,6 +9,9 @@ import 'package:terapia_esquema/features/mental_map/domain/mental_map_monitor_su
 import 'package:terapia_esquema/features/mental_map/domain/mental_map_problem_summary.dart';
 import 'package:terapia_esquema/features/mental_map/domain/mental_map_questionnaire_block.dart';
 import 'package:terapia_esquema/features/mental_map/domain/mental_map_score_highlight.dart';
+import 'package:terapia_esquema/features/mental_map/domain/mental_map_clinical_core.dart';
+import 'package:terapia_esquema/features/mental_map/domain/mental_map_history_links.dart';
+import 'package:terapia_esquema/features/mental_map/domain/mental_map_therapy_plan.dart';
 import 'package:terapia_esquema/features/mental_map/domain/mental_map_validation_summary.dart';
 import 'package:terapia_esquema/features/therapy_resources/domain/therapy_resource_recommendation_engine.dart';
 import 'package:terapia_esquema/features/therapy_resources/domain/patient_resource_access.dart';
@@ -97,12 +101,16 @@ void main() {
   test('buildTherapyResourceRecommendations suggests matching resources', () {
     final mentalMap = MentalMapData(
       patientName: 'Paciente teste',
+      caseMap: MentalCaseMap.empty,
       caseSummary: const MentalMapCaseSummary(
         therapyDemands: 'Regular ansiedade e entender padrões de esquema.',
         centralHypotheses: ['Abandono'],
         currentFocuses: ['Crises de ansiedade'],
       ),
       validationSummary: MentalMapValidationSummary.empty,
+      clinicalCore: MentalMapClinicalCore.empty,
+      historyLinks: MentalMapHistoryLinks.empty,
+      therapyPlan: MentalMapTherapyPlan.empty,
       questionnaires: const [
         MentalMapQuestionnaireBlock(
           responseId: 'att-1',

@@ -54,152 +54,164 @@ class _QuestionnaireIntroPageState
     return AppScaffold(
       title: 'Antes de começar',
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text(
-                widget.questionnaire.name,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                24,
+                24,
+                24,
+                24 + MediaQuery.of(context).viewPadding.bottom,
+              ),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minHeight: constraints.maxHeight - 48),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      widget.questionnaire.name,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    if (widget.questionnaire.description != null &&
+                        widget.questionnaire.description!.trim().isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        widget.questionnaire.description!,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                    if (orientation != null) ...[
+                      const SizedBox(height: 24),
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                Icons.schedule_outlined,
+                                color: theme.colorScheme.primary,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  orientation,
+                                  style: theme.textTheme.bodyLarge,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                    if (widget.questionnaire.patientSpecificGuidance != null) ...[
+                      const SizedBox(height: 16),
+                      Card(
+                        color: theme.colorScheme.primaryContainer,
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(
+                                Icons.info_outline,
+                                color: theme.colorScheme.onPrimaryContainer,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  widget.questionnaire.patientSpecificGuidance!,
+                                  style: theme.textTheme.bodyLarge?.copyWith(
+                                    color: theme.colorScheme.onPrimaryContainer,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                    if (widget.questionnaire.isParentalStyles) ...[
+                      const SizedBox(height: 16),
+                      Card(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Para quem voce deseja responder?',
+                                style: theme.textTheme.titleMedium,
+                              ),
+                              const SizedBox(height: 12),
+                              CheckboxListTile(
+                                value: _includeMother,
+                                onChanged: (value) => setState(
+                                  () => _includeMother = value ?? false,
+                                ),
+                                title: const Text('Mae'),
+                                contentPadding: EdgeInsets.zero,
+                                controlAffinity: ListTileControlAffinity.leading,
+                              ),
+                              CheckboxListTile(
+                                value: _includeFather,
+                                onChanged: (value) => setState(
+                                  () => _includeFather = value ?? false,
+                                ),
+                                title: const Text('Pai'),
+                                contentPadding: EdgeInsets.zero,
+                                controlAffinity: ListTileControlAffinity.leading,
+                              ),
+                              CheckboxListTile(
+                                value: _includeOther,
+                                onChanged: (value) => setState(
+                                  () => _includeOther = value ?? false,
+                                ),
+                                title: const Text('Outro'),
+                                contentPadding: EdgeInsets.zero,
+                                controlAffinity: ListTileControlAffinity.leading,
+                              ),
+                              if (_includeOther) ...[
+                                const SizedBox(height: 8),
+                                TextField(
+                                  controller: _otherController,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Qual figura parental?',
+                                    border: OutlineInputBorder(),
+                                  ),
+                                  textCapitalization: TextCapitalization.words,
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 24),
+                    FilledButton(
+                      onPressed: _starting ? null : _onStart,
+                      child: _starting
+                          ? const SizedBox(
+                              height: 22,
+                              width: 22,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Iniciar questionário'),
+                    ),
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: _starting ? null : () => context.pop(),
+                      child: const Text('Voltar'),
+                    ),
+                  ],
                 ),
               ),
-              if (widget.questionnaire.description != null &&
-                  widget.questionnaire.description!.trim().isNotEmpty) ...[
-                const SizedBox(height: 12),
-                Text(
-                  widget.questionnaire.description!,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-              if (orientation != null) ...[
-                const SizedBox(height: 24),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          Icons.schedule_outlined,
-                          color: theme.colorScheme.primary,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            orientation,
-                            style: theme.textTheme.bodyLarge,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-              if (widget.questionnaire.patientSpecificGuidance != null) ...[
-                const SizedBox(height: 16),
-                Card(
-                  color: theme.colorScheme.primaryContainer,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(
-                          Icons.info_outline,
-                          color: theme.colorScheme.onPrimaryContainer,
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            widget.questionnaire.patientSpecificGuidance!,
-                            style: theme.textTheme.bodyLarge?.copyWith(
-                              color: theme.colorScheme.onPrimaryContainer,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-              if (widget.questionnaire.isParentalStyles) ...[
-                const SizedBox(height: 16),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Para quem voce deseja responder?',
-                          style: theme.textTheme.titleMedium,
-                        ),
-                        const SizedBox(height: 12),
-                        CheckboxListTile(
-                          value: _includeMother,
-                          onChanged: (value) => setState(
-                            () => _includeMother = value ?? false,
-                          ),
-                          title: const Text('Mae'),
-                          contentPadding: EdgeInsets.zero,
-                          controlAffinity: ListTileControlAffinity.leading,
-                        ),
-                        CheckboxListTile(
-                          value: _includeFather,
-                          onChanged: (value) => setState(
-                            () => _includeFather = value ?? false,
-                          ),
-                          title: const Text('Pai'),
-                          contentPadding: EdgeInsets.zero,
-                          controlAffinity: ListTileControlAffinity.leading,
-                        ),
-                        CheckboxListTile(
-                          value: _includeOther,
-                          onChanged: (value) => setState(
-                            () => _includeOther = value ?? false,
-                          ),
-                          title: const Text('Outro'),
-                          contentPadding: EdgeInsets.zero,
-                          controlAffinity: ListTileControlAffinity.leading,
-                        ),
-                        if (_includeOther) ...[
-                          const SizedBox(height: 8),
-                          TextField(
-                            controller: _otherController,
-                            decoration: const InputDecoration(
-                              labelText: 'Qual figura parental?',
-                              border: OutlineInputBorder(),
-                            ),
-                            textCapitalization: TextCapitalization.words,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                ),
-              ],
-              const Spacer(),
-              FilledButton(
-                onPressed: _starting ? null : _onStart,
-                child: _starting
-                    ? const SizedBox(
-                        height: 22,
-                        width: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Iniciar questionário'),
-              ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: _starting ? null : () => context.pop(),
-                child: const Text('Voltar'),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );

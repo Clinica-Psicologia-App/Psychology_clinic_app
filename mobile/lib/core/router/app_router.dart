@@ -75,12 +75,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         return AppRoutes.login;
       }
 
-      if (isPublicRoute) {
-        return null;
-      }
-
       if (isLogin || isSplash) {
         return RouteAccess.homeFor(profile.role);
+      }
+
+      if (isPublicRoute) {
+        return null;
       }
 
       if (!RouteAccess.isAllowed(location, profile.role)) {

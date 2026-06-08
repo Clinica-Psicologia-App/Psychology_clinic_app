@@ -308,22 +308,57 @@ Feature: `lib/features/mental_map/` — sem migration; agrega dados via RLS dos 
 
 | Tela | Função |
 |------|--------|
-| `PatientMentalMapPage` | Hub radial com navegação + visão resumida por módulo |
+| `PatientMentalMapPage` | Formulação visual do caso com centro clínico, camadas e síntese por módulo |
 | `StaffPatientMentalMapPage` | Mesma visão no detalhe do paciente |
 
-**Layout v1.2:** hub radial/estrela responsivo com fallback em grid para larguras muito pequenas. O centro mostra apenas nome do paciente + rótulo `Paciente`.
+**Layout v3 (M1–M5):** formulação visual do caso com hub de 8 nós, tabs de camadas e bottom sheet por nó.
 
-**Nós navegáveis:** Esquemas · Modos · Problemas · Objetivos · Timeline · Genograma.
+**Centro do mapa:** nome do paciente + resumo curto com:
 
-**Resumo abaixo do hub:** mantém a síntese atual por módulos (questionários, problemas, objetivos, check-in, monitor, timeline, genograma).
+- problemas ativos
+- objetivos ativos
+- último check-in
+
+**Anel principal:** Esquemas · Modos · Problemas · Objetivos
+
+**Anel contextual:** Apego · Enfrentamento · Parentais · História/Vínculos (timeline + genograma)
+
+**Dados usados no builder `mental_case_map_builder.dart`:**
+
+- `questionnaire_results` (via `ResultsRepository`) — YSQ, YAMI, ATTACHMENT, YCI, YRAI, PARENTAL
+- `patient_problems`
+- `therapy_goals`
+- `patient_check_ins`
+- `patient_timeline_events`
+- `genogram_people`
+- `genogram_relationships`
+- `snapshot.contexts[]` para resumo por figura parental (`extractParentalFigureSummaries`)
+
+**Comportamento dos nós (M1):**
+
+- título, status preenchido/pendente, até 3 itens principais
+- indicador visual (borda sólida vs tracejada + ícone)
+- toque abre bottom sheet (M5), não navega direto
+
+**Bottom sheet (M5):** título, itens, origem dos dados, última atualização, CTA para módulo relacionado.
+
+**Tabs de formulação (M2–M4):** segmented control abaixo do hub:
+
+| Tab | Conteúdo |
+|-----|----------|
+| **Núcleo** | Top esquemas YSQ, modos YAMI, problemas por intensidade, apego, enfrentamento |
+| **História** | Timeline (top 5), genograma resumido, parentais por figura, apego; sensíveis mascarados |
+| **Plano** | Objetivos + problemas (proximidade visual), check-ins, sparkline 7 dias, recursos |
+
+**Domain/builders:** `mental_case_map_builder.dart`, `mental_map_hub_builder.dart`, `mental_map_clinical_core_builder.dart`, `mental_map_history_links_builder.dart`, `mental_map_therapy_plan_builder.dart`.
+
+**Spec:** [product/mental-map-v3-spec.md](./product/mental-map-v3-spec.md) — v3 completo (M1–M5).
 
 **Rotas:** `/patient/mental-map` · staff: `…/patients/:patientId/mental-map`
 
 **Trilha:** *Mapa mental* → Disponível (sem dados clínicos relevantes) · Em andamento (com ao menos um dado).
 
-Aviso fixo na tela: organiza informações registradas; não substitui avaliação clínica. Sem interpretação automática de scores.
-
-**Trilha:** *Dashboard clínico* → Disponível (sem YSQ/YAMI concluídos) · Em andamento (com ao menos um resultado estruturado).
+Aviso fixo na tela: *Mapa mental em construção. Esta visão organiza informações registradas, mas não substitui avaliação clínica.* Sem IA, sem inferência automática de relações e sem interpretação clínica automática.
 
 ## Módulo de dashboard clínico (`clinical_dashboard`)
 
@@ -331,13 +366,30 @@ Feature: `lib/features/clinical_dashboard/` — sem migration; lê `questionnair
 
 | Tela | Função |
 |------|--------|
-| `DashboardHomePage` | Home com 6 seções de instrumentos |
+| `DashboardHomePage` | **v3 fatia 1:** visão executiva do caso (D1) + estilos parentais por figura (D3) + detalhes colapsáveis por instrumento |
 | `PatientClinicalDashboardPage` | Wrapper paciente do dashboard home |
 | `StaffPatientClinicalDashboardPage` | Mesmo painel no detalhe do paciente |
 
-**Seções da home:** YSQ · YAMI · Estilos Parentais · Estilos de Apego · Estilos de Enfrentamento · Personalidade.
+**Visão executiva (D1 — v3):**
 
-**Estado atual:** YSQ e YAMI continuam usando os painéis existentes com barras horizontais e histórico básico. As demais seções exibem `Disponível em versão futura.`
+- Header com nome do paciente, última atualização clínica, KPIs (problemas, objetivos, resultados, check-in)
+- Grid de prioridades: top 3 YSQ, top 3 YAMI, apego, enfrentamento (YCI/YRAI)
+- Sinais recentes: check-in, eventos da timeline, problemas mais intensos
+- Callouts orientativos (sem interpretação clínica): instrumentos pendentes, check-in ausente
+
+**Estilos parentais (D3 — v3):**
+
+- Lê `snapshot.contexts[]` (`parental-context-v1`) da última resposta `PARENTAL_STYLES_V1`
+- Chips por figura (Mãe, Pai, Outro/label informado)
+- Top scores, contagem de itens respondidos e resumo por figura
+
+**Detalhes por instrumento:** seção colapsável com barras completas YSQ · YAMI · Apego · YCI · YRAI (compatível com v1.1).
+
+**Estado atual:** YSQ, YAMI, `ATTACHMENT_STYLES_V1`, `YCI_FOUNDATION_V1`, `YRAI_FOUNDATION_V1` e `PARENTAL_STYLES_V1` usam painéis reais. Personalidade continua placeholder.
+
+**Domain/builders:** `clinical_case_summary_builder.dart`, `clinical_parental_dashboard_builder.dart`, `clinical_dashboard_callouts.dart`.
+
+**Spec:** [product/dashboard-v3-spec.md](./product/dashboard-v3-spec.md)
 
 **Rotas:** `/patient/clinical-dashboard` · staff: `…/patients/:patientId/clinical-dashboard`
 
@@ -382,6 +434,7 @@ Feature: `lib/features/results/` (`data` / `domain` / `providers` / `presentatio
   - `MVP_DEMO` → “Resultado demonstrativo, sem validade clínica oficial.”
   - `YSQ_FOUNDATION_V1` → “Resultado estruturado para validação clínica…” (interpretação pelo psicólogo)
   - `YAMI_MODES_FOUNDATION_V1` → “Resultado estruturado de modos esquemáticos para validação clínica…”
+  - `ATTACHMENT_STYLES_V1` → “Resultado estruturado por estilo de apego para validação clínica…”
   - demais → “Resultado estruturado. Revise as regras clínicas…”
 - Modelos: `features/results/domain/scoring_*.dart`, `result_disclaimer.dart`.
 - **`version: mvp-1` (ou ausente):** visualização legada por categoria (soma ponderada, itens simples).

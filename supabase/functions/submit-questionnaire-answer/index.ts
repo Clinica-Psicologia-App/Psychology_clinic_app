@@ -50,7 +50,9 @@ serve(async (req) => {
       client,
       responseId,
       body.response_context_id,
-      response.questionnaire?.code as string? ?? null,
+      typeof response.questionnaire?.code === "string"
+        ? response.questionnaire.code
+        : null,
     );
 
     validateAnswerValue(

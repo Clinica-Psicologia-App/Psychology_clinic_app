@@ -115,6 +115,38 @@ MentalMapQuestionnaireBlock blockWithHighlights(
   );
 }
 
+/// Resumos por figura parental a partir de `snapshot.contexts[]`.
+List<String> extractParentalFigureSummaries(
+  PatientResultDetail detail, {
+  int limit = 3,
+}) {
+  final contexts = detail.snapshotContexts;
+  if (contexts.isEmpty) return const [];
+
+  final items = <String>[];
+  for (final context in contexts) {
+    final label = context.label.trim();
+    if (label.isEmpty) continue;
+
+    final schemas = [...context.schemas]
+      ..sort((a, b) {
+        final sa = a.weightedScore ?? a.averageScore ?? a.rawScore ?? -1;
+        final sb = b.weightedScore ?? b.averageScore ?? b.rawScore ?? -1;
+        return sb.compareTo(sa);
+      });
+
+    if (schemas.isNotEmpty) {
+      items.add('$label — ${schemas.first.name.trim()}');
+    } else {
+      items.add(label);
+    }
+
+    if (items.length >= limit) break;
+  }
+
+  return items;
+}
+
 /// Principais esquemas/modos por score ponderado ou médio (ordem decrescente).
 List<MentalMapScoreHighlight> extractScoreHighlights(
   PatientResultDetail detail, {

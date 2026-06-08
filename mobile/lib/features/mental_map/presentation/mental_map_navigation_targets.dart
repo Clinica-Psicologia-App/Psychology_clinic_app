@@ -8,6 +8,7 @@ import '../../profile/domain/profile_role.dart';
 import '../../questionnaires/presentation/questionnaire_routes.dart';
 import '../../results/presentation/result_routes.dart';
 import '../../therapy_goals/presentation/therapy_goal_routes.dart';
+import '../../therapy_resources/presentation/therapy_resource_routes.dart';
 
 /// Rotas de "Ver detalhes" por seção do mapa mental.
 abstract final class MentalMapNavigationTargets {
@@ -75,11 +76,37 @@ abstract final class MentalMapNavigationTargets {
     return PatientTimelineRoutes.staffList(role: role, patientId: patientId);
   }
 
+  static String? questionnaireResult({
+    required ProfileRole role,
+    String? patientId,
+    String? responseId,
+  }) {
+    if (role == ProfileRole.patient || patientId == null || responseId == null) {
+      return null;
+    }
+    return ResultRoutes.detail(
+      role: role,
+      patientId: patientId,
+      responseId: responseId,
+    );
+  }
+
   static String? genogram({required ProfileRole role, String? patientId}) {
     if (role == ProfileRole.patient) {
       return GenogramRoutes.patientList;
     }
     if (patientId == null) return null;
     return GenogramRoutes.staffList(role: role, patientId: patientId);
+  }
+
+  static String? therapyResources({
+    required ProfileRole role,
+    String? patientId,
+  }) {
+    if (role == ProfileRole.patient) {
+      return TherapyResourceRoutes.patientList;
+    }
+    if (patientId == null) return null;
+    return TherapyResourceRoutes.staffList(role: role, patientId: patientId);
   }
 }

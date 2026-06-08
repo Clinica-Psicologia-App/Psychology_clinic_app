@@ -8,6 +8,12 @@ Roadmap **técnico** após a modelagem inicial do banco (`supabase/migrations/`)
 
 **Homologação final MVP (2026-06-04):** [demo/final-mvp-homologation.md](./demo/final-mvp-homologation.md) · deploy: [deploy/supabase-deploy-checklist.md](./deploy/supabase-deploy-checklist.md) · [deploy/mobile-build-checklist.md](./deploy/mobile-build-checklist.md)
 
+**QA pós-feedback FH-01 a FH-04 (2026-06-06):** [qa/post-feedback-homologation-qa.md](./qa/post-feedback-homologation-qa.md)
+
+**QA Dashboard v3 + Mapa Mental v3 (2026-06-07):** [qa/dashboard-v3-mental-map-v3-homologation.md](./qa/dashboard-v3-mental-map-v3-homologation.md)
+
+**Specs visão clínica v3 (2026-06-07):** [product/dashboard-v3-spec.md](./product/dashboard-v3-spec.md) · [product/mental-map-v3-spec.md](./product/mental-map-v3-spec.md) — Dashboard v3 fatia 1 (D1+D3) e Mapa Mental v3 (M1–M5) entregues; homologação UX/clínica pendente.
+
 ---
 
 ## Pacote de homologação / demo (2026-06-04)
@@ -16,8 +22,15 @@ Roadmap **técnico** após a modelagem inicial do banco (`supabase/migrations/`)
 - [x] Checklist deploy Supabase
 - [x] Checklist build mobile
 - [x] [demo-checklist.md](./demo-checklist.md) e [demo-script.md](./demo-script.md) atualizados (trilha, PDF, YSQ/YAMI)
+- [x] Rodada de QA pós-feedback documentada: [qa/post-feedback-homologation-qa.md](./qa/post-feedback-homologation-qa.md)
+- [x] Roteiro QA Dashboard v3 + Mapa Mental v3: [qa/dashboard-v3-mental-map-v3-homologation.md](./qa/dashboard-v3-mental-map-v3-homologation.md)
+- [ ] Executar homologação v3 (§1–§5 do doc QA v3) — paciente + staff + psicóloga
+- [ ] Preencher tabela de feedbacks §6 e registro de sessão §7
+- [x] `flutter test` pós-FH-01/FH-02/FH-03/FH-04 — `156` testes OK
+- [x] `flutter analyze` pós-FH — baseline atual `47 issues`, sem erro bloqueante novo
 - [ ] Sessão presencial com cliente/psicólogas — preencher critérios §11 do doc de homologação
 - [ ] Homologação clínica YSQ/YAMI — [scoring-engine/clinical-homologation.md](./scoring-engine/clinical-homologation.md)
+- [ ] Executar checklist manual pós-feedback em dispositivo/emulador e backend local
 
 ---
 
@@ -199,6 +212,7 @@ supabase db query --local "SELECT count(*) FROM patients;"
 - [x] Testes: `route_access_test`, `error_mapper_test`, domínio dos módulos.
 - [ ] `supabase db reset` e `edge-functions-flow.ps1` na máquina de CI/demo antes de cada release.
 - [ ] Checklist manual RLS: `docs/rls-test-plan.md` no remoto.
+- [ ] Rodar QA pós-feedback FH-01 a FH-04: [qa/post-feedback-homologation-qa.md](./qa/post-feedback-homologation-qa.md)
 
 ### 10. Demo funcional (mobile + seed)
 
@@ -211,11 +225,18 @@ supabase db query --local "SELECT count(*) FROM patients;"
 ### 11. Dashboard e mapa mental
 
 - [x] **Dashboard clínico v1.1 (mobile)** — `clinical_dashboard`: home por instrumento, YSQ/YAMI com barras a partir de `snapshot`, placeholders de versão futura; trilha + staff; sem PDF/IA/web.
-- [x] **Mapa mental v1.1 (mobile)** — `mental_map`: hub radial navegável + agregador read-only; trilha + staff.
-- [ ] Views materializadas ou queries agregadas para `questionnaire_results` (após motor).
-- [ ] Modelagem de nós/arestas do mapa mental (tabelas novas — **não** antecipar no schema atual além de `therapy_resources`).
+- [x] **Mapa mental v2 (mobile)** — `mental_map`: Formulação Visual do Caso com centro clínico, camadas principal/contextual, navegação por nós e fallback em grid; trilha + staff; sem IA e sem nova migration.
+- [x] **Especificação Dashboard v3** — [product/dashboard-v3-spec.md](./product/dashboard-v3-spec.md): visão do caso, painéis por instrumento, parentais por figura, comparativo longitudinal (client-side), domínios YSQ.
+- [x] **Especificação Mapa Mental v3** — [product/mental-map-v3-spec.md](./product/mental-map-v3-spec.md): camadas Núcleo/História/Plano, hub 8 nós, sparkline check-in, bottom sheet por nó.
+- [x] **Dashboard v3 fatia 1 (D1 + D3)** — visão executiva do caso, prioridades, sinais recentes, callouts, estilos parentais por figura; detalhes por instrumento colapsáveis; `flutter test` 181 OK.
+- [ ] **Dashboard v3 fatia 2 (D2, D4, D5)** — painel completo por instrumento, comparativo longitudinal, domínios YSQ.
+- [x] **Mapa Mental v3 fatia 1 (M1 + M5)** — hub 8 nós, bottom sheet, parentais por figura.
+- [x] **Mapa Mental v3 fatia 2 (M2–M4)** — tabs Núcleo/História/Plano, sparkline check-in, recursos; `flutter test` 197 OK.
+- [ ] **Homologação UX/clínica v3** — [qa/dashboard-v3-mental-map-v3-homologation.md](./qa/dashboard-v3-mental-map-v3-homologation.md)
+- [ ] Views materializadas ou queries agregadas para `questionnaire_results` (após motor) — **não necessário para v3**.
+- [ ] Modelagem de nós/arestas do mapa mental (tabelas novas — **fora de escopo v3**).
 - [x] Relatório clínico PDF v1 (staff, Edge Function) — ver [api.md](./api.md) §5.
-- [ ] Dashboard web, comparativo longitudinal e PDF avançado — ver [product/master-roadmap.md](./product/master-roadmap.md) (Fases 5–6).
+- [ ] Dashboard web, comparativo entre instrumentos diferentes e PDF avançado — ver [product/master-roadmap.md](./product/master-roadmap.md) (Fases 5–6).
 
 ### 11b. Catálogo de questionários e acesso clínico
 
@@ -269,18 +290,111 @@ supabase db query --local "SELECT count(*) FROM patients;"
 - [x] Flutter: listas de pessoas/relações, formulários, aviso de visualização gráfica futura.
 - [ ] `db push` / `db reset` com migration 021 no ambiente de cada dev.
 
-### 12g. Mapa mental (agregador v1)
+### 12g. Mapa mental (Formulação Visual do Caso v2 → v3)
 
-- [x] Feature `mental_map`: hub radial/estrela responsivo, cards por seção, links "Ver detalhes", aviso clínico.
-- [x] Agrega YSQ/YAMI (últimos resultados), problemas/objetivos ativos, check-in, monitor, timeline, genograma.
-- [ ] Evolução futura: grafo interativo, IA (fora de escopo atual).
+- [x] Feature `mental_map`: hub radial responsivo com fallback em grid, cards por seção, links "Ver detalhes" e aviso clínico.
+- [x] Builder `mental_case_map_builder.dart`: centro do caso + anel principal (esquemas, modos, problemas, objetivos) + anel contextual (apego, enfrentamento, parentais, história/vínculos).
+- [x] Agrega `questionnaire_results`, `patient_problems`, `therapy_goals`, `patient_check_ins`, `patient_timeline_events`, `genogram_people` e `genogram_relationships`.
+- [x] Sem nova migration, sem IA, sem alteração no scoring e sem inferência automática de relações.
+- [x] Spec v3: [product/mental-map-v3-spec.md](./product/mental-map-v3-spec.md) — tabs Núcleo/História/Plano, hub 8 nós, sparkline, bottom sheet M5.
+- [x] **v3 fatia 1 (M1 + M5):** hub 8 nós, indicador preenchido/pendente, `MentalMapNodeDetailSheet`, CTAs via `mental_map_hub_builder.dart`, parentais via `snapshot.contexts[]`.
+- [x] **v3 fatia 2 (M2–M4):** tabs Núcleo/História/Plano, builders `mental_map_clinical_core_builder`, `mental_map_history_links_builder`, `mental_map_therapy_plan_builder`, sparkline check-in, recursos terapêuticos.
 
-### 12h. Dashboard clínico (home v1.1)
+### 12h. Dashboard clínico (home v1.1 → v3)
 
 - [x] `DashboardHomePage` com seções YSQ, YAMI, Estilos Parentais, Estilos de Apego, Estilos de Enfrentamento e Personalidade.
-- [x] YSQ e YAMI seguem usando os painéis existentes baseados em `snapshot`.
-- [x] Instrumentos ainda não implementados exibem `Disponível em versão futura.`
-- [ ] Evolução futura: comparativo longitudinal, web dashboard e instrumentação adicional sem alterar o motor atual.
+- [x] YSQ, YAMI e ATTACHMENT seguem usando painéis reais baseados em `snapshot`.
+- [x] Spec v3: [product/dashboard-v3-spec.md](./product/dashboard-v3-spec.md).
+- [x] **Fatia 1 implementada:** D1 visão executiva + D3 parentais por figura (`ClinicalExecutiveHeader`, `ClinicalPriorityGrid`, `ParentalStylesDashboardSection`).
+- [ ] Fatia 2: D2 painel completo, D4 comparativo, D5 domínios YSQ.
+
+### 12i. Auditoria dos instrumentos complementares (2026-06-07)
+
+Escopo auditado nesta rodada:
+
+- `ATTACHMENT_STYLES_V1`
+- `YCI_FOUNDATION_V1`
+- `YRAI_FOUNDATION_V1`
+- `PERSONALITY_V1` (verificação de existência)
+
+Critérios verificados:
+
+- Catálogo (`questionnaires`)
+- Perguntas (`questions`)
+- Versão ativa (`questionnaire_versions.status = active`)
+- Regras estruturadas (`question_scoring_rules`)
+- Faixas (`severity_ranges`)
+- Suporte no dashboard
+- Suporte no mapa mental
+- Suporte em resultados
+- Suporte de snapshot
+
+| Instrumento | Catálogo | Perguntas | Versão ativa | Scoring (`question_scoring_rules`) | Faixas (`severity_ranges`) | Dashboard | Mapa mental | Resultados | Snapshot | Classificação |
+|-------------|----------|-----------|--------------|------------------------------------|----------------------------|-----------|--------------|------------|----------|---------------|
+| `ATTACHMENT_STYLES_V1` | Sim | Sim (42) | Sim | Sim | Não documentadas | Sim | Sim | Sim | Sim (`scoring-demo-1` + fallback legado) | **IMPLEMENTADO** |
+| `YCI_FOUNDATION_V1` | Sim | Sim (48) | Sim | Sim | Não | Sim | Sim | Sim | Sim | **IMPLEMENTADO** |
+| `YRAI_FOUNDATION_V1` | Sim | Sim (40) | Sim | Sim | Não | Sim | Sim | Sim | Sim | **IMPLEMENTADO** |
+| `PERSONALITY_V1` | Não | Não | Não | Não | Não | Não | Não | Não | Não | **NÃO IMPLEMENTADO** |
+
+Notas de leitura:
+
+- `Dashboard = Parcial` significa placeholder visual já presente no app, mas sem painel dedicado alimentado por dados do instrumento.
+- `Snapshot = Sim (legado / genérico)` significa compatibilidade com `finish-questionnaire` + `question_category_items`, resultando em `snapshot.version = "mvp-1"` ou payload híbrido sem motor estruturado próprio do instrumento.
+- `ATTACHMENT_STYLES_V1` passou a contar com `question_scoring_rules` próprias e painel dedicado no app.
+- `YRAI_FOUNDATION_V1` passou a contar com `question_scoring_rules` próprias, painel dedicado no dashboard e agregação estruturada junto do nó de enfrentamento no mapa mental.
+
+#### 12i.1 `ATTACHMENT_STYLES_V1`
+
+- **Existe no catálogo:** sim.
+- **Possui perguntas:** sim, `42` itens.
+- **Possui versão ativa:** sim (`legacy_category_average`).
+- **Possui scoring estruturado:** sim, via migration `026_attachment_styles_scoring.sql`, reutilizando o agrupamento legado em 3 estilos (`Ansioso`, `Seguro`, `Evitante`) dentro do domínio global `Estilos de Apego`.
+- **Possui faixas:** não nesta etapa; ausência documentada, sem cortes inventados.
+- **Aparece no dashboard:** sim, com painel real em `DashboardHomePage`.
+- **Aparece no mapa mental:** sim, na agregação de questionários concluídos.
+- **Aparece nos resultados:** sim, com parsing estruturado `scoring-demo-1`, disclaimer específico e fallback legado mantido.
+- **Classificação:** **IMPLEMENTADO**.
+
+#### 12i.2 `YCI_FOUNDATION_V1`
+
+- **Existe no catálogo:** sim.
+- **Possui perguntas:** sim, `48` itens.
+- **Possui versão ativa:** sim (`legacy_category_average`).
+- **Possui scoring estruturado:** sim, via migration `027_yci_scoring.sql`, reaproveitando o agrupamento legado `YCI_TOTAL` como `YCI Geral` dentro do domínio global `Estilos de Enfrentamento`.
+- **Possui faixas:** não nesta etapa; ausência documentada, sem cortes inventados.
+- **Aparece no dashboard:** sim, com painel real `Estilos de enfrentamento — YCI`.
+- **Aparece no mapa mental:** sim, como nó contextual de `Estilos de Enfrentamento` quando houver resultado estruturado.
+- **Aparece nos resultados:** sim, com parsing estruturado `scoring-demo-1`, disclaimer específico e fallback legado mantido.
+- **Classificação:** **IMPLEMENTADO**.
+
+#### 12i.3 `YRAI_FOUNDATION_V1`
+
+- **Existe no catálogo:** sim.
+- **Possui perguntas:** sim, `40` itens.
+- **Possui versão ativa:** sim (`legacy_category_average`).
+- **Possui scoring estruturado:** sim, via migration `028_yrai_scoring.sql`, reaproveitando o agrupamento legado `YRAI_TOTAL` como `YRAI Geral` dentro do domínio global `Estilos de Enfrentamento`.
+- **Possui faixas:** não nesta etapa; ausência documentada, sem cortes inventados.
+- **Aparece no dashboard:** sim, com painel real `Estilos de enfrentamento — YRAI`.
+- **Aparece no mapa mental:** sim, como parte do nó contextual de `Estilos de Enfrentamento`, isoladamente ou junto com `YCI`.
+- **Aparece nos resultados:** sim, com parsing estruturado `scoring-demo-1`, disclaimer específico e fallback legado mantido.
+- **Classificação:** **IMPLEMENTADO**.
+
+#### 12i.4 `PERSONALITY_V1`
+
+- **Existe no catálogo:** não foi encontrado no catálogo nem no código.
+- **Possui perguntas:** não.
+- **Possui versão ativa:** não.
+- **Possui scoring estruturado:** não.
+- **Possui faixas:** não.
+- **Aparece no dashboard:** não como instrumento real; existe apenas o card futuro `Personalidade`.
+- **Aparece no mapa mental:** não.
+- **Aparece nos resultados:** não.
+- **Classificação:** **NÃO IMPLEMENTADO**.
+
+Próximo passo sugerido para esses instrumentos, sem mudar banco nesta etapa:
+
+- decidir se `ATTACHMENT`, `YCI` e `YRAI` entrarão só como instrumentos legados com leitura genérica ou se receberão onboarding completo no motor estruturado (`question_scoring_rules` + `severity_ranges` + painel dedicado);
+- definir se `PERSONALITY_V1` fará parte do catálogo real ou permanece apenas como placeholder de produto/UI.
 
 ### 13. Produto — wireframes e diagrama (documentação)
 
@@ -322,9 +436,9 @@ supabase db query --local "SELECT count(*) FROM patients;"
 
 ## O que ainda NÃO deve ser implementado nesta fase
 
-- Dashboard visual ou gráficos (ver Fase 6 do [master roadmap](./product/master-roadmap.md)).
-- Mapa mental interativo (UI e grafo).
-- Integração com IA.
+- Dashboard web ou gráficos radar (fora de escopo v3; ver specs v3).
+- Relações automáticas inferidas no mapa mental (v3 proíbe explicitamente).
+- Integração com IA no mapa mental ou dashboard.
 - Gateway de pagamento / assinaturas.
 - Cálculo automático em produção (função de apuração) até validação das fórmulas.
 - Testes E2E automatizados de RLS por role (opcional nesta fase).
@@ -349,6 +463,8 @@ supabase db query --local "SELECT count(*) FROM patients;"
 - `docs/database-model.md` — modelo e fluxos.
 - `docs/next-steps.md` — este arquivo.
 - `docs/product/master-roadmap.md` — roadmap de produto.
+- `docs/product/dashboard-v3-spec.md` — spec Dashboard clínico v3.
+- `docs/product/mental-map-v3-spec.md` — spec Mapa Mental v3.
 - `docs/product/gap-analysis-from-wireframes.md` — gaps vs wireframes.
 
 ---

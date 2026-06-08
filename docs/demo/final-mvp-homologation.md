@@ -12,12 +12,12 @@
 |------|--------|
 | Auth + RLS por clínica e perfil | Implementado |
 | Pacientes (staff) | Implementado |
-| Questionários (`MVP_DEMO`, `YSQ_FOUNDATION_V1`, `YAMI_MODES_FOUNDATION_V1`) | Implementado |
+| Questionários clínicos (`YSQ_FOUNDATION_V1`, `YAMI_MODES_FOUNDATION_V1`, `PARENTAL_STYLES_V1`, `ATTACHMENT_STYLES_V1`, `YCI_FOUNDATION_V1`, `YRAI_FOUNDATION_V1`) | Implementado |
 | Motor de apuração + snapshot JSON | Implementado |
 | Resultados (staff) | Implementado |
 | Recursos terapêuticos + monitor diário | Implementado |
 | Trilha do paciente + 7 módulos clínicos do paciente | Implementado |
-| Mapa mental v1 + dashboard clínico v1 | Implementado (somente leitura; avisos de validação) |
+| Mapa mental v3 + dashboard v3 (mobile) | Implementado — homologação UX/clínica pendente |
 | Relatório PDF v1 (staff) | Implementado |
 | IA, dashboard web, assinatura digital, e-mail automático | **Fora do escopo** |
 
@@ -39,8 +39,35 @@
 - [Deploy Supabase](../deploy/supabase-deploy-checklist.md)
 - [Build mobile](../deploy/mobile-build-checklist.md)
 - [QA pós-roadmap](../qa/post-roadmap-stabilization.md)
+- [QA pós-feedback FH-01 a FH-04](../qa/post-feedback-homologation-qa.md)
+- [QA Dashboard v3 + Mapa Mental v3](../qa/dashboard-v3-mental-map-v3-homologation.md)
 - [Homologação clínica YSQ/YAMI](../scoring-engine/clinical-homologation.md)
 - [Checklist validação clínica catálogo](../scoring-engine/clinical-validation-checklist.md)
+
+### Gate adicional para homologação v3 (Dashboard + Mapa Mental)
+
+Antes da sessão com cliente/psicólogas após entrega v3, executar:
+
+- [qa/dashboard-v3-mental-map-v3-homologation.md](../qa/dashboard-v3-mental-map-v3-homologation.md) — checklists §1–§5
+- Cenários: paciente sem dados · com cada instrumento · caso completo seed
+- Validar hub 8 nós, tabs Núcleo/História/Plano, bottom sheets e responsividade
+- Preencher tabela de feedbacks §6 e registro §7
+
+**Escopo v3 entregue (Flutter only):**
+
+| Módulo | Entregue | Pendente homologação / roadmap |
+|--------|----------|--------------------------------|
+| Dashboard v3 | D1 visão executiva + D3 parentais + detalhes colapsáveis | D2/D4/D5; sessão clínica |
+| Mapa Mental v3 | M1 hub + M2–M4 tabs + M5 bottom sheet | Sessão UX/clínica; grafo/IA fora de escopo |
+
+### Gate adicional para a próxima versão de homologação (FH-01 a FH-04)
+
+Antes da próxima sessão com cliente, executar também o roteiro pós-feedback de:
+
+- onboarding público do profissional (`FH-01`)
+- convite e primeiro acesso do paciente (`FH-02`)
+- catálogo/liberação de questionários por profissional (`FH-03`)
+- `PARENTAL_STYLES_V1` com múltiplas figuras parentais (`FH-04`)
 
 ---
 
@@ -52,7 +79,7 @@
 cd /caminho/para/Aplicativo-Clinica-Psicologia
 
 supabase start
-supabase db reset          # migrations 001–021 + seed demo
+supabase db reset          # migrations 001–025 + seed demo
 supabase functions serve   # manter em terminal separado
 ```
 
@@ -96,7 +123,10 @@ supabase link --project-ref <PROJECT_REF>
 supabase db push
 supabase db query --linked -f supabase/seed.sql
 
+supabase functions deploy create-professional-account
 supabase functions deploy create-patient
+supabase functions deploy create-patient-invitation
+supabase functions deploy accept-patient-invitation
 supabase functions deploy start-questionnaire
 supabase functions deploy submit-questionnaire-answer
 supabase functions deploy finish-questionnaire
@@ -122,11 +152,14 @@ Senha para todas: **`TesteMVP2025!`**
 **Paciente:** `patients.id` = `11111111-1111-1111-1111-111111111201`  
 Dados fictícios: domínio `@clinicateste-mvp.example`, CPF `00000000191`.
 
-**Instrumentos no banco (migrations 014–015):**
+**Instrumentos no banco (migrations 014–015, 022–025 e seed atual):**
 
 - `YSQ_FOUNDATION_V1` — 90 itens, esquemas iniciais
 - `YAMI_MODES_FOUNDATION_V1` — modos esquemáticos
-- `MVP_DEMO` — inventário demo 5 itens (seed + resposta concluída)
+- `PARENTAL_STYLES_V1` — estilos parentais com suporte a múltiplas figuras
+- `ATTACHMENT_STYLES_V1` — estilos de apego
+- `YCI_FOUNDATION_V1` — coping/inventário complementar
+- `YRAI_FOUNDATION_V1` — inventário complementar
 
 ---
 
@@ -143,11 +176,11 @@ Login: `paciente.login@…` / `TesteMVP2025!`
 | 5 | **Check-in** — registro de hoje | Trilha pode marcar concluído |
 | 6 | **Linha do tempo** — 1 evento | Título + data/período |
 | 7 | **Genograma** — 2 pessoas + 1 relação | Aviso gráfico v1; lista OK |
-| 8 | **Questionários** — concluir `MVP_DEMO` ou iniciar YSQ/YAMI* | Finalizar sem erro (functions ativas) |
+| 8 | **Questionários** — iniciar YSQ/YAMI ou responder um instrumento curto disponível | Finalizar sem erro (functions ativas) |
 | 9 | **Monitor diário** — registro de hoje | SnackBar sucesso |
 | 10 | **Meus recursos** — item liberado pelo staff | Sem recursos não liberados |
-| 11 | **Mapa mental** | Banner disclaimer; seções conforme dados |
-| 12 | **Dashboard clínico** | Banner *validação clínica*; barras ou empty YSQ/YAMI |
+| 11 | **Mapa mental** | Hub 8 nós + tabs Núcleo/História/Plano + bottom sheets; banner disclaimer; cards resumo v2 mantidos |
+| 12 | **Dashboard clínico** | Visão executiva v3; prioridades YSQ/YAMI/apego/enfrentamento; parentais por figura; detalhes colapsáveis |
 | 13 | Logout | Retorno ao login |
 
 \* YSQ (90) e YAMI (~124) são longos — para sessão de homologação clínica dedicada, usar [clinical-homologation.md](../scoring-engine/clinical-homologation.md).
@@ -163,8 +196,8 @@ Login admin **ou** psicólogo (mesmo paciente Maria Silva).
 | 1 | **Pacientes** → Maria Silva | Psicóloga responsável visível |
 | 2 | **Questionários** (staff) | Iniciar aplicação se necessário |
 | 3 | **Resultados** | Resposta concluída; snapshot legível; **sem interpretação automática** |
-| 4 | **Dashboard clínico** | Top esquemas/modos se YSQ/YAMI concluídos |
-| 5 | **Mapa mental** | Agregado read-only |
+| 4 | **Dashboard clínico** | Visão executiva v3; parentais por figura; callouts |
+| 5 | **Mapa mental** | Hub + tabs + bottom sheet; agregado read-only |
 | 6 | **Objetivos / Problemas / Timeline / Genograma** | Dados criados pelo paciente |
 | 7 | **Check-ins** | **Somente leitura** (staff não cria) |
 | 8 | **Monitor diário** (histórico) | Leitura; registros do paciente |
@@ -219,7 +252,7 @@ Usar em sessão **dedicada** com psicóloga homologadora (não substituir demo f
 - [ ] Psicóloga registra OK / pendências na tabela do doc de homologação
 - [ ] Faixas de severidade e licença de uso revisadas ([severity-ranges.md](../scoring-engine/severity-ranges.md))
 
-**Até homologação formal:** dashboard e mapa mental são **apoio visual**, não laudo.
+**Até homologação formal:** dashboard e mapa mental são **apoio visual**, não laudo. Rodada UX/clínica v3: [dashboard-v3-mental-map-v3-homologation.md](../qa/dashboard-v3-mental-map-v3-homologation.md).
 
 ---
 
@@ -268,6 +301,7 @@ Automação: `cd mobile && flutter test` (inclui `route_access_test`).
 - [ ] `flutter test` verde
 - [ ] Roteiro paciente (§5) executado ou amostra registrada
 - [ ] Roteiro staff (§6) + PDF (§7) executados
+- [ ] QA Dashboard v3 + Mapa Mental v3 — [dashboard-v3-mental-map-v3-homologation.md](../qa/dashboard-v3-mental-map-v3-homologation.md) §5 aprovado ou com ressalvas documentadas
 - [ ] Checklist segurança (§9) — smoke OK
 - [ ] YSQ/YAMI: sessão clínica agendada ou tabela [clinical-homologation.md](../scoring-engine/clinical-homologation.md) preenchida
 - [ ] Pendências (§10) comunicadas ao cliente
@@ -279,6 +313,9 @@ Automação: `cd mobile && flutter test` (inclui `route_access_test`).
 | Tópico | Documento |
 |--------|-----------|
 | API Edge Functions | [api.md](../api.md) |
+| QA v3 Dashboard + Mapa | [qa/dashboard-v3-mental-map-v3-homologation.md](../qa/dashboard-v3-mental-map-v3-homologation.md) |
+| Spec Dashboard v3 | [product/dashboard-v3-spec.md](../product/dashboard-v3-spec.md) |
+| Spec Mapa Mental v3 | [product/mental-map-v3-spec.md](../product/mental-map-v3-spec.md) |
 | App mobile / rotas | [mobile-app.md](../mobile-app.md) |
 | Roteiro demo 15–25 min | [demo-script.md](../demo-script.md) |
 | Deploy Supabase | [deploy/supabase-deploy-checklist.md](../deploy/supabase-deploy-checklist.md) |

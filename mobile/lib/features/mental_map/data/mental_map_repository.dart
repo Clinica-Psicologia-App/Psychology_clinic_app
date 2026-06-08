@@ -9,15 +9,20 @@ import '../../patient_timeline/domain/patient_timeline_event_input.dart';
 import '../../results/data/results_repository.dart';
 import '../../therapy_goals/data/therapy_goals_repository.dart';
 import '../../therapy_goals/domain/therapy_goal_status.dart';
+import '../../therapy_resources/data/therapy_resources_repository.dart';
 import '../domain/mental_map_aggregator.dart';
+import '../domain/mental_case_map_builder.dart';
 import '../domain/mental_map_case_summary.dart';
 import '../domain/mental_map_check_in_summary.dart';
+import '../domain/mental_map_clinical_core_builder.dart';
 import '../domain/mental_map_data.dart';
 import '../domain/mental_map_genogram_summary.dart';
 import '../domain/mental_map_goal_summary.dart';
+import '../domain/mental_map_history_links_builder.dart';
 import '../domain/mental_map_monitor_summary.dart';
 import '../domain/mental_map_problem_summary.dart';
 import '../domain/mental_map_questionnaire_block.dart';
+import '../domain/mental_map_therapy_plan_builder.dart';
 import '../domain/mental_map_timeline_summary.dart';
 import '../domain/mental_map_validation_summary.dart';
 
@@ -30,6 +35,7 @@ class MentalMapRepository {
     DailyMonitorsRepository? monitorsRepository,
     PatientTimelineRepository? timelineRepository,
     GenogramRepository? genogramRepository,
+    TherapyResourcesRepository? resourcesRepository,
     PatientsRepository? patientsRepository,
   })  : _results = resultsRepository ?? ResultsRepository(),
         _problems = problemsRepository ?? PatientProblemsRepository(),
@@ -38,6 +44,7 @@ class MentalMapRepository {
         _monitors = monitorsRepository ?? DailyMonitorsRepository(),
         _timeline = timelineRepository ?? PatientTimelineRepository(),
         _genogram = genogramRepository ?? GenogramRepository(),
+        _resources = resourcesRepository ?? TherapyResourcesRepository(),
         _patients = patientsRepository ?? PatientsRepository();
 
   final ResultsRepository _results;
@@ -47,6 +54,7 @@ class MentalMapRepository {
   final DailyMonitorsRepository _monitors;
   final PatientTimelineRepository _timeline;
   final GenogramRepository _genogram;
+  final TherapyResourcesRepository _resources;
   final PatientsRepository _patients;
 
   Future<String> resolvePatientId({String? patientId}) async {
@@ -60,10 +68,21 @@ class MentalMapRepository {
     var blocks = buildQuestionnaireBlocks(responses: responses);
 
     final enriched = <MentalMapQuestionnaireBlock>[];
+    final questionnaireContexts = <MentalMapQuestionnaireContext>[];
     for (final block in blocks) {
       final detail = await _results.getResponseDetail(block.responseId);
       if (detail != null) {
         enriched.add(blockWithHighlights(block, detail));
+        if (detail.isParentalStyles) {
+          questionnaireContexts.add(
+            MentalMapQuestionnaireContext(
+              responseId: block.responseId,
+              questionnaireCode: block.questionnaireCode,
+              completedAt: block.completedAt ?? detail.completedAt,
+              figureSummaries: extractParentalFigureSummaries(detail),
+            ),
+          );
+        }
       } else {
         enriched.add(block);
       }
@@ -98,18 +117,24 @@ class MentalMapRepository {
         .toList();
 
     final checkIns = await _checkIns.listForPatient(patientId);
+    final checkInSummaries = checkIns
+        .map(
+          (c) => MentalMapCheckInSummary(
+            id: c.id,
+            moodScore: c.moodScore,
+            anxietyScore: c.anxietyScore,
+            energyScore: c.energyScore,
+            problemIntensityScore: c.problemIntensityScore,
+            checkedInAt: c.checkedInAt,
+          ),
+        )
+        .toList(growable: false);
     MentalMapCheckInSummary? recentCheckIn;
-    if (checkIns.isNotEmpty) {
-      final c = checkIns.first;
-      recentCheckIn = MentalMapCheckInSummary(
-        id: c.id,
-        moodScore: c.moodScore,
-        anxietyScore: c.anxietyScore,
-        energyScore: c.energyScore,
-        problemIntensityScore: c.problemIntensityScore,
-        checkedInAt: c.checkedInAt,
-      );
+    if (checkInSummaries.isNotEmpty) {
+      recentCheckIn = checkInSummaries.first;
     }
+
+    final resourceAccess = await _resources.listAccessForPatient(patientId);
 
     final monitors = await _monitors.listForPatient(patientId);
     final recentMonitors = monitors.take(3).map((m) {
@@ -161,8 +186,34 @@ class MentalMapRepository {
 
     return MentalMapData(
       patientName: patient?.fullName ?? 'Paciente',
+      caseMap: buildMentalCaseMap(
+        patientName: patient?.fullName ?? 'Paciente',
+        questionnaires: blocks,
+        activeProblems: activeProblems,
+        activeGoals: activeGoals,
+        recentCheckIn: recentCheckIn,
+        timelineEvents: recentTimeline,
+        genogramData: genogramData,
+        questionnaireContexts: questionnaireContexts,
+      ),
       caseSummary: caseSummary,
       validationSummary: validationSummary,
+      clinicalCore: buildMentalMapClinicalCore(
+        questionnaires: blocks,
+        activeProblems: activeProblems,
+      ),
+      historyLinks: buildMentalMapHistoryLinks(
+        timelineEvents: timelineEvents,
+        genogramData: genogramData,
+        questionnaires: blocks,
+        questionnaireContexts: questionnaireContexts,
+      ),
+      therapyPlan: buildMentalMapTherapyPlan(
+        activeGoals: activeGoals,
+        activeProblems: activeProblems,
+        checkIns: checkInSummaries,
+        resourceAccess: resourceAccess,
+      ),
       questionnaires: blocks,
       activeProblems: activeProblems,
       activeGoals: activeGoals,

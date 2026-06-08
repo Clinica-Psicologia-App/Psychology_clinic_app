@@ -52,7 +52,7 @@ serve(async (req) => {
     const fullName = body.full_name?.trim();
     const phone = body.phone?.trim();
 
-    if (!email || !email.contains("@")) {
+    if (!email || !email.includes("@")) {
       throw new AppError("VALIDATION_ERROR", "Email inválido.", 400);
     }
 

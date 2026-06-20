@@ -1,4 +1,4 @@
-/// Linha de score para gráfico horizontal (sem interpretação clínica).
+﻿/// Linha de score para gráfico horizontal (sem interpretação clínica).
 class ClinicalDashboardScoreRow {
   const ClinicalDashboardScoreRow({
     required this.name,

@@ -1,4 +1,4 @@
-/// Status de `questionnaire_responses.status`.
+﻿/// Status de `questionnaire_responses.status`.
 enum QuestionnaireResponseStatus {
   draft('draft'),
   completed('completed'),

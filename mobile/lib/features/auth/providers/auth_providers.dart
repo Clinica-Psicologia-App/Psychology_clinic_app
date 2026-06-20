@@ -1,4 +1,4 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+﻿import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/app_exception.dart';
@@ -22,6 +22,10 @@ final authSessionProvider = Provider<Session?>((ref) {
 /// Mensagem exibida na tela de login após redirect (ex.: sessão expirada).
 final authRedirectMessageProvider = StateProvider<String?>((ref) => null);
 
+/// Indica que há uma sessão de recuperação de senha ativa (link de e-mail clicado).
+/// Enquanto verdadeiro, o router redireciona para /update-password.
+final passwordRecoveryActiveProvider = StateProvider<bool>((ref) => false);
+
 class AuthController extends StateNotifier<AsyncValue<UserProfile?>> {
   AuthController(this._ref) : super(const AsyncValue.loading()) {
     _listenAuth();
@@ -39,9 +43,7 @@ class AuthController extends StateNotifier<AsyncValue<UserProfile?>> {
       final session = authState.session;
 
       if (session == null) {
-        if (_hadAuthenticatedSession &&
-            (event == AuthChangeEvent.signedOut ||
-                event == AuthChangeEvent.userDeleted)) {
+        if (_hadAuthenticatedSession && event == AuthChangeEvent.signedOut) {
           _setRedirectMessage(
             userMessageForCode(AppExceptionCodes.sessionExpired),
           );
@@ -59,16 +61,30 @@ class AuthController extends StateNotifier<AsyncValue<UserProfile?>> {
           break;
         case AuthChangeEvent.initialSession:
         case AuthChangeEvent.signedIn:
-        case AuthChangeEvent.userUpdated:
           loadProfile();
           break;
+        case AuthChangeEvent.userUpdated:
+          // Durante recuperação de senha, o usuário fará logout após atualizar.
+          // Não carrega profile aqui para evitar redirect indevido para home.
+          if (!_ref.read(passwordRecoveryActiveProvider)) {
+            loadProfile();
+          }
+          break;
         case AuthChangeEvent.passwordRecovery:
+          // Sessão de recuperação recebida via link de e-mail.
+          // Sinaliza o router para navegar a /update-password.
+          _ref.read(passwordRecoveryActiveProvider.notifier).state = true;
+          state = const AsyncValue.data(null);
+          break;
         case AuthChangeEvent.mfaChallengeVerified:
           break;
         case AuthChangeEvent.signedOut:
-        case AuthChangeEvent.userDeleted:
+          // Limpa o modo de recuperação ao sair (inclusive após redefinir senha).
+          _ref.read(passwordRecoveryActiveProvider.notifier).state = false;
           state = const AsyncValue.data(null);
           break;
+        default:
+          state = const AsyncValue.data(null);
       }
     });
   }

@@ -1,4 +1,4 @@
-import '../utils/json_parsing.dart';
+﻿import '../utils/json_parsing.dart';
 
 /// Item respondido com apuração DEMO (`snapshot.items[]` enriquecido).
 class ScoringItemResult {

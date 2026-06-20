@@ -51,12 +51,11 @@ class PatientInvitation {
       patientId: json['patient_id'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       invitedById: json['invited_by'] as String,
-      responsiblePsychologistId:
-          json['responsible_psychologist_id'] as String,
-      invitedByName: invitedBy is Map ? invitedBy['full_name'] as String? : null,
-      responsiblePsychologistName: responsible is Map
-          ? responsible['full_name'] as String?
-          : null,
+      responsiblePsychologistId: json['responsible_psychologist_id'] as String,
+      invitedByName:
+          invitedBy is Map ? invitedBy['full_name'] as String? : null,
+      responsiblePsychologistName:
+          responsible is Map ? responsible['full_name'] as String? : null,
     );
   }
 

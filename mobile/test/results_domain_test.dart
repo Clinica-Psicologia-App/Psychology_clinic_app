@@ -1,4 +1,4 @@
-import 'package:flutter_test/flutter_test.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
 import 'package:terapia_esquema/features/results/domain/category_result.dart';
 import 'package:terapia_esquema/features/results/domain/patient_result_detail.dart';
 import 'package:terapia_esquema/features/results/domain/patient_response_summary.dart';
@@ -33,7 +33,7 @@ Map<String, dynamic> _scoringDemoSnapshotJson() => {
         {
           'id': 'd1',
           'code': 'DEMO_DOMAIN_DISCONNECTION',
-          'name': 'Demo — Domínio Desconexão',
+          'name': 'Demo - Domínio Desconexão',
           'raw_score': 7,
           'weighted_score': 7,
           'average_score': 3.5,
@@ -46,14 +46,14 @@ Map<String, dynamic> _scoringDemoSnapshotJson() => {
         {
           'id': 's1',
           'code': 'DEMO_SCHEMA_ABANDONMENT',
-          'name': 'Demo — Abandono',
+          'name': 'Demo - Abandono',
           'raw_score': 4,
           'weighted_score': 4,
           'average_score': 4,
           'answered_items': 1,
           'max_possible_score': 6,
           'severity': {
-            'label': 'Demo — Moderado',
+            'label': 'Demo - Moderado',
             'color_key': 'severity_moderate',
             'min_score': 2.51,
             'max_score': 4,
@@ -140,7 +140,7 @@ void main() {
             {
               'id': 's1',
               'code': 'MOTHER_ABANDONO',
-              'name': 'Abandono — Mãe',
+              'name': 'Abandono - Mãe',
               'weighted_score': 12,
               'average_score': 4.0,
               'answered_items': 3,
@@ -154,7 +154,7 @@ void main() {
     expect(snap.contexts.length, 1);
     expect(snap.contexts.first.label, 'Mãe');
     expect(snap.contexts.first.summary.averageScore, 3.5);
-    expect(snap.contexts.first.schemas.first.name, 'Abandono — Mãe');
+    expect(snap.contexts.first.schemas.first.name, 'Abandono - Mãe');
   });
 
   test('ResultSnapshot.fromJson returns empty on null', () {
@@ -209,7 +209,7 @@ void main() {
 
     expect(result.snapshot.isScoringDemo, isTrue);
     expect(result.snapshot.scoring?.schemas.first.severity?.label,
-        'Demo — Moderado');
+        'Demo - Moderado');
   });
 
   test('ResultSnapshot parses attachment structured schemas safely', () {
@@ -382,12 +382,12 @@ void main() {
   test('CategoryResult derives parental figure and compact label', () {
     final mother = CategoryResult.fromJson({
       'id': 'r-m',
-      'category': {'code': 'ABANDONMENT_MOTHER', 'name': 'Abandono — Mãe'},
+      'category': {'code': 'ABANDONMENT_MOTHER', 'name': 'Abandono - Mãe'},
       'snapshot': null,
     });
     final father = CategoryResult.fromJson({
       'id': 'r-p',
-      'category': {'code': 'ABANDONMENT_FATHER', 'name': 'Abandono — Pai'},
+      'category': {'code': 'ABANDONMENT_FATHER', 'name': 'Abandono - Pai'},
       'snapshot': null,
     });
 

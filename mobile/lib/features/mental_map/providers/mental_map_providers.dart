@@ -50,8 +50,6 @@ class StaffMentalMapContext {
 final staffMentalMapProvider =
     FutureProvider.family<MentalMapData, StaffMentalMapContext>(
   (ref, ctx) {
-    return ref
-        .read(mentalMapRepositoryProvider)
-        .loadForPatient(ctx.patientId);
+    return ref.read(mentalMapRepositoryProvider).loadForPatient(ctx.patientId);
   },
 );

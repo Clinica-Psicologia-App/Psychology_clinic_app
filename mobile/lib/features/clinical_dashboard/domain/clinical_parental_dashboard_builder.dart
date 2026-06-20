@@ -1,4 +1,4 @@
-import '../../results/domain/patient_response_summary.dart';
+﻿import '../../results/domain/patient_response_summary.dart';
 import '../../results/domain/patient_result_detail.dart';
 import '../../results/domain/scoring_schema_result.dart';
 import '../../results/domain/snapshot_context_result.dart';

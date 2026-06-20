@@ -1,4 +1,4 @@
-import 'package:flutter_test/flutter_test.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
 import 'package:terapia_esquema/features/clinical_dashboard/domain/clinical_case_summary_builder.dart';
 import 'package:terapia_esquema/features/clinical_dashboard/domain/clinical_dashboard_builder.dart';
 import 'package:terapia_esquema/features/clinical_dashboard/domain/clinical_dashboard_callouts.dart';
@@ -361,10 +361,8 @@ void main() {
         topScores: [
           ClinicalDashboardScoreRow(
               name: 'Criança vulnerável', code: 'CV', score: 4.8),
-          ClinicalDashboardScoreRow(
-              name: 'Punitivo', code: 'PUN', score: 3.2),
-          ClinicalDashboardScoreRow(
-              name: 'Protetor', code: 'PRO', score: 2.1),
+          ClinicalDashboardScoreRow(name: 'Punitivo', code: 'PUN', score: 3.2),
+          ClinicalDashboardScoreRow(name: 'Protetor', code: 'PRO', score: 2.1),
           ClinicalDashboardScoreRow(name: 'Extra', code: 'X', score: 1.0),
         ],
       ),
@@ -525,13 +523,13 @@ void main() {
                   {
                     'id': 's1',
                     'code': 'M_ABANDONO',
-                    'name': 'Abandono — Mãe',
+                    'name': 'Abandono - Mãe',
                     'weighted_score': 12,
                   },
                   {
                     'id': 's2',
                     'code': 'M_PERMISSIVO',
-                    'name': 'Permissivo — Mãe',
+                    'name': 'Permissivo - Mãe',
                     'weighted_score': 8,
                   },
                 ],
@@ -547,7 +545,7 @@ void main() {
                   {
                     'id': 's3',
                     'code': 'P_AUTORITARIO',
-                    'name': 'Autoritário — Pai',
+                    'name': 'Autoritário - Pai',
                     'weighted_score': 10,
                   },
                 ],
@@ -576,7 +574,7 @@ void main() {
     expect(dashboard, isNotNull);
     expect(dashboard!.figures.length, 2);
     expect(dashboard.figures.first.label, 'Mãe');
-    expect(dashboard.figures.first.topScores.first.name, 'Abandono — Mãe');
+    expect(dashboard.figures.first.topScores.first.name, 'Abandono - Mãe');
     expect(dashboard.figures.last.label, 'Pai');
     expect(dashboard.hasContent, isTrue);
   });

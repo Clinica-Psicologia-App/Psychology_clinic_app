@@ -1,4 +1,4 @@
-/// Registro em `daily_monitors` (humor, sono, atividade, emoções).
+﻿/// Registro em `daily_monitors` (humor, sono, atividade, emoções).
 class DailyMonitor {
   const DailyMonitor({
     required this.id,
@@ -23,7 +23,8 @@ class DailyMonitor {
   final DateTime updatedAt;
 
   /// Humor / estado emocional.
-  String? get moodState => moodNotes?.trim().isEmpty == true ? null : moodNotes?.trim();
+  String? get moodState =>
+      moodNotes?.trim().isEmpty == true ? null : moodNotes?.trim();
 
   /// Observações gerais (inclui sono quando informado).
   String? get observations =>
@@ -48,7 +49,7 @@ class DailyMonitor {
   String get summaryLine {
     final mood = moodState;
     if (mood != null && mood.isNotEmpty) {
-      final short = mood.length > 60 ? '${mood.substring(0, 60)}…' : mood;
+      final short = mood.length > 60 ? '${mood.substring(0, 60)}...' : mood;
       return short;
     }
     final intensity = emotionPayload.intensity;
@@ -130,8 +131,7 @@ String? buildEmotionNotes({int? intensity, String? triggers}) {
     if (trimmed.isNotEmpty) triggerLines.add(trimmed);
   }
 
-  final triggers =
-      triggerLines.isEmpty ? null : triggerLines.join('\n').trim();
+  final triggers = triggerLines.isEmpty ? null : triggerLines.join('\n').trim();
 
   return (intensity: intensity, triggers: triggers);
 }

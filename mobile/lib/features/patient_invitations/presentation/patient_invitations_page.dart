@@ -25,7 +25,8 @@ class PatientInvitationsPage extends ConsumerStatefulWidget {
       _PatientInvitationsPageState();
 }
 
-class _PatientInvitationsPageState extends ConsumerState<PatientInvitationsPage> {
+class _PatientInvitationsPageState
+    extends ConsumerState<PatientInvitationsPage> {
   CreatedPatientInvitation? _recentInvitation;
 
   @override

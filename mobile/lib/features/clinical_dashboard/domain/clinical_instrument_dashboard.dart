@@ -1,4 +1,4 @@
-import 'clinical_dashboard_score_row.dart';
+﻿import 'clinical_dashboard_score_row.dart';
 
 /// Painel de um instrumento (YSQ ou YAMI) com última resposta concluída.
 class ClinicalInstrumentDashboard {

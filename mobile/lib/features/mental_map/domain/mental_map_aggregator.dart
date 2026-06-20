@@ -1,4 +1,4 @@
-import '../../patients/domain/patient.dart';
+﻿import '../../patients/domain/patient.dart';
 import '../../results/domain/category_result.dart';
 import '../../results/domain/patient_response_summary.dart';
 import '../../results/domain/patient_result_detail.dart';
@@ -128,15 +128,14 @@ List<String> extractParentalFigureSummaries(
     final label = context.label.trim();
     if (label.isEmpty) continue;
 
-    final schemas = [...context.schemas]
-      ..sort((a, b) {
+    final schemas = [...context.schemas]..sort((a, b) {
         final sa = a.weightedScore ?? a.averageScore ?? a.rawScore ?? -1;
         final sb = b.weightedScore ?? b.averageScore ?? b.rawScore ?? -1;
         return sb.compareTo(sa);
       });
 
     if (schemas.isNotEmpty) {
-      items.add('$label — ${schemas.first.name.trim()}');
+      items.add('$label - ${schemas.first.name.trim()}');
     } else {
       items.add(label);
     }
@@ -181,7 +180,7 @@ MentalMapScoreHighlight _fromSchema(ScoringSchemaResult schema) {
     code: schema.code,
     kind: 'schema',
     score: score,
-    scoreLabel: score != null ? null : '—',
+    scoreLabel: score != null ? null : '-',
   );
 }
 
@@ -199,7 +198,7 @@ MentalMapScoreHighlight _fromCategory(CategoryResult category) {
   final score = category.averageScore ?? category.totalScore;
   return MentalMapScoreHighlight(
     name: category.categoryName ?? category.categoryCode ?? 'Categoria',
-    code: category.categoryCode ?? '—',
+    code: category.categoryCode ?? '-',
     kind: 'category',
     score: score,
   );

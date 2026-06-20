@@ -25,7 +25,7 @@ export async function loadActiveQuestionnaire(
   const id = assertUuid(questionnaireId, "questionnaire_id");
   const { data, error } = await client
     .from("questionnaires")
-    .select("id, code, name, description, is_active")
+    .select("id, code, name, description, is_active, clinical_status")
     .eq("id", id)
     .maybeSingle();
 
@@ -35,6 +35,20 @@ export async function loadActiveQuestionnaire(
 
   if (!data || !data.is_active) {
     throw new AppError("NOT_FOUND", "Questionnaire not found or inactive", 404);
+  }
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+  const isLocal = supabaseUrl.includes("127.0.0.1") ||
+    supabaseUrl.includes("localhost") ||
+    supabaseUrl.includes("kong:8000");
+  const allowUnvalidated =
+    Deno.env.get("ALLOW_UNVALIDATED_INSTRUMENTS") === "true" || isLocal;
+  if (data.clinical_status !== "approved" && !allowUnvalidated) {
+    throw new AppError(
+      "FORBIDDEN",
+      "Instrumento indisponível até concluir homologação clínica e licenciamento.",
+      403,
+    );
   }
 
   return data;
@@ -85,7 +99,7 @@ export function normalizeParentalContexts(
     };
   });
 
-  if (contexts.isEmpty) {
+  if (contexts.length === 0) {
     throw new AppError(
       "VALIDATION_ERROR",
       "Selecione pelo menos uma figura parental.",

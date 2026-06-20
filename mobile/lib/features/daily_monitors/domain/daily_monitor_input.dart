@@ -1,4 +1,4 @@
-import 'daily_monitor.dart';
+﻿import 'daily_monitor.dart';
 
 /// Payload de formulário mapeado para colunas de `daily_monitors`.
 class DailyMonitorInput {

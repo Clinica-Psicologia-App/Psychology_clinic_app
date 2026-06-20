@@ -1,4 +1,4 @@
-/// Erro de domínio/aplicação com código estável para UI e logs.
+﻿/// Erro de domínio/aplicação com código estável para UI e logs.
 class AppException implements Exception {
   AppException({
     required this.code,

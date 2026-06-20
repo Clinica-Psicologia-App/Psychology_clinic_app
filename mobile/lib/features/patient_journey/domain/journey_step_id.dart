@@ -1,4 +1,4 @@
-/// Identificadores estáveis dos passos da trilha (rotas e placeholders).
+﻿/// Identificadores estáveis dos passos da trilha (rotas e placeholders).
 enum JourneyStepId {
   questionnaires,
   dailyMonitor,

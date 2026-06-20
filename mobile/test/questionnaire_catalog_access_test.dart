@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -38,7 +38,24 @@ void main() {
     expect(questionnaire.referencePeriod, ReferencePeriod.lastYear);
   });
 
-  test('Questionnaire.fromJson keeps fallback compatibility without FH-03 fields', () {
+  test('Questionnaire defaults missing clinical status to validation', () {
+    final questionnaire = Questionnaire.fromJson({
+      'id': 'q-1',
+      'code': 'YSQ_FOUNDATION_V1',
+      'name': 'YSQ',
+      'is_active': true,
+    });
+
+    expect(
+      questionnaire.clinicalStatus,
+      QuestionnaireClinicalStatus.validation,
+    );
+    expect(questionnaire.isClinicallyApproved, isFalse);
+  });
+
+  test(
+      'Questionnaire.fromJson keeps fallback compatibility without FH-03 fields',
+      () {
     final questionnaire = Questionnaire.fromJson({
       'id': 'q-2',
       'code': 'YCI_FOUNDATION_V1',
@@ -69,7 +86,9 @@ void main() {
     expect(visible.map((item) => item.id), ['q-1', 'q-3']);
   });
 
-  test('visibleQuestionnairesFromEnabledIds falls back to full catalog when migration 022 is unavailable', () {
+  test(
+      'visibleQuestionnairesFromEnabledIds falls back to full catalog when migration 022 is unavailable',
+      () {
     final catalog = [
       _questionnaire('q-1', 'YSQ_FOUNDATION_V1'),
       _questionnaire('q-2', 'YAMI_MODES_FOUNDATION_V1'),
@@ -84,7 +103,9 @@ void main() {
     expect(visible.map((item) => item.id), ['q-1', 'q-2']);
   });
 
-  test('questionnairesListProvider resolves own patient id before listing questionnaires for patient', () async {
+  test(
+      'questionnairesListProvider resolves own patient id before listing questionnaires for patient',
+      () async {
     final repo = _RecordingQuestionnairesRepository();
     final container = ProviderContainer(
       overrides: [
@@ -104,7 +125,9 @@ void main() {
     expect(result.single.code, 'YSQ_FOUNDATION_V1');
   });
 
-  testWidgets('admin sees questionnaire access management page with fallback warning', (tester) async {
+  testWidgets(
+      'admin sees questionnaire access management page with fallback warning',
+      (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -113,7 +136,7 @@ void main() {
               const UserProfile(
                 id: 'admin-1',
                 clinicId: 'clinic-1',
-                role: ProfileRole.admin,
+                role: ProfileRole.platformAdmin,
                 fullName: 'Admin',
                 email: 'admin@example.com',
                 isActive: true,

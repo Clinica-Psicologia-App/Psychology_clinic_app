@@ -52,8 +52,7 @@ MentalMapClinicalCore buildMentalMapClinicalCore({
 List<MentalMapProblemSummary> _topProblemsByIntensity(
   List<MentalMapProblemSummary> activeProblems,
 ) {
-  final sorted = [...activeProblems]
-    ..sort((a, b) {
+  final sorted = [...activeProblems]..sort((a, b) {
       final ai = a.intensity ?? -1;
       final bi = b.intensity ?? -1;
       return bi.compareTo(ai);

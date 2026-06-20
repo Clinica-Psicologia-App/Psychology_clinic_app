@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import {
   assertEmailAvailableInClinic,
+  assertPsychologistCanReceivePatient,
   assertPsychologistInClinic,
   assertUuid,
   getCallerProfile,
@@ -85,6 +86,11 @@ serve(async (req) => {
     }
 
     await assertPsychologistInClinic(
+      userClient,
+      psychologistId,
+      caller.clinic_id,
+    );
+    await assertPsychologistCanReceivePatient(
       userClient,
       psychologistId,
       caller.clinic_id,

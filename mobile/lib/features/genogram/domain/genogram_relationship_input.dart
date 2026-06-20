@@ -1,4 +1,4 @@
-import 'genogram_relationship.dart';
+﻿import 'genogram_relationship.dart';
 import 'genogram_relationship_type.dart';
 
 class GenogramRelationshipInput {

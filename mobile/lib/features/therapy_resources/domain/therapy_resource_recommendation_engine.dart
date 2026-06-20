@@ -1,4 +1,4 @@
-import '../../mental_map/domain/mental_map_data.dart';
+﻿import '../../mental_map/domain/mental_map_data.dart';
 import 'patient_resource_access.dart';
 import 'therapy_resource.dart';
 import 'therapy_resource_recommendation.dart';

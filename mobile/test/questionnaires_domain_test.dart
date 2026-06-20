@@ -133,7 +133,28 @@ void main() {
 
     expect(questionnaire.isParentalStyles, isTrue);
     expect(questionnaire.referencePeriod, ReferencePeriod.lifetime);
-    expect(questionnaire.patientSpecificGuidance, contains('figuras parentais'));
+    expect(
+        questionnaire.patientSpecificGuidance, contains('figuras parentais'));
+  });
+
+  test('questionnaire start respects clinical approval and local override', () {
+    const pending = Questionnaire(
+      id: 'pending',
+      code: 'PENDING',
+      name: 'Pendente',
+      isActive: true,
+    );
+    const approved = Questionnaire(
+      id: 'approved',
+      code: 'APPROVED',
+      name: 'Aprovado',
+      isActive: true,
+      clinicalStatus: QuestionnaireClinicalStatus.approved,
+    );
+
+    expect(pending.canStart(allowUnvalidated: false), isFalse);
+    expect(pending.canStart(allowUnvalidated: true), isTrue);
+    expect(approved.canStart(allowUnvalidated: false), isTrue);
   });
 
   test('parental context selection requires at least one option', () {

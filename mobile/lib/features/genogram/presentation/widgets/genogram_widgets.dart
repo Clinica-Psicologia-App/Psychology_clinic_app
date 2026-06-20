@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../../domain/genogram_data.dart';
 import '../../domain/genogram_person.dart';
@@ -119,7 +119,8 @@ class GenogramPersonTile extends StatelessWidget {
       child: ListTile(
         leading: Icon(
           sensitive ? Icons.lock_outline : Icons.person_outline,
-          color: sensitive ? theme.colorScheme.error : theme.colorScheme.primary,
+          color:
+              sensitive ? theme.colorScheme.error : theme.colorScheme.primary,
         ),
         title: Text(person.displayName),
         subtitle: Column(
@@ -171,17 +172,18 @@ class GenogramRelationshipTile extends StatelessWidget {
       child: ListTile(
         leading: Icon(
           sensitive ? Icons.lock_outline : Icons.link,
-          color: sensitive ? theme.colorScheme.error : theme.colorScheme.primary,
+          color:
+              sensitive ? theme.colorScheme.error : theme.colorScheme.primary,
         ),
         title: Text(relationship.labelBetween(aName, bName)),
-        subtitle: relationship.notes != null &&
-                relationship.notes!.trim().isNotEmpty
-            ? Text(
-                relationship.notes!.trim(),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              )
-            : null,
+        subtitle:
+            relationship.notes != null && relationship.notes!.trim().isNotEmpty
+                ? Text(
+                    relationship.notes!.trim(),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  )
+                : null,
         isThreeLine: relationship.notes != null,
         trailing: const Icon(Icons.chevron_right),
         onTap: onTap,

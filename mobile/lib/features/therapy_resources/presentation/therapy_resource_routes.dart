@@ -6,8 +6,8 @@ abstract final class TherapyResourceRoutes {
     required String patientId,
   }) {
     switch (role) {
-      case ProfileRole.admin:
-        return '/admin/patients/$patientId/therapy-resources';
+      case ProfileRole.platformAdmin:
+        throw StateError('Staff clinic only');
       case ProfileRole.psychologist:
         return '/psychologist/patients/$patientId/therapy-resources';
       case ProfileRole.patient:
@@ -23,6 +23,13 @@ abstract final class TherapyResourceRoutes {
     return '${staffList(role: role, patientId: patientId)}/assign/$resourceId';
   }
 
+  static String newResource({
+    required ProfileRole role,
+    required String patientId,
+  }) {
+    return '${staffList(role: role, patientId: patientId)}/new';
+  }
+
   static String staffDetail({
     required ProfileRole role,
     required String patientId,
@@ -31,7 +38,16 @@ abstract final class TherapyResourceRoutes {
     return '${staffList(role: role, patientId: patientId)}/resource/$resourceId';
   }
 
+  static String edit({
+    required ProfileRole role,
+    required String patientId,
+    required String resourceId,
+  }) {
+    return '${staffDetail(role: role, patientId: patientId, resourceId: resourceId)}/edit';
+  }
+
   static const patientList = '/patient/resources';
 
-  static String patientDetail(String accessId) => '/patient/resources/$accessId';
+  static String patientDetail(String accessId) =>
+      '/patient/resources/$accessId';
 }

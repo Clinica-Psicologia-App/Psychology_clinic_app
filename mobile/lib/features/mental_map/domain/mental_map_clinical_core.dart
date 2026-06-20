@@ -1,7 +1,7 @@
-import 'mental_map_problem_summary.dart';
+﻿import 'mental_map_problem_summary.dart';
 import 'mental_map_score_highlight.dart';
 
-/// Camada M2 — núcleo clínico (esquemas, modos, problemas, apego, enfrentamento).
+/// Camada M2 - núcleo clínico (esquemas, modos, problemas, apego, enfrentamento).
 class MentalMapClinicalCore {
   const MentalMapClinicalCore({
     required this.topSchemas,
@@ -44,9 +44,5 @@ class MentalMapClinicalCore {
   bool get hasCoping => copingStyles.isNotEmpty;
 
   bool get hasContent =>
-      hasSchemas ||
-      hasModes ||
-      hasProblems ||
-      hasAttachment ||
-      hasCoping;
+      hasSchemas || hasModes || hasProblems || hasAttachment || hasCoping;
 }

@@ -1,12 +1,13 @@
-enum ProfileRole {
-  admin,
+﻿enum ProfileRole {
+  platformAdmin,
   psychologist,
   patient;
 
   static ProfileRole? tryParse(String? value) {
     switch (value) {
+      case 'platform_admin':
       case 'admin':
-        return ProfileRole.admin;
+        return ProfileRole.platformAdmin;
       case 'psychologist':
         return ProfileRole.psychologist;
       case 'patient':
@@ -16,9 +17,20 @@ enum ProfileRole {
     }
   }
 
+  String get storageValue {
+    switch (this) {
+      case ProfileRole.platformAdmin:
+        return 'platform_admin';
+      case ProfileRole.psychologist:
+        return 'psychologist';
+      case ProfileRole.patient:
+        return 'patient';
+    }
+  }
+
   String get label {
     switch (this) {
-      case ProfileRole.admin:
+      case ProfileRole.platformAdmin:
         return 'Administrador';
       case ProfileRole.psychologist:
         return 'Psicólogo';

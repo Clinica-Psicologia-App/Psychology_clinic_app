@@ -1,4 +1,4 @@
-import 'genogram_gender.dart';
+﻿import 'genogram_gender.dart';
 
 class GenogramPerson {
   const GenogramPerson({
@@ -45,7 +45,7 @@ class GenogramPerson {
   String? get lifeSpanLabel {
     if (birthYear == null && deathYear == null) return null;
     if (birthYear != null && deathYear != null) {
-      return '$birthYear — $deathYear';
+      return '$birthYear - $deathYear';
     }
     if (birthYear != null) return 'Nasc. $birthYear';
     return 'Falec. $deathYear';

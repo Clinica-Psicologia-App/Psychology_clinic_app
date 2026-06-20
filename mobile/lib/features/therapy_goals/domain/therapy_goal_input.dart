@@ -1,4 +1,4 @@
-import 'therapy_goal.dart';
+﻿import 'therapy_goal.dart';
 import 'therapy_goal_status.dart';
 
 class TherapyGoalInput {
@@ -48,8 +48,7 @@ class TherapyGoalInput {
     return {
       'title': title.trim(),
       'description': _nullableTrim(description),
-      if (targetDate != null)
-        'target_date': _formatDate(targetDate!),
+      if (targetDate != null) 'target_date': _formatDate(targetDate!),
       'status': (status ?? TherapyGoalStatus.active).storageValue,
     };
   }

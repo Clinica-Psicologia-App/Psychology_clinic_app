@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import 'journey_step_availability.dart';
 import 'journey_step_id.dart';
@@ -31,6 +31,9 @@ List<JourneyStep> buildPatientJourneySteps(PatientJourneyProgress? progress) {
 
   JourneyStepAvailability questionnairesStatus() {
     if (p == null) return JourneyStepAvailability.available;
+    if (p.activeQuestionnaireCount == 0) {
+      return JourneyStepAvailability.blocked;
+    }
     if (p.allActiveQuestionnairesCompleted) {
       return JourneyStepAvailability.completed;
     }
@@ -59,7 +62,10 @@ List<JourneyStep> buildPatientJourneySteps(PatientJourneyProgress? progress) {
   }
 
   String? questionnairesHint() {
-    if (p == null || p.activeQuestionnaireCount == 0) return null;
+    if (p == null) return null;
+    if (p.activeQuestionnaireCount == 0) {
+      return 'Nenhum instrumento foi liberado para você.';
+    }
     if (p.allActiveQuestionnairesCompleted) {
       return 'Todos os instrumentos disponíveis foram concluídos.';
     }

@@ -1,4 +1,4 @@
-import '../../profile/domain/profile_role.dart';
+﻿import '../../profile/domain/profile_role.dart';
 
 class QuestionnaireProfessionalOption {
   const QuestionnaireProfessionalOption({

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -55,7 +55,8 @@ class GenogramRelationshipDetailPage extends ConsumerWidget {
 
           return genogramAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (_, __) => const Center(child: Text('Erro ao carregar nomes.')),
+            error: (_, __) =>
+                const Center(child: Text('Erro ao carregar nomes.')),
             data: (data) {
               final theme = Theme.of(context);
               final aName = data.personNameById(relationship.personAId);

@@ -1,11 +1,12 @@
-import 'package:flutter_test/flutter_test.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
 import 'package:terapia_esquema/features/questionnaires/domain/questionnaire.dart';
 import 'package:terapia_esquema/features/questionnaires/domain/reference_period.dart';
 
 void main() {
   group('referencePeriodFromStorage', () {
     test('maps known values', () {
-      expect(referencePeriodFromStorage('last_month'), ReferencePeriod.lastMonth);
+      expect(
+          referencePeriodFromStorage('last_month'), ReferencePeriod.lastMonth);
       expect(referencePeriodFromStorage('last_year'), ReferencePeriod.lastYear);
       expect(referencePeriodFromStorage('lifetime'), ReferencePeriod.lifetime);
       expect(
@@ -17,7 +18,8 @@ void main() {
     test('falls back to unspecified for null, empty and unknown', () {
       expect(referencePeriodFromStorage(null), ReferencePeriod.unspecified);
       expect(referencePeriodFromStorage(''), ReferencePeriod.unspecified);
-      expect(referencePeriodFromStorage('last_week'), ReferencePeriod.unspecified);
+      expect(
+          referencePeriodFromStorage('last_week'), ReferencePeriod.unspecified);
     });
   });
 

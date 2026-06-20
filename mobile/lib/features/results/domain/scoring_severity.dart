@@ -1,4 +1,4 @@
-import '../utils/json_parsing.dart';
+﻿import '../utils/json_parsing.dart';
 
 /// Faixa de severidade DEMO (sem interpretação clínica).
 class ScoringSeverity {
@@ -15,12 +15,12 @@ class ScoringSeverity {
   final double? maxScore;
 
   factory ScoringSeverity.fromJson(dynamic raw) {
-    if (raw is! Map) return const ScoringSeverity(label: '—');
+    if (raw is! Map) return const ScoringSeverity(label: '-');
 
     final map = Map<String, dynamic>.from(raw);
     final label = map['label'] as String?;
     if (label == null || label.trim().isEmpty) {
-      return const ScoringSeverity(label: '—');
+      return const ScoringSeverity(label: '-');
     }
 
     return ScoringSeverity(
@@ -31,5 +31,5 @@ class ScoringSeverity {
     );
   }
 
-  bool get hasLabel => label != '—' && label.isNotEmpty;
+  bool get hasLabel => label != '-' && label.isNotEmpty;
 }

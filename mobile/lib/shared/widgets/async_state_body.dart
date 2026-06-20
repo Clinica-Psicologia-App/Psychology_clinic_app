@@ -1,8 +1,12 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/errors/app_exception.dart';
 import '../../core/errors/error_mapper.dart';
+import '../../core/theme/app_spacing.dart';
+import 'homologation_ui.dart';
+import 'loading_skeleton.dart';
+import 'app_motion.dart';
 
 /// Corpo reutilizável para listas com loading, erro, vazio e conteúdo.
 class AsyncStateBody<T> extends StatelessWidget {
@@ -13,6 +17,7 @@ class AsyncStateBody<T> extends StatelessWidget {
     required this.dataBuilder,
     this.emptyMessage = 'Nenhum item encontrado.',
     this.emptyIcon = Icons.inbox_outlined,
+    this.useSkeleton = false,
   });
 
   final AsyncValue<T> asyncValue;
@@ -20,12 +25,15 @@ class AsyncStateBody<T> extends StatelessWidget {
   final Widget Function(T data) dataBuilder;
   final String emptyMessage;
   final IconData emptyIcon;
+  final bool useSkeleton;
 
   @override
   Widget build(BuildContext context) {
     return asyncValue.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => _ErrorState(
+      loading: () => useSkeleton
+          ? const LoadingSkeletonList()
+          : const Center(child: CircularProgressIndicator()),
+      error: (error, _) => ErrorStatePanel(
         message: error is AppException
             ? userMessageFor(error)
             : 'Não foi possível carregar os dados.',
@@ -33,44 +41,52 @@ class AsyncStateBody<T> extends StatelessWidget {
       ),
       data: (data) {
         if (data is List && data.isEmpty) {
-          return _EmptyState(message: emptyMessage, icon: emptyIcon);
+          return EmptyStatePanel(message: emptyMessage, icon: emptyIcon);
         }
-        return dataBuilder(data);
+        return MotionReveal(child: dataBuilder(data));
       },
     );
   }
 }
 
-class _EmptyState extends StatelessWidget {
-  const _EmptyState({required this.message, required this.icon});
+class EmptyStatePanel extends StatelessWidget {
+  const EmptyStatePanel({
+    super.key,
+    required this.message,
+    required this.icon,
+    this.title = 'Nada por aqui ainda',
+    this.hint,
+  });
 
   final String message;
   final IconData icon;
+  final String title;
+  final String? hint;
 
   @override
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 56, color: Theme.of(context).colorScheme.outline),
-            const SizedBox(height: 16),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ],
+        padding: const EdgeInsets.all(AppSpacing.xxl),
+        child: MotionReveal(
+          child: HomologationEmptyPanel(
+            icon: icon,
+            title: title,
+            message: message,
+            hint: hint,
+          ),
         ),
       ),
     );
   }
 }
 
-class _ErrorState extends StatelessWidget {
-  const _ErrorState({required this.message, required this.onRetry});
+class ErrorStatePanel extends StatelessWidget {
+  const ErrorStatePanel({
+    super.key,
+    required this.message,
+    required this.onRetry,
+  });
 
   final String message;
   final VoidCallback onRetry;
@@ -79,7 +95,7 @@ class _ErrorState extends StatelessWidget {
   Widget build(BuildContext context) {
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(AppSpacing.xxl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -88,9 +104,9 @@ class _ErrorState extends StatelessWidget {
               size: 56,
               color: Theme.of(context).colorScheme.error,
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
             Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xl),
             FilledButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh),

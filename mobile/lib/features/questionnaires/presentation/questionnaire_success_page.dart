@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../shared/widgets/app_scaffold.dart';
@@ -64,7 +64,7 @@ class QuestionnaireSuccessPage extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 child: Text(
                   'Suas respostas foram registradas. A interpretação clínica '
-                  'será revisada pelo profissional responsável — não há '
+                  'será revisada pelo profissional responsável - não há '
                   'resultado automático nesta versão.',
                   style: Theme.of(context).textTheme.bodyMedium,
                   textAlign: TextAlign.center,

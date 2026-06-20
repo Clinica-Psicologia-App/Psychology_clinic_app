@@ -14,8 +14,8 @@ abstract final class PatientTimelineRoutes {
     required String patientId,
   }) {
     switch (role) {
-      case ProfileRole.admin:
-        return '/admin/patients/$patientId/timeline';
+      case ProfileRole.platformAdmin:
+        throw ArgumentError('Use rotas globais para platform admin');
       case ProfileRole.psychologist:
         return '/psychologist/patients/$patientId/timeline';
       case ProfileRole.patient:
@@ -26,17 +26,20 @@ abstract final class PatientTimelineRoutes {
   static String staffCreate({
     required ProfileRole role,
     required String patientId,
-  }) => '${staffList(role: role, patientId: patientId)}/new';
+  }) =>
+      '${staffList(role: role, patientId: patientId)}/new';
 
   static String staffDetail({
     required ProfileRole role,
     required String patientId,
     required String eventId,
-  }) => '${staffList(role: role, patientId: patientId)}/$eventId';
+  }) =>
+      '${staffList(role: role, patientId: patientId)}/$eventId';
 
   static String staffEdit({
     required ProfileRole role,
     required String patientId,
     required String eventId,
-  }) => '${staffList(role: role, patientId: patientId)}/$eventId/edit';
+  }) =>
+      '${staffList(role: role, patientId: patientId)}/$eventId/edit';
 }

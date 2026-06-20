@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -75,7 +75,7 @@ class _AssignResourceToPatientPageState
                 ],
                 const Spacer(),
                 FilledButton.icon(
-                  onPressed: _assigning ? null : () => _assign(context),
+                  onPressed: _assigning ? null : _assign,
                   icon: _assigning
                       ? const SizedBox.shrink()
                       : const Icon(Icons.check),
@@ -98,7 +98,7 @@ class _AssignResourceToPatientPageState
     );
   }
 
-  Future<void> _assign(BuildContext context) async {
+  Future<void> _assign() async {
     setState(() => _assigning = true);
     try {
       await ref
@@ -120,7 +120,9 @@ class _AssignResourceToPatientPageState
       );
       context.pop();
     } catch (e) {
-      if (mounted) showErrorBanner(context, e);
+      if (mounted) {
+        showErrorBanner(context, e);
+      }
     } finally {
       if (mounted) setState(() => _assigning = false);
     }

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -22,7 +22,8 @@ class PatientCheckInFormPage extends ConsumerStatefulWidget {
       _PatientCheckInFormPageState();
 }
 
-class _PatientCheckInFormPageState extends ConsumerState<PatientCheckInFormPage> {
+class _PatientCheckInFormPageState
+    extends ConsumerState<PatientCheckInFormPage> {
   final _notesController = TextEditingController();
 
   int _mood = 5;
@@ -107,7 +108,9 @@ class _PatientCheckInFormPageState extends ConsumerState<PatientCheckInFormPage>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              e is AppException ? userMessageFor(e) : 'Não foi possível salvar.',
+              e is AppException
+                  ? userMessageFor(e)
+                  : 'Não foi possível salvar.',
             ),
           ),
         );
@@ -124,7 +127,7 @@ class _PatientCheckInFormPageState extends ConsumerState<PatientCheckInFormPage>
           ref.watch(patientCheckInDetailProvider(widget.checkInId!));
       return checkInAsync.when(
         loading: () => const AppScaffold(
-          title: 'Carregando…',
+          title: 'Carregando...',
           body: Center(child: CircularProgressIndicator()),
         ),
         error: (_, __) => AppScaffold(
@@ -227,7 +230,8 @@ class _PatientCheckInFormPageState extends ConsumerState<PatientCheckInFormPage>
                     width: 22,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : Text(widget.isEdit ? 'Salvar alterações' : 'Registrar check-in'),
+                : Text(
+                    widget.isEdit ? 'Salvar alterações' : 'Registrar check-in'),
           ),
         ],
       ),

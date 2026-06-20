@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
@@ -7,6 +8,7 @@ import '../../profile/domain/profile_role.dart';
 import '../domain/patient_resource_access.dart';
 import '../domain/therapy_resource.dart';
 import '../providers/therapy_resources_providers.dart';
+import 'therapy_resource_routes.dart';
 import 'utils/open_resource_url.dart';
 import 'widgets/therapy_resource_widgets.dart';
 
@@ -59,7 +61,7 @@ class _TherapyResourceDetailPageState
       ref.invalidate(resourceAccessDetailProvider(widget.accessId!));
       ref.invalidate(myReleasedResourcesProvider);
     } catch (_) {
-      // RLS ou offline — não bloqueia visualização
+      // RLS ou offline - não bloqueia visualização
     }
   }
 
@@ -113,16 +115,25 @@ class _TherapyResourceDetailPageState
 
   Widget _buildStaffResourceDetail(String resourceId, String patientId) {
     final resourceAsync = ref.watch(
-      FutureProvider(
-        (ref) => ref
-            .read(therapyResourcesRepositoryProvider)
-            .getResourceById(resourceId),
-      ),
+      therapyResourceDetailProvider(resourceId),
     );
     final accessAsync = ref.watch(patientResourceAccessProvider(patientId));
 
     return AppScaffold(
       title: 'Detalhe do recurso',
+      actions: [
+        IconButton(
+          tooltip: 'Editar material',
+          onPressed: () => context.push(
+            TherapyResourceRoutes.edit(
+              role: widget.role,
+              patientId: patientId,
+              resourceId: resourceId,
+            ),
+          ),
+          icon: const Icon(Icons.edit_outlined),
+        ),
+      ],
       body: resourceAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => const Center(child: Text('Erro ao carregar.')),
@@ -141,9 +152,8 @@ class _TherapyResourceDetailPageState
             isPatient: false,
             updating: _updating,
             onOpenUrl: () => openResourceUrl(context, resource.url),
-            onRevoke: access != null
-                ? () => _revoke(access.id, patientId)
-                : null,
+            onRevoke:
+                access != null ? () => _revoke(access.id, patientId) : null,
           );
         },
       ),
@@ -157,7 +167,8 @@ class _TherapyResourceDetailPageState
         children: [
           const Text('Erro ao carregar.'),
           const SizedBox(height: 16),
-          FilledButton(onPressed: onRetry, child: const Text('Tentar novamente')),
+          FilledButton(
+              onPressed: onRetry, child: const Text('Tentar novamente')),
         ],
       ),
     );
@@ -166,7 +177,9 @@ class _TherapyResourceDetailPageState
   Future<void> _markCompleted(String accessId) async {
     setState(() => _updating = true);
     try {
-      await ref.read(therapyResourcesRepositoryProvider).markCompleted(accessId);
+      await ref
+          .read(therapyResourcesRepositoryProvider)
+          .markCompleted(accessId);
       ref.invalidate(resourceAccessDetailProvider(accessId));
       ref.invalidate(myReleasedResourcesProvider);
     } catch (e) {

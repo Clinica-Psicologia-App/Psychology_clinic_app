@@ -1,4 +1,4 @@
-/// Status persistido em `therapy_goals.status`.
+﻿/// Status persistido em `therapy_goals.status`.
 enum TherapyGoalStatus {
   active,
   completed,
@@ -15,8 +15,7 @@ extension TherapyGoalStatusParsing on TherapyGoalStatus {
       };
 
   bool get isTerminal =>
-      this == TherapyGoalStatus.completed ||
-      this == TherapyGoalStatus.archived;
+      this == TherapyGoalStatus.completed || this == TherapyGoalStatus.archived;
 }
 
 TherapyGoalStatus therapyGoalStatusFromStorage(String? value) {

@@ -3,17 +3,25 @@ class AcceptPatientInvitationRequest {
     required this.token,
     required this.password,
     required this.profile,
+    this.termsVersion = '2026-06-15',
+    this.privacyVersion = '2026-06-15',
   });
 
   final String token;
   final String password;
   final AcceptPatientInvitationProfile profile;
+  final String termsVersion;
+  final String privacyVersion;
 
   Map<String, dynamic> toJson() {
     return {
       'token': token.trim(),
       'password': password,
       'profile': profile.toJson(),
+      'legal_consent': {
+        'terms_version': termsVersion,
+        'privacy_version': privacyVersion,
+      },
     };
   }
 }
@@ -70,8 +78,7 @@ class AcceptPatientInvitationProfile {
         'religious_orientation': religiousOrientation!.trim(),
       if (ethnicGroup != null && ethnicGroup!.trim().isNotEmpty)
         'ethnic_group': ethnicGroup!.trim(),
-      if (sexualOrientation != null &&
-          sexualOrientation!.trim().isNotEmpty)
+      if (sexualOrientation != null && sexualOrientation!.trim().isNotEmpty)
         'sexual_orientation': sexualOrientation!.trim(),
       if (hasChildren != null) 'has_children': hasChildren,
     };

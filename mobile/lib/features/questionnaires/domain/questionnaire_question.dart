@@ -1,4 +1,4 @@
-import 'question_answer_type.dart';
+﻿import 'question_answer_type.dart';
 
 class QuestionnaireQuestion {
   const QuestionnaireQuestion({

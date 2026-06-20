@@ -1,4 +1,4 @@
-import 'package:flutter_test/flutter_test.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:terapia_esquema/core/errors/app_exception.dart';
 import 'package:terapia_esquema/core/errors/error_mapper.dart';
@@ -42,5 +42,17 @@ void main() {
       messageForApiCode('VALIDATION_ERROR', 'CPF inválido'),
       'CPF inválido',
     );
+  });
+
+  test('maps unavailable Edge Function to a retryable Portuguese message', () {
+    final ex = mapToAppException(
+      const FunctionException(
+        status: 503,
+        reasonPhrase: 'Service Temporarily Unavailable',
+      ),
+    );
+
+    expect(ex.code, AppExceptionCodes.network);
+    expect(ex.message, 'Serviço temporariamente indisponível. Tente novamente.');
   });
 }

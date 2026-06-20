@@ -1,4 +1,4 @@
-class PersonalityReferenceFacet {
+﻿class PersonalityReferenceFacet {
   const PersonalityReferenceFacet({
     required this.name,
     required this.description,

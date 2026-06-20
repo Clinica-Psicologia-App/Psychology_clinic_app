@@ -1,10 +1,11 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+﻿import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
 import '../../../core/supabase/supabase_bootstrap.dart';
 import '../domain/patient_resource_access.dart';
 import '../domain/therapy_resource.dart';
+import '../domain/therapy_resource_input.dart';
 
 class TherapyResourcesRepository {
   TherapyResourcesRepository({SupabaseClient? client})
@@ -12,8 +13,7 @@ class TherapyResourcesRepository {
 
   final SupabaseClient _client;
 
-  static const _resourceSelect =
-      'id, title, type, description, url, is_active';
+  static const _resourceSelect = 'id, title, type, description, url, is_active';
 
   static const _accessSelect = '''
 id,
@@ -27,7 +27,8 @@ resource:therapy_resources($_resourceSelect),
 released_by:profiles!patient_resource_access_released_by_profile_id_fkey(full_name)
 ''';
 
-  Future<List<TherapyResource>> listClinicResources({bool activeOnly = true}) async {
+  Future<List<TherapyResource>> listClinicResources(
+      {bool activeOnly = true}) async {
     try {
       var query = _client.from('therapy_resources').select(_resourceSelect);
       if (activeOnly) {
@@ -58,6 +59,73 @@ released_by:profiles!patient_resource_access_released_by_profile_id_fkey(full_na
     }
   }
 
+  Future<TherapyResource> createResource(TherapyResourceInput input) async {
+    final validation = input.validate();
+    if (validation != null) {
+      throw AppException(
+        code: AppExceptionCodes.validation,
+        message: validation,
+      );
+    }
+
+    try {
+      final clinicId = await _getCurrentProfileClinicId();
+      final row = await _client
+          .from('therapy_resources')
+          .insert(input.toInsertJson(clinicId: clinicId))
+          .select(_resourceSelect)
+          .single();
+
+      return TherapyResource.fromJson(Map<String, dynamic>.from(row));
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  Future<TherapyResource> updateResource({
+    required String resourceId,
+    required TherapyResourceInput input,
+  }) async {
+    final validation = input.validate();
+    if (validation != null) {
+      throw AppException(
+        code: AppExceptionCodes.validation,
+        message: validation,
+      );
+    }
+
+    try {
+      final row = await _client
+          .from('therapy_resources')
+          .update(input.toUpdateJson())
+          .eq('id', resourceId)
+          .select(_resourceSelect)
+          .single();
+
+      return TherapyResource.fromJson(Map<String, dynamic>.from(row));
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  Future<TherapyResource> setResourceActive({
+    required String resourceId,
+    required bool isActive,
+  }) async {
+    try {
+      final row = await _client
+          .from('therapy_resources')
+          .update({'is_active': isActive})
+          .eq('id', resourceId)
+          .select(_resourceSelect)
+          .single();
+
+      return TherapyResource.fromJson(Map<String, dynamic>.from(row));
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
   Future<List<PatientResourceAccess>> listAccessForPatient(
     String patientId, {
     bool activeOnly = false,
@@ -81,6 +149,36 @@ released_by:profiles!patient_resource_access_released_by_profile_id_fkey(full_na
             ),
           )
           .toList();
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  Future<String> _getCurrentProfileClinicId() async {
+    try {
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) {
+        throw AppException(
+          code: AppExceptionCodes.unauthorized,
+          message: 'Sessão não encontrada.',
+        );
+      }
+
+      final row = await _client
+          .from('profiles')
+          .select('clinic_id')
+          .eq('id', userId)
+          .maybeSingle();
+
+      final clinicId = row?['clinic_id'] as String?;
+      if (clinicId == null || clinicId.isEmpty) {
+        throw AppException(
+          code: AppExceptionCodes.notFound,
+          message: 'Clínica não encontrada para este usuário.',
+        );
+      }
+
+      return clinicId;
     } catch (e) {
       throw mapToAppException(e);
     }
@@ -164,8 +262,7 @@ released_by:profiles!patient_resource_access_released_by_profile_id_fkey(full_na
     try {
       await _client
           .from('patient_resource_access')
-          .update({'is_active': false})
-          .eq('id', accessId);
+          .update({'is_active': false}).eq('id', accessId);
     } catch (e) {
       throw mapToAppException(e);
     }

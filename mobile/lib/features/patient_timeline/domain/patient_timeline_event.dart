@@ -1,4 +1,4 @@
-class PatientTimelineEvent {
+﻿class PatientTimelineEvent {
   const PatientTimelineEvent({
     required this.id,
     required this.clinicId,

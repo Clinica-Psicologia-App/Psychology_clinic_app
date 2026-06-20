@@ -1,4 +1,4 @@
-import '../../daily_monitors/presentation/daily_monitor_routes.dart';
+﻿import '../../daily_monitors/presentation/daily_monitor_routes.dart';
 import '../../clinical_dashboard/presentation/clinical_dashboard_routes.dart';
 import '../../genogram/presentation/genogram_routes.dart';
 import '../../patient_check_ins/presentation/patient_check_in_routes.dart';
@@ -81,7 +81,9 @@ abstract final class MentalMapNavigationTargets {
     String? patientId,
     String? responseId,
   }) {
-    if (role == ProfileRole.patient || patientId == null || responseId == null) {
+    if (role == ProfileRole.patient ||
+        patientId == null ||
+        responseId == null) {
       return null;
     }
     return ResultRoutes.detail(

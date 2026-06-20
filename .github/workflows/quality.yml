@@ -1,0 +1,95 @@
+name: Quality
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+
+jobs:
+  flutter:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze --no-fatal-infos
+      - run: flutter test
+      - name: Build web release
+        run: >-
+          flutter build web --release
+          --dart-define=SUPABASE_URL=https://ci-placeholder.supabase.co
+          --dart-define=SUPABASE_ANON_KEY=ci-placeholder-anon-key
+      - name: Create ephemeral Android signing key
+        run: |
+          mkdir -p android/keystore
+          keytool -genkeypair -noprompt \
+            -keystore android/keystore/ci-upload.jks \
+            -storepass ci-release-password \
+            -keypass ci-release-password \
+            -alias upload \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 30 \
+            -dname "CN=CI, OU=Engineering, O=EsquemaCore, C=BR"
+          printf '%s\n' \
+            'storePassword=ci-release-password' \
+            'keyPassword=ci-release-password' \
+            'keyAlias=upload' \
+            'storeFile=../keystore/ci-upload.jks' \
+            > android/key.properties
+      - name: Build Android app bundle release
+        run: >-
+          flutter build appbundle --release
+          --dart-define=SUPABASE_URL=https://ci-placeholder.supabase.co
+          --dart-define=SUPABASE_ANON_KEY=ci-placeholder-anon-key
+          --dart-define=SHOW_TEST_ACCOUNTS=false
+
+  edge-functions:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: supabase/functions
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - run: deno check */index.ts
+      - run: deno task test:scoring
+      - run: deno task test:clinical-report
+
+  database:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - run: supabase start
+      - run: supabase db lint --local
+      - name: RLS smoke tests
+        run: |
+          DB_CONTAINER="$(docker ps --filter 'name=supabase_db_' --format '{{.Names}}' | head -n 1)"
+          test -n "$DB_CONTAINER"
+          RLS_OUTPUT="$(
+            cat supabase/tests/rls-smoke-tests.sql |
+              docker exec -i "$DB_CONTAINER" \
+                psql -U postgres -d postgres -v ON_ERROR_STOP=1 2>&1
+          )"
+          printf '%s\n' "$RLS_OUTPUT"
+          if printf '%s\n' "$RLS_OUTPUT" | grep -q '\[FAIL\]'; then
+            exit 1
+          fi
+      - name: Production governance tests
+        run: |
+          DB_CONTAINER="$(docker ps --filter 'name=supabase_db_' --format '{{.Names}}' | head -n 1)"
+          test -n "$DB_CONTAINER"
+          cat supabase/tests/production-governance-tests.sql |
+            docker exec -i "$DB_CONTAINER" \
+              psql -U postgres -d postgres -v ON_ERROR_STOP=1

@@ -1,13 +1,20 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/errors/app_exception.dart';
+import '../../../core/errors/error_mapper.dart';
+import '../../../core/legal/legal_documents.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_gradients.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/utils/brazil_validators.dart';
 import '../../../shared/utils/input_formatters.dart';
-import '../../../shared/widgets/app_scaffold.dart';
-import '../../../shared/widgets/error_banner.dart';
+import '../../../shared/widgets/esquema_core_logo.dart';
+import '../../../shared/widgets/form_section.dart';
+import '../../../shared/widgets/homologation_ui.dart';
+import '../../../shared/widgets/responsive_content.dart';
 import '../domain/accept_patient_invitation_request.dart';
 import '../providers/patient_invitations_providers.dart';
 
@@ -46,35 +53,36 @@ class _AcceptPatientInvitationPageState
   bool _submitting = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _acceptedLegal = false;
 
   static const _genderOptions = [
     'Feminino',
     'Masculino',
-    'Nao binario',
+    'Não binário',
     'Outro',
-    'Prefiro nao informar',
+    'Prefiro não informar',
   ];
   static const _relationshipStatusOptions = [
     'Solteiro(a)',
     'Namorando',
     'Casado(a)',
-    'Uniao estavel',
+    'União estável',
     'Separado(a)',
     'Divorciado(a)',
-    'Viuvo(a)',
-    'Prefiro nao informar',
+    'Viúvo(a)',
+    'Prefiro não informar',
   ];
   static const _educationLevelOptions = [
     'Ensino fundamental incompleto',
     'Ensino fundamental completo',
-    'Ensino medio incompleto',
-    'Ensino medio completo',
+    'Ensino médio incompleto',
+    'Ensino médio completo',
     'Ensino superior incompleto',
     'Ensino superior completo',
-    'Pos-graduacao',
+    'Pós-graduação',
     'Mestrado',
     'Doutorado',
-    'Prefiro nao informar',
+    'Prefiro não informar',
   ];
 
   @override
@@ -92,236 +100,356 @@ class _AcceptPatientInvitationPageState
     super.dispose();
   }
 
+  InputDecoration _decoration(String label, {String? hint}) {
+    return InputDecoration(
+      labelText: label,
+      hintText: hint,
+      border: const OutlineInputBorder(),
+      filled: true,
+      fillColor: Theme.of(context)
+          .colorScheme
+          .surfaceContainerHighest
+          .withValues(alpha: 0.35),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final token = widget.token;
-    return AppScaffold(
-      title: 'Primeiro acesso',
-      body: token == null || token.trim().isEmpty
-          ? const Center(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text('Convite invalido ou expirado.'),
-              ),
-            )
-          : Form(
-              key: _formKey,
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  Text(
-                    'Crie sua senha e complete os dados cadastrais para acessar o app.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color:
-                              Theme.of(context).colorScheme.onSurfaceVariant,
+    final token = widget.token?.trim();
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+
+    return Scaffold(
+      body: SafeArea(
+        child: token == null || token.isEmpty
+            ? _InvalidInvitationBody(
+                icon: Icons.link_off_outlined,
+                title: 'Convite inválido',
+                message:
+                    'O link de convite não foi reconhecido. Solicite um novo '
+                    'convite à clínica.',
+              )
+            : SingleChildScrollView(
+                padding: EdgeInsets.fromLTRB(16, 16, 16, 24 + bottomInset),
+                keyboardDismissBehavior:
+                    ScrollViewKeyboardDismissBehavior.onDrag,
+                child: ResponsiveContent(
+                  maxWidth: 560,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      DecoratedBox(
+                        decoration: const BoxDecoration(
+                          gradient: AppGradients.brand,
+                          borderRadius: BorderRadius.all(Radius.circular(20)),
                         ),
-                  ),
-                  const SizedBox(height: 16),
-                  if (ref.watch(acceptPatientInvitationProvider).hasError)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 16),
-                      child: buildErrorBanner(
-                        context,
-                        ref.watch(acceptPatientInvitationProvider).error
-                                is AppException
-                            ? ref.watch(acceptPatientInvitationProvider).error
-                                as AppException
-                            : AppException(
-                                code: AppExceptionCodes.unknown,
-                                message: 'Nao foi possivel concluir o cadastro.',
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppSpacing.xl),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const EsquemaCoreLogo.monochrome(
+                                size: 56,
+                                showTagline: true,
+                                taglineColor: AppColors.textOnBrand,
                               ),
-                      ),
-                    ),
-                  TextFormField(
-                    controller: _fullNameController,
-                    decoration: const InputDecoration(
-                      labelText: 'Nome completo *',
-                      border: OutlineInputBorder(),
-                    ),
-                    textCapitalization: TextCapitalization.words,
-                    validator: (value) => value == null || value.trim().isEmpty
-                        ? 'Informe o nome completo'
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _phoneController,
-                    decoration: const InputDecoration(
-                      labelText: 'Telefone',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.phone,
-                    inputFormatters: [BrazilPhoneInputFormatter()],
-                    validator: validateOptionalPhone,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _cpfController,
-                    decoration: const InputDecoration(
-                      labelText: 'CPF',
-                      border: OutlineInputBorder(),
-                    ),
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [CpfInputFormatter()],
-                    validator: validateOptionalCpf,
-                  ),
-                  const SizedBox(height: 16),
-                  InkWell(
-                    onTap: _pickBirthDate,
-                    child: InputDecorator(
-                      decoration: const InputDecoration(
-                        labelText: 'Data de nascimento',
-                        border: OutlineInputBorder(),
-                      ),
-                      child: Text(
-                        _birthDate == null
-                            ? 'Opcional'
-                            : _formatDate(_birthDate!),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  _SimpleDropdownField(
-                    label: 'Genero',
-                    value: _selectedGender,
-                    options: _genderOptions,
-                    onChanged: (value) => setState(() => _selectedGender = value),
-                  ),
-                  const SizedBox(height: 16),
-                  _SimpleDropdownField(
-                    label: 'Estado civil',
-                    value: _selectedRelationshipStatus,
-                    options: _relationshipStatusOptions,
-                    onChanged: (value) =>
-                        setState(() => _selectedRelationshipStatus = value),
-                  ),
-                  const SizedBox(height: 16),
-                  _SimpleDropdownField(
-                    label: 'Escolaridade',
-                    value: _selectedEducationLevel,
-                    options: _educationLevelOptions,
-                    onChanged: (value) =>
-                        setState(() => _selectedEducationLevel = value),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _occupationController,
-                    decoration: const InputDecoration(
-                      labelText: 'Ocupacao',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _birthCountryStateController,
-                    decoration: const InputDecoration(
-                      labelText: 'Naturalidade',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _religiousOrientationController,
-                    decoration: const InputDecoration(
-                      labelText: 'Orientacao religiosa',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _ethnicGroupController,
-                    decoration: const InputDecoration(
-                      labelText: 'Grupo etnico',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _sexualOrientationController,
-                    decoration: const InputDecoration(
-                      labelText: 'Orientacao sexual',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  SwitchListTile(
-                    value: _hasChildren ?? false,
-                    onChanged: (value) => setState(() => _hasChildren = value),
-                    title: const Text('Possui filhos?'),
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    decoration: InputDecoration(
-                      labelText: 'Senha *',
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        onPressed: () => setState(
-                          () => _obscurePassword = !_obscurePassword,
-                        ),
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
+                              const SizedBox(height: AppSpacing.md),
+                              Text(
+                                'Primeiro acesso',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .headlineSmall
+                                    ?.copyWith(
+                                      color: AppColors.textOnBrand,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                              ),
+                              const SizedBox(height: AppSpacing.xs),
+                              Text(
+                                'Você foi convidado(a) a acessar a plataforma '
+                                'clínica. Complete seus dados e crie uma senha '
+                                'para entrar.',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      color: AppColors.textOnBrand
+                                          .withValues(alpha: 0.92),
+                                      height: 1.45,
+                                    ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Informe a senha';
-                      }
-                      if (value.length < 8) {
-                        return 'A senha deve ter pelo menos 8 caracteres';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _confirmPasswordController,
-                    obscureText: _obscureConfirmPassword,
-                    decoration: InputDecoration(
-                      labelText: 'Confirmar senha *',
-                      border: const OutlineInputBorder(),
-                      suffixIcon: IconButton(
-                        onPressed: () => setState(
-                          () => _obscureConfirmPassword =
-                              !_obscureConfirmPassword,
+                      const SizedBox(height: AppSpacing.lg),
+                      const HomologationInfoBanner(
+                        title: 'Privacidade',
+                        icon: Icons.lock_outline,
+                        message:
+                            'Seus dados serão usados apenas para cadastro e '
+                            'acompanhamento clínico na clínica que enviou o convite.',
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      if (ref.watch(acceptPatientInvitationProvider).hasError)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                          child: _InvitationErrorPanel(
+                            error: ref
+                                .watch(acceptPatientInvitationProvider)
+                                .error!,
+                          ),
                         ),
-                        icon: Icon(
-                          _obscureConfirmPassword
-                              ? Icons.visibility_outlined
-                              : Icons.visibility_off_outlined,
+                      Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            FormSection(
+                              title: 'Dados pessoais',
+                              icon: Icons.person_outline,
+                              children: [
+                                TextFormField(
+                                  controller: _fullNameController,
+                                  decoration: _decoration('Nome completo *'),
+                                  textCapitalization: TextCapitalization.words,
+                                  validator: (value) =>
+                                      value == null || value.trim().isEmpty
+                                          ? 'Informe o nome completo'
+                                          : null,
+                                ),
+                                const SizedBox(height: AppSpacing.md),
+                                InkWell(
+                                  onTap: _pickBirthDate,
+                                  child: InputDecorator(
+                                    decoration: _decoration(
+                                      'Data de nascimento',
+                                      hint: 'Opcional',
+                                    ),
+                                    child: Text(
+                                      _birthDate == null
+                                          ? 'Opcional'
+                                          : _formatDate(_birthDate!),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: AppSpacing.md),
+                                _SimpleDropdownField(
+                                  label: 'Genero',
+                                  value: _selectedGender,
+                                  options: _genderOptions,
+                                  onChanged: (value) =>
+                                      setState(() => _selectedGender = value),
+                                ),
+                              ],
+                            ),
+                            FormSection(
+                              title: 'Contato',
+                              icon: Icons.phone_outlined,
+                              children: [
+                                TextFormField(
+                                  controller: _phoneController,
+                                  decoration: _decoration('Telefone'),
+                                  keyboardType: TextInputType.phone,
+                                  inputFormatters: [
+                                    BrazilPhoneInputFormatter()
+                                  ],
+                                  validator: validateOptionalPhone,
+                                ),
+                                const SizedBox(height: AppSpacing.md),
+                                TextFormField(
+                                  controller: _cpfController,
+                                  decoration: _decoration('CPF'),
+                                  keyboardType: TextInputType.number,
+                                  inputFormatters: [CpfInputFormatter()],
+                                  validator: validateOptionalCpf,
+                                ),
+                              ],
+                            ),
+                            FormSection(
+                              title: 'Informações sociodemográficas',
+                              icon: Icons.groups_outlined,
+                              children: [
+                                FormFieldGrid(
+                                  children: [
+                                    _SimpleDropdownField(
+                                      label: 'Estado civil',
+                                      value: _selectedRelationshipStatus,
+                                      options: _relationshipStatusOptions,
+                                      onChanged: (value) => setState(
+                                        () =>
+                                            _selectedRelationshipStatus = value,
+                                      ),
+                                    ),
+                                    _SimpleDropdownField(
+                                      label: 'Escolaridade',
+                                      value: _selectedEducationLevel,
+                                      options: _educationLevelOptions,
+                                      onChanged: (value) => setState(
+                                        () => _selectedEducationLevel = value,
+                                      ),
+                                    ),
+                                    TextFormField(
+                                      controller: _occupationController,
+                                      decoration: _decoration('Ocupação'),
+                                    ),
+                                    TextFormField(
+                                      controller: _birthCountryStateController,
+                                      decoration: _decoration('Naturalidade'),
+                                    ),
+                                    TextFormField(
+                                      controller:
+                                          _religiousOrientationController,
+                                      decoration:
+                                          _decoration('Orientação religiosa'),
+                                    ),
+                                    TextFormField(
+                                      controller: _ethnicGroupController,
+                                      decoration: _decoration('Grupo étnico'),
+                                    ),
+                                    TextFormField(
+                                      controller: _sexualOrientationController,
+                                      decoration:
+                                          _decoration('Orientação sexual'),
+                                    ),
+                                  ],
+                                ),
+                                SwitchListTile(
+                                  value: _hasChildren ?? false,
+                                  onChanged: (value) =>
+                                      setState(() => _hasChildren = value),
+                                  title: const Text('Possui filhos?'),
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                              ],
+                            ),
+                            FormSection(
+                              title: 'Acesso',
+                              subtitle: 'Crie a senha que usará para entrar',
+                              icon: Icons.lock_outline,
+                              children: [
+                                TextFormField(
+                                  controller: _passwordController,
+                                  obscureText: _obscurePassword,
+                                  decoration: _decoration('Senha *').copyWith(
+                                    suffixIcon: IconButton(
+                                      onPressed: () => setState(
+                                        () => _obscurePassword =
+                                            !_obscurePassword,
+                                      ),
+                                      icon: Icon(
+                                        _obscurePassword
+                                            ? Icons.visibility_outlined
+                                            : Icons.visibility_off_outlined,
+                                      ),
+                                    ),
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Informe a senha';
+                                    }
+                                    if (value.length < 8) {
+                                      return 'A senha deve ter pelo menos 8 caracteres';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                                const SizedBox(height: AppSpacing.md),
+                                TextFormField(
+                                  controller: _confirmPasswordController,
+                                  obscureText: _obscureConfirmPassword,
+                                  decoration:
+                                      _decoration('Confirmar senha *').copyWith(
+                                    suffixIcon: IconButton(
+                                      onPressed: () => setState(
+                                        () => _obscureConfirmPassword =
+                                            !_obscureConfirmPassword,
+                                      ),
+                                      icon: Icon(
+                                        _obscureConfirmPassword
+                                            ? Icons.visibility_outlined
+                                            : Icons.visibility_off_outlined,
+                                      ),
+                                    ),
+                                  ),
+                                  validator: (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Confirme a senha';
+                                    }
+                                    if (value != _passwordController.text) {
+                                      return 'As senhas não conferem';
+                                    }
+                                    return null;
+                                  },
+                                ),
+                              ],
+                            ),
+                            CheckboxListTile(
+                              value: _acceptedLegal,
+                              contentPadding: EdgeInsets.zero,
+                              controlAffinity:
+                                  ListTileControlAffinity.leading,
+                              onChanged: (value) => setState(
+                                () => _acceptedLegal = value ?? false,
+                              ),
+                              title: const Text(
+                                'Li e aceito os Termos de Uso e a Política de '
+                                'Privacidade.',
+                              ),
+                              subtitle: Wrap(
+                                spacing: AppSpacing.xs,
+                                children: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        context.push(AppRoutes.terms),
+                                    child: const Text('Ler termos'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        context.push(AppRoutes.privacy),
+                                    child: const Text('Ler privacidade'),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            if (!_acceptedLegal)
+                              Text(
+                                'O aceite é obrigatório para criar a conta.',
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
+                              ),
+                            const SizedBox(height: AppSpacing.md),
+                            FilledButton.icon(
+                              onPressed: _submitting || !_acceptedLegal
+                                  ? null
+                                  : () => _submit(token),
+                              icon: _submitting
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Icon(Icons.check_circle_outline),
+                              label: Text(
+                                _submitting ? 'Criando conta...' : 'Criar conta',
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: _submitting
+                                  ? null
+                                  : () => context.go(AppRoutes.login),
+                              child: const Text('Já tenho conta'),
+                            ),
+                          ],
                         ),
                       ),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Confirme a senha';
-                      }
-                      if (value != _passwordController.text) {
-                        return 'As senhas nao conferem';
-                      }
-                      return null;
-                    },
+                    ],
                   ),
-                  const SizedBox(height: 24),
-                  FilledButton.icon(
-                    onPressed: _submitting ? null : () => _submit(token),
-                    icon: _submitting
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.check_circle_outline),
-                    label: const Text('Criar conta'),
-                  ),
-                ],
+                ),
               ),
-            ),
+      ),
     );
   }
 
@@ -348,6 +476,8 @@ class _AcceptPatientInvitationPageState
                 sexualOrientation: _sexualOrientationController.text,
                 hasChildren: _hasChildren,
               ),
+              termsVersion: LegalDocuments.termsVersion,
+              privacyVersion: LegalDocuments.privacyVersion,
             ),
           );
       if (!mounted) return;
@@ -356,7 +486,8 @@ class _AcceptPatientInvitationPageState
         builder: (context) => AlertDialog(
           title: const Text('Conta criada'),
           content: const Text(
-            'Seu acesso foi criado com sucesso. Agora voce pode entrar com e-mail e senha.',
+            'Seu acesso foi criado com sucesso. Agora você pode entrar com '
+            'e-mail e senha.',
           ),
           actions: [
             FilledButton(
@@ -369,15 +500,11 @@ class _AcceptPatientInvitationPageState
       if (!mounted) return;
       context.go(AppRoutes.login);
     } catch (_) {
-      if (mounted) {
-        setState(() => _submitting = false);
-      }
+      if (mounted) setState(() => _submitting = false);
       return;
     }
 
-    if (mounted) {
-      setState(() => _submitting = false);
-    }
+    if (mounted) setState(() => _submitting = false);
   }
 
   Future<void> _pickBirthDate() async {
@@ -388,16 +515,130 @@ class _AcceptPatientInvitationPageState
       firstDate: DateTime(1900),
       lastDate: now,
     );
-    if (picked != null) {
-      setState(() => _birthDate = picked);
-    }
+    if (picked != null) setState(() => _birthDate = picked);
   }
 
   String _formatDate(DateTime date) {
     final day = date.day.toString().padLeft(2, '0');
     final month = date.month.toString().padLeft(2, '0');
-    final year = date.year.toString();
-    return '$day/$month/$year';
+    return '$day/$month/${date.year}';
+  }
+}
+
+class _InvalidInvitationBody extends StatelessWidget {
+  const _InvalidInvitationBody({
+    required this.icon,
+    required this.title,
+    required this.message,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: ResponsiveContent(
+          maxWidth: 420,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const EsquemaCoreLogo(size: 72, showTagline: true),
+              const SizedBox(height: AppSpacing.xl),
+              Icon(icon, size: 48, color: Theme.of(context).colorScheme.error),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              FilledButton(
+                onPressed: () => context.go(AppRoutes.login),
+                child: const Text('Ir para login'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InvitationErrorPanel extends StatelessWidget {
+  const _InvitationErrorPanel({required this.error});
+
+  final Object error;
+
+  @override
+  Widget build(BuildContext context) {
+    final message = error is AppException
+        ? userMessageFor(error as AppException)
+        : 'Não foi possível concluir o cadastro.';
+
+    final (icon, title) = _resolvePresentation(message);
+
+    return Card(
+      color:
+          Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.45),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(icon, color: Theme.of(context).colorScheme.error),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  const SizedBox(height: AppSpacing.xxs),
+                  Text(message),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  (IconData, String) _resolvePresentation(String message) {
+    final lower = message.toLowerCase();
+    if (lower.contains('expirado')) {
+      return (Icons.schedule_outlined, 'Convite expirado');
+    }
+    if (lower.contains('inválido') || lower.contains('invalido')) {
+      return (Icons.link_off_outlined, 'Convite inválido');
+    }
+    if (lower.contains('já') ||
+        lower.contains('ja ') ||
+        lower.contains('uso')) {
+      return (Icons.check_circle_outline, 'Convite já utilizado');
+    }
+    if (lower.contains('revogado')) {
+      return (Icons.block_outlined, 'Convite revogado');
+    }
+    return (Icons.error_outline, 'Não foi possível concluir');
   }
 }
 

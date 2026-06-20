@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -32,7 +32,8 @@ class PatientProblemFormPage extends ConsumerStatefulWidget {
       _PatientProblemFormPageState();
 }
 
-class _PatientProblemFormPageState extends ConsumerState<PatientProblemFormPage> {
+class _PatientProblemFormPageState
+    extends ConsumerState<PatientProblemFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -124,7 +125,9 @@ class _PatientProblemFormPageState extends ConsumerState<PatientProblemFormPage>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              e is AppException ? userMessageFor(e) : 'Não foi possível salvar.',
+              e is AppException
+                  ? userMessageFor(e)
+                  : 'Não foi possível salvar.',
             ),
           ),
         );
@@ -154,7 +157,7 @@ class _PatientProblemFormPageState extends ConsumerState<PatientProblemFormPage>
           ref.watch(patientProblemDetailProvider(widget.problemId!));
       return problemAsync.when(
         loading: () => const AppScaffold(
-          title: 'Carregando…',
+          title: 'Carregando...',
           body: Center(child: CircularProgressIndicator()),
         ),
         error: (_, __) => AppScaffold(
@@ -225,7 +228,7 @@ class _PatientProblemFormPageState extends ConsumerState<PatientProblemFormPage>
             TextFormField(
               controller: _intensityController,
               decoration: const InputDecoration(
-                labelText: 'Intensidade (0–10)',
+                labelText: 'Intensidade (0-10)',
                 hintText: '0 = leve, 10 = muito intenso',
               ),
               keyboardType: TextInputType.number,
@@ -290,7 +293,9 @@ class _PatientProblemFormPageState extends ConsumerState<PatientProblemFormPage>
                       width: 22,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : Text(widget.isEdit ? 'Salvar alterações' : 'Registrar problema'),
+                  : Text(widget.isEdit
+                      ? 'Salvar alterações'
+                      : 'Registrar problema'),
             ),
           ],
         ),

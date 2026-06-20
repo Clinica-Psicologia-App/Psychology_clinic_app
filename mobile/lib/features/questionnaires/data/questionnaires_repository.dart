@@ -1,4 +1,4 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+﻿import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/questionnaires/supported_questionnaire_codes.dart';
 import '../../../core/errors/app_exception.dart';
@@ -35,7 +35,7 @@ class QuestionnairesRepository {
     try {
       final catalog = await _listCatalogQuestionnaires();
       switch (role) {
-        case ProfileRole.admin:
+        case ProfileRole.platformAdmin:
           return catalog;
         case ProfileRole.psychologist:
           final professionalId = _currentProfileId();
@@ -70,7 +70,7 @@ class QuestionnairesRepository {
       final rows = await _client
           .from('profiles')
           .select('id, full_name, email, role')
-          .or('role.eq.admin,role.eq.psychologist')
+          .eq('role', 'psychologist')
           .eq('is_active', true)
           .order('full_name');
 
@@ -86,7 +86,8 @@ class QuestionnairesRepository {
     }
   }
 
-  Future<QuestionnaireAccessManagementData> listQuestionnaireAccessForProfessional(
+  Future<QuestionnaireAccessManagementData>
+      listQuestionnaireAccessForProfessional(
     String professionalId,
   ) async {
     try {
@@ -117,7 +118,7 @@ class QuestionnairesRepository {
   }) async {
     try {
       final currentUserId = _currentProfileId();
-      final clinicId = await _getCurrentClinicId();
+      final clinicId = await _getProfessionalClinicId(professionalId);
 
       await _client.from('questionnaire_professional_access').upsert(
         {
@@ -148,7 +149,8 @@ class QuestionnairesRepository {
     final rows = await _fetchActiveQuestionnaireRowsWithFallback();
     return rows
         .map((row) => Questionnaire.fromJson(Map<String, dynamic>.from(row)))
-        .where((questionnaire) => isSupportedQuestionnaireCode(questionnaire.code))
+        .where(
+            (questionnaire) => isSupportedQuestionnaireCode(questionnaire.code))
         .toList();
   }
 
@@ -201,6 +203,7 @@ class QuestionnairesRepository {
         'instrument_version',
         'citation',
         'license_notes',
+        'clinical_status',
       ],
     ];
 
@@ -233,7 +236,8 @@ class QuestionnairesRepository {
     return message.contains('author_name') ||
         message.contains('instrument_version') ||
         message.contains('citation') ||
-        message.contains('license_notes');
+        message.contains('license_notes') ||
+        message.contains('clinical_status');
   }
 
   bool _isMissingQuestionnaireAccessSchemaError(PostgrestException e) {
@@ -285,18 +289,19 @@ class QuestionnairesRepository {
     return userId;
   }
 
-  Future<String> _getCurrentClinicId() async {
+  Future<String> _getProfessionalClinicId(String professionalId) async {
     final row = await _client
         .from('profiles')
         .select('clinic_id')
-        .eq('id', _currentProfileId())
+        .eq('id', professionalId)
+        .eq('role', 'psychologist')
         .maybeSingle();
 
     final clinicId = row?['clinic_id'] as String?;
     if (clinicId == null) {
       throw AppException(
         code: AppExceptionCodes.unauthorized,
-        message: 'Clínica do usuário não encontrada.',
+        message: 'Clínica do psicólogo não encontrada.',
       );
     }
     return clinicId;
@@ -387,7 +392,8 @@ class QuestionnairesRepository {
           'response_id': responseId,
           'question_id': questionId,
           'answer_value': answerValue,
-          if (responseContextId != null) 'response_context_id': responseContextId,
+          if (responseContextId != null)
+            'response_context_id': responseContextId,
         },
       );
     } catch (e) {

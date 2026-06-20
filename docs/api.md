@@ -1,5 +1,9 @@
 # API — Edge Functions (MVP)
 
+> Regra vigente desde 2026-06-20: não existe autocadastro público de
+> profissionais. A função `create-professional-account` foi removida. Contas
+> profissionais são criadas por administradores autorizados.
+
 Base URL local: `http://127.0.0.1:54321/functions/v1`  
 Base URL remota: `https://<PROJECT_REF>.supabase.co/functions/v1`
 
@@ -15,7 +19,6 @@ Content-Type: application/json
 
 Exceções públicas atuais:
 
-- `POST /create-professional-account`
 - `POST /accept-patient-invitation`
 
 Obter token (local):
@@ -125,7 +128,10 @@ Cria usuário Auth + profile (`patient`) + registro em `patients`.
 
 ---
 
-## 0. `POST /create-professional-account`
+## Endpoint removido: `POST /create-professional-account`
+
+Este endpoint não está mais disponível. O conteúdo abaixo descreve apenas o
+fluxo histórico e não deve ser utilizado em clientes ou automações.
 
 Cria uma conta de profissional sem exigir cadastro manual prévio de clínica.
 

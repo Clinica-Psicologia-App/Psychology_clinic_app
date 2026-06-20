@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../domain/journey_step.dart';
 import '../../domain/journey_step_availability.dart';
+import '../../../../shared/widgets/app_motion.dart';
 import 'journey_step_card.dart';
 
 /// Lista vertical com conector visual entre passos da trilha.
@@ -19,12 +20,13 @@ class JourneyTrail extends StatelessWidget {
   Widget build(BuildContext context) {
     final sorted = List<JourneyStep>.from(steps)
       ..sort((a, b) => a.order.compareTo(b.order));
+    final compact = MediaQuery.sizeOf(context).width < 600;
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+      padding: EdgeInsets.fromLTRB(compact ? 12 : 16, 8, compact ? 12 : 16, 24),
       children: [
         Padding(
-          padding: const EdgeInsets.only(bottom: 12, left: 48),
+          padding: EdgeInsets.only(bottom: 12, left: compact ? 44 : 48),
           child: Text(
             'Passos da trilha',
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -46,12 +48,16 @@ class JourneyTrail extends StatelessWidget {
                   _TrailRail(
                     step: step,
                     showConnector: !isLast,
+                    compact: compact,
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: compact ? 8 : 12),
                   Expanded(
-                    child: JourneyStepCard(
-                      step: step,
-                      onTap: () => onStepTap(step),
+                    child: MotionReveal(
+                      delay: Duration(milliseconds: 45 * index),
+                      child: JourneyStepCard(
+                        step: step,
+                        onTap: () => onStepTap(step),
+                      ),
                     ),
                   ),
                 ],
@@ -68,10 +74,12 @@ class _TrailRail extends StatelessWidget {
   const _TrailRail({
     required this.step,
     required this.showConnector,
+    required this.compact,
   });
 
   final JourneyStep step;
   final bool showConnector;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -79,12 +87,12 @@ class _TrailRail extends StatelessWidget {
     final nodeColor = _nodeColor(theme.colorScheme, step.availability);
 
     return SizedBox(
-      width: 36,
+      width: compact ? 32 : 36,
       child: Column(
         children: [
           Container(
-            width: 32,
-            height: 32,
+            width: compact ? 30 : 32,
+            height: compact ? 30 : 32,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: nodeColor.background,

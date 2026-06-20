@@ -1,5 +1,8 @@
 # App mobile Flutter — MVP Terapia do Esquema
 
+> Regra vigente desde 2026-06-20: o cadastro profissional público foi removido.
+> Administradores criam os acessos da equipe; pacientes entram por convite.
+
 Cliente iOS/Android com autenticação Supabase e navegação por `role` do profile.
 
 **QA pós-roadmap:** rotas, RLS, estados de UI e roteiros manuais em [qa/post-roadmap-stabilization.md](./qa/post-roadmap-stabilization.md).
@@ -13,7 +16,6 @@ mobile/
     shared/               # widgets compartilhados
     features/
       auth/               # login, sessão, telas home
-      professional_onboarding/ # cadastro público de profissional com clínica opcional
       profile/            # leitura do próprio profile (RLS)
       patients/           # listagem, detalhe e cadastro (staff)
       questionnaires/   # listar, responder e finalizar (Edge Functions)
@@ -58,9 +60,13 @@ supabase status -o json
 - Login: `signInWithPassword`.
 - Ao abrir o app: `restoreSession()` → se JWT válido, busca `profiles`.
 - Logout: `signOut()` + redirect para login.
-- Rota pública adicional: `/professional-sign-up` para onboarding de profissional.
+- Não existe rota pública de cadastro profissional.
 
-## Onboarding de profissional (`professional_onboarding`)
+## Onboarding profissional removido
+
+O antigo módulo `professional_onboarding` e a rota `/professional-sign-up`
+foram removidos. O texto abaixo é histórico; o fluxo vigente é a criação de
+acessos por administradores autorizados.
 
 Feature: `lib/features/professional_onboarding/`.
 

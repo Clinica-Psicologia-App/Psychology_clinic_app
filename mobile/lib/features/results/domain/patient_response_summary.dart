@@ -1,4 +1,4 @@
-import 'questionnaire_response_status.dart';
+﻿import 'questionnaire_response_status.dart';
 
 /// Item da listagem de respostas de um paciente.
 class PatientResponseSummary {
@@ -50,7 +50,7 @@ class PatientResponseSummary {
       id: json['id'] as String,
       questionnaireId:
           qMap['id'] as String? ?? json['questionnaire_id'] as String,
-      questionnaireCode: qMap['code'] as String? ?? '—',
+      questionnaireCode: qMap['code'] as String? ?? '-',
       questionnaireName: qMap['name'] as String? ?? 'Questionário',
       status: QuestionnaireResponseStatus.fromString(
         json['status'] as String? ?? 'draft',

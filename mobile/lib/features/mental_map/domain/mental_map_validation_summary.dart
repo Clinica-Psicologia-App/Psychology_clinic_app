@@ -1,4 +1,4 @@
-class MentalMapValidationSummary {
+﻿class MentalMapValidationSummary {
   const MentalMapValidationSummary({
     required this.pendingQuestionnaireReviewCount,
     required this.hasTherapistInputs,

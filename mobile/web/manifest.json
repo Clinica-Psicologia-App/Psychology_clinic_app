@@ -1,11 +1,11 @@
 {
-    "name": "terapia_esquema",
-    "short_name": "terapia_esquema",
+    "name": "EsquemaCore",
+    "short_name": "EsquemaCore",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F7FAFC",
+    "theme_color": "#00B2A9",
+    "description": "Raciocínio clínico e jornada terapêutica em um único fluxo.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

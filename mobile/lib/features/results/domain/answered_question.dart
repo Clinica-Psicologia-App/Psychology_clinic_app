@@ -1,4 +1,4 @@
-import '../../questionnaires/domain/question_answer_type.dart';
+﻿import '../../questionnaires/domain/question_answer_type.dart';
 import '../utils/likert_labels.dart';
 
 /// Pergunta com resposta gravada (detalhe).
@@ -39,7 +39,7 @@ class AnsweredQuestion {
 
     return AnsweredQuestion(
       questionId: q['id'] as String? ?? json['question_id'] as String,
-      code: q['code'] as String? ?? '—',
+      code: q['code'] as String? ?? '-',
       text: q['text'] as String? ?? '',
       orderIndex: q['order_index'] as int? ?? 0,
       answerType: QuestionAnswerType.fromString(

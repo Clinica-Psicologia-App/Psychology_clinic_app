@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -27,7 +27,8 @@ class TherapyGoalFormPage extends ConsumerStatefulWidget {
   bool get isStaff => role != ProfileRole.patient;
 
   @override
-  ConsumerState<TherapyGoalFormPage> createState() => _TherapyGoalFormPageState();
+  ConsumerState<TherapyGoalFormPage> createState() =>
+      _TherapyGoalFormPageState();
 }
 
 class _TherapyGoalFormPageState extends ConsumerState<TherapyGoalFormPage> {
@@ -62,7 +63,8 @@ class _TherapyGoalFormPageState extends ConsumerState<TherapyGoalFormPage> {
       title: _titleController.text,
       description: _descriptionController.text,
       targetDate: widget.isStaff ? _targetDate : null,
-      status: widget.isStaff || widget.isEdit ? _status : TherapyGoalStatus.active,
+      status:
+          widget.isStaff || widget.isEdit ? _status : TherapyGoalStatus.active,
     );
   }
 
@@ -107,7 +109,9 @@ class _TherapyGoalFormPageState extends ConsumerState<TherapyGoalFormPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              e is AppException ? userMessageFor(e) : 'Não foi possível salvar.',
+              e is AppException
+                  ? userMessageFor(e)
+                  : 'Não foi possível salvar.',
             ),
           ),
         );
@@ -136,7 +140,7 @@ class _TherapyGoalFormPageState extends ConsumerState<TherapyGoalFormPage> {
       final goalAsync = ref.watch(therapyGoalDetailProvider(widget.goalId!));
       return goalAsync.when(
         loading: () => AppScaffold(
-          title: 'Carregando…',
+          title: 'Carregando...',
           body: const Center(child: CircularProgressIndicator()),
         ),
         error: (_, __) => AppScaffold(
@@ -256,7 +260,8 @@ class _TherapyGoalFormPageState extends ConsumerState<TherapyGoalFormPage> {
                       width: 22,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : Text(widget.isEdit ? 'Salvar alterações' : 'Criar objetivo'),
+                  : Text(
+                      widget.isEdit ? 'Salvar alterações' : 'Criar objetivo'),
             ),
           ],
         ),

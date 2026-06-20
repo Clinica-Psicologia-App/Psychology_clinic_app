@@ -1,20 +1,17 @@
-import '../../profile/domain/profile_role.dart';
+﻿import '../../profile/domain/profile_role.dart';
 
 abstract final class QuestionnaireRoutes {
-  static const adminAccess = '/admin/questionnaire-access';
+  static const adminAccess = '/platform/questionnaire-access';
 
   static String list({
     required ProfileRole role,
     String? patientId,
-  }) {
+    }) {
     switch (role) {
+      case ProfileRole.platformAdmin:
+        throw ArgumentError('Use rotas globais para platform admin');
       case ProfileRole.patient:
         return '/patient/questionnaires';
-      case ProfileRole.admin:
-        if (patientId == null) {
-          throw ArgumentError('patientId obrigatório para admin');
-        }
-        return '/admin/patients/$patientId/questionnaires';
       case ProfileRole.psychologist:
         if (patientId == null) {
           throw ArgumentError('patientId obrigatório para psychologist');

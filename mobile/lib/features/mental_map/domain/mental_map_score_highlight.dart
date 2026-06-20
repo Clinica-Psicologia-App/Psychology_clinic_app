@@ -1,4 +1,4 @@
-/// Destaque numérico de esquema/modo/domínio (sem interpretação clínica).
+﻿/// Destaque numérico de esquema/modo/domínio (sem interpretação clínica).
 class MentalMapScoreHighlight {
   const MentalMapScoreHighlight({
     required this.name,
@@ -10,6 +10,7 @@ class MentalMapScoreHighlight {
 
   final String name;
   final String code;
+
   /// `schema`, `domain` ou `category`.
   final String kind;
   final double? score;
@@ -17,7 +18,7 @@ class MentalMapScoreHighlight {
 
   String get displayScore {
     if (scoreLabel != null && scoreLabel!.isNotEmpty) return scoreLabel!;
-    if (score == null) return '—';
+    if (score == null) return '-';
     return score!.toStringAsFixed(2);
   }
 }

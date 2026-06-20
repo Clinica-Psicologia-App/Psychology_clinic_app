@@ -1,24 +1,15 @@
-export type ErrorCode =
-  | "UNAUTHORIZED"
-  | "FORBIDDEN"
-  | "VALIDATION_ERROR"
-  | "NOT_FOUND"
-  | "CONFLICT"
-  | "INVALID_STATE"
-  | "INTERNAL_ERROR";
-
 export class AppError extends Error {
-  constructor(
-    public readonly code: ErrorCode,
-    message: string,
-    public readonly status = 400,
-    public readonly details?: Record<string, unknown>,
-  ) {
+  code;
+  status;
+  details;
+  constructor(code, message, status = 400, details){
     super(message);
+    this.code = code;
+    this.status = status;
+    this.details = details;
     this.name = "AppError";
   }
 }
-
-export function isAppError(error: unknown): error is AppError {
+export function isAppError(error) {
   return error instanceof AppError;
 }

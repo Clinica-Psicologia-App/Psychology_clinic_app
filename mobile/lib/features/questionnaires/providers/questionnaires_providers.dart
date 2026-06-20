@@ -25,7 +25,8 @@ final questionnairePatientIdProvider =
 final questionnairesListProvider =
     FutureProvider.family<List<Questionnaire>, QuestionnaireListContext>(
   (ref, ctx) async {
-    final patientId = await ref.watch(questionnairePatientIdProvider(ctx).future);
+    final patientId =
+        await ref.watch(questionnairePatientIdProvider(ctx).future);
     return ref.read(questionnairesRepositoryProvider).listVisibleQuestionnaires(
           role: ctx.role,
           patientId: patientId,
@@ -38,8 +39,9 @@ final questionnaireStaffOptionsProvider =
   return ref.read(questionnairesRepositoryProvider).listStaffOptions();
 });
 
-final questionnaireAccessManagementProvider = FutureProvider.family<
-    QuestionnaireAccessManagementData, String>((ref, professionalId) {
+final questionnaireAccessManagementProvider =
+    FutureProvider.family<QuestionnaireAccessManagementData, String>(
+        (ref, professionalId) {
   return ref
       .read(questionnairesRepositoryProvider)
       .listQuestionnaireAccessForProfessional(professionalId);
@@ -64,9 +66,8 @@ class QuestionnaireListContext {
   int get hashCode => Object.hash(role, patientId);
 }
 
-final startQuestionnaireProvider =
-    AsyncNotifierProvider.family<StartQuestionnaireNotifier, void,
-        StartQuestionnaireArgs>(
+final startQuestionnaireProvider = AsyncNotifierProvider.family<
+    StartQuestionnaireNotifier, void, StartQuestionnaireArgs>(
   StartQuestionnaireNotifier.new,
 );
 
@@ -119,13 +120,12 @@ class StartQuestionnaireNotifier
   Future<QuestionnaireSession> start() async {
     state = const AsyncValue.loading();
     try {
-      final session = await ref
-          .read(questionnairesRepositoryProvider)
-          .startQuestionnaire(
-            patientId: arg.patientId,
-            questionnaireId: arg.questionnaireId,
-            contexts: arg.contexts,
-          );
+      final session =
+          await ref.read(questionnairesRepositoryProvider).startQuestionnaire(
+                patientId: arg.patientId,
+                questionnaireId: arg.questionnaireId,
+                contexts: arg.contexts,
+              );
       state = const AsyncValue.data(null);
       return session;
     } catch (e, st) {
@@ -159,20 +159,20 @@ class FinishQuestionnaireArgs {
   int get hashCode => Object.hash(responseId, questionnaireName);
 }
 
-class FinishQuestionnaireNotifier
-    extends FamilyAsyncNotifier<FinishQuestionnaireResult?, FinishQuestionnaireArgs> {
+class FinishQuestionnaireNotifier extends FamilyAsyncNotifier<
+    FinishQuestionnaireResult?, FinishQuestionnaireArgs> {
   @override
-  Future<FinishQuestionnaireResult?> build(FinishQuestionnaireArgs arg) async => null;
+  Future<FinishQuestionnaireResult?> build(FinishQuestionnaireArgs arg) async =>
+      null;
 
   Future<FinishQuestionnaireResult> submit() async {
     state = const AsyncValue.loading();
     try {
-      final result = await ref
-          .read(questionnairesRepositoryProvider)
-          .finishQuestionnaire(
-            responseId: arg.responseId,
-            questionnaireName: arg.questionnaireName,
-          );
+      final result =
+          await ref.read(questionnairesRepositoryProvider).finishQuestionnaire(
+                responseId: arg.responseId,
+                questionnaireName: arg.questionnaireName,
+              );
       state = AsyncValue.data(result);
       return result;
     } catch (e, st) {

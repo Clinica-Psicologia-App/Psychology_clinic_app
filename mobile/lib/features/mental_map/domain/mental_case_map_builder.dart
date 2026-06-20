@@ -1,4 +1,4 @@
-import '../../genogram/domain/genogram_data.dart';
+﻿import '../../genogram/domain/genogram_data.dart';
 import 'mental_case_map.dart';
 import 'mental_map_check_in_summary.dart';
 import 'mental_map_goal_summary.dart';
@@ -82,7 +82,7 @@ MentalCaseMapNode _buildSchemaNode(
     shortLabel: _buildFilledStatusLabel(items.isNotEmpty),
     items: items,
     emptyLabel: 'Pendente',
-    dataSource: 'YSQ — última resposta concluída',
+    dataSource: 'YSQ - última resposta concluída',
     lastUpdatedAt: block?.completedAt,
     responseId: block?.responseId,
   );
@@ -99,13 +99,14 @@ MentalCaseMapNode _buildModeNode(
     shortLabel: _buildFilledStatusLabel(items.isNotEmpty),
     items: items,
     emptyLabel: 'Pendente',
-    dataSource: 'YAMI — última resposta concluída',
+    dataSource: 'YAMI - última resposta concluída',
     lastUpdatedAt: block?.completedAt,
     responseId: block?.responseId,
   );
 }
 
-MentalCaseMapNode _buildProblemsNode(List<MentalMapProblemSummary> activeProblems) {
+MentalCaseMapNode _buildProblemsNode(
+    List<MentalMapProblemSummary> activeProblems) {
   final items = activeProblems
       .take(_nodeItemLimit)
       .map((problem) => problem.title.trim())
@@ -158,13 +159,14 @@ MentalCaseMapNode _buildAttachmentNode(
     shortLabel: _buildFilledStatusLabel(items.isNotEmpty),
     items: items,
     emptyLabel: 'Pendente',
-    dataSource: 'ATTACHMENT_STYLES_V1 — snapshot estruturado',
+    dataSource: 'ATTACHMENT_STYLES_V1 - snapshot estruturado',
     lastUpdatedAt: block?.completedAt,
     responseId: block?.responseId,
   );
 }
 
-MentalCaseMapNode _buildCopingNode(List<MentalMapQuestionnaireBlock> questionnaires) {
+MentalCaseMapNode _buildCopingNode(
+    List<MentalMapQuestionnaireBlock> questionnaires) {
   final yci = _findQuestionnaireBlockByCode(questionnaires, _yciCode);
   final yrai = _findQuestionnaireBlockByCode(questionnaires, _yraiCode);
   final items =
@@ -184,7 +186,7 @@ MentalCaseMapNode _buildCopingNode(List<MentalMapQuestionnaireBlock> questionnai
     shortLabel: _buildFilledStatusLabel(items.isNotEmpty),
     items: items,
     emptyLabel: 'Pendente',
-    dataSource: 'YCI / YRAI — snapshots estruturados',
+    dataSource: 'YCI / YRAI - snapshots estruturados',
     lastUpdatedAt: latest,
     responseId: yci?.responseId ?? yrai?.responseId,
   );
@@ -196,7 +198,8 @@ MentalCaseMapNode _buildParentalNode(
 ) {
   final block = _findQuestionnaireBlockByCode(questionnaires, _parentalCode);
   final figureItems = context?.figureSummaries ?? const [];
-  final fallbackItems = _topHighlightItemsForCode(questionnaires, _parentalCode);
+  final fallbackItems =
+      _topHighlightItemsForCode(questionnaires, _parentalCode);
   final items = figureItems.isNotEmpty ? figureItems : fallbackItems;
 
   return MentalCaseMapNode(
@@ -205,7 +208,7 @@ MentalCaseMapNode _buildParentalNode(
     shortLabel: _buildFilledStatusLabel(items.isNotEmpty),
     items: items.take(_nodeItemLimit).toList(growable: false),
     emptyLabel: 'Pendente',
-    dataSource: 'PARENTAL_STYLES_V1 — figuras parentais',
+    dataSource: 'PARENTAL_STYLES_V1 - figuras parentais',
     lastUpdatedAt: context?.completedAt ?? block?.completedAt,
     responseId: context?.responseId ?? block?.responseId,
   );
@@ -300,7 +303,8 @@ List<String> _topHighlightItemsForCode(
   List<MentalMapQuestionnaireBlock> questionnaires,
   String questionnaireCode,
 ) {
-  final selected = _findQuestionnaireBlockByCode(questionnaires, questionnaireCode);
+  final selected =
+      _findQuestionnaireBlockByCode(questionnaires, questionnaireCode);
   if (selected == null) return const [];
 
   final schemaOnly = selected.highlights

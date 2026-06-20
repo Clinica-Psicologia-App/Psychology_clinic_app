@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -100,7 +100,8 @@ class _TherapyGoalDetailBody extends ConsumerStatefulWidget {
       _TherapyGoalDetailBodyState();
 }
 
-class _TherapyGoalDetailBodyState extends ConsumerState<_TherapyGoalDetailBody> {
+class _TherapyGoalDetailBodyState
+    extends ConsumerState<_TherapyGoalDetailBody> {
   bool _busy = false;
 
   Future<void> _run(Future<void> Function() action) async {
@@ -134,8 +135,9 @@ class _TherapyGoalDetailBodyState extends ConsumerState<_TherapyGoalDetailBody> 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final goal = ref.watch(therapyGoalDetailProvider(widget.goal.id)).valueOrNull ??
-        widget.goal;
+    final goal =
+        ref.watch(therapyGoalDetailProvider(widget.goal.id)).valueOrNull ??
+            widget.goal;
     final loc = MaterialLocalizations.of(context);
 
     return Column(
@@ -178,8 +180,7 @@ class _TherapyGoalDetailBodyState extends ConsumerState<_TherapyGoalDetailBody> 
             ],
           ),
         ),
-        if (_busy)
-          const LinearProgressIndicator(),
+        if (_busy) const LinearProgressIndicator(),
         const Divider(height: 1),
         Padding(
           padding: const EdgeInsets.all(16),

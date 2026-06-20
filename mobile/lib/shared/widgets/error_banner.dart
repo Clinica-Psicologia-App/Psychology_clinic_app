@@ -3,9 +3,13 @@ import 'package:flutter/material.dart';
 import '../../core/errors/app_exception.dart';
 import '../../core/errors/error_mapper.dart';
 
-MaterialBanner buildErrorBanner(BuildContext context, Object error) {
+MaterialBanner buildErrorBanner(
+  ScaffoldMessengerState messenger,
+  BuildContext context,
+  Object error,
+) {
   final message = error is AppException
-      ? userMessageFor(error as AppException)
+      ? userMessageFor(error)
       : 'Ocorreu um erro. Tente novamente.';
 
   return MaterialBanner(
@@ -13,8 +17,7 @@ MaterialBanner buildErrorBanner(BuildContext context, Object error) {
     content: Text(message),
     actions: [
       TextButton(
-        onPressed: () =>
-            ScaffoldMessenger.of(context).hideCurrentMaterialBanner(),
+        onPressed: () => messenger.hideCurrentMaterialBanner(),
         child: const Text('OK'),
       ),
     ],
@@ -22,7 +25,8 @@ MaterialBanner buildErrorBanner(BuildContext context, Object error) {
 }
 
 void showErrorBanner(BuildContext context, Object error) {
-  ScaffoldMessenger.of(context)
+  final messenger = ScaffoldMessenger.of(context);
+  messenger
     ..hideCurrentMaterialBanner()
-    ..showMaterialBanner(buildErrorBanner(context, error));
+    ..showMaterialBanner(buildErrorBanner(messenger, context, error));
 }

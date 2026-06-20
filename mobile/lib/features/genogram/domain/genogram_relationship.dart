@@ -1,4 +1,4 @@
-import 'genogram_relationship_type.dart';
+﻿import 'genogram_relationship_type.dart';
 
 class GenogramRelationship {
   const GenogramRelationship({
@@ -28,7 +28,7 @@ class GenogramRelationship {
   final DateTime updatedAt;
 
   String labelBetween(String personAName, String personBName) {
-    return '$personAName — ${relationshipType.label} — $personBName';
+    return '$personAName - ${relationshipType.label} - $personBName';
   }
 
   bool involvesPerson(String personId) =>

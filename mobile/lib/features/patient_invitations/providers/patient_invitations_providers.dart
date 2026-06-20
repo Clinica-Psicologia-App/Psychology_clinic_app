@@ -11,8 +11,8 @@ final patientInvitationsRepositoryProvider =
   return PatientInvitationsRepository();
 });
 
-final patientInvitationsListProvider =
-    AsyncNotifierProvider<PatientInvitationsListNotifier, List<PatientInvitation>>(
+final patientInvitationsListProvider = AsyncNotifierProvider<
+    PatientInvitationsListNotifier, List<PatientInvitation>>(
   PatientInvitationsListNotifier.new,
 );
 

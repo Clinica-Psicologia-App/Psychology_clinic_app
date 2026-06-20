@@ -1,4 +1,4 @@
-import 'genogram_gender.dart';
+﻿import 'genogram_gender.dart';
 import 'genogram_person.dart';
 
 class GenogramPersonInput {
@@ -47,9 +47,7 @@ class GenogramPersonInput {
     if (yearError != null) return yearError;
     final deathError = _validateYear(deathYear, 'falecimento');
     if (deathError != null) return deathError;
-    if (birthYear != null &&
-        deathYear != null &&
-        deathYear! < birthYear!) {
+    if (birthYear != null && deathYear != null && deathYear! < birthYear!) {
       return 'Ano de falecimento não pode ser anterior ao de nascimento.';
     }
     return null;
@@ -58,7 +56,7 @@ class GenogramPersonInput {
   static String? _validateYear(int? year, String label) {
     if (year == null) return null;
     if (year < 1800 || year > 2200) {
-      return 'Ano de $label inválido (use 1800–2200).';
+      return 'Ano de $label inválido (use 1800-2200).';
     }
     return null;
   }

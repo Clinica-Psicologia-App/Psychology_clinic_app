@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -22,7 +22,8 @@ class PatientProblemsPage extends ConsumerWidget {
       title: 'Problemas',
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
-          final created = await context.push<bool>(PatientProblemRoutes.patientCreate);
+          final created =
+              await context.push<bool>(PatientProblemRoutes.patientCreate);
           if (created == true) {
             ref.read(myPatientProblemsProvider.notifier).refresh();
           }
@@ -157,9 +158,11 @@ class _ProblemsList extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         if (open.isNotEmpty) ...[
-          Text('Em acompanhamento', style: Theme.of(context).textTheme.titleSmall),
+          Text('Em acompanhamento',
+              style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 8),
-          ...open.map((p) => PatientProblemListTile(problem: p, onTap: () => onTap(p))),
+          ...open.map(
+              (p) => PatientProblemListTile(problem: p, onTap: () => onTap(p))),
         ],
         if (closed.isNotEmpty) ...[
           const SizedBox(height: 16),

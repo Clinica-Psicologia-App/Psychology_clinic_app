@@ -1,4 +1,4 @@
-/// Seções opcionais do relatório clínico PDF (staff).
+﻿/// Seções opcionais do relatório clínico PDF (staff).
 class ClinicalReportIncludeOptions {
   const ClinicalReportIncludeOptions({
     this.questionnaires = true,

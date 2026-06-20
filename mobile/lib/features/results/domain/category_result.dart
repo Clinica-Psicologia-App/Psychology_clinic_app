@@ -1,4 +1,4 @@
-import 'result_snapshot.dart';
+﻿import 'result_snapshot.dart';
 
 /// Resultado por categoria (`questionnaire_results`).
 class CategoryResult {
@@ -40,15 +40,15 @@ class CategoryResult {
 
   String get classificationLabel {
     final c = classification?.trim();
-    if (c == null || c.isEmpty) return '—';
+    if (c == null || c.isEmpty) return '-';
     if (c == 'pending_review') return 'Aguardando revisão';
     return c;
   }
 
   String get parentalFigureLabel {
     final value = categoryName ?? categoryCode ?? '';
-    if (value.endsWith('— Mãe') || value.endsWith('- Mãe')) return 'Mãe';
-    if (value.endsWith('— Pai') || value.endsWith('- Pai')) return 'Pai';
+    if (value.endsWith('- Mãe') || value.endsWith('- Mãe')) return 'Mãe';
+    if (value.endsWith('- Pai') || value.endsWith('- Pai')) return 'Pai';
     return 'Geral';
   }
 
@@ -56,7 +56,7 @@ class CategoryResult {
     final value = (categoryName ?? categoryCode ?? '').trim();
     if (value.isEmpty) return 'Categoria';
 
-    const separators = ['— Mãe', '— Pai', '- Mãe', '- Pai'];
+    const separators = ['- Mãe', '- Pai', '- Mãe', '- Pai'];
     for (final separator in separators) {
       if (value.endsWith(separator)) {
         return value.substring(0, value.length - separator.length).trim();

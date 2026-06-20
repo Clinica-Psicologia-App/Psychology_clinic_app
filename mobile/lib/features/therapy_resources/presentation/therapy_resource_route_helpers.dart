@@ -4,6 +4,7 @@ import '../../profile/domain/profile_role.dart';
 import 'assign_resource_to_patient_page.dart';
 import 'patient_resources_page.dart';
 import 'therapy_resource_detail_page.dart';
+import 'therapy_resource_form_page.dart';
 import 'therapy_resources_page.dart';
 
 List<RouteBase> staffTherapyResourceRoutes({required ProfileRole role}) {
@@ -15,6 +16,13 @@ List<RouteBase> staffTherapyResourceRoutes({required ProfileRole role}) {
         patientId: state.pathParameters['patientId']!,
       ),
       routes: [
+        GoRoute(
+          path: 'new',
+          builder: (context, state) => TherapyResourceFormPage(
+            role: role,
+            patientId: state.pathParameters['patientId']!,
+          ),
+        ),
         GoRoute(
           path: 'assign/:resourceId',
           builder: (context, state) => AssignResourceToPatientPage(
@@ -30,6 +38,16 @@ List<RouteBase> staffTherapyResourceRoutes({required ProfileRole role}) {
             patientId: state.pathParameters['patientId'],
             resourceId: state.pathParameters['resourceId']!,
           ),
+          routes: [
+            GoRoute(
+              path: 'edit',
+              builder: (context, state) => TherapyResourceFormPage(
+                role: role,
+                patientId: state.pathParameters['patientId']!,
+                resourceId: state.pathParameters['resourceId']!,
+              ),
+            ),
+          ],
         ),
       ],
     ),

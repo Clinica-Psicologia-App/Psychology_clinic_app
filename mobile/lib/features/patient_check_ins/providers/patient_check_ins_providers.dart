@@ -30,7 +30,9 @@ class MyPatientCheckInsNotifier extends AsyncNotifier<List<PatientCheckIn>> {
 
 final todayCheckInProvider = FutureProvider<PatientCheckIn?>((ref) async {
   ref.watch(myPatientCheckInsProvider);
-  return ref.read(patientCheckInsRepositoryProvider).findTodayForCurrentPatient();
+  return ref
+      .read(patientCheckInsRepositoryProvider)
+      .findTodayForCurrentPatient();
 });
 
 class StaffCheckInsContext {

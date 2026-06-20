@@ -4,7 +4,8 @@ abstract final class PatientProblemRoutes {
   static const patientList = '/patient/problems';
   static const patientCreate = '/patient/problems/new';
 
-  static String patientDetail(String problemId) => '/patient/problems/$problemId';
+  static String patientDetail(String problemId) =>
+      '/patient/problems/$problemId';
 
   static String patientEdit(String problemId) =>
       '/patient/problems/$problemId/edit';
@@ -14,8 +15,8 @@ abstract final class PatientProblemRoutes {
     required String patientId,
   }) {
     switch (role) {
-      case ProfileRole.admin:
-        return '/admin/patients/$patientId/problems';
+      case ProfileRole.platformAdmin:
+        throw ArgumentError('Use rotas globais para platform admin');
       case ProfileRole.psychologist:
         return '/psychologist/patients/$patientId/problems';
       case ProfileRole.patient:
@@ -26,17 +27,20 @@ abstract final class PatientProblemRoutes {
   static String staffCreate({
     required ProfileRole role,
     required String patientId,
-  }) => '${staffList(role: role, patientId: patientId)}/new';
+  }) =>
+      '${staffList(role: role, patientId: patientId)}/new';
 
   static String staffDetail({
     required ProfileRole role,
     required String patientId,
     required String problemId,
-  }) => '${staffList(role: role, patientId: patientId)}/$problemId';
+  }) =>
+      '${staffList(role: role, patientId: patientId)}/$problemId';
 
   static String staffEdit({
     required ProfileRole role,
     required String patientId,
     required String problemId,
-  }) => '${staffList(role: role, patientId: patientId)}/$problemId/edit';
+  }) =>
+      '${staffList(role: role, patientId: patientId)}/$problemId/edit';
 }

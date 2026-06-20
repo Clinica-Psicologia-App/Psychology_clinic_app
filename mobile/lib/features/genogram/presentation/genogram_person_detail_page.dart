@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -105,9 +105,8 @@ class _PersonDetailBody extends ConsumerWidget {
 
   Widget _buildContent(BuildContext context, GenogramData data) {
     final theme = Theme.of(context);
-    final linked = data.relationships
-        .where((r) => r.involvesPerson(person.id))
-        .toList();
+    final linked =
+        data.relationships.where((r) => r.involvesPerson(person.id)).toList();
 
     return Column(
       children: [
@@ -117,8 +116,8 @@ class _PersonDetailBody extends ConsumerWidget {
             children: [
               if (person.isSensitive)
                 Card(
-                  color: theme.colorScheme.errorContainer
-                      .withValues(alpha: 0.35),
+                  color:
+                      theme.colorScheme.errorContainer.withValues(alpha: 0.35),
                   child: const ListTile(
                     leading: Icon(Icons.lock_outline),
                     title: Text('Dados sensíveis'),
@@ -157,8 +156,7 @@ class _PersonDetailBody extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              Text('Relações vinculadas',
-                  style: theme.textTheme.titleMedium),
+              Text('Relações vinculadas', style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
               if (linked.isEmpty)
                 const Text('Nenhuma relação com esta pessoa ainda.')

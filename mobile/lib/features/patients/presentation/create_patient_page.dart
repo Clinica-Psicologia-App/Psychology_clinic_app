@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../shared/utils/brazil_validators.dart';
 import '../../../shared/utils/input_formatters.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/widgets/form_section.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../profile/domain/profile_role.dart';
@@ -96,7 +97,7 @@ class _CreatePatientPageState extends ConsumerState<CreatePatientPage> {
     super.dispose();
   }
 
-  bool get _isAdmin => widget.role == ProfileRole.admin;
+  bool get _isAdmin => false;
 
   InputDecoration _decoration(String label, {String? hint, String? helper}) {
     return InputDecoration(
@@ -105,9 +106,10 @@ class _CreatePatientPageState extends ConsumerState<CreatePatientPage> {
       helperText: helper,
       border: const OutlineInputBorder(),
       filled: true,
-      fillColor: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(
-            alpha: 0.35,
-          ),
+      fillColor:
+          Theme.of(context).colorScheme.surfaceContainerHighest.withValues(
+                alpha: 0.35,
+              ),
     );
   }
 
@@ -123,347 +125,344 @@ class _CreatePatientPageState extends ConsumerState<CreatePatientPage> {
 
     return AppScaffold(
       title: 'Novo paciente',
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: EdgeInsets.fromLTRB(16, 8, 16, 24 + bottomInset),
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          children: [
-            Text(
-              'Dados do paciente',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
+      body: FormPageBody(
+        maxWidth: 640,
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 24 + bottomInset),
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            children: [
+              FormSection(
+                title: 'Dados pessoais',
+                subtitle: 'Campos com * são obrigatórios.',
+                icon: Icons.person_outline,
+                children: [
+                  TextFormField(
+                    controller: _fullNameController,
+                    decoration: _decoration('Nome completo *'),
+                    textCapitalization: TextCapitalization.words,
+                    textInputAction: TextInputAction.next,
+                    validator: (v) =>
+                        v == null || v.trim().isEmpty ? 'Informe o nome' : null,
                   ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Campos com * são obrigatórios.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  const SizedBox(height: _fieldSpacing),
+                  TextFormField(
+                    controller: _emailController,
+                    decoration: _decoration(
+                      'E-mail de login *',
+                      hint: 'paciente@exemplo.com',
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                    autocorrect: false,
+                    textInputAction: TextInputAction.next,
+                    validator: (v) {
+                      if (v == null || v.trim().isEmpty) {
+                        return 'Informe o e-mail';
+                      }
+                      if (!v.contains('@')) return 'E-mail inválido';
+                      return null;
+                    },
                   ),
-            ),
-            const SizedBox(height: _fieldSpacing),
-            TextFormField(
-              controller: _fullNameController,
-              decoration: _decoration('Nome completo *'),
-              textCapitalization: TextCapitalization.words,
-              textInputAction: TextInputAction.next,
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Informe o nome' : null,
-            ),
-            const SizedBox(height: _fieldSpacing),
-            TextFormField(
-              controller: _emailController,
-              decoration: _decoration(
-                'E-mail de login *',
-                hint: 'paciente@exemplo.com',
-              ),
-              keyboardType: TextInputType.emailAddress,
-              autocorrect: false,
-              textInputAction: TextInputAction.next,
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return 'Informe o e-mail';
-                if (!v.contains('@')) return 'E-mail inválido';
-                return null;
-              },
-            ),
-            const SizedBox(height: _fieldSpacing),
-            _SimpleDropdownField(
-              label: 'Gênero',
-              value: _selectedGender,
-              hint: 'Selecione',
-              options: _genderOptions,
-              onChanged: (value) => setState(() => _selectedGender = value),
-            ),
-            const SizedBox(height: _fieldSpacing),
-            TextFormField(
-              controller: _phoneController,
-              decoration: _decoration(
-                'Telefone',
-                hint: '(51) 99999-9999',
-              ),
-              keyboardType: TextInputType.phone,
-              textInputAction: TextInputAction.next,
-              inputFormatters: [BrazilPhoneInputFormatter()],
-              validator: validateOptionalPhone,
-            ),
-            const SizedBox(height: _fieldSpacing),
-            TextFormField(
-              controller: _cpfController,
-              decoration: _decoration(
-                'CPF',
-                hint: '000.000.000-00',
-                helper: 'Opcional',
-              ),
-              keyboardType: TextInputType.number,
-              textInputAction: TextInputAction.next,
-              inputFormatters: [CpfInputFormatter()],
-              validator: validateOptionalCpf,
-            ),
-            const SizedBox(height: _fieldSpacing),
-            _SimpleDropdownField(
-              label: 'Estado civil',
-              value: _selectedRelationshipStatus,
-              hint: 'Selecione',
-              options: _relationshipStatusOptions,
-              onChanged: (value) =>
-                  setState(() => _selectedRelationshipStatus = value),
-            ),
-            const SizedBox(height: _fieldSpacing),
-            _SimpleDropdownField(
-              label: 'Escolaridade',
-              value: _selectedEducationLevel,
-              hint: 'Selecione',
-              options: _educationLevelOptions,
-              onChanged: (value) =>
-                  setState(() => _selectedEducationLevel = value),
-            ),
-            const SizedBox(height: _fieldSpacing),
-            TextFormField(
-              controller: _occupationController,
-              decoration: _decoration(
-                'Ocupação',
-                hint: 'Ex.: Psicóloga clínica',
-              ),
-              textCapitalization: TextCapitalization.sentences,
-              textInputAction: TextInputAction.next,
-            ),
-            const SizedBox(height: _fieldSpacing),
-            InkWell(
-              onTap: _pickBirthDate,
-              borderRadius: BorderRadius.circular(4),
-              child: InputDecorator(
-                decoration: _decoration(
-                  'Data de nascimento',
-                  hint: 'Toque para selecionar',
-                ).copyWith(
-                  suffixIcon: IconButton(
-                    icon: const Icon(Icons.calendar_today_outlined),
-                    onPressed: _pickBirthDate,
+                  const SizedBox(height: _fieldSpacing),
+                  _SimpleDropdownField(
+                    label: 'Gênero',
+                    value: _selectedGender,
+                    hint: 'Selecione',
+                    options: _genderOptions,
+                    onChanged: (value) =>
+                        setState(() => _selectedGender = value),
                   ),
-                ),
-                child: Text(
-                  _birthDate == null
-                      ? 'Opcional'
-                      : _formatDate(_birthDate!),
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: _birthDate == null
-                            ? Theme.of(context).colorScheme.onSurfaceVariant
-                            : null,
+                  const SizedBox(height: _fieldSpacing),
+                  TextFormField(
+                    controller: _phoneController,
+                    decoration: _decoration(
+                      'Telefone',
+                      hint: '(51) 99999-9999',
+                    ),
+                    keyboardType: TextInputType.phone,
+                    textInputAction: TextInputAction.next,
+                    inputFormatters: [BrazilPhoneInputFormatter()],
+                    validator: validateOptionalPhone,
+                  ),
+                  const SizedBox(height: _fieldSpacing),
+                  TextFormField(
+                    controller: _cpfController,
+                    decoration: _decoration(
+                      'CPF',
+                      hint: '000.000.000-00',
+                      helper: 'Opcional',
+                    ),
+                    keyboardType: TextInputType.number,
+                    textInputAction: TextInputAction.next,
+                    inputFormatters: [CpfInputFormatter()],
+                    validator: validateOptionalCpf,
+                  ),
+                  const SizedBox(height: _fieldSpacing),
+                  _SimpleDropdownField(
+                    label: 'Estado civil',
+                    value: _selectedRelationshipStatus,
+                    hint: 'Selecione',
+                    options: _relationshipStatusOptions,
+                    onChanged: (value) =>
+                        setState(() => _selectedRelationshipStatus = value),
+                  ),
+                  const SizedBox(height: _fieldSpacing),
+                  _SimpleDropdownField(
+                    label: 'Escolaridade',
+                    value: _selectedEducationLevel,
+                    hint: 'Selecione',
+                    options: _educationLevelOptions,
+                    onChanged: (value) =>
+                        setState(() => _selectedEducationLevel = value),
+                  ),
+                  const SizedBox(height: _fieldSpacing),
+                  TextFormField(
+                    controller: _occupationController,
+                    decoration: _decoration(
+                      'Ocupação',
+                      hint: 'Ex.: Psicóloga clínica',
+                    ),
+                    textCapitalization: TextCapitalization.sentences,
+                    textInputAction: TextInputAction.next,
+                  ),
+                  const SizedBox(height: _fieldSpacing),
+                  InkWell(
+                    onTap: _pickBirthDate,
+                    borderRadius: BorderRadius.circular(4),
+                    child: InputDecorator(
+                      decoration: _decoration(
+                        'Data de nascimento',
+                        hint: 'Toque para selecionar',
+                      ).copyWith(
+                        suffixIcon: IconButton(
+                          icon: const Icon(Icons.calendar_today_outlined),
+                          onPressed: _pickBirthDate,
+                        ),
                       ),
-                ),
+                      child: Text(
+                        _birthDate == null
+                            ? 'Opcional'
+                            : _formatDate(_birthDate!),
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: _birthDate == null
+                                  ? Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant
+                                  : null,
+                            ),
+                      ),
+                    ),
+                  ),
+                  if (_birthDate != null) ...[
+                    const SizedBox(height: 8),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        onPressed: () => setState(() => _birthDate = null),
+                        icon: const Icon(Icons.clear, size: 18),
+                        label: const Text('Limpar data'),
+                      ),
+                    ),
+                  ],
+                  const SizedBox(height: _fieldSpacing),
+                  TextFormField(
+                    controller: _stateBirthController,
+                    decoration: _decoration(
+                      'Estado de nascimento',
+                      hint: 'Ex.: Rio Grande do Sul',
+                    ),
+                    textCapitalization: TextCapitalization.words,
+                    textInputAction: TextInputAction.next,
+                  ),
+                  const SizedBox(height: _fieldSpacing),
+                  TextFormField(
+                    controller: _countryBirthController,
+                    decoration: _decoration(
+                      'País de nascimento',
+                      hint: 'Ex.: Brasil',
+                    ),
+                    textCapitalization: TextCapitalization.words,
+                    textInputAction: TextInputAction.next,
+                  ),
+                  const SizedBox(height: _fieldSpacing),
+                  TextFormField(
+                    controller: _religiousOrientationController,
+                    decoration: _decoration(
+                      'Orientação religiosa',
+                      hint: 'Opcional',
+                    ),
+                    textCapitalization: TextCapitalization.words,
+                    textInputAction: TextInputAction.next,
+                  ),
+                  const SizedBox(height: _fieldSpacing),
+                  TextFormField(
+                    controller: _ethnicGroupController,
+                    decoration: _decoration(
+                      'Grupo étnico',
+                      hint: 'Opcional',
+                    ),
+                    textCapitalization: TextCapitalization.words,
+                    textInputAction: TextInputAction.next,
+                  ),
+                  const SizedBox(height: _fieldSpacing),
+                  TextFormField(
+                    controller: _sexualOrientationController,
+                    decoration: _decoration(
+                      'Orientação sexual',
+                      hint: 'Opcional',
+                    ),
+                    textCapitalization: TextCapitalization.sentences,
+                    textInputAction: TextInputAction.next,
+                  ),
+                  const SizedBox(height: _fieldSpacing),
+                  _SimpleDropdownField(
+                    label: 'Possui filhos?',
+                    value: switch (_hasChildren) {
+                      true => 'Sim',
+                      false => 'Não',
+                      null => null,
+                    },
+                    hint: 'Selecione',
+                    options: const ['Sim', 'Não'],
+                    onChanged: (value) => setState(
+                      () => _hasChildren = switch (value) {
+                        'Sim' => true,
+                        'Não' => false,
+                        _ => null,
+                      },
+                    ),
+                  ),
+                ],
               ),
-            ),
-            if (_birthDate != null) ...[
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton.icon(
-                  onPressed: () => setState(() => _birthDate = null),
-                  icon: const Icon(Icons.clear, size: 18),
-                  label: const Text('Limpar data'),
+              FormSection(
+                title: 'Acesso e responsável',
+                icon: Icons.lock_outline,
+                children: [
+                  TextFormField(
+                    controller: _passwordController,
+                    decoration: _decoration(
+                      'Senha inicial *',
+                      helper: 'Mínimo 8 caracteres',
+                    ).copyWith(
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                        ),
+                        onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword),
+                      ),
+                    ),
+                    obscureText: _obscurePassword,
+                    textInputAction: TextInputAction.next,
+                    validator: (v) {
+                      if (v == null || v.length < 8) {
+                        return 'Senha com pelo menos 8 caracteres';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: _fieldSpacing),
+                  TextFormField(
+                    controller: _confirmPasswordController,
+                    decoration: _decoration('Confirmar senha *').copyWith(
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureConfirmPassword
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                        ),
+                        onPressed: () => setState(
+                          () => _obscureConfirmPassword =
+                              !_obscureConfirmPassword,
+                        ),
+                      ),
+                    ),
+                    obscureText: _obscureConfirmPassword,
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) {
+                      if (!_submitting &&
+                          profile != null &&
+                          psychologistId != null) {
+                        _submit(profile, psychologistId);
+                      }
+                    },
+                    validator: (v) {
+                      if (v != _passwordController.text) {
+                        return 'As senhas não coincidem';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: _fieldSpacing),
+                  if (_isAdmin)
+                    psychologistsAsync.when(
+                      loading: () => const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(16),
+                          child: CircularProgressIndicator(),
+                        ),
+                      ),
+                      error: (_, __) => const Text(
+                        'Não foi possível carregar psicólogos.',
+                      ),
+                      data: (options) => _PsychologistDropdown(
+                        options: options,
+                        value: _selectedPsychologistId,
+                        onChanged: (v) =>
+                            setState(() => _selectedPsychologistId = v),
+                      ),
+                    )
+                  else if (profile != null)
+                    Card(
+                      elevation: 0,
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          child: Icon(
+                            Icons.psychology_outlined,
+                            color: Theme.of(context)
+                                .colorScheme
+                                .onPrimaryContainer,
+                          ),
+                        ),
+                        title: const Text('Psicólogo responsável'),
+                        subtitle: Text(
+                          profile.fullName,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              FilledButton.icon(
+                onPressed:
+                    _submitting || profile == null || psychologistId == null
+                        ? null
+                        : () => _submit(profile, psychologistId),
+                icon: _submitting
+                    ? const SizedBox.shrink()
+                    : const Icon(Icons.person_add_outlined),
+                label: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: _submitting
+                      ? const SizedBox(
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Text('Cadastrar paciente'),
                 ),
               ),
             ],
-            const SizedBox(height: _fieldSpacing),
-            TextFormField(
-              controller: _stateBirthController,
-              decoration: _decoration(
-                'Estado de nascimento',
-                hint: 'Ex.: Rio Grande do Sul',
-              ),
-              textCapitalization: TextCapitalization.words,
-              textInputAction: TextInputAction.next,
-            ),
-            const SizedBox(height: _fieldSpacing),
-            TextFormField(
-              controller: _countryBirthController,
-              decoration: _decoration(
-                'País de nascimento',
-                hint: 'Ex.: Brasil',
-              ),
-              textCapitalization: TextCapitalization.words,
-              textInputAction: TextInputAction.next,
-            ),
-            const SizedBox(height: _fieldSpacing),
-            TextFormField(
-              controller: _religiousOrientationController,
-              decoration: _decoration(
-                'Orientação religiosa',
-                hint: 'Opcional',
-              ),
-              textCapitalization: TextCapitalization.words,
-              textInputAction: TextInputAction.next,
-            ),
-            const SizedBox(height: _fieldSpacing),
-            TextFormField(
-              controller: _ethnicGroupController,
-              decoration: _decoration(
-                'Grupo étnico',
-                hint: 'Opcional',
-              ),
-              textCapitalization: TextCapitalization.words,
-              textInputAction: TextInputAction.next,
-            ),
-            const SizedBox(height: _fieldSpacing),
-            TextFormField(
-              controller: _sexualOrientationController,
-              decoration: _decoration(
-                'Orientação sexual',
-                hint: 'Opcional',
-              ),
-              textCapitalization: TextCapitalization.sentences,
-              textInputAction: TextInputAction.next,
-            ),
-            const SizedBox(height: _fieldSpacing),
-            _SimpleDropdownField(
-              label: 'Possui filhos?',
-              value: switch (_hasChildren) {
-                true => 'Sim',
-                false => 'Não',
-                null => null,
-              },
-              hint: 'Selecione',
-              options: const ['Sim', 'Não'],
-              onChanged: (value) => setState(
-                () => _hasChildren = switch (value) {
-                  'Sim' => true,
-                  'Não' => false,
-                  _ => null,
-                },
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Acesso ao app',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-            const SizedBox(height: _fieldSpacing),
-            TextFormField(
-              controller: _passwordController,
-              decoration: _decoration(
-                'Senha inicial *',
-                helper: 'Mínimo 8 caracteres',
-              ).copyWith(
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscurePassword
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                  ),
-                  onPressed: () =>
-                      setState(() => _obscurePassword = !_obscurePassword),
-                ),
-              ),
-              obscureText: _obscurePassword,
-              textInputAction: TextInputAction.next,
-              validator: (v) {
-                if (v == null || v.length < 8) {
-                  return 'Senha com pelo menos 8 caracteres';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: _fieldSpacing),
-            TextFormField(
-              controller: _confirmPasswordController,
-              decoration: _decoration('Confirmar senha *').copyWith(
-                suffixIcon: IconButton(
-                  icon: Icon(
-                    _obscureConfirmPassword
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined,
-                  ),
-                  onPressed: () => setState(
-                    () => _obscureConfirmPassword = !_obscureConfirmPassword,
-                  ),
-                ),
-              ),
-              obscureText: _obscureConfirmPassword,
-              textInputAction: TextInputAction.done,
-              onFieldSubmitted: (_) {
-                if (!_submitting &&
-                    profile != null &&
-                    psychologistId != null) {
-                  _submit(profile, psychologistId);
-                }
-              },
-              validator: (v) {
-                if (v != _passwordController.text) {
-                  return 'As senhas não coincidem';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Equipe',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-            const SizedBox(height: _fieldSpacing),
-            if (_isAdmin)
-              psychologistsAsync.when(
-                loading: () => const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(16),
-                    child: CircularProgressIndicator(),
-                  ),
-                ),
-                error: (_, __) => const Text(
-                  'Não foi possível carregar psicólogos.',
-                ),
-                data: (options) => _PsychologistDropdown(
-                  options: options,
-                  value: _selectedPsychologistId,
-                  onChanged: (v) => setState(() => _selectedPsychologistId = v),
-                ),
-              )
-            else if (profile != null)
-              Card(
-                elevation: 0,
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                child: ListTile(
-                  leading: CircleAvatar(
-                    child: Icon(
-                      Icons.psychology_outlined,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                  title: const Text('Psicólogo responsável'),
-                  subtitle: Text(
-                    profile.fullName,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ),
-            const SizedBox(height: 28),
-            FilledButton.icon(
-              onPressed: _submitting || profile == null || psychologistId == null
-                  ? null
-                  : () => _submit(profile, psychologistId),
-              icon: _submitting
-                  ? const SizedBox.shrink()
-                  : const Icon(Icons.person_add_outlined),
-              label: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: _submitting
-                    ? const SizedBox(
-                        height: 22,
-                        width: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Text('Cadastrar paciente'),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -678,6 +677,17 @@ class _PsychologistMenuItem extends StatelessWidget {
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
           ),
+        Text(
+          option.accessSummary,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: option.canAssignNewPatient
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.error,
+                fontWeight: FontWeight.w700,
+              ),
+        ),
       ],
     );
   }

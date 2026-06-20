@@ -64,8 +64,7 @@ class CreatePatientRequest {
         'religious_orientation': religiousOrientation!.trim(),
       if (ethnicGroup != null && ethnicGroup!.trim().isNotEmpty)
         'ethnic_group': ethnicGroup!.trim(),
-      if (sexualOrientation != null &&
-          sexualOrientation!.trim().isNotEmpty)
+      if (sexualOrientation != null && sexualOrientation!.trim().isNotEmpty)
         'sexual_orientation': sexualOrientation!.trim(),
       if (hasChildren != null) 'has_children': hasChildren,
     };

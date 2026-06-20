@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/widgets/app_scaffold.dart';
@@ -6,6 +6,7 @@ import '../../../shared/widgets/async_state_body.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../domain/journey_step.dart';
 import '../../../shared/widgets/homologation_ui.dart';
+import '../../../shared/widgets/app_motion.dart';
 import '../providers/patient_journey_providers.dart';
 import 'patient_journey_navigation.dart';
 import 'widgets/journey_trail.dart';
@@ -25,7 +26,9 @@ class PatientJourneyPage extends ConsumerWidget {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: _JourneyHeader(patientName: profile?.fullName),
+            child: MotionReveal(
+              child: _JourneyHeader(patientName: profile?.fullName),
+            ),
           ),
           Expanded(
             child: AsyncStateBody<List<JourneyStep>>(

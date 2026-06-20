@@ -21,7 +21,8 @@ void main() {
       isTrue,
     );
     expect(
-      RouteAccess.isAllowed('/patient/journey/upcoming/genogram', ProfileRole.patient),
+      RouteAccess.isAllowed(
+          '/patient/journey/upcoming/genogram', ProfileRole.patient),
       isTrue,
     );
     expect(
@@ -42,9 +43,9 @@ void main() {
     expect(
       RouteAccess.isAllowed(
         '/admin/patients/abc/problems',
-        ProfileRole.admin,
+        ProfileRole.platformAdmin,
       ),
-      isTrue,
+      isFalse,
     );
     expect(
       RouteAccess.isAllowed('/patient/check-ins', ProfileRole.patient),
@@ -64,9 +65,9 @@ void main() {
     expect(
       RouteAccess.isAllowed(
         '/admin/patients/abc/timeline',
-        ProfileRole.admin,
+        ProfileRole.platformAdmin,
       ),
-      isTrue,
+      isFalse,
     );
     expect(
       RouteAccess.isAllowed('/patient/genogram', ProfileRole.patient),
@@ -86,9 +87,9 @@ void main() {
     expect(
       RouteAccess.isAllowed(
         '/admin/patients/abc/mental-map',
-        ProfileRole.admin,
+        ProfileRole.platformAdmin,
       ),
-      isTrue,
+      isFalse,
     );
     expect(
       RouteAccess.isAllowed('/patient/clinical-dashboard', ProfileRole.patient),
@@ -104,9 +105,9 @@ void main() {
     expect(
       RouteAccess.isAllowed(
         '/admin/patients/abc/clinical-report',
-        ProfileRole.admin,
+        ProfileRole.platformAdmin,
       ),
-      isTrue,
+      isFalse,
     );
     expect(
       RouteAccess.isAllowed(
@@ -119,7 +120,7 @@ void main() {
 
   test('staff cannot access patient-only routes', () {
     expect(
-      RouteAccess.isAllowed('/patient/journey', ProfileRole.admin),
+      RouteAccess.isAllowed('/patient/journey', ProfileRole.platformAdmin),
       isFalse,
     );
     expect(
@@ -127,7 +128,10 @@ void main() {
       isFalse,
     );
     expect(
-      RouteAccess.isAllowed('/patient/clinical-dashboard', ProfileRole.admin),
+      RouteAccess.isAllowed(
+        '/patient/clinical-dashboard',
+        ProfileRole.platformAdmin,
+      ),
       isFalse,
     );
     expect(
@@ -178,21 +182,27 @@ void main() {
     );
   });
 
-  test('professional sign up route is public and does not affect login flow', () {
-    expect(RouteAccess.isPublic('/professional-sign-up'), isTrue);
+  test('professional sign up route is not publicly accessible', () {
+    expect(RouteAccess.isPublic('/professional-sign-up'), isFalse);
     expect(
-      RouteAccess.isAllowed('/professional-sign-up', ProfileRole.admin),
-      isTrue,
+      RouteAccess.isAllowed(
+        '/professional-sign-up',
+        ProfileRole.platformAdmin,
+      ),
+      isFalse,
     );
   });
 
-  test('admin cannot access psychologist routes', () {
+  test('platform admin cannot access clinical routes', () {
     expect(
-      RouteAccess.isAllowed('/psychologist/patients', ProfileRole.admin),
+      RouteAccess.isAllowed(
+        '/psychologist/patients',
+        ProfileRole.platformAdmin,
+      ),
       isFalse,
     );
     expect(
-      RouteAccess.isAllowed('/admin/patients', ProfileRole.admin),
+      RouteAccess.isAllowed('/platform/users', ProfileRole.platformAdmin),
       isTrue,
     );
   });
@@ -209,7 +219,7 @@ void main() {
   });
 
   test('homeFor returns role prefix', () {
-    expect(RouteAccess.homeFor(ProfileRole.admin), '/admin');
+    expect(RouteAccess.homeFor(ProfileRole.platformAdmin), '/platform');
     expect(RouteAccess.homeFor(ProfileRole.patient), '/patient');
   });
 }

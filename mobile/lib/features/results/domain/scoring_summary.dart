@@ -1,4 +1,4 @@
-import '../utils/json_parsing.dart';
+﻿import '../utils/json_parsing.dart';
 
 /// Resumo geral da apuração DEMO (`snapshot.summary`).
 class ScoringSummary {

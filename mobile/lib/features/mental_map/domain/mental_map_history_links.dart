@@ -1,4 +1,4 @@
-/// Evento resumido para M3 (timeline).
+﻿/// Evento resumido para M3 (timeline).
 class MentalMapTimelineHighlight {
   const MentalMapTimelineHighlight({
     required this.id,
@@ -58,7 +58,7 @@ class MentalMapParentalFigureHighlight {
   final String dominantStyle;
 }
 
-/// Camada M3 — história e vínculos.
+/// Camada M3 - história e vínculos.
 class MentalMapHistoryLinks {
   const MentalMapHistoryLinks({
     required this.timelineEvents,

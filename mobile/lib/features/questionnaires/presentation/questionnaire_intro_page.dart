@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/config/env_config.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
+import '../../../shared/widgets/homologation_ui.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/parental_contexts.dart';
 import '../domain/questionnaire.dart';
@@ -50,6 +52,9 @@ class _QuestionnaireIntroPageState
     final theme = Theme.of(context);
     final orientation =
         widget.questionnaire.referencePeriod.patientOrientationMessage;
+    final canStart = widget.questionnaire.canStart(
+      allowUnvalidated: EnvConfig.allowsUnvalidatedInstruments,
+    );
 
     return AppScaffold(
       title: 'Antes de começar',
@@ -64,7 +69,8 @@ class _QuestionnaireIntroPageState
                 24 + MediaQuery.of(context).viewPadding.bottom,
               ),
               child: ConstrainedBox(
-                constraints: BoxConstraints(minHeight: constraints.maxHeight - 48),
+                constraints:
+                    BoxConstraints(minHeight: constraints.maxHeight - 48),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -75,7 +81,9 @@ class _QuestionnaireIntroPageState
                       ),
                     ),
                     if (widget.questionnaire.description != null &&
-                        widget.questionnaire.description!.trim().isNotEmpty) ...[
+                        widget.questionnaire.description!
+                            .trim()
+                            .isNotEmpty) ...[
                       const SizedBox(height: 12),
                       Text(
                         widget.questionnaire.description!,
@@ -84,7 +92,17 @@ class _QuestionnaireIntroPageState
                         ),
                       ),
                     ],
-                    if (orientation != null) ...[
+                    if (!canStart) ...[
+                      const SizedBox(height: 24),
+                      const HomologationInfoBanner(
+                        title: 'Instrumento em homologação',
+                        message: 'Este questionário ainda está passando por '
+                            'validação clínica e análise de licenciamento. '
+                            'Ele será liberado automaticamente após a aprovação.',
+                        icon: Icons.lock_clock_outlined,
+                      ),
+                    ],
+                    if (canStart && orientation != null) ...[
                       const SizedBox(height: 24),
                       Card(
                         child: Padding(
@@ -108,7 +126,9 @@ class _QuestionnaireIntroPageState
                         ),
                       ),
                     ],
-                    if (widget.questionnaire.patientSpecificGuidance != null) ...[
+                    if (canStart &&
+                        widget.questionnaire.patientSpecificGuidance !=
+                            null) ...[
                       const SizedBox(height: 16),
                       Card(
                         color: theme.colorScheme.primaryContainer,
@@ -135,7 +155,7 @@ class _QuestionnaireIntroPageState
                         ),
                       ),
                     ],
-                    if (widget.questionnaire.isParentalStyles) ...[
+                    if (canStart && widget.questionnaire.isParentalStyles) ...[
                       const SizedBox(height: 16),
                       Card(
                         child: Padding(
@@ -144,7 +164,7 @@ class _QuestionnaireIntroPageState
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Para quem voce deseja responder?',
+                                'Para quem você deseja responder?',
                                 style: theme.textTheme.titleMedium,
                               ),
                               const SizedBox(height: 12),
@@ -153,9 +173,10 @@ class _QuestionnaireIntroPageState
                                 onChanged: (value) => setState(
                                   () => _includeMother = value ?? false,
                                 ),
-                                title: const Text('Mae'),
+                                title: const Text('Mãe'),
                                 contentPadding: EdgeInsets.zero,
-                                controlAffinity: ListTileControlAffinity.leading,
+                                controlAffinity:
+                                    ListTileControlAffinity.leading,
                               ),
                               CheckboxListTile(
                                 value: _includeFather,
@@ -164,7 +185,8 @@ class _QuestionnaireIntroPageState
                                 ),
                                 title: const Text('Pai'),
                                 contentPadding: EdgeInsets.zero,
-                                controlAffinity: ListTileControlAffinity.leading,
+                                controlAffinity:
+                                    ListTileControlAffinity.leading,
                               ),
                               CheckboxListTile(
                                 value: _includeOther,
@@ -173,7 +195,8 @@ class _QuestionnaireIntroPageState
                                 ),
                                 title: const Text('Outro'),
                                 contentPadding: EdgeInsets.zero,
-                                controlAffinity: ListTileControlAffinity.leading,
+                                controlAffinity:
+                                    ListTileControlAffinity.leading,
                               ),
                               if (_includeOther) ...[
                                 const SizedBox(height: 8),
@@ -193,14 +216,18 @@ class _QuestionnaireIntroPageState
                     ],
                     const SizedBox(height: 24),
                     FilledButton(
-                      onPressed: _starting ? null : _onStart,
+                      onPressed: _starting || !canStart ? null : _onStart,
                       child: _starting
                           ? const SizedBox(
                               height: 22,
                               width: 22,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Text('Iniciar questionário'),
+                          : Text(
+                              canStart
+                                  ? 'Iniciar questionário'
+                                  : 'Indisponível para aplicação',
+                            ),
                     ),
                     const SizedBox(height: 8),
                     TextButton(

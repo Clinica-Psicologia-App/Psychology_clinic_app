@@ -1,4 +1,4 @@
-enum ClinicalDashboardCalloutKind {
+﻿enum ClinicalDashboardCalloutKind {
   missingYsq,
   missingYami,
   missingCheckIn,
@@ -25,8 +25,7 @@ List<ClinicalDashboardCallout> buildClinicalDashboardCallouts({
     callouts.add(
       const ClinicalDashboardCallout(
         kind: ClinicalDashboardCalloutKind.missingYsq,
-        message:
-            'Ainda não há YSQ ou YAMI concluídos. Aplique os instrumentos '
+        message: 'Ainda não há YSQ ou YAMI concluídos. Aplique os instrumentos '
             'na trilha para enriquecer a visão clínica.',
       ),
     );
@@ -35,8 +34,7 @@ List<ClinicalDashboardCallout> buildClinicalDashboardCallouts({
       callouts.add(
         const ClinicalDashboardCallout(
           kind: ClinicalDashboardCalloutKind.missingYsq,
-          message:
-              'Nenhuma aplicação YSQ concluída. Considere aplicar o '
+          message: 'Nenhuma aplicação YSQ concluída. Considere aplicar o '
               'inventário de esquemas iniciais.',
         ),
       );
@@ -45,8 +43,7 @@ List<ClinicalDashboardCallout> buildClinicalDashboardCallouts({
       callouts.add(
         const ClinicalDashboardCallout(
           kind: ClinicalDashboardCalloutKind.missingYami,
-          message:
-              'Nenhuma aplicação YAMI concluída. Considere aplicar o '
+          message: 'Nenhuma aplicação YAMI concluída. Considere aplicar o '
               'inventário de modos esquemáticos.',
         ),
       );
@@ -57,8 +54,7 @@ List<ClinicalDashboardCallout> buildClinicalDashboardCallouts({
     callouts.add(
       const ClinicalDashboardCallout(
         kind: ClinicalDashboardCalloutKind.missingCheckIn,
-        message:
-            'Não há check-in recente. Registrar o estado atual ajuda a '
+        message: 'Não há check-in recente. Registrar o estado atual ajuda a '
             'acompanhar sinais entre sessões.',
       ),
     );

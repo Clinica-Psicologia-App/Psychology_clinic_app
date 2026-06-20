@@ -2,19 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/auth/presentation/admin_home_page.dart';
 import '../../features/patient_invitations/presentation/accept_patient_invitation_page.dart';
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/patient_home_page.dart';
 import '../../features/auth/presentation/psychologist_home_page.dart';
-import '../../features/professional_onboarding/presentation/professional_sign_up_page.dart';
+import '../../features/platform_admin/presentation/platform_admin_home_page.dart';
 import '../../features/auth/presentation/splash_page.dart';
+import '../../features/auth/presentation/forgot_password_page.dart';
+import '../../features/auth/presentation/update_password_page.dart';
+import '../../features/legal/presentation/legal_document_page.dart';
 import '../../features/auth/providers/auth_providers.dart';
 import '../../features/daily_monitors/presentation/daily_monitor_route_helpers.dart';
 import '../../features/patient_journey/presentation/patient_journey_route_helpers.dart';
 import '../../features/genogram/presentation/genogram_route_helpers.dart';
 import '../../features/clinical_dashboard/presentation/clinical_dashboard_route_helpers.dart';
 import '../../features/clinical_reports/presentation/clinical_report_route_helpers.dart';
+import '../../features/clinics/presentation/clinic_routes.dart';
+import '../../features/clinics/presentation/clinics_page.dart';
 import '../../features/mental_map/presentation/mental_map_route_helpers.dart';
 import '../../features/patient_check_ins/presentation/patient_check_in_route_helpers.dart';
 import '../../features/patient_timeline/presentation/patient_timeline_route_helpers.dart';
@@ -33,19 +37,25 @@ import '../../features/questionnaires/presentation/questionnaire_access_manageme
 import '../../features/questionnaires/presentation/questionnaire_routes.dart';
 import '../../features/results/presentation/result_route_helpers.dart';
 import '../../features/therapy_resources/presentation/therapy_resource_route_helpers.dart';
+import '../../features/user_management/presentation/user_management_page.dart';
+import '../../features/user_management/presentation/user_management_routes.dart';
 import 'route_access.dart';
 
 abstract final class AppRoutes {
   static const splash = '/';
   static const login = '/login';
-  static const professionalSignUp = '/professional-sign-up';
-  static const adminHome = '/admin';
+  static const forgotPassword = '/forgot-password';
+  static const updatePassword = '/update-password';
+  static const terms = '/terms';
+  static const privacy = '/privacy';
+  static const platformHome = '/platform';
   static const psychologistHome = '/psychologist';
   static const patientHome = '/patient';
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authControllerProvider);
+  final isPasswordRecovery = ref.watch(passwordRecoveryActiveProvider);
 
   return GoRouter(
     initialLocation: AppRoutes.splash,
@@ -55,6 +65,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isSplash = location == AppRoutes.splash;
       final isLogin = location == AppRoutes.login;
       final isPublicRoute = RouteAccess.isPublic(location);
+
+      // Sessão de recuperação de senha ativa: forçar /update-password.
+      if (isPasswordRecovery) {
+        if (location == AppRoutes.updatePassword) return null;
+        return AppRoutes.updatePassword;
+      }
 
       if (authState.isLoading) {
         if (isSplash || isLogin || isPublicRoute) return null;
@@ -99,8 +115,22 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const LoginPage(),
       ),
       GoRoute(
-        path: AppRoutes.professionalSignUp,
-        builder: (_, __) => const ProfessionalSignUpPage(),
+        path: AppRoutes.forgotPassword,
+        builder: (_, __) => const ForgotPasswordPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.updatePassword,
+        builder: (_, __) => const UpdatePasswordPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.terms,
+        builder: (_, __) =>
+            const LegalDocumentPage(type: LegalDocumentType.terms),
+      ),
+      GoRoute(
+        path: AppRoutes.privacy,
+        builder: (_, __) =>
+            const LegalDocumentPage(type: LegalDocumentType.privacy),
       ),
       GoRoute(
         path: PatientInvitationRoutes.accept,
@@ -109,15 +139,35 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         ),
       ),
       GoRoute(
-        path: AppRoutes.adminHome,
-        builder: (_, __) => const AdminHomePage(),
+        path: AppRoutes.platformHome,
+        builder: (_, __) => const PlatformAdminHomePage(),
         routes: [
-          ...patientInvitationRoutesFor(ProfileRole.admin),
           GoRoute(
-            path: QuestionnaireRoutes.adminAccess.replaceFirst('/admin/', ''),
+            path: ClinicRoutes.platformList.replaceFirst('/platform/', ''),
+            builder: (_, __) => const ClinicsPage(),
+          ),
+          GoRoute(
+            path: UserManagementRoutes.platformList.replaceFirst('/platform/', ''),
+            builder: (_, __) => const UserManagementPage(),
+          ),
+          GoRoute(
+            path: QuestionnaireRoutes.adminAccess.replaceFirst('/platform/', ''),
             builder: (_, __) => const QuestionnaireAccessManagementPage(),
           ),
-          ..._staffPatientRoutes(ProfileRole.admin),
+          GoRoute(
+            path: 'patients',
+            builder: (_, __) =>
+                const PatientsPage(role: ProfileRole.platformAdmin),
+            routes: [
+              GoRoute(
+                path: ':patientId',
+                builder: (_, state) => PatientDetailsPage(
+                  role: ProfileRole.platformAdmin,
+                  patientId: state.pathParameters['patientId']!,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
       GoRoute(
@@ -211,6 +261,9 @@ class _RouterRefresh extends ChangeNotifier {
       notifyListeners();
     });
     _ref.listen<String?>(authRedirectMessageProvider, (_, __) {
+      notifyListeners();
+    });
+    _ref.listen<bool>(passwordRecoveryActiveProvider, (_, __) {
       notifyListeners();
     });
   }

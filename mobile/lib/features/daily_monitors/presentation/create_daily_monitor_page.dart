@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -22,7 +22,8 @@ class CreateDailyMonitorPage extends ConsumerStatefulWidget {
       _CreateDailyMonitorPageState();
 }
 
-class _CreateDailyMonitorPageState extends ConsumerState<CreateDailyMonitorPage> {
+class _CreateDailyMonitorPageState
+    extends ConsumerState<CreateDailyMonitorPage> {
   final _formKey = GlobalKey<FormState>();
   final _moodController = TextEditingController();
   final _observationsController = TextEditingController();
@@ -274,7 +275,8 @@ class _CreateDailyMonitorPageState extends ConsumerState<CreateDailyMonitorPage>
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
                   : const Icon(Icons.save_outlined),
-              label: Text(widget.isEdit ? 'Salvar alterações' : 'Salvar registro'),
+              label:
+                  Text(widget.isEdit ? 'Salvar alterações' : 'Salvar registro'),
             ),
           ],
         ),

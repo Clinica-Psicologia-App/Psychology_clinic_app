@@ -1,6 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
+import '../../../../shared/widgets/clinical_kpi_chip.dart';
 import '../../../../shared/widgets/homologation_ui.dart';
+import 'clinical_dashboard_shared_widgets.dart';
 import '../../../patient_problems/domain/patient_problem_status.dart';
 import '../../../therapy_goals/domain/therapy_goal_status.dart';
 import '../../domain/clinical_case_summary.dart';
@@ -18,8 +20,7 @@ class ClinicalDashboardDisclaimerBanner extends StatelessWidget {
     return const HomologationInfoBanner(
       title: 'Validação clínica',
       icon: Icons.verified_outlined,
-      message:
-          'Dashboard em validação clínica. Use como apoio visual, '
+      message: 'Dashboard em validação clínica. Use como apoio visual, '
           'não como diagnóstico. A interpretação é responsabilidade '
           'do profissional.',
     );
@@ -81,8 +82,7 @@ class InstrumentDashboardCard extends StatelessWidget {
               const HomologationEmptyPanel(
                 icon: Icons.analytics_outlined,
                 title: 'Sem scores nesta resposta',
-                message:
-                    'O snapshot desta aplicação não contém esquemas ou '
+                message: 'O snapshot desta aplicação não contém esquemas ou '
                     'modos estruturados para exibir.',
               )
             else ...[
@@ -122,103 +122,11 @@ class HorizontalScoreBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final safeMax = maxScore > 0 ? maxScore : 1.0;
-    final fraction = (row.score / safeMax).clamp(0.0, 1.0);
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (rank != null) ...[
-                CircleAvatar(
-                  radius: 12,
-                  backgroundColor: theme.colorScheme.primaryContainer,
-                  child: Text(
-                    '$rank',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: theme.colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-              ],
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      row.name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    if (row.code.isNotEmpty)
-                      Text(
-                        row.code,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                row.score.toStringAsFixed(2),
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: fraction,
-              minHeight: 10,
-              backgroundColor: theme.colorScheme.surfaceContainerHighest,
-              color: _barColor(theme, row),
-            ),
-          ),
-          if (row.hasSeverity)
-            Padding(
-              padding: const EdgeInsets.only(top: 6),
-              child: Text(
-                'Severidade: ${row.severityLabel}',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-        ],
-      ),
+    return AnimatedClinicalScoreBar(
+      row: row,
+      maxScore: maxScore,
+      rank: rank,
     );
-  }
-
-  Color _barColor(ThemeData theme, ClinicalDashboardScoreRow row) {
-    final key = row.severityColorKey?.toLowerCase();
-    switch (key) {
-      case 'green':
-        return Colors.green.shade600;
-      case 'yellow':
-      case 'amber':
-        return Colors.amber.shade700;
-      case 'orange':
-        return Colors.orange.shade700;
-      case 'red':
-        return theme.colorScheme.error;
-      default:
-        return theme.colorScheme.primary;
-    }
   }
 }
 
@@ -512,7 +420,8 @@ class ClinicalCaseProblemsGoalsCard extends StatelessWidget {
                       problem.status.label,
                       if (problem.intensity != null)
                         'Intensidade ${problem.intensity}/10',
-                      if (problem.category != null && problem.category!.isNotEmpty)
+                      if (problem.category != null &&
+                          problem.category!.isNotEmpty)
                         problem.category!,
                     ].join(' · '),
                   ),
@@ -602,40 +511,22 @@ class _SummaryChip extends StatelessWidget {
   const _SummaryChip({
     required this.label,
     required this.value,
+    this.icon,
+    this.animateFromZero = true,
   });
 
   final String label;
   final String value;
+  final IconData? icon;
+  final bool animateFromZero;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            value,
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
+    return ClinicalKpiChip(
+      label: label,
+      value: value,
+      icon: icon,
+      animateFromZero: animateFromZero && int.tryParse(value) != null,
     );
   }
 }
@@ -754,18 +645,23 @@ class ClinicalExecutiveHeader extends StatelessWidget {
                 _SummaryChip(
                   label: 'Problemas ativos',
                   value: '${summary.openProblemsCount}',
+                  icon: Icons.report_problem_outlined,
                 ),
                 _SummaryChip(
                   label: 'Objetivos ativos',
                   value: '${summary.activeGoalsCount}',
+                  icon: Icons.flag_outlined,
                 ),
                 _SummaryChip(
                   label: 'Resultados',
                   value: '${summary.structuredResultCount}',
+                  icon: Icons.analytics_outlined,
                 ),
                 _SummaryChip(
                   label: 'Último check-in',
                   value: checkInLabel,
+                  icon: Icons.monitor_heart_outlined,
+                  animateFromZero: false,
                 ),
               ],
             ),
@@ -1112,7 +1008,9 @@ class _ParentalStylesDashboardSectionState
     final selected = figures[safeIndex];
     final maxScore = selected.topScores.isEmpty
         ? 6.0
-        : selected.topScores.map((row) => row.score).reduce((a, b) => a > b ? a : b);
+        : selected.topScores
+            .map((row) => row.score)
+            .reduce((a, b) => a > b ? a : b);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -1210,75 +1108,90 @@ class ClinicalInstrumentDetailsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ExpansionTile(
-      tilePadding: EdgeInsets.zero,
-      title: const Text('Detalhes por instrumento'),
-      subtitle: const Text('Barras completas YSQ, YAMI, apego e enfrentamento'),
-      children: [
-        if (data.ysq != null)
-          InstrumentDashboardCard(
-            title: 'YSQ — esquemas iniciais',
-            panel: data.ysq!,
-            icon: Icons.psychology_outlined,
-          )
-        else
-          const ClinicalDashboardEmptyInstrumentCard(
-            title: 'YSQ — esquemas iniciais',
-            message: 'Nenhuma resposta YSQ concluída com snapshot estruturado.',
-            icon: Icons.psychology_outlined,
-          ),
-        if (data.yami != null)
-          InstrumentDashboardCard(
-            title: 'YAMI — modos',
-            panel: data.yami!,
-            icon: Icons.self_improvement_outlined,
-          )
-        else
-          const ClinicalDashboardEmptyInstrumentCard(
-            title: 'YAMI — modos',
-            message:
-                'Nenhuma resposta YAMI concluída com snapshot estruturado.',
-            icon: Icons.self_improvement_outlined,
-          ),
-        if (data.attachment != null)
-          InstrumentDashboardCard(
-            title: 'Estilos de apego',
-            panel: data.attachment!,
-            icon: Icons.favorite_border,
-          )
-        else
-          const ClinicalDashboardEmptyInstrumentCard(
-            title: 'Estilos de apego',
-            message:
-                'Nenhuma resposta de apego concluída com snapshot estruturado.',
-            icon: Icons.favorite_border,
-          ),
-        if (data.yci != null)
-          InstrumentDashboardCard(
-            title: 'Estilos de enfrentamento — YCI',
-            panel: data.yci!,
-            icon: Icons.shield_outlined,
-          )
-        else
-          const ClinicalDashboardEmptyInstrumentCard(
-            title: 'Estilos de enfrentamento — YCI',
-            message: 'Nenhuma resposta YCI concluída com snapshot estruturado.',
-            icon: Icons.shield_outlined,
-          ),
-        if (data.yrai != null)
-          InstrumentDashboardCard(
-            title: 'Estilos de enfrentamento — YRAI',
-            panel: data.yrai!,
-            icon: Icons.shield_outlined,
-          )
-        else
-          const ClinicalDashboardEmptyInstrumentCard(
-            title: 'Estilos de enfrentamento — YRAI',
-            message:
-                'Nenhuma resposta YRAI concluída com snapshot estruturado.',
-            icon: Icons.shield_outlined,
-          ),
-      ],
+    return ExpandableDashboardSection(
+      title: 'Detalhes por instrumento',
+      subtitle: 'YSQ, YAMI, apego, parentais, YCI e YRAI',
+      icon: Icons.bar_chart_outlined,
+      initiallyExpanded: false,
+      child: Column(
+        children: [
+          if (data.ysq != null)
+            InstrumentDashboardCard(
+              title: 'Esquemas - YSQ',
+              panel: data.ysq!,
+              icon: Icons.psychology_outlined,
+            )
+          else
+            const ClinicalDashboardEmptyInstrumentCard(
+              title: 'Esquemas - YSQ',
+              message:
+                  'Nenhuma resposta YSQ concluída com snapshot estruturado.',
+              icon: Icons.psychology_outlined,
+            ),
+          if (data.yami != null)
+            InstrumentDashboardCard(
+              title: 'Modos - YAMI',
+              panel: data.yami!,
+              icon: Icons.self_improvement_outlined,
+            )
+          else
+            const ClinicalDashboardEmptyInstrumentCard(
+              title: 'Modos - YAMI',
+              message:
+                  'Nenhuma resposta YAMI concluída com snapshot estruturado.',
+              icon: Icons.self_improvement_outlined,
+            ),
+          if (data.parental != null && data.parental!.figures.isNotEmpty)
+            ParentalStylesDashboardSection(dashboard: data.parental!)
+          else
+            const ClinicalDashboardEmptyInstrumentCard(
+              title: 'Estilos parentais',
+              message:
+                  'Nenhuma resposta de estilos parentais concluída. Aplique o '
+                  'instrumento na trilha selecionando as figuras parentais.',
+              icon: Icons.family_restroom_outlined,
+            ),
+          if (data.attachment != null)
+            InstrumentDashboardCard(
+              title: 'Estilos de apego',
+              panel: data.attachment!,
+              icon: Icons.favorite_border,
+            )
+          else
+            const ClinicalDashboardEmptyInstrumentCard(
+              title: 'Estilos de apego',
+              message:
+                  'Nenhuma resposta de apego concluída com snapshot estruturado.',
+              icon: Icons.favorite_border,
+            ),
+          if (data.yci != null)
+            InstrumentDashboardCard(
+              title: 'Enfrentamento - YCI',
+              panel: data.yci!,
+              icon: Icons.shield_outlined,
+            )
+          else
+            const ClinicalDashboardEmptyInstrumentCard(
+              title: 'Enfrentamento - YCI',
+              message:
+                  'Nenhuma resposta YCI concluída com snapshot estruturado.',
+              icon: Icons.shield_outlined,
+            ),
+          if (data.yrai != null)
+            InstrumentDashboardCard(
+              title: 'Enfrentamento - YRAI',
+              panel: data.yrai!,
+              icon: Icons.shield_outlined,
+            )
+          else
+            const ClinicalDashboardEmptyInstrumentCard(
+              title: 'Enfrentamento - YRAI',
+              message:
+                  'Nenhuma resposta YRAI concluída com snapshot estruturado.',
+              icon: Icons.shield_outlined,
+            ),
+        ],
+      ),
     );
   }
 }

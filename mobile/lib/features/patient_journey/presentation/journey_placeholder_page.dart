@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/app_scaffold.dart';
 import '../domain/journey_step.dart' show JourneyStep, buildPatientJourneySteps;
@@ -29,8 +29,7 @@ class JourneyPlaceholderPage extends StatelessWidget {
   final String title;
   final String? subtitle;
 
-  static const _message =
-      'Funcionalidade prevista para próxima versão.';
+  static const _message = 'Funcionalidade prevista para próxima versão.';
 
   @override
   Widget build(BuildContext context) {

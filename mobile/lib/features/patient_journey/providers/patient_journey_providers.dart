@@ -10,18 +10,19 @@ final patientJourneyRepositoryProvider =
 });
 
 final patientJourneyPatientIdProvider = FutureProvider<String>((ref) async {
-  return ref.read(patientJourneyRepositoryProvider).getPatientIdForCurrentProfile();
+  return ref
+      .read(patientJourneyRepositoryProvider)
+      .getPatientIdForCurrentProfile();
 });
 
 final patientJourneyProgressProvider =
     FutureProvider<PatientJourneyProgress>((ref) async {
   final patientId = await ref.watch(patientJourneyPatientIdProvider.future);
-  return ref
-      .read(patientJourneyRepositoryProvider)
-      .loadProgress(patientId);
+  return ref.read(patientJourneyRepositoryProvider).loadProgress(patientId);
 });
 
-final patientJourneyStepsProvider = FutureProvider<List<JourneyStep>>((ref) async {
+final patientJourneyStepsProvider =
+    FutureProvider<List<JourneyStep>>((ref) async {
   final progress = await ref.watch(patientJourneyProgressProvider.future);
   return buildPatientJourneySteps(progress);
 });

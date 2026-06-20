@@ -1,7 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:terapia_esquema/features/mental_map/domain/mental_case_map.dart';
 import 'package:terapia_esquema/features/mental_map/domain/mental_map_node_detail.dart';
+import 'package:terapia_esquema/features/mental_map/presentation/mental_map_node_state.dart';
 import 'package:terapia_esquema/features/mental_map/presentation/widgets/mental_map_widgets.dart';
 
 void main() {
@@ -22,6 +23,7 @@ void main() {
       icon: Icons.psychology_outlined,
       accentColor: Colors.blue,
       isFilled: true,
+      visualState: MentalMapNodeVisualState.filled,
     ),
     const MentalMapHubNodeData(
       id: 'modes',
@@ -32,6 +34,7 @@ void main() {
       icon: Icons.self_improvement_outlined,
       accentColor: Colors.green,
       isFilled: true,
+      visualState: MentalMapNodeVisualState.filled,
     ),
     const MentalMapHubNodeData(
       id: 'problems',
@@ -42,6 +45,7 @@ void main() {
       icon: Icons.report_problem_outlined,
       accentColor: Colors.red,
       isFilled: true,
+      visualState: MentalMapNodeVisualState.filled,
     ),
     const MentalMapHubNodeData(
       id: 'goals',
@@ -52,6 +56,7 @@ void main() {
       icon: Icons.flag_outlined,
       accentColor: Colors.orange,
       isFilled: true,
+      visualState: MentalMapNodeVisualState.filled,
     ),
     const MentalMapHubNodeData(
       id: 'attachment',
@@ -62,6 +67,7 @@ void main() {
       icon: Icons.favorite_border,
       accentColor: Colors.purple,
       isFilled: false,
+      visualState: MentalMapNodeVisualState.pending,
     ),
     const MentalMapHubNodeData(
       id: 'coping',
@@ -72,6 +78,7 @@ void main() {
       icon: Icons.shield_outlined,
       accentColor: Colors.teal,
       isFilled: false,
+      visualState: MentalMapNodeVisualState.pending,
     ),
     const MentalMapHubNodeData(
       id: 'parental',
@@ -82,6 +89,7 @@ void main() {
       icon: Icons.family_restroom_outlined,
       accentColor: Colors.brown,
       isFilled: false,
+      visualState: MentalMapNodeVisualState.pending,
     ),
     const MentalMapHubNodeData(
       id: 'history',
@@ -92,24 +100,27 @@ void main() {
       icon: Icons.timeline_outlined,
       accentColor: Colors.indigo,
       isFilled: true,
+      visualState: MentalMapNodeVisualState.filled,
     ),
   ];
 
-  testWidgets('MentalMapRadialHub uses grid fallback on small screens',
+  testWidgets('MentalMapRadialHub uses connected list on small screens',
       (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
           body: SizedBox(
-            width: 420,
+            width: 360,
             child: MentalMapRadialHub(center: center, nodes: nodes),
           ),
         ),
       ),
     );
 
-    expect(find.byKey(const ValueKey('mental-map-grid-layout')), findsOneWidget);
-    expect(find.byKey(const ValueKey('mental-map-radial-layout')), findsNothing);
+    expect(find.byKey(const ValueKey('mental-map-connected-list')),
+        findsOneWidget);
+    expect(
+        find.byKey(const ValueKey('mental-map-radial-layout')), findsNothing);
   });
 
   testWidgets('MentalMapRadialHub keeps radial layout on wider screens',
@@ -125,8 +136,10 @@ void main() {
       ),
     );
 
-    expect(find.byKey(const ValueKey('mental-map-radial-layout')), findsOneWidget);
-    expect(find.byKey(const ValueKey('mental-map-grid-layout')), findsNothing);
+    expect(
+        find.byKey(const ValueKey('mental-map-radial-layout')), findsOneWidget);
+    expect(
+        find.byKey(const ValueKey('mental-map-connected-list')), findsNothing);
   });
 
   testWidgets('MentalMapNodeDetailSheet shows items and data source',
@@ -135,7 +148,7 @@ void main() {
       id: 'schemas',
       title: 'Esquemas',
       items: ['Abandono 5.80'],
-      dataSource: 'YSQ — última resposta concluída',
+      dataSource: 'YSQ - última resposta concluída',
       ctaLabel: 'Abrir dashboard clínico',
       lastUpdatedAt: null,
     );
@@ -164,7 +177,7 @@ void main() {
 
     expect(find.text('Esquemas'), findsOneWidget);
     expect(find.text('Origem dos dados'), findsOneWidget);
-    expect(find.text('YSQ — última resposta concluída'), findsOneWidget);
+    expect(find.text('YSQ - última resposta concluída'), findsOneWidget);
     expect(find.text('Abandono 5.80'), findsOneWidget);
     expect(find.text('Abrir dashboard clínico'), findsOneWidget);
   });

@@ -1,4 +1,4 @@
-import 'questionnaire_response_context.dart';
+﻿import 'questionnaire_response_context.dart';
 
 List<QuestionnaireContextInput> buildParentalContextInputs({
   required bool includeMother,
@@ -50,6 +50,7 @@ double progressForContext({
   required int totalQuestions,
 }) {
   if (totalQuestions <= 0) return 0;
-  final answered = answers.keys.where((key) => key.startsWith('$contextId::')).length;
+  final answered =
+      answers.keys.where((key) => key.startsWith('$contextId::')).length;
   return answered / totalQuestions;
 }

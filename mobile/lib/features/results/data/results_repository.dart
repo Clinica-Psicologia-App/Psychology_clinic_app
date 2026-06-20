@@ -73,7 +73,8 @@ questionnaire_results(
             ),
           )
           .where(
-            (summary) => isSupportedQuestionnaireCode(summary.questionnaireCode),
+            (summary) =>
+                isSupportedQuestionnaireCode(summary.questionnaireCode),
           )
           .toList();
     } catch (e) {
@@ -91,7 +92,8 @@ questionnaire_results(
           .maybeSingle();
 
       if (row == null) return null;
-      final detail = PatientResultDetail.fromJson(Map<String, dynamic>.from(row));
+      final detail =
+          PatientResultDetail.fromJson(Map<String, dynamic>.from(row));
       if (!isSupportedQuestionnaireCode(detail.questionnaireCode)) {
         return null;
       }

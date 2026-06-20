@@ -1,4 +1,4 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+﻿import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
@@ -81,7 +81,8 @@ class PatientTimelineRepository {
           .order('created_at', ascending: false);
 
       final events = (rows as List)
-          .map((r) => PatientTimelineEvent.fromJson(Map<String, dynamic>.from(r)))
+          .map((r) =>
+              PatientTimelineEvent.fromJson(Map<String, dynamic>.from(r)))
           .toList();
 
       return sortTimelineEventsChronologically(events);

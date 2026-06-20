@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/config/env_config.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../patients/providers/patients_providers.dart';
@@ -36,7 +37,8 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final patientIdAsync = ref.watch(questionnairePatientIdProvider(_listContext));
+    final patientIdAsync =
+        ref.watch(questionnairePatientIdProvider(_listContext));
     final listAsync = ref.watch(questionnairesListProvider(_listContext));
 
     final title = widget.role == ProfileRole.patient
@@ -109,10 +111,17 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
                       itemCount: items.length,
                       itemBuilder: (context, index) {
                         final q = items[index];
+                        final canApply = q.canStart(
+                          allowUnvalidated:
+                              EnvConfig.allowsUnvalidatedInstruments,
+                        );
                         return QuestionnaireListTile(
                           questionnaire: q,
+                          enabled: canApply,
                           showStaffDetails: widget.role != ProfileRole.patient,
-                          onTap: () => _onQuestionnaireTap(q, patientId),
+                          onTap: canApply
+                              ? () => _onQuestionnaireTap(q, patientId)
+                              : null,
                         );
                       },
                     ),

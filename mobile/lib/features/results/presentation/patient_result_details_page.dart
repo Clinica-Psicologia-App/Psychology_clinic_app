@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/widgets/app_scaffold.dart';
@@ -14,7 +14,7 @@ import '../domain/snapshot_context_result.dart';
 import '../providers/results_providers.dart';
 import 'widgets/scoring_demo_section.dart';
 
-const _supportsClinicalReview = false;
+const _supportsClinicalReview = true;
 
 class PatientResultDetailsPage extends ConsumerWidget {
   const PatientResultDetailsPage({
@@ -145,13 +145,13 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
                   label: 'Início',
                   value: detail.startedAt != null
                       ? loc.formatFullDate(detail.startedAt!)
-                      : '—',
+                      : '-',
                 ),
                 _InfoRow(
                   label: 'Conclusão',
                   value: detail.completedAt != null
                       ? loc.formatFullDate(detail.completedAt!)
-                      : '—',
+                      : '-',
                 ),
                 _InfoRow(
                   label: 'Respostas registradas',
@@ -268,7 +268,9 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
               .map((context) => _ParentalContextCard(context: context)),
         ] else ...[
           _SectionTitle(
-            showScoringDemo ? 'Categorias (legado)' : 'Resultados por categoria',
+            showScoringDemo
+                ? 'Categorias (legado)'
+                : 'Resultados por categoria',
           ),
           if (!detail.hasResults)
             Card(
@@ -564,7 +566,8 @@ class _AnswerCard extends StatelessWidget {
             const SizedBox(height: 4),
             Text(a.text),
             const SizedBox(height: 8),
-            if (a.contextLabel != null && a.contextLabel!.trim().isNotEmpty) ...[
+            if (a.contextLabel != null &&
+                a.contextLabel!.trim().isNotEmpty) ...[
               Text(
                 'Figura parental: ${a.contextLabel}',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -605,7 +608,8 @@ class _ParentalContextCard extends StatelessWidget {
             const SizedBox(height: 8),
             _InfoRow(
               label: 'Progresso',
-              value: '${this.context.answerCount ?? 0}/${this.context.totalQuestions ?? 0}',
+              value:
+                  '${this.context.answerCount ?? 0}/${this.context.totalQuestions ?? 0}',
             ),
             if (this.context.summary.averageScore != null)
               _InfoRow(
@@ -620,19 +624,19 @@ class _ParentalContextCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               ...this.context.schemas.map(
-                (schema) => Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Row(
-                    children: [
-                      Expanded(child: Text(schema.name)),
-                      Text(
-                        schema.averageScore?.toStringAsFixed(2) ?? '—',
-                        style: Theme.of(contextWidget).textTheme.labelLarge,
+                    (schema) => Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(
+                        children: [
+                          Expanded(child: Text(schema.name)),
+                          Text(
+                            schema.averageScore?.toStringAsFixed(2) ?? '-',
+                            style: Theme.of(contextWidget).textTheme.labelLarge,
+                          ),
+                        ],
                       ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
             ],
           ],
         ),

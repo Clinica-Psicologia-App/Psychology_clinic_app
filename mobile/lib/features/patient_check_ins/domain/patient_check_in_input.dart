@@ -1,4 +1,4 @@
-import 'patient_check_in.dart';
+﻿import 'patient_check_in.dart';
 
 class PatientCheckInInput {
   const PatientCheckInInput({

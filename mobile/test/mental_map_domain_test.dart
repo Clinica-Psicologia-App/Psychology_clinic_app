@@ -1,4 +1,4 @@
-import 'package:flutter_test/flutter_test.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
 import 'package:terapia_esquema/features/genogram/domain/genogram_data.dart';
 import 'package:terapia_esquema/features/genogram/domain/genogram_person.dart';
 import 'package:terapia_esquema/features/genogram/domain/genogram_relationship.dart';
@@ -171,7 +171,7 @@ void main() {
     );
 
     final summaries = extractParentalFigureSummaries(detail);
-    expect(summaries, contains('Mãe — Superprotetora'));
+    expect(summaries, contains('Mãe - Superprotetora'));
   });
 
   test('mentalMapHasRelevantData false when all sections empty', () {
@@ -684,7 +684,7 @@ void main() {
         MentalMapQuestionnaireContext(
           responseId: 'parental-1',
           questionnaireCode: 'PARENTAL_STYLES_V1',
-          figureSummaries: ['Mãe — Superprotetora'],
+          figureSummaries: ['Mãe - Superprotetora'],
         ),
       ],
     );
@@ -692,7 +692,7 @@ void main() {
     final parentalNode = map.contextNodes.singleWhere(
       (node) => node.id == 'parental',
     );
-    expect(parentalNode.items, contains('Mãe — Superprotetora'));
+    expect(parentalNode.items, contains('Mãe - Superprotetora'));
   });
 
   test('buildMentalMapNodeDetail exposes data source and routes for staff', () {
@@ -702,7 +702,7 @@ void main() {
       shortLabel: 'Preenchido',
       items: ['Abandono 5.80'],
       emptyLabel: 'Pendente',
-      dataSource: 'YSQ — última resposta concluída',
+      dataSource: 'YSQ - última resposta concluída',
       responseId: 'ysq-1',
     );
 
@@ -893,7 +893,7 @@ void main() {
         MentalMapQuestionnaireContext(
           responseId: 'par-1',
           questionnaireCode: 'PARENTAL_STYLES_V1',
-          figureSummaries: ['Mãe — Superprotetora'],
+          figureSummaries: ['Mãe - Superprotetora'],
         ),
       ],
     );

@@ -1,21 +1,21 @@
-import '../../questionnaires/domain/question_answer_type.dart';
+﻿import '../../questionnaires/domain/question_answer_type.dart';
 
-/// Rótulos legíveis para valores Likert (MVP — escala 1–6 do seed).
+/// Rótulos legíveis para valores Likert (MVP - escala 1-6 do seed).
 String likertLabel(int value, {int? scaleMin, int? scaleMax}) {
   if (scaleMin == 1 && scaleMax == 6) {
     switch (value) {
       case 1:
-        return '1 — Nunca';
+        return '1 - Nunca';
       case 2:
-        return '2 — Raramente';
+        return '2 - Raramente';
       case 3:
-        return '3 — Às vezes';
+        return '3 - Às vezes';
       case 4:
-        return '4 — Frequentemente';
+        return '4 - Frequentemente';
       case 5:
-        return '5 — Quase sempre';
+        return '5 - Quase sempre';
       case 6:
-        return '6 — Sempre';
+        return '6 - Sempre';
     }
   }
   return '$value';

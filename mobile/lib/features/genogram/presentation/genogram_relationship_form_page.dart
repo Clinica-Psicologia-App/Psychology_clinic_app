@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -108,7 +108,9 @@ class _GenogramRelationshipFormPageState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              e is AppException ? userMessageFor(e) : 'Não foi possível salvar.',
+              e is AppException
+                  ? userMessageFor(e)
+                  : 'Não foi possível salvar.',
             ),
           ),
         );
@@ -126,7 +128,7 @@ class _GenogramRelationshipFormPageState
       );
       return relAsync.when(
         loading: () => const AppScaffold(
-          title: 'Carregando…',
+          title: 'Carregando...',
           body: Center(child: CircularProgressIndicator()),
         ),
         error: (_, __) => AppScaffold(
@@ -170,7 +172,7 @@ class _GenogramRelationshipFormPageState
 
     return genogramAsync.when(
       loading: () => const AppScaffold(
-        title: 'Carregando…',
+        title: 'Carregando...',
         body: Center(child: CircularProgressIndicator()),
       ),
       error: (_, __) => AppScaffold(
@@ -224,21 +226,21 @@ class _GenogramRelationshipFormPageState
           padding: const EdgeInsets.all(16),
           children: [
             DropdownButtonFormField<String>(
-              value: _personAId,
+              initialValue: _personAId,
               decoration: const InputDecoration(labelText: 'Pessoa A *'),
               items: _personItems(data),
               onChanged: (v) => setState(() => _personAId = v),
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _personBId,
+              initialValue: _personBId,
               decoration: const InputDecoration(labelText: 'Pessoa B *'),
               items: _personItems(data, excludeId: _personAId),
               onChanged: (v) => setState(() => _personBId = v),
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<GenogramRelationshipType>(
-              value: _type,
+              initialValue: _type,
               decoration: const InputDecoration(labelText: 'Tipo da relação *'),
               items: GenogramRelationshipType.values
                   .map(
@@ -277,7 +279,9 @@ class _GenogramRelationshipFormPageState
                       width: 22,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : Text(widget.isEdit ? 'Salvar alterações' : 'Registrar relação'),
+                  : Text(widget.isEdit
+                      ? 'Salvar alterações'
+                      : 'Registrar relação'),
             ),
           ],
         ),

@@ -11,6 +11,19 @@ import 'package:terapia_esquema/features/patient_invitations/domain/patient_invi
 import 'package:terapia_esquema/features/patient_invitations/providers/patient_invitations_providers.dart';
 
 void main() {
+  test('patient invitation acceptance includes legal consent versions', () {
+    const request = AcceptPatientInvitationRequest(
+      token: 'token',
+      password: 'ValidPass123',
+      profile: AcceptPatientInvitationProfile(fullName: 'Paciente Teste'),
+    );
+
+    expect(request.toJson()['legal_consent'], {
+      'terms_version': '2026-06-15',
+      'privacy_version': '2026-06-15',
+    });
+  });
+
   test('PatientInvitation.fromJson parses status and names', () {
     final invitation = PatientInvitation.fromJson({
       'id': 'inv-1',
@@ -42,7 +55,8 @@ void main() {
     );
   });
 
-  test('CreatePatientInvitationRequest.toJson trims and normalizes payload', () {
+  test('CreatePatientInvitationRequest.toJson trims and normalizes payload',
+      () {
     final json = const CreatePatientInvitationRequest(
       email: '  Bruno@Example.com ',
       fullName: ' Bruno Costa ',
@@ -99,15 +113,14 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    final result = await container
-        .read(createPatientInvitationProvider.notifier)
-        .submit(
-          const CreatePatientInvitationRequest(
-            email: 'bruno@example.com',
-            fullName: 'Bruno Costa',
-            responsiblePsychologistId: 'psy-1',
-          ),
-        );
+    final result =
+        await container.read(createPatientInvitationProvider.notifier).submit(
+              const CreatePatientInvitationRequest(
+                email: 'bruno@example.com',
+                fullName: 'Bruno Costa',
+                responsiblePsychologistId: 'psy-1',
+              ),
+            );
 
     expect(repo.lastCreateRequest?.email, 'bruno@example.com');
     expect(result.inviteUrl, '/accept-invitation?token=secure-token');

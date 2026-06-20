@@ -1,4 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
+
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_spacing.dart';
 
 /// Banner informativo para telas em validação clínica (homologação).
 class HomologationInfoBanner extends StatelessWidget {
@@ -19,14 +23,18 @@ class HomologationInfoBanner extends StatelessWidget {
 
     return Card(
       elevation: 0,
-      color: theme.colorScheme.primaryContainer.withValues(alpha: 0.35),
+      color: AppColors.infoContainer,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadius.lgAll,
+        side: BorderSide(color: AppColors.info.withValues(alpha: 0.2)),
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: theme.colorScheme.primary, size: 22),
-            const SizedBox(width: 12),
+            Icon(icon, color: AppColors.info, size: 22),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -36,16 +44,16 @@ class HomologationInfoBanner extends StatelessWidget {
                       title!,
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w600,
-                        color: theme.colorScheme.primary,
+                        color: AppColors.onInfoContainer,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: AppSpacing.xxs),
                   ],
                   Text(
                     message,
                     style: theme.textTheme.bodyMedium?.copyWith(
-                      height: 1.4,
-                      color: theme.colorScheme.onSurface,
+                      height: 1.45,
+                      color: AppColors.onInfoContainer,
                     ),
                   ),
                 ],
@@ -76,15 +84,22 @@ class HomologationEmptyPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final muted = theme.colorScheme.onSurfaceVariant;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 48, color: muted.withValues(alpha: 0.85)),
-          const SizedBox(height: 16),
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceMuted,
+              borderRadius: AppRadius.lgAll,
+            ),
+            child: Icon(icon, size: 32, color: AppColors.textMuted),
+          ),
+          const SizedBox(height: AppSpacing.md),
           Text(
             title,
             textAlign: TextAlign.center,
@@ -92,22 +107,22 @@ class HomologationEmptyPanel extends StatelessWidget {
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.xs),
           Text(
             message,
             textAlign: TextAlign.center,
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: muted,
+              color: AppColors.textSecondary,
               height: 1.45,
             ),
           ),
           if (hint != null) ...[
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.sm),
             Text(
               hint!,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.primary,
+                color: AppColors.cyan,
                 fontStyle: FontStyle.italic,
                 height: 1.4,
               ),
@@ -126,21 +141,32 @@ class HomologationSectionHeader extends StatelessWidget {
     required this.icon,
     required this.title,
     this.subtitle,
+    this.accentColor,
   });
 
   final IconData icon;
   final String title;
   final String? subtitle;
+  final Color? accentColor;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final accent = accentColor ?? AppColors.cyan;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: theme.colorScheme.primary, size: 22),
-        const SizedBox(width: 10),
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: accent.withValues(alpha: 0.12),
+            borderRadius: AppRadius.smAll,
+          ),
+          child: Icon(icon, color: accent, size: 20),
+        ),
+        const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,11 +178,11 @@ class HomologationSectionHeader extends StatelessWidget {
                 ),
               ),
               if (subtitle != null) ...[
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.xxs),
                 Text(
                   subtitle!,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                    color: AppColors.textSecondary,
                     height: 1.35,
                   ),
                 ),

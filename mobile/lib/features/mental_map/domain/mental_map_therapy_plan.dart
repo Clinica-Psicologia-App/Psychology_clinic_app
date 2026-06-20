@@ -1,4 +1,4 @@
-import 'mental_map_check_in_summary.dart';
+﻿import 'mental_map_check_in_summary.dart';
 import 'mental_map_goal_summary.dart';
 import 'mental_map_problem_summary.dart';
 
@@ -45,7 +45,7 @@ class MentalMapResourcesSummary {
   bool get hasContent => releasedCount > 0;
 }
 
-/// Camada M4 — plano terapêutico.
+/// Camada M4 - plano terapêutico.
 class MentalMapTherapyPlan {
   const MentalMapTherapyPlan({
     required this.activeGoals,

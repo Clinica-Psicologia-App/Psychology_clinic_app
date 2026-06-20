@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_filex/open_filex.dart';
 
@@ -28,8 +28,7 @@ class ClinicalReportOptionsPage extends ConsumerStatefulWidget {
 
 class _ClinicalReportOptionsPageState
     extends ConsumerState<ClinicalReportOptionsPage> {
-  ClinicalReportIncludeOptions _include =
-      ClinicalReportIncludeOptions.defaults;
+  ClinicalReportIncludeOptions _include = ClinicalReportIncludeOptions.defaults;
   bool _generating = false;
 
   Future<void> _generate() async {
@@ -107,8 +106,7 @@ class _ClinicalReportOptionsPageState
           const HomologationInfoBanner(
             title: 'Apoio clínico',
             icon: Icons.picture_as_pdf_outlined,
-            message:
-                'Relatório gerado como apoio clínico. A interpretação é '
+            message: 'Relatório gerado como apoio clínico. A interpretação é '
                 'responsabilidade do profissional. Não constitui diagnóstico '
                 'automático.',
           ),
@@ -116,7 +114,8 @@ class _ClinicalReportOptionsPageState
           const HomologationSectionHeader(
             icon: Icons.tune_outlined,
             title: 'Conteúdo do PDF',
-            subtitle: 'Escolha quais módulos entram no relatório deste paciente',
+            subtitle:
+                'Escolha quais módulos entram no relatório deste paciente',
           ),
           const SizedBox(height: 12),
           Card(
@@ -201,7 +200,7 @@ class _ClinicalReportOptionsPageState
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.picture_as_pdf_outlined),
-            label: Text(_generating ? 'Gerando…' : 'Gerar relatório PDF'),
+            label: Text(_generating ? 'Gerando...' : 'Gerar relatório PDF'),
           ),
         ],
       ),

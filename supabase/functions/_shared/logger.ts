@@ -1,20 +1,17 @@
-type LogLevel = "info" | "warn" | "error";
-
-function log(level: LogLevel, event: string, meta?: Record<string, unknown>) {
+function log(level, event, meta) {
   const payload = {
     ts: new Date().toISOString(),
     level,
     event,
-    ...meta,
+    ...meta
   };
   const line = JSON.stringify(payload);
   if (level === "error") console.error(line);
   else if (level === "warn") console.warn(line);
   else console.log(line);
 }
-
 export const logger = {
-  info: (event: string, meta?: Record<string, unknown>) => log("info", event, meta),
-  warn: (event: string, meta?: Record<string, unknown>) => log("warn", event, meta),
-  error: (event: string, meta?: Record<string, unknown>) => log("error", event, meta),
+  info: (event, meta)=>log("info", event, meta),
+  warn: (event, meta)=>log("warn", event, meta),
+  error: (event, meta)=>log("error", event, meta)
 };

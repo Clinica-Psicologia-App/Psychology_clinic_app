@@ -8,7 +8,9 @@ final dailyMonitorsRepositoryProvider =
     Provider<DailyMonitorsRepository>((ref) => DailyMonitorsRepository());
 
 final myPatientIdProvider = FutureProvider<String>((ref) async {
-  return ref.read(dailyMonitorsRepositoryProvider).getPatientIdForCurrentProfile();
+  return ref
+      .read(dailyMonitorsRepositoryProvider)
+      .getPatientIdForCurrentProfile();
 });
 
 final myDailyMonitorsProvider =
@@ -50,8 +52,9 @@ class StaffMonitorHistoryContext {
   int get hashCode => Object.hash(role, patientId);
 }
 
-final staffPatientMonitorsProvider = FutureProvider.family<List<DailyMonitor>,
-    StaffMonitorHistoryContext>((ref, ctx) {
+final staffPatientMonitorsProvider =
+    FutureProvider.family<List<DailyMonitor>, StaffMonitorHistoryContext>(
+        (ref, ctx) {
   return ref
       .read(dailyMonitorsRepositoryProvider)
       .listForPatient(ctx.patientId);

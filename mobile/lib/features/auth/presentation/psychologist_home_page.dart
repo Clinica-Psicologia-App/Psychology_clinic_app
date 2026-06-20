@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../../profile/domain/profile_role.dart';
 import 'role_home_shell.dart';
@@ -9,7 +9,7 @@ class PsychologistHomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return const RoleHomeShell(
-      title: 'Psicólogo',
+      title: 'EsquemaCore',
       subtitle: 'Área do profissional',
       role: ProfileRole.psychologist,
     );

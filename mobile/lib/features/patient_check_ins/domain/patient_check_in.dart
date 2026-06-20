@@ -1,4 +1,4 @@
-class PatientCheckIn {
+﻿class PatientCheckIn {
   const PatientCheckIn({
     required this.id,
     required this.clinicId,

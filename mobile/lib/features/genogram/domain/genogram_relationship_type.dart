@@ -1,4 +1,4 @@
-enum GenogramRelationshipType {
+﻿enum GenogramRelationshipType {
   parentChild,
   spouse,
   exSpouse,
@@ -34,7 +34,7 @@ extension GenogramRelationshipTypeX on GenogramRelationshipType {
   String get label {
     switch (this) {
       case GenogramRelationshipType.parentChild:
-        return 'Pai/mãe — filho(a)';
+        return 'Pai/mãe - filho(a)';
       case GenogramRelationshipType.spouse:
         return 'Cônjuge';
       case GenogramRelationshipType.exSpouse:

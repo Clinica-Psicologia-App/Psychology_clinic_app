@@ -6,7 +6,10 @@ abstract final class RouteAccess {
     '/',
     '/login',
     '/accept-invitation',
-    '/professional-sign-up',
+    '/forgot-password',
+    '/update-password',
+    '/terms',
+    '/privacy',
   };
 
   static bool isPublic(String location) => publicPaths.contains(location);
@@ -15,8 +18,8 @@ abstract final class RouteAccess {
     if (isPublic(location)) return true;
 
     switch (role) {
-      case ProfileRole.admin:
-        return location == '/admin' || location.startsWith('/admin/');
+      case ProfileRole.platformAdmin:
+        return location == '/platform' || location.startsWith('/platform/');
       case ProfileRole.psychologist:
         return location == '/psychologist' ||
             location.startsWith('/psychologist/');
@@ -27,8 +30,8 @@ abstract final class RouteAccess {
 
   static String homeFor(ProfileRole role) {
     switch (role) {
-      case ProfileRole.admin:
-        return '/admin';
+      case ProfileRole.platformAdmin:
+        return '/platform';
       case ProfileRole.psychologist:
         return '/psychologist';
       case ProfileRole.patient:

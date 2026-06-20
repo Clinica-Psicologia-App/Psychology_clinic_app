@@ -246,7 +246,7 @@ async function finishParentalQuestionnaire(input: {
 }) {
   const { client, callerId, responseId, response } = input;
   const contexts = await loadResponseContexts(client, responseId);
-  if (contexts.isEmpty) {
+  if (contexts.length === 0) {
     throw new AppError(
       "INVALID_STATE",
       "Selecione ao menos uma figura parental antes de responder.",
@@ -625,7 +625,7 @@ async function loadParentalTemplateCategoryItems(
   client: ReturnType<typeof createUserClient>,
   questionIds: string[],
 ): Promise<CategoryItem[]> {
-  if (questionIds.isEmpty) return [];
+  if (questionIds.length === 0) return [];
 
   const { data, error } = await client
     .from("question_category_items")
@@ -656,7 +656,7 @@ function buildParentalContextSnapshot(input: {
     input.answerMap,
   );
 
-  const schemas = input.categories.map((category) {
+  const schemas = input.categories.map((category) => {
     const agg = aggregates.get(category.id) ?? {
       total: 0,
       weightSum: 0,

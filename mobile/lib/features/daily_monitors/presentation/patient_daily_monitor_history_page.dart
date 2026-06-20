@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -68,7 +68,8 @@ class PatientDailyMonitorHistoryPage extends ConsumerWidget {
             child: AsyncStateBody<List<DailyMonitor>>(
               asyncValue: listAsync,
               onRetry: () => ref.invalidate(staffPatientMonitorsProvider(ctx)),
-              emptyMessage: 'Este paciente ainda não registrou acompanhamentos.',
+              emptyMessage:
+                  'Este paciente ainda não registrou acompanhamentos.',
               emptyIcon: Icons.monitor_heart_outlined,
               dataBuilder: (items) => RefreshIndicator(
                 onRefresh: () async {

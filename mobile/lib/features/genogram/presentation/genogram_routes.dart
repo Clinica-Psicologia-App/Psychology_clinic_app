@@ -23,8 +23,8 @@ abstract final class GenogramRoutes {
     required String patientId,
   }) {
     switch (role) {
-      case ProfileRole.admin:
-        return '/admin/patients/$patientId/genogram';
+      case ProfileRole.platformAdmin:
+        throw ArgumentError('Use rotas globais para platform admin');
       case ProfileRole.psychologist:
         return '/psychologist/patients/$patientId/genogram';
       case ProfileRole.patient:
@@ -35,18 +35,21 @@ abstract final class GenogramRoutes {
   static String staffPersonCreate({
     required ProfileRole role,
     required String patientId,
-  }) => '${staffList(role: role, patientId: patientId)}/people/new';
+  }) =>
+      '${staffList(role: role, patientId: patientId)}/people/new';
 
   static String staffRelationshipCreate({
     required ProfileRole role,
     required String patientId,
-  }) => '${staffList(role: role, patientId: patientId)}/relationships/new';
+  }) =>
+      '${staffList(role: role, patientId: patientId)}/relationships/new';
 
   static String staffPersonDetail({
     required ProfileRole role,
     required String patientId,
     required String personId,
-  }) => '${staffList(role: role, patientId: patientId)}/people/$personId';
+  }) =>
+      '${staffList(role: role, patientId: patientId)}/people/$personId';
 
   static String staffPersonEdit({
     required ProfileRole role,

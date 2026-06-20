@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../../domain/question_answer_type.dart';
 import '../../domain/questionnaire_question.dart';
@@ -44,7 +44,7 @@ class QuestionInputWidget extends StatelessWidget {
         if (question.answerType == QuestionAnswerType.numericScale &&
             values.length > 2) ...[
           Text(
-            value?.toString() ?? '—',
+            value?.toString() ?? '-',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.headlineMedium,
           ),

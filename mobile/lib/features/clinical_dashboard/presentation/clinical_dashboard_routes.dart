@@ -8,8 +8,8 @@ abstract final class ClinicalDashboardRoutes {
     required String patientId,
   }) {
     switch (role) {
-      case ProfileRole.admin:
-        return '/admin/patients/$patientId/clinical-dashboard';
+      case ProfileRole.platformAdmin:
+        throw ArgumentError('Use rotas globais para platform admin');
       case ProfileRole.psychologist:
         return '/psychologist/patients/$patientId/clinical-dashboard';
       case ProfileRole.patient:
@@ -21,5 +21,6 @@ abstract final class ClinicalDashboardRoutes {
     required ProfileRole role,
     required String patientId,
     required String responseId,
-  }) => '${staffList(role: role, patientId: patientId)}/results/$responseId';
+  }) =>
+      '${staffList(role: role, patientId: patientId)}/results/$responseId';
 }

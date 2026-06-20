@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -32,7 +32,8 @@ class PatientProblemDetailPage extends ConsumerWidget {
       actions: [
         IconButton(
           tooltip: 'Atualizar',
-          onPressed: () => ref.invalidate(patientProblemDetailProvider(problemId)),
+          onPressed: () =>
+              ref.invalidate(patientProblemDetailProvider(problemId)),
           icon: const Icon(Icons.refresh),
         ),
       ],
@@ -136,7 +137,8 @@ class _PatientProblemDetailBodyState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final goal = ref.watch(patientProblemDetailProvider(widget.problem.id))
+    final goal = ref
+            .watch(patientProblemDetailProvider(widget.problem.id))
             .valueOrNull ??
         widget.problem;
     final loc = MaterialLocalizations.of(context);
@@ -163,7 +165,8 @@ class _PatientProblemDetailBodyState
                 const SizedBox(height: 12),
                 PatientProblemIntensityBadge(intensity: goal.intensity!),
               ],
-              if (goal.category != null && goal.category!.trim().isNotEmpty) ...[
+              if (goal.category != null &&
+                  goal.category!.trim().isNotEmpty) ...[
                 const SizedBox(height: 16),
                 _InfoRow(label: 'Categoria', value: goal.category!),
               ],

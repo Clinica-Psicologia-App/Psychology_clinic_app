@@ -1,7 +1,12 @@
+﻿import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_colors.dart';
+import '../../../../shared/widgets/esquema_core_logo.dart';
 import '../../../../shared/widgets/homologation_ui.dart';
 import '../../domain/mental_case_map.dart';
+import '../mental_map_node_state.dart';
 import '../../domain/mental_map_case_summary.dart';
 import '../../domain/mental_map_node_detail.dart';
 import '../../domain/mental_map_validation_summary.dart';
@@ -286,6 +291,22 @@ class MentalMapVisualHub extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hubNodes = [
+      ...nodes,
+      if (!nodes.any((node) => node.id == 'personality'))
+        MentalMapHubNodeData(
+          id: 'personality',
+          title: 'Personalidade',
+          subtitle: 'Versão futura',
+          items: const [],
+          emptyLabel: 'Placeholder clínico',
+          icon: Icons.psychology_alt_outlined,
+          accentColor: AppColors.purple,
+          isFilled: false,
+          visualState: MentalMapNodeVisualState.blocked,
+        ),
+    ];
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
@@ -296,12 +317,12 @@ class MentalMapVisualHub extends StatelessWidget {
             const HomologationSectionHeader(
               icon: Icons.hub_outlined,
               title: 'Formulação visual do caso',
-              subtitle: 'Centro clínico + camadas principais e contextuais',
+              subtitle: 'Núcleo clínico e contexto terapêutico',
             ),
             const SizedBox(height: 16),
             MentalMapRadialHub(
               center: caseMap.center,
-              nodes: nodes,
+              nodes: hubNodes,
             ),
           ],
         ),
@@ -325,8 +346,8 @@ class MentalMapRadialHub extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final width = constraints.maxWidth;
-        if (width < 560) {
-          return _MentalMapHubGridFallback(nodes: nodes, center: center);
+        if (width < 600) {
+          return _MentalMapMobileOrbit(nodes: nodes, center: center);
         }
 
         final hubHeight = (width * 0.9).clamp(360.0, 520.0);
@@ -368,7 +389,7 @@ class MentalMapRadialHub extends StatelessWidget {
                   top: topY,
                   width: nodeWidth,
                   height: nodeHeight,
-                  child: MentalMapHubNode(data: node),
+                  child: _MentalMapOrbitNode(data: node, large: true),
                 ),
               if (nodeMap['modes'] case final node?)
                 Positioned(
@@ -376,7 +397,7 @@ class MentalMapRadialHub extends StatelessWidget {
                   top: upperY,
                   width: nodeWidth,
                   height: nodeHeight,
-                  child: MentalMapHubNode(data: node),
+                  child: _MentalMapOrbitNode(data: node, large: true),
                 ),
               if (nodeMap['problems'] case final node?)
                 Positioned(
@@ -384,7 +405,7 @@ class MentalMapRadialHub extends StatelessWidget {
                   top: lowerY,
                   width: nodeWidth,
                   height: nodeHeight,
-                  child: MentalMapHubNode(data: node),
+                  child: _MentalMapOrbitNode(data: node, large: true),
                 ),
               if (nodeMap['goals'] case final node?)
                 Positioned(
@@ -392,7 +413,7 @@ class MentalMapRadialHub extends StatelessWidget {
                   top: bottomY,
                   width: nodeWidth,
                   height: nodeHeight,
-                  child: MentalMapHubNode(data: node),
+                  child: _MentalMapOrbitNode(data: node, large: true),
                 ),
               if (nodeMap['attachment'] case final node?)
                 Positioned(
@@ -400,7 +421,7 @@ class MentalMapRadialHub extends StatelessWidget {
                   top: upperY,
                   width: nodeWidth,
                   height: nodeHeight,
-                  child: MentalMapHubNode(data: node),
+                  child: _MentalMapOrbitNode(data: node, large: true),
                 ),
               if (nodeMap['coping'] case final node?)
                 Positioned(
@@ -408,7 +429,7 @@ class MentalMapRadialHub extends StatelessWidget {
                   top: hubHeight * 0.36,
                   width: nodeWidth,
                   height: nodeHeight,
-                  child: MentalMapHubNode(data: node),
+                  child: _MentalMapOrbitNode(data: node, large: true),
                 ),
               if (nodeMap['parental'] case final node?)
                 Positioned(
@@ -416,7 +437,7 @@ class MentalMapRadialHub extends StatelessWidget {
                   top: lowerY,
                   width: nodeWidth,
                   height: nodeHeight,
-                  child: MentalMapHubNode(data: node),
+                  child: _MentalMapOrbitNode(data: node, large: true),
                 ),
               if (nodeMap['history'] case final node?)
                 Positioned(
@@ -424,7 +445,7 @@ class MentalMapRadialHub extends StatelessWidget {
                   top: bottomY,
                   width: nodeWidth,
                   height: nodeHeight,
-                  child: MentalMapHubNode(data: node),
+                  child: _MentalMapOrbitNode(data: node, large: true),
                 ),
             ],
           ),
@@ -434,8 +455,8 @@ class MentalMapRadialHub extends StatelessWidget {
   }
 }
 
-class _MentalMapHubGridFallback extends StatelessWidget {
-  const _MentalMapHubGridFallback({
+class _MentalMapMobileOrbit extends StatefulWidget {
+  const _MentalMapMobileOrbit({
     required this.nodes,
     required this.center,
   });
@@ -444,39 +465,176 @@ class _MentalMapHubGridFallback extends StatelessWidget {
   final MentalCaseMapCenter center;
 
   @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _MentalMapHubCenter(center: center),
-          const SizedBox(height: 12),
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final width = constraints.maxWidth;
-              const spacing = 10.0;
-              final itemWidth = (width - spacing) / 2;
+  State<_MentalMapMobileOrbit> createState() => _MentalMapMobileOrbitState();
+}
 
-              return Wrap(
-                key: const ValueKey('mental-map-grid-layout'),
-                spacing: spacing,
-                runSpacing: spacing,
-                children: [
-                  for (final node in nodes)
-                    SizedBox(
-                      width: itemWidth,
-                      height: 112,
-                      child: MentalMapHubNode(data: node),
+class _MentalMapMobileOrbitState extends State<_MentalMapMobileOrbit>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 3600),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final nodeMap = <String, MentalMapHubNodeData>{
+      for (final node in widget.nodes) node.id: node,
+    };
+    final slots = <({String id, Alignment align, double size})>[
+      (id: 'schemas', align: const Alignment(0, -1), size: 64),
+      (id: 'modes', align: const Alignment(0.95, -0.48), size: 56),
+      (id: 'problems', align: const Alignment(0.92, 0.46), size: 56),
+      (id: 'attachment', align: const Alignment(0, 1), size: 64),
+      (id: 'goals', align: const Alignment(-0.92, 0.46), size: 56),
+      (id: 'coping', align: const Alignment(-0.95, -0.48), size: 56),
+    ];
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        return SizedBox(
+          key: const ValueKey('mental-map-connected-list'),
+          height: 300,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.navy.withValues(alpha: 0.08),
+                    width: 2,
+                  ),
+                ),
+                child: const SizedBox(width: 260, height: 260),
+              ),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: AppColors.navy.withValues(alpha: 0.06),
+                  ),
+                ),
+                child: const SizedBox(width: 190, height: 190),
+              ),
+              SizedBox(
+                width: 156,
+                height: 156,
+                child: _MentalMapHubCenter(center: widget.center),
+              ),
+              for (var i = 0; i < slots.length; i++)
+                if (nodeMap[slots[i].id] case final node?)
+                  Align(
+                    alignment: slots[i].align,
+                    child: Transform.translate(
+                      offset: Offset(
+                        0,
+                        math.sin((_controller.value * math.pi) + i) * 5,
+                      ),
+                      child: SizedBox(
+                        width: 82,
+                        height: 94,
+                        child: _MentalMapOrbitNode(
+                          data: node,
+                          diameter: slots[i].size,
+                        ),
+                      ),
                     ),
-                ],
-              );
-            },
+                  ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _MentalMapOrbitNode extends StatelessWidget {
+  const _MentalMapOrbitNode({
+    required this.data,
+    this.diameter = 56,
+    this.large = false,
+  });
+
+  final MentalMapHubNodeData data;
+  final double diameter;
+  final bool large;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = data.isFilled
+        ? data.accentColor
+        : theme.colorScheme.outlineVariant;
+    final textColor = data.isFilled
+        ? data.accentColor
+        : theme.colorScheme.onSurfaceVariant;
+
+    return InkWell(
+      onTap: data.onTap,
+      borderRadius: BorderRadius.circular(22),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            width: diameter,
+            height: diameter,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: data.isFilled
+                  ? data.accentColor.withValues(alpha: 0.16)
+                  : Colors.transparent,
+              border: Border.all(
+                color: color,
+                width: data.isFilled ? 2 : 1.5,
+                style: data.isFilled ? BorderStyle.solid : BorderStyle.solid,
+              ),
+              boxShadow: data.isFilled
+                  ? [
+                      BoxShadow(
+                        color: data.accentColor.withValues(alpha: 0.18),
+                        blurRadius: 18,
+                        offset: const Offset(0, 6),
+                      ),
+                    ]
+                  : const [],
+            ),
+            child: Icon(
+              data.icon,
+              color: data.isFilled ? data.accentColor : color,
+              size: large ? 26 : 22,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            data.title,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: textColor,
+              fontWeight: data.isFilled ? FontWeight.w800 : FontWeight.w600,
+            ),
           ),
         ],
       ),
     );
   }
 }
+
 
 class MentalMapHubNodeData {
   const MentalMapHubNodeData({
@@ -488,6 +646,7 @@ class MentalMapHubNodeData {
     required this.icon,
     required this.accentColor,
     required this.isFilled,
+    required this.visualState,
     this.onTap,
   });
 
@@ -499,6 +658,7 @@ class MentalMapHubNodeData {
   final IconData icon;
   final Color accentColor;
   final bool isFilled;
+  final MentalMapNodeVisualState visualState;
   final VoidCallback? onTap;
 
   bool get isEmpty => items.isEmpty;
@@ -511,6 +671,19 @@ class MentalMapHubNode extends StatelessWidget {
   });
 
   final MentalMapHubNodeData data;
+
+  Color _stateColor(
+    MentalMapNodeVisualState state,
+    Color accent,
+    ThemeData theme,
+  ) {
+    return switch (state) {
+      MentalMapNodeVisualState.filled => accent,
+      MentalMapNodeVisualState.partial => AppColors.warning,
+      MentalMapNodeVisualState.pending => theme.colorScheme.onSurfaceVariant,
+      MentalMapNodeVisualState.blocked => theme.colorScheme.error,
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -574,23 +747,23 @@ class MentalMapHubNode extends StatelessWidget {
                             ),
                           ),
                           Icon(
-                            data.isFilled
-                                ? Icons.check_circle
-                                : Icons.radio_button_unchecked,
+                            mentalMapNodeStateIcon(data.visualState),
                             size: 14,
-                            color: data.isFilled
-                                ? data.accentColor
-                                : theme.colorScheme.onSurfaceVariant,
+                            semanticLabel:
+                                mentalMapNodeStateLabel(data.visualState),
+                            color: _stateColor(data.visualState, data.accentColor,
+                                theme),
                           ),
                         ],
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        data.subtitle,
+                        mentalMapNodeStateLabel(data.visualState),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.labelMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+                          color: _stateColor(
+                              data.visualState, data.accentColor, theme),
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -647,36 +820,46 @@ class _MentalMapHubCenter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: LinearGradient(
-          colors: [
-            colors.primaryContainer,
-            colors.surfaceContainerHighest,
+    return Semantics(
+      label: 'Paciente ${center.patientName}',
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: LinearGradient(
+            colors: [
+              AppColors.turquoise.withValues(alpha: 0.18),
+              theme.colorScheme.surfaceContainerHighest,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          border: Border.all(color: AppColors.turquoise.withValues(alpha: 0.35)),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.turquoise.withValues(alpha: 0.15),
+              blurRadius: 16,
+              offset: const Offset(0, 4),
+            ),
           ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
         ),
-        border: Border.all(color: colors.primary.withValues(alpha: 0.18)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(14),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                center.patientName,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const EsquemaCoreLogo.icon(size: 28),
+                const SizedBox(height: 6),
+                Text(
+                  center.patientName,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
-              ),
               const SizedBox(height: 4),
               Text(
                 center.activeProblemsLabel,
@@ -711,6 +894,7 @@ class _MentalMapHubCenter extends StatelessWidget {
           ),
         ),
       ),
+    ),
     );
   }
 }
@@ -907,3 +1091,4 @@ class MentalMapNodeDetailSheet extends StatelessWidget {
     );
   }
 }
+

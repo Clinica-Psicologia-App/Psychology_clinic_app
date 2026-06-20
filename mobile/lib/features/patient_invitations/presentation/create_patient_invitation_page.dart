@@ -40,7 +40,7 @@ class _CreatePatientInvitationPageState
   String? _selectedPsychologistId;
   bool _submitting = false;
 
-  bool get _isAdmin => widget.role == ProfileRole.admin;
+  bool get _isAdmin => false;
 
   @override
   void initState() {
@@ -74,7 +74,7 @@ class _CreatePatientInvitationPageState
           padding: const EdgeInsets.all(16),
           children: [
             Text(
-              'Crie um convite simples. O paciente definira a senha e completara o cadastro no primeiro acesso.',
+              'Crie um convite simples. O paciente definirá a senha e completará o cadastro no primeiro acesso.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -100,7 +100,7 @@ class _CreatePatientInvitationPageState
                 if (value == null || value.trim().isEmpty) {
                   return 'Informe o e-mail';
                 }
-                if (!value.contains('@')) return 'E-mail invalido';
+                if (!value.contains('@')) return 'E-mail inválido';
                 return null;
               },
             ),
@@ -120,26 +120,31 @@ class _CreatePatientInvitationPageState
               psychologistsAsync.when(
                 loading: () => const Center(child: CircularProgressIndicator()),
                 error: (_, __) => const Text(
-                  'Nao foi possivel carregar os psicologos.',
+                  'Não foi possível carregar os psicólogos.',
                 ),
                 data: (options) => DropdownButtonFormField<String>(
                   initialValue: _selectedPsychologistId,
+                  isExpanded: true,
                   decoration: const InputDecoration(
-                    labelText: 'Psicologo responsavel *',
+                    labelText: 'Psicólogo responsável *',
                     border: OutlineInputBorder(),
                   ),
                   items: options
                       .map(
                         (option) => DropdownMenuItem<String>(
                           value: option.id,
-                          child: Text(option.displayLabel),
+                          child: Text(
+                            option.displayLabel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       )
                       .toList(),
                   onChanged: (value) =>
                       setState(() => _selectedPsychologistId = value),
                   validator: (value) => value == null || value.isEmpty
-                      ? 'Selecione o psicologo responsavel'
+                      ? 'Selecione o psicólogo responsável'
                       : null,
                 ),
               )
@@ -147,28 +152,29 @@ class _CreatePatientInvitationPageState
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 leading: const Icon(Icons.psychology_outlined),
-                title: const Text('Psicologo responsavel'),
-                subtitle: Text(profile?.fullName ?? 'Nao identificado'),
+                title: const Text('Psicólogo responsável'),
+                subtitle: Text(profile?.fullName ?? 'Não identificado'),
               ),
             const SizedBox(height: 24),
             if (ref.watch(createPatientInvitationProvider).hasError)
               Padding(
                 padding: const EdgeInsets.only(bottom: 16),
                 child: buildErrorBanner(
+                  ScaffoldMessenger.of(context),
                   context,
-                  ref.watch(createPatientInvitationProvider).error is AppException
+                  ref.watch(createPatientInvitationProvider).error
+                          is AppException
                       ? ref.watch(createPatientInvitationProvider).error
                           as AppException
                       : AppException(
                           code: AppExceptionCodes.unknown,
-                          message: 'Nao foi possivel criar o convite.',
+                          message: 'Não foi possível criar o convite.',
                         ),
                 ),
               ),
             FilledButton.icon(
-              onPressed: _submitting
-                  ? null
-                  : () => _submit(profileId: profile?.id),
+              onPressed:
+                  _submitting ? null : () => _submit(profileId: profile?.id),
               icon: _submitting
                   ? const SizedBox(
                       width: 18,
@@ -189,10 +195,11 @@ class _CreatePatientInvitationPageState
 
     final responsiblePsychologistId =
         _isAdmin ? _selectedPsychologistId : profileId;
-    if (responsiblePsychologistId == null || responsiblePsychologistId.isEmpty) {
+    if (responsiblePsychologistId == null ||
+        responsiblePsychologistId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Selecione o psicologo responsavel.'),
+          content: Text('Selecione o psicólogo responsável.'),
         ),
       );
       return;

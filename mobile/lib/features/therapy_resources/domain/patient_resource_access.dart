@@ -1,4 +1,4 @@
-import 'resource_access_status.dart';
+﻿import 'resource_access_status.dart';
 import 'therapy_resource.dart';
 
 /// Liberação de recurso (`patient_resource_access` + join).

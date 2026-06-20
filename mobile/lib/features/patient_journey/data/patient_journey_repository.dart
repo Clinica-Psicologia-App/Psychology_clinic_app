@@ -1,16 +1,23 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+﻿import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
 import '../../../core/supabase/supabase_bootstrap.dart';
+import '../../profile/domain/profile_role.dart';
+import '../../questionnaires/data/questionnaires_repository.dart';
 import '../domain/patient_journey_progress.dart';
 
 /// Leituras agregadas para a trilha do paciente (sem alterar outros módulos).
 class PatientJourneyRepository {
-  PatientJourneyRepository({SupabaseClient? client})
-      : _client = client ?? SupabaseBootstrap.client;
+  PatientJourneyRepository({
+    SupabaseClient? client,
+    QuestionnairesRepository? questionnairesRepository,
+  })  : _client = client ?? SupabaseBootstrap.client,
+        _questionnairesRepository = questionnairesRepository ??
+            QuestionnairesRepository(client: client);
 
   final SupabaseClient _client;
+  final QuestionnairesRepository _questionnairesRepository;
 
   Future<String> getPatientIdForCurrentProfile() async {
     try {
@@ -43,14 +50,12 @@ class PatientJourneyRepository {
 
   Future<PatientJourneyProgress> loadProgress(String patientId) async {
     try {
-      final activeRows = await _client
-          .from('questionnaires')
-          .select('id')
-          .eq('is_active', true);
-
-      final activeIds = (activeRows as List)
-          .map((r) => r['id'] as String)
-          .toSet();
+      final visibleQuestionnaires =
+          await _questionnairesRepository.listVisibleQuestionnaires(
+        role: ProfileRole.patient,
+        patientId: patientId,
+      );
+      final activeIds = visibleQuestionnaires.map((item) => item.id).toSet();
 
       final completedRows = await _client
           .from('questionnaire_responses')

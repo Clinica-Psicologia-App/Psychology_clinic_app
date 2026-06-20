@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../../domain/scoring_domain_result.dart';
 import '../../domain/scoring_item_result.dart';

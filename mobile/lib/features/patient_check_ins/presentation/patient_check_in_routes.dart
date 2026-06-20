@@ -13,8 +13,8 @@ abstract final class PatientCheckInRoutes {
     required String patientId,
   }) {
     switch (role) {
-      case ProfileRole.admin:
-        return '/admin/patients/$patientId/check-ins';
+      case ProfileRole.platformAdmin:
+        throw ArgumentError('Use rotas globais para platform admin');
       case ProfileRole.psychologist:
         return '/psychologist/patients/$patientId/check-ins';
       case ProfileRole.patient:
@@ -26,5 +26,6 @@ abstract final class PatientCheckInRoutes {
     required ProfileRole role,
     required String patientId,
     required String checkInId,
-  }) => '${staffList(role: role, patientId: patientId)}/$checkInId';
+  }) =>
+      '${staffList(role: role, patientId: patientId)}/$checkInId';
 }

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../profile/domain/profile_role.dart';
@@ -21,7 +21,8 @@ List<RouteBase> questionnaireRoutesFor({
       path: 'questionnaires',
       builder: (context, state) => QuestionnairesPage(
         role: role,
-        patientId: nestedPatient ? state.pathParameters[patientIdPathParam] : null,
+        patientId:
+            nestedPatient ? state.pathParameters[patientIdPathParam] : null,
       ),
       routes: [
         GoRoute(
@@ -37,8 +38,9 @@ List<RouteBase> questionnaireRoutesFor({
               questionnaire: extra.questionnaire,
               patientId: extra.patientId,
               role: role,
-              staffPatientId:
-                  nestedPatient ? state.pathParameters[patientIdPathParam] : null,
+              staffPatientId: nestedPatient
+                  ? state.pathParameters[patientIdPathParam]
+                  : null,
             );
           },
         ),
@@ -63,7 +65,8 @@ List<RouteBase> questionnaireRoutesFor({
           builder: (context, state) {
             final result = state.extra;
             if (result is! FinishQuestionnaireResult) {
-              return const _InvalidSessionPage(message: 'Resultado indisponível.');
+              return const _InvalidSessionPage(
+                  message: 'Resultado indisponível.');
             }
             return QuestionnaireSuccessPage(
               result: result,

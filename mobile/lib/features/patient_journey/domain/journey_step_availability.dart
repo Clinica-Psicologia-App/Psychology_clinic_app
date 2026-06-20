@@ -1,4 +1,4 @@
-/// Estado de exibição de um passo na trilha do paciente.
+﻿/// Estado de exibição de um passo na trilha do paciente.
 enum JourneyStepAvailability {
   available,
   inProgress,

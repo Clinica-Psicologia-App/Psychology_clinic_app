@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -22,7 +22,8 @@ class PatientTherapyGoalsPage extends ConsumerWidget {
       title: 'Objetivos da terapia',
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
-          final created = await context.push<bool>(TherapyGoalRoutes.patientCreate);
+          final created =
+              await context.push<bool>(TherapyGoalRoutes.patientCreate);
           if (created == true) {
             ref.read(myTherapyGoalsProvider.notifier).refresh();
           }
@@ -33,8 +34,7 @@ class PatientTherapyGoalsPage extends ConsumerWidget {
       actions: [
         IconButton(
           tooltip: 'Atualizar',
-          onPressed: () =>
-              ref.read(myTherapyGoalsProvider.notifier).refresh(),
+          onPressed: () => ref.read(myTherapyGoalsProvider.notifier).refresh(),
           icon: const Icon(Icons.refresh),
         ),
       ],
@@ -93,7 +93,8 @@ class StaffPatientTherapyGoalsPage extends ConsumerWidget {
       actions: [
         IconButton(
           tooltip: 'Atualizar',
-          onPressed: () => ref.invalidate(staffPatientTherapyGoalsProvider(ctx)),
+          onPressed: () =>
+              ref.invalidate(staffPatientTherapyGoalsProvider(ctx)),
           icon: const Icon(Icons.refresh),
         ),
       ],
@@ -137,8 +138,10 @@ class _GoalsList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final visible = goals.where((g) => g.status != TherapyGoalStatus.archived).toList();
-    final archived = goals.where((g) => g.status == TherapyGoalStatus.archived).toList();
+    final visible =
+        goals.where((g) => g.status != TherapyGoalStatus.archived).toList();
+    final archived =
+        goals.where((g) => g.status == TherapyGoalStatus.archived).toList();
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
@@ -150,7 +153,8 @@ class _GoalsList extends StatelessWidget {
               ),
         ),
         const SizedBox(height: 16),
-        ...visible.map((g) => TherapyGoalListTile(goal: g, onTap: () => onTap(g))),
+        ...visible
+            .map((g) => TherapyGoalListTile(goal: g, onTap: () => onTap(g))),
         if (archived.isNotEmpty) ...[
           const SizedBox(height: 16),
           Text(

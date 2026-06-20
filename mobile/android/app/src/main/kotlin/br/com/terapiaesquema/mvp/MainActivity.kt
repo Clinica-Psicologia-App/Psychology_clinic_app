@@ -1,4 +1,4 @@
-package br.com.terapiaesquema.mvp
+package br.com.esquemacore.app
 
 import io.flutter.embedding.android.FlutterActivity
 

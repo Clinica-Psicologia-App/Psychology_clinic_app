@@ -9,12 +9,13 @@ final patientTimelineRepositoryProvider =
   return PatientTimelineRepository();
 });
 
-final myPatientTimelineProvider =
-    AsyncNotifierProvider<MyPatientTimelineNotifier, List<PatientTimelineEvent>>(
+final myPatientTimelineProvider = AsyncNotifierProvider<
+    MyPatientTimelineNotifier, List<PatientTimelineEvent>>(
   MyPatientTimelineNotifier.new,
 );
 
-class MyPatientTimelineNotifier extends AsyncNotifier<List<PatientTimelineEvent>> {
+class MyPatientTimelineNotifier
+    extends AsyncNotifier<List<PatientTimelineEvent>> {
   @override
   Future<List<PatientTimelineEvent>> build() async {
     return ref.read(patientTimelineRepositoryProvider).listMyEvents();
@@ -48,8 +49,8 @@ class StaffPatientTimelineContext {
   int get hashCode => Object.hash(role, patientId);
 }
 
-final staffPatientTimelineProvider =
-    FutureProvider.family<List<PatientTimelineEvent>, StaffPatientTimelineContext>(
+final staffPatientTimelineProvider = FutureProvider.family<
+    List<PatientTimelineEvent>, StaffPatientTimelineContext>(
   (ref, ctx) {
     return ref
         .read(patientTimelineRepositoryProvider)

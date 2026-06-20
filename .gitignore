@@ -13,6 +13,9 @@ mobile/.pub/
 mobile/.flutter-plugins
 mobile/.flutter-plugins-dependencies
 mobile/env.local.json
+mobile/env.production.json
+mobile/android/key.properties
+mobile/android/keystore/
 
 # Supabase local (secrets)
 supabase/.branches/

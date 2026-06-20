@@ -44,8 +44,7 @@ MentalMapCheckInSparkline buildCheckInSparkline(
     moodPoints: chronological.map((c) => c.moodScore?.toDouble()).toList(),
     anxietyPoints:
         chronological.map((c) => c.anxietyScore?.toDouble()).toList(),
-    energyPoints:
-        chronological.map((c) => c.energyScore?.toDouble()).toList(),
+    energyPoints: chronological.map((c) => c.energyScore?.toDouble()).toList(),
     showChart: true,
   );
 }

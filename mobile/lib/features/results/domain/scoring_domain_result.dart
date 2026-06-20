@@ -1,4 +1,4 @@
-import '../utils/json_parsing.dart';
+﻿import '../utils/json_parsing.dart';
 import 'scoring_severity.dart';
 
 /// Agregação DEMO por domínio clínico (`snapshot.domains[]`).
@@ -29,16 +29,15 @@ class ScoringDomainResult {
     final severityRaw = json['severity'];
     return ScoringDomainResult(
       id: json['id'] as String? ?? '',
-      code: json['code'] as String? ?? '—',
-      name: json['name'] as String? ?? '—',
+      code: json['code'] as String? ?? '-',
+      name: json['name'] as String? ?? '-',
       rawScore: asDouble(json['raw_score']),
       weightedScore: asDouble(json['weighted_score']),
       averageScore: asDouble(json['average_score']),
       answeredItems: asInt(json['answered_items']),
       maxPossibleScore: asDouble(json['max_possible_score']),
-      severity: severityRaw != null
-          ? ScoringSeverity.fromJson(severityRaw)
-          : null,
+      severity:
+          severityRaw != null ? ScoringSeverity.fromJson(severityRaw) : null,
     );
   }
 

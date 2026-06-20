@@ -77,7 +77,8 @@ ClinicalCaseSummary buildClinicalCaseSummary({
     topModes: yami?.topScores.take(_defaultCaseListLimit).toList() ?? const [],
     topAttachment:
         attachment?.topScores.take(_defaultCaseListLimit).toList() ?? const [],
-    topCoping: _topCopingScores(yci: yci, yrai: yrai, limit: _defaultCaseListLimit),
+    topCoping:
+        _topCopingScores(yci: yci, yrai: yrai, limit: _defaultCaseListLimit),
     highlightedProblems:
         openProblems.take(_defaultCaseListLimit).toList(growable: false),
     highlightedGoals:

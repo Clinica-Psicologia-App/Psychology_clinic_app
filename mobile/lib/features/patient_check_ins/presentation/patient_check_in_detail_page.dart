@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -32,7 +32,8 @@ class PatientCheckInDetailPage extends ConsumerWidget {
       actions: [
         IconButton(
           tooltip: 'Atualizar',
-          onPressed: () => ref.invalidate(patientCheckInDetailProvider(checkInId)),
+          onPressed: () =>
+              ref.invalidate(patientCheckInDetailProvider(checkInId)),
           icon: const Icon(Icons.refresh),
         ),
       ],
@@ -85,8 +86,8 @@ class PatientCheckInDetailPage extends ConsumerWidget {
                         TimeOfDay.fromDateTime(checkIn.checkedInAt.toLocal()),
                       ),
                       style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
                     const SizedBox(height: 24),
                     CheckInScoresSummary(checkIn: checkIn),

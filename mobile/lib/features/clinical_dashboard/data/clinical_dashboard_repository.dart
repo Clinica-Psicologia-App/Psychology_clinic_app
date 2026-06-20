@@ -1,4 +1,4 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+﻿import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
@@ -193,7 +193,8 @@ class ClinicalDashboardRepository {
     final callouts = buildClinicalDashboardCallouts(
       hasYsqResult: ysq != null && !ysq.isEmpty,
       hasYamiResult: yami != null && !yami.isEmpty,
-      hasRecentCheckIn: hasRecentCheckIn(caseSummary.latestCheckIn?.checkedInAt),
+      hasRecentCheckIn:
+          hasRecentCheckIn(caseSummary.latestCheckIn?.checkedInAt),
     );
 
     return ClinicalDashboardData(

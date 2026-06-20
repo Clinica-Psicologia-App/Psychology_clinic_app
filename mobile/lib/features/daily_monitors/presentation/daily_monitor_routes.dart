@@ -13,8 +13,8 @@ abstract final class DailyMonitorRoutes {
     required String patientId,
   }) {
     switch (role) {
-      case ProfileRole.admin:
-        return '/admin/patients/$patientId/daily-monitors';
+      case ProfileRole.platformAdmin:
+        throw StateError('Staff clinic only');
       case ProfileRole.psychologist:
         return '/psychologist/patients/$patientId/daily-monitors';
       case ProfileRole.patient:

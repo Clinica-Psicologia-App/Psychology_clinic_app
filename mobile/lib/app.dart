@@ -13,7 +13,7 @@ class TerapiaEsquemaApp extends ConsumerWidget {
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(
-      title: 'Terapia do Esquema',
+      title: AppTheme.appName,
       theme: AppTheme.light,
       routerConfig: router,
       debugShowCheckedModeBanner: false,

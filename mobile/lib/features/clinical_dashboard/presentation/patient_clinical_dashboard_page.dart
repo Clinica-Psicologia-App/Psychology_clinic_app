@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
+import '../../../shared/widgets/responsive_content.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../results/presentation/result_routes.dart';
 import '../domain/clinical_dashboard_data.dart';
@@ -104,67 +105,68 @@ class DashboardHomePage extends StatelessWidget {
     final loc = MaterialLocalizations.of(context);
     final isStaff = role != ProfileRole.patient;
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        const ClinicalDashboardDisclaimerBanner(),
-        const SizedBox(height: 16),
-        ClinicalExecutiveHeader(summary: data.caseSummary),
-        ClinicalPriorityGrid(summary: data.caseSummary),
-        ClinicalRecentSignalsCard(summary: data.caseSummary),
-        ClinicalDashboardCalloutsSection(callouts: data.callouts),
-        if (data.parental != null && data.parental!.figures.isNotEmpty)
-          ParentalStylesDashboardSection(dashboard: data.parental!)
-        else
-          const ClinicalDashboardEmptyInstrumentCard(
-            title: 'Estilos parentais',
-            message:
-                'Nenhuma resposta de estilos parentais concluída. Aplique o '
-                'instrumento na trilha selecionando as figuras parentais.',
-            icon: Icons.family_restroom_outlined,
+    return ResponsiveContent(
+      child: CustomScrollView(
+        slivers: [
+          const SliverToBoxAdapter(
+            child: ClinicalDashboardDisclaimerBanner(),
           ),
-        ClinicalInstrumentDetailsSection(data: data),
-        const ClinicalDashboardFutureSectionCard(
-          title: 'Personalidade',
-          icon: Icons.psychology_alt_outlined,
-        ),
-        if (isStaff)
-          ClinicalDashboardHistoryCard(
-            historyTiles: data.history.map((entry) {
-              return ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(
-                  entry.hasResults
-                      ? Icons.check_circle_outline
-                      : Icons.hourglass_empty,
-                  color: Theme.of(context).colorScheme.primary,
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
+                ClinicalExecutiveHeader(summary: data.caseSummary),
+                ClinicalPriorityGrid(summary: data.caseSummary),
+                ClinicalRecentSignalsCard(summary: data.caseSummary),
+                ClinicalDashboardCalloutsSection(callouts: data.callouts),
+                ClinicalInstrumentDetailsSection(data: data),
+                const ClinicalDashboardFutureSectionCard(
+                  title: 'Personalidade',
+                  icon: Icons.psychology_alt_outlined,
                 ),
-                title: Text(entry.questionnaireName),
-                subtitle: Text(
-                  [
-                    entry.questionnaireCode,
-                    if (entry.completedAt != null)
-                      loc.formatFullDate(entry.completedAt!.toLocal()),
-                    entry.hasResults ? 'Com resultados' : 'Sem resultados',
-                  ].join(' · '),
-                ),
-                trailing: patientId != null
-                    ? IconButton(
-                        icon: const Icon(Icons.chevron_right),
-                        tooltip: 'Ver resposta',
-                        onPressed: () => context.push(
-                          ResultRoutes.detail(
-                            role: role,
-                            patientId: patientId!,
-                            responseId: entry.responseId,
-                          ),
+                if (isStaff)
+                  ClinicalDashboardHistoryCard(
+                    historyTiles: data.history.map((entry) {
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(
+                          entry.hasResults
+                              ? Icons.check_circle_outline
+                              : Icons.hourglass_empty,
+                          color: Theme.of(context).colorScheme.primary,
                         ),
-                      )
-                    : null,
-              );
-            }).toList(),
+                        title: Text(entry.questionnaireName),
+                        subtitle: Text(
+                          [
+                            entry.questionnaireCode,
+                            if (entry.completedAt != null)
+                              loc.formatFullDate(entry.completedAt!.toLocal()),
+                            entry.hasResults
+                                ? 'Com resultados'
+                                : 'Sem resultados',
+                          ].join(' · '),
+                        ),
+                        trailing: patientId != null
+                            ? IconButton(
+                                icon: const Icon(Icons.chevron_right),
+                                tooltip: 'Ver resposta',
+                                onPressed: () => context.push(
+                                  ResultRoutes.detail(
+                                    role: role,
+                                    patientId: patientId!,
+                                    responseId: entry.responseId,
+                                  ),
+                                ),
+                              )
+                            : null,
+                      );
+                    }).toList(),
+                  ),
+              ]),
+            ),
           ),
-      ],
+        ],
+      ),
     );
   }
 }

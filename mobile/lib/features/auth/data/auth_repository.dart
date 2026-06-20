@@ -1,6 +1,7 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+﻿import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/error_mapper.dart';
+import '../../../core/config/env_config.dart';
 import '../../../core/supabase/supabase_bootstrap.dart';
 
 class AuthRepository {
@@ -42,6 +43,25 @@ class AuthRepository {
         throw StateError('Login sem sessão retornada.');
       }
       return session;
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  Future<void> requestPasswordReset(String email) async {
+    try {
+      await _client.auth.resetPasswordForEmail(
+        email.trim().toLowerCase(),
+        redirectTo: EnvConfig.passwordResetRedirectUrl,
+      );
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  Future<void> updatePassword(String password) async {
+    try {
+      await _client.auth.updateUser(UserAttributes(password: password));
     } catch (e) {
       throw mapToAppException(e);
     }

@@ -24,6 +24,83 @@ BEGIN;
 -- SETUP (role postgres — visível dentro da transação)
 -- Dados extras para therapy_resources e daily_monitors
 -- -----------------------------------------------------------------------------
+INSERT INTO auth.users (
+  instance_id,
+  id,
+  aud,
+  role,
+  email,
+  encrypted_password,
+  email_confirmed_at,
+  confirmation_token,
+  recovery_token,
+  email_change_token_new,
+  email_change,
+  raw_app_meta_data,
+  raw_user_meta_data,
+  created_at,
+  updated_at
+)
+VALUES
+  (
+    '00000000-0000-0000-0000-000000000000',
+    '11111111-1111-1111-1111-111111111102',
+    'authenticated',
+    'authenticated',
+    'rls-admin@esquemacore.test',
+    crypt('RlsTest2026!', gen_salt('bf')),
+    timezone('utc', now()),
+    '', '', '', '',
+    '{"provider":"email","providers":["email"]}',
+    '{"full_name":"RLS Admin","clinic_id":"11111111-1111-1111-1111-111111111101","role":"platform_admin"}',
+    timezone('utc', now()),
+    timezone('utc', now())
+  ),
+  (
+    '00000000-0000-0000-0000-000000000000',
+    '11111111-1111-1111-1111-111111111103',
+    'authenticated',
+    'authenticated',
+    'rls-psychologist@esquemacore.test',
+    crypt('RlsTest2026!', gen_salt('bf')),
+    timezone('utc', now()),
+    '', '', '', '',
+    '{"provider":"email","providers":["email"]}',
+    '{"full_name":"RLS Psychologist","clinic_id":"11111111-1111-1111-1111-111111111101","role":"psychologist"}',
+    timezone('utc', now()),
+    timezone('utc', now())
+  )
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.profiles (id, clinic_id, full_name, email, role, is_active)
+VALUES
+  (
+    '11111111-1111-1111-1111-111111111102',
+    '11111111-1111-1111-1111-111111111101',
+    'RLS Admin',
+    'rls-admin@esquemacore.test',
+    'platform_admin',
+    true
+  ),
+  (
+    '11111111-1111-1111-1111-111111111103',
+    '11111111-1111-1111-1111-111111111101',
+    'RLS Psychologist',
+    'rls-psychologist@esquemacore.test',
+    'psychologist',
+    true
+  )
+ON CONFLICT (id) DO UPDATE SET
+  clinic_id = EXCLUDED.clinic_id,
+  full_name = EXCLUDED.full_name,
+  email = EXCLUDED.email,
+  role = EXCLUDED.role,
+  is_active = EXCLUDED.is_active;
+
+UPDATE public.patients
+SET responsible_psychologist_id = '11111111-1111-1111-1111-111111111103'
+WHERE id = '11111111-1111-1111-1111-111111111201';
+
 INSERT INTO public.therapy_resources (id, clinic_id, title, type, is_active)
 VALUES
   (
@@ -61,6 +138,26 @@ VALUES (
   '11111111-1111-1111-1111-111111111201',
   'Monitor seed smoke test'
 )
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.questionnaire_responses (
+  id, clinic_id, patient_id, questionnaire_id, status
+)
+VALUES
+  (
+    '33333333-3333-3333-3333-333333335901',
+    '11111111-1111-1111-1111-111111111101',
+    '11111111-1111-1111-1111-111111111201',
+    '11111111-1111-1111-1111-111111111301',
+    'draft'
+  ),
+  (
+    '33333333-3333-3333-3333-333333335902',
+    '11111111-1111-1111-1111-111111111101',
+    '11111111-1111-1111-1111-111111111201',
+    '11111111-1111-1111-1111-111111111301',
+    'draft'
+  )
 ON CONFLICT (id) DO NOTHING;
 
 -- -----------------------------------------------------------------------------
@@ -129,6 +226,8 @@ DECLARE
   v_clinic  UUID := '11111111-1111-1111-1111-111111111101';
   v_pat     UUID := '11111111-1111-1111-1111-111111111201';
   v_resp    UUID := '11111111-1111-1111-1111-111111111701';
+  v_resp_insert_psych UUID := '33333333-3333-3333-3333-333333335901';
+  v_resp_insert_patient UUID := '33333333-3333-3333-3333-333333335902';
   v_quest   UUID := '11111111-1111-1111-1111-111111111301';
   v_cat     UUID := '11111111-1111-1111-1111-111111111401';
   v_nobody  UUID := '99999999-9999-9999-9999-999999999901';
@@ -144,7 +243,10 @@ BEGIN
   -- SELECT permitido
   -- -------------------------------------------------------------------------
   v_c := pg_temp._rls_count_as(v_admin, 'SELECT 1 FROM public.clinics');
-  RAISE NOTICE 'admin SELECT clinics: % [%]', v_c, CASE WHEN v_c = 1 THEN 'OK' ELSE 'FAIL' END;
+  RAISE NOTICE 'platform admin SELECT clinics: % [%]', v_c, CASE WHEN v_c >= 1 THEN 'OK' ELSE 'FAIL' END;
+
+  v_c := pg_temp._rls_count_as(v_admin, 'SELECT 1 FROM public.patients');
+  RAISE NOTICE 'platform admin SELECT patients: % [%]', v_c, CASE WHEN v_c = 0 THEN 'OK_BLOCKED' ELSE 'FAIL' END;
 
   v_c := pg_temp._rls_count_as(v_psych, 'SELECT 1 FROM public.patients WHERE id = ''' || v_pat || '''');
   RAISE NOTICE 'psych SELECT own patient: % [%]', v_c, CASE WHEN v_c = 1 THEN 'OK' ELSE 'FAIL' END;
@@ -190,7 +292,7 @@ BEGIN
   v_ok := pg_temp._rls_exec_as(
     v_psych,
     'INSERT INTO public.therapy_resources (id, clinic_id, title, type) VALUES (' ||
-    quote_literal('33333333-3333-3333-3333-333333333303') || ', ' ||
+    quote_literal('33333333-3333-3333-3333-333333333903') || ', ' ||
     quote_literal(v_clinic) || ', ''Smoke psych resource'', ''article'')'
   );
   RAISE NOTICE 'psych INSERT therapy_resource: [%]', CASE WHEN v_ok THEN 'OK' ELSE 'FAIL' END;
@@ -199,7 +301,7 @@ BEGIN
     v_psych,
     'INSERT INTO public.questionnaire_results (id, response_id, questionnaire_id, category_id, total_score) VALUES (' ||
     quote_literal('33333333-3333-3333-3333-333333333601') || ', ' ||
-    quote_literal(v_resp) || ', ' || quote_literal(v_quest) || ', ' ||
+    quote_literal(v_resp_insert_psych) || ', ' || quote_literal(v_quest) || ', ' ||
     quote_literal(v_cat) || ', 20)'
   );
   RAISE NOTICE 'psych INSERT questionnaire_results: [%]', CASE WHEN v_ok THEN 'OK' ELSE 'FAIL' END;
@@ -211,7 +313,7 @@ BEGIN
     v_patient,
     'INSERT INTO public.questionnaire_results (id, response_id, questionnaire_id, category_id, total_score) VALUES (' ||
     quote_literal('33333333-3333-3333-3333-333333333602') || ', ' ||
-    quote_literal(v_resp) || ', ' || quote_literal(v_quest) || ', ' ||
+    quote_literal(v_resp_insert_patient) || ', ' || quote_literal(v_quest) || ', ' ||
     quote_literal(v_cat) || ', 99)'
   );
   RAISE NOTICE 'patient INSERT questionnaire_results: [%]', CASE WHEN NOT v_ok THEN 'OK_BLOCKED' ELSE 'FAIL' END;
@@ -237,7 +339,7 @@ BEGIN
     'INSERT INTO public.questionnaires (id, code, name) VALUES (' ||
     quote_literal('33333333-3333-3333-3333-333333333801') || ', ''SMOKE_HACK'', ''Hack'')'
   );
-  RAISE NOTICE 'admin INSERT questionnaires: [%]', CASE WHEN NOT v_ok THEN 'OK_BLOCKED' ELSE 'FAIL' END;
+  RAISE NOTICE 'platform admin INSERT questionnaires: [%]', CASE WHEN NOT v_ok THEN 'OK_BLOCKED' ELSE 'FAIL' END;
 
   -- -------------------------------------------------------------------------
   -- UPDATE permitido
@@ -246,7 +348,7 @@ BEGIN
     v_admin,
     'UPDATE public.clinics SET phone = phone WHERE id = ' || quote_literal(v_clinic)
   );
-  RAISE NOTICE 'admin UPDATE clinics: [%]', CASE WHEN v_ok THEN 'OK' ELSE 'FAIL' END;
+  RAISE NOTICE 'platform admin UPDATE clinics: [%]', CASE WHEN v_ok THEN 'OK' ELSE 'FAIL' END;
 
   v_ok := pg_temp._rls_exec_as(
     v_patient,

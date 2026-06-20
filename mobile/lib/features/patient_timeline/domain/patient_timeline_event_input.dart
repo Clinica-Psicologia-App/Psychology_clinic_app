@@ -1,4 +1,4 @@
-import 'patient_timeline_event.dart';
+﻿import 'patient_timeline_event.dart';
 
 class PatientTimelineEventInput {
   const PatientTimelineEventInput({

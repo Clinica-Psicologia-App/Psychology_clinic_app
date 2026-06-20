@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../shared/widgets/app_motion.dart';
+import '../../../../shared/widgets/status_chip.dart';
 import '../../domain/patient.dart';
 
 class PatientListTile extends StatelessWidget {
@@ -15,34 +20,97 @@ class PatientListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final psychologist =
-        patient.responsiblePsychologistName ?? 'Não informado';
-    final status = patient.accessStatus?.label;
+    final psychologist = patient.responsiblePsychologistName ?? 'Não informado';
+    final status =
+        patient.isActive ? patient.accessStatus?.label : 'Paciente inativo';
 
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      child: ListTile(
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs,
+      ),
+      child: MotionSurface(
         onTap: onTap,
-        title: Text(patient.fullName),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (patient.email != null && patient.email!.isNotEmpty)
-              Text(patient.email!),
-            if (patient.phone != null && patient.phone!.isNotEmpty)
-              Text(patient.phone!),
-            Text('Psicólogo: $psychologist'),
-            if (status != null)
-              Text(
-                status,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.primary,
-                ),
+        borderRadius: AppRadius.lgAll,
+        child: Card(
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: AppRadius.lgAll,
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    radius: 24,
+                    backgroundColor: AppColors.blue.withValues(alpha: 0.12),
+                    child: Text(
+                      patient.fullName.characters.first.toUpperCase(),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: AppColors.navy,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          patient.fullName,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xxs),
+                        if (patient.email != null && patient.email!.isNotEmpty)
+                          Text(
+                            patient.email!,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        const SizedBox(height: AppSpacing.xxs),
+                        Text(
+                          'Psicólogo: $psychologist',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                        if (status != null) ...[
+                          const SizedBox(height: AppSpacing.xs),
+                          StatusChip(
+                            label: status,
+                            tone: !patient.isActive
+                                ? AppStatusTone.warning
+                                : patient.accessStatus ==
+                                        PatientAccessStatus.active
+                                    ? AppStatusTone.success
+                                    : AppStatusTone.neutral,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: AppColors.blue.withValues(alpha: 0.08),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.arrow_forward_rounded,
+                      size: 18,
+                      color: AppColors.blue,
+                    ),
+                  ),
+                ],
               ),
-          ],
+            ),
+          ),
         ),
-        isThreeLine: true,
-        trailing: const Icon(Icons.chevron_right),
       ),
     );
   }

@@ -22,7 +22,8 @@ class FinishQuestionnaireResult {
     return FinishQuestionnaireResult(
       responseId: response['id'] as String,
       questionnaireName: questionnaireName,
-      completedAt: completedRaw != null ? DateTime.tryParse(completedRaw) : null,
+      completedAt:
+          completedRaw != null ? DateTime.tryParse(completedRaw) : null,
       resultsCount: results.length,
     );
   }

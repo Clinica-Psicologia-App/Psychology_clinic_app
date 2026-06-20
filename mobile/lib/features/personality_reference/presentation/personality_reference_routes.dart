@@ -1,4 +1,4 @@
-import '../../profile/domain/profile_role.dart';
+﻿import '../../profile/domain/profile_role.dart';
 
 abstract final class PersonalityReferenceRoutes {
   static String staffList({
@@ -6,8 +6,8 @@ abstract final class PersonalityReferenceRoutes {
     required String patientId,
   }) {
     switch (role) {
-      case ProfileRole.admin:
-        return '/admin/patients/$patientId/personality-reference';
+      case ProfileRole.platformAdmin:
+        throw ArgumentError('Use rotas globais para platform admin');
       case ProfileRole.psychologist:
         return '/psychologist/patients/$patientId/personality-reference';
       case ProfileRole.patient:

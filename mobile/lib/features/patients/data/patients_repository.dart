@@ -37,6 +37,8 @@ sexual_orientation,
 has_children,
 profile_id,
 responsible_psychologist_id,
+is_active,
+inactivated_at,
 created_at,
 responsible_psychologist:profiles!patients_responsible_psychologist_id_fkey(full_name),
 access_profile:profiles!patients_profile_id_fkey(is_active)
@@ -96,17 +98,38 @@ therapy_demands
     try {
       final rows = await _client
           .from('profiles')
-          .select('id, full_name, email')
+          .select(
+            'id, full_name, email, can_receive_patients, patient_assignment_limit',
+          )
           .eq('role', 'psychologist')
           .eq('is_active', true)
           .order('full_name');
 
-      return (rows as List)
-          .map(
-            (row) =>
-                PsychologistOption.fromJson(Map<String, dynamic>.from(row)),
-          )
-          .toList();
+      final patientRows = await _client
+          .from('patients')
+          .select('responsible_psychologist_id')
+          .eq('is_active', true);
+      final invitationRows = await _client
+          .from('patient_invitations')
+          .select('responsible_psychologist_id')
+          .eq('status', 'pending');
+      final patientsByPsychologist = _countByProfile(
+        patientRows as List,
+        'responsible_psychologist_id',
+      );
+      final invitationsByPsychologist = _countByProfile(
+        invitationRows as List,
+        'responsible_psychologist_id',
+      );
+
+      return (rows as List).map((row) {
+        final json = Map<String, dynamic>.from(row as Map);
+        final id = json['id'] as String;
+        json['assigned_patients_count'] = patientsByPsychologist[id] ?? 0;
+        json['pending_patient_invitations_count'] =
+            invitationsByPsychologist[id] ?? 0;
+        return PsychologistOption.fromJson(json);
+      }).toList();
     } catch (e) {
       throw mapToAppException(e);
     }
@@ -167,7 +190,7 @@ therapy_demands
       if (_isMissingIntakeColumnsError(e)) {
         throw AppException(
           code: AppExceptionCodes.validation,
-          message: 'Este ambiente ainda nao possui os campos de anamnese '
+          message: 'Este ambiente ainda não possui os campos de anamnese '
               'do paciente. Aplique a migration '
               '20250604193022_patient_intake_context.sql.',
           cause: e,
@@ -200,4 +223,50 @@ therapy_demands
         ) ||
         message.contains('column patients.therapy_demands does not exist');
   }
+
+  Future<Patient> setPatientActiveStatus({
+    required String patientId,
+    required bool isActive,
+  }) async {
+    try {
+      await _client.rpc(
+        'set_patient_active_status',
+        params: {
+          'p_patient_id': patientId,
+          'p_is_active': isActive,
+        },
+      );
+
+      final patient = await getPatientById(patientId);
+      if (patient == null) {
+        throw AppException(
+          code: AppExceptionCodes.notFound,
+          message: 'Paciente não encontrado após a atualização.',
+        );
+      }
+      return patient;
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+  Future<void> deletePatient(String patientId) async {
+    try {
+      await _client.rpc(
+        'delete_patient_as_admin',
+        params: {'p_patient_id': patientId},
+      );
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+}
+
+Map<String, int> _countByProfile(List<dynamic> rows, String field) {
+  final counts = <String, int>{};
+  for (final row in rows) {
+    final profileId = (row as Map)[field] as String?;
+    if (profileId == null || profileId.isEmpty) continue;
+    counts[profileId] = (counts[profileId] ?? 0) + 1;
+  }
+  return counts;
 }

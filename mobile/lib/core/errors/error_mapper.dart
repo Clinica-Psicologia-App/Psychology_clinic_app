@@ -1,4 +1,4 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+﻿import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'app_exception.dart';
 
@@ -24,7 +24,8 @@ AppException mapToAppException(Object error) {
       text.contains('failed host lookup')) {
     return AppException(
       code: AppExceptionCodes.network,
-      message: 'Sem conexão com o servidor. Verifique a internet e tente de novo.',
+      message:
+          'Sem conexão com o servidor. Verifique a internet e tente de novo.',
       cause: error,
     );
   }
@@ -186,6 +187,15 @@ AppException _mapFunctionException(FunctionException error) {
     );
   }
 
+  if (status == 502 || status == 503 || status == 504) {
+    return AppException(
+      code: AppExceptionCodes.network,
+      message: 'Serviço temporariamente indisponível. Tente novamente.',
+      cause: error,
+      details: {'httpStatus': status},
+    );
+  }
+
   return AppException(
     code: AppExceptionCodes.unknown,
     message: error.reasonPhrase ?? 'Erro ao chamar o servidor.',
@@ -237,8 +247,7 @@ String messageForApiCode(String code, String? apiMessage) {
     case 'UNAUTHORIZED':
       return userMessageForCode(AppExceptionCodes.sessionExpired);
     case 'FORBIDDEN':
-      return apiMessage ??
-          userMessageForCode(AppExceptionCodes.forbidden);
+      return apiMessage ?? userMessageForCode(AppExceptionCodes.forbidden);
     case 'NOT_FOUND':
       return apiMessage ?? 'Registro não encontrado.';
     case 'INVALID_STATE':

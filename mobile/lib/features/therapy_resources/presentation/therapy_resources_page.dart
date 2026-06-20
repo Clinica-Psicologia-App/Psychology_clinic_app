@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -31,6 +31,16 @@ class TherapyResourcesPage extends ConsumerWidget {
     return AppScaffold(
       title: 'Recursos terapêuticos',
       actions: [
+        IconButton(
+          tooltip: 'Novo material',
+          onPressed: () => context.push(
+            TherapyResourceRoutes.newResource(
+              role: role,
+              patientId: patientId,
+            ),
+          ),
+          icon: const Icon(Icons.add),
+        ),
         IconButton(
           tooltip: 'Atualizar',
           onPressed: () => ref.invalidate(staffTherapyBundleProvider(ctx)),
@@ -169,7 +179,7 @@ class TherapyResourcesPage extends ConsumerWidget {
                   ...inactiveAssigned.map(
                     (access) => TherapyResourceTile(
                       resource: access.resource,
-                      subtitle: 'Bloqueado — toque para liberar novamente',
+                      subtitle: 'Bloqueado - toque para liberar novamente',
                       onTap: () => context.push(
                         TherapyResourceRoutes.assign(
                           role: role,

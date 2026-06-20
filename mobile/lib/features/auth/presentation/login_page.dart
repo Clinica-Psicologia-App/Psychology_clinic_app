@@ -1,10 +1,18 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/config/env_config.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/theme/app_breakpoints.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_gradients.dart';
+import '../../../core/theme/app_radius.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/error_banner.dart' show showErrorBanner;
+import '../../../shared/widgets/esquema_core_logo.dart';
 import '../../../shared/widgets/loading_overlay.dart';
+import '../../../shared/widgets/app_motion.dart';
 import '../providers/auth_providers.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -68,156 +76,325 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final authState = ref.watch(authControllerProvider);
     final redirectMsg = ref.watch(authRedirectMessageProvider);
     final isLoading = authState.isLoading;
+    final isWide = AppBreakpoints.fromContext(context) != AppLayoutSize.compact;
 
     return Stack(
       children: [
         Scaffold(
+          backgroundColor: AppColors.background,
           body: SafeArea(
+            child: isWide
+                ? _buildSplitLayout(redirectMsg, isLoading)
+                : _buildMobileLayout(redirectMsg, isLoading),
+          ),
+        ),
+        if (isLoading) const LoadingOverlay(message: 'Entrando...'),
+      ],
+    );
+  }
+
+  Widget _buildSplitLayout(String? redirectMsg, bool isLoading) {
+    return Row(
+      children: [
+        Expanded(
+          child: DecoratedBox(
+            decoration: const BoxDecoration(gradient: AppGradients.brand),
             child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 400),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        Text(
-                          'Terapia do Esquema',
-                          style: Theme.of(context).textTheme.headlineMedium,
-                          textAlign: TextAlign.center,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Acesse com seu e-mail e senha',
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                        if (redirectMsg != null) ...[
-                          const SizedBox(height: 16),
-                          MaterialBanner(
-                            backgroundColor:
-                                Theme.of(context).colorScheme.secondaryContainer,
-                            content: Text(redirectMsg),
-                            actions: [
-                              TextButton(
-                                onPressed: () => ref
-                                    .read(authControllerProvider.notifier)
-                                    .clearRedirectMessage(),
-                                child: const Text('OK'),
-                              ),
-                            ],
-                          ),
-                        ],
-                        const SizedBox(height: 32),
-                        TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          autocorrect: false,
-                          decoration: const InputDecoration(
-                            labelText: 'E-mail',
-                          ),
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty) {
-                              return 'Informe o e-mail';
-                            }
-                            if (!v.contains('@')) {
-                              return 'E-mail inválido';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _passwordController,
-                          obscureText: _obscurePassword,
-                          decoration: InputDecoration(
-                            labelText: 'Senha',
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                              ),
-                              onPressed: () => setState(
-                                () => _obscurePassword = !_obscurePassword,
-                              ),
-                            ),
-                          ),
-                          validator: (v) {
-                            if (v == null || v.isEmpty) {
-                              return 'Informe a senha';
-                            }
-                            return null;
-                          },
-                        ),
-                        const SizedBox(height: 24),
-                        FilledButton(
-                          onPressed: isLoading ? null : _submit,
-                          child: const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 12),
-                            child: Text('Entrar'),
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        TextButton(
-                          onPressed: isLoading
-                              ? null
-                              : () => context.push(AppRoutes.professionalSignUp),
-                          child: const Text('Sou profissional, criar conta'),
-                        ),
-                        const SizedBox(height: 24),
-                        Text(
-                          'Contas de teste (seed local)',
-                          style: Theme.of(context).textTheme.labelMedium,
-                        ),
-                        const SizedBox(height: 8),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: [
-                            _SeedChip(
-                              label: 'Admin',
-                              onTap: () =>
-                                  _fillSeed('admin@clinicateste-mvp.example'),
-                            ),
-                            _SeedChip(
-                              label: 'Psicólogo',
-                              onTap: () => _fillSeed(
-                                'psicologo@clinicateste-mvp.example',
-                              ),
-                            ),
-                            _SeedChip(
-                              label: 'Paciente',
-                              onTap: () => _fillSeed(
-                                'paciente.login@clinicateste-mvp.example',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.xxxl),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const EsquemaCoreLogo.monochrome(
+                      size: 88,
+                      showTagline: true,
+                      taglineColor: AppColors.textOnBrand,
                     ),
+                    const SizedBox(height: AppSpacing.xxl),
+                    Text(
+                      'Plataforma clínica para Terapia do Esquema',
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                color: AppColors.textOnBrand,
+                                fontWeight: FontWeight.w500,
+                              ),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'Organize formulação, instrumentos e jornada terapêutica '
+                      'em um único fluxo profissional.',
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            color: AppColors.textOnBrand.withValues(alpha: 0.9),
+                            height: 1.5,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        Expanded(
+          child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(AppSpacing.xxxl),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 420),
+                child: MotionReveal(
+                  offset: const Offset(0.035, 0),
+                  child: _LoginForm(
+                    formKey: _formKey,
+                    emailController: _emailController,
+                    passwordController: _passwordController,
+                    obscurePassword: _obscurePassword,
+                    onTogglePassword: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
+                    redirectMsg: redirectMsg,
+                    isLoading: isLoading,
+                    onSubmit: _submit,
+                    onForgotPassword: () =>
+                        context.push(AppRoutes.forgotPassword),
+                    onFillSeed: _fillSeed,
+                    showTestAccounts: EnvConfig.showTestAccounts,
+                    showHeaderLogo: false,
                   ),
                 ),
               ),
             ),
           ),
         ),
-        if (isLoading) const LoadingOverlay(message: 'Entrando…'),
       ],
+    );
+  }
+
+  Widget _buildMobileLayout(String? redirectMsg, bool isLoading) {
+    return Center(
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 420),
+          child: MotionReveal(
+            child: _LoginForm(
+              formKey: _formKey,
+              emailController: _emailController,
+              passwordController: _passwordController,
+              obscurePassword: _obscurePassword,
+              onTogglePassword: () =>
+                  setState(() => _obscurePassword = !_obscurePassword),
+              redirectMsg: redirectMsg,
+              isLoading: isLoading,
+              onSubmit: _submit,
+              onForgotPassword: () =>
+                  context.push(AppRoutes.forgotPassword),
+              onFillSeed: _fillSeed,
+              showTestAccounts: EnvConfig.showTestAccounts,
+              showHeaderLogo: true,
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
 
-class _SeedChip extends StatelessWidget {
-  const _SeedChip({required this.label, required this.onTap});
+class _LoginForm extends StatelessWidget {
+  const _LoginForm({
+    required this.formKey,
+    required this.emailController,
+    required this.passwordController,
+    required this.obscurePassword,
+    required this.onTogglePassword,
+    required this.redirectMsg,
+    required this.isLoading,
+    required this.onSubmit,
+    required this.onForgotPassword,
+    required this.onFillSeed,
+    required this.showTestAccounts,
+    required this.showHeaderLogo,
+  });
 
-  final String label;
-  final VoidCallback onTap;
+  final GlobalKey<FormState> formKey;
+  final TextEditingController emailController;
+  final TextEditingController passwordController;
+  final bool obscurePassword;
+  final VoidCallback onTogglePassword;
+  final String? redirectMsg;
+  final bool isLoading;
+  final VoidCallback onSubmit;
+  final VoidCallback onForgotPassword;
+  final void Function(String email) onFillSeed;
+  final bool showTestAccounts;
+  final bool showHeaderLogo;
 
   @override
   Widget build(BuildContext context) {
-    return ActionChip(label: Text(label), onPressed: onTap);
+    return Form(
+      key: formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (showHeaderLogo) ...[
+            const EsquemaCoreLogo(
+              size: 80,
+              showTagline: true,
+            ),
+            const SizedBox(height: AppSpacing.xxl),
+          ] else ...[
+            Text(
+              'Entrar',
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Acesse com seu e-mail e senha',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+          ],
+          if (redirectMsg != null) ...[
+            MaterialBanner(
+              backgroundColor: AppColors.infoContainer,
+              content: Text(redirectMsg!),
+              actions: const [SizedBox.shrink()],
+            ),
+            const SizedBox(height: AppSpacing.md),
+          ],
+          TextFormField(
+            controller: emailController,
+            keyboardType: TextInputType.emailAddress,
+            autocorrect: false,
+            textInputAction: TextInputAction.next,
+            decoration: const InputDecoration(
+              labelText: 'E-mail',
+              prefixIcon: Icon(Icons.email_outlined),
+            ),
+            validator: (v) {
+              if (v == null || v.trim().isEmpty) return 'Informe o e-mail';
+              if (!v.contains('@')) return 'E-mail inválido';
+              return null;
+            },
+          ),
+          const SizedBox(height: AppSpacing.md),
+          TextFormField(
+            controller: passwordController,
+            obscureText: obscurePassword,
+            textInputAction: TextInputAction.done,
+            onFieldSubmitted: (_) => onSubmit(),
+            decoration: InputDecoration(
+              labelText: 'Senha',
+              prefixIcon: const Icon(Icons.lock_outline),
+              suffixIcon: IconButton(
+                icon: Icon(
+                  obscurePassword ? Icons.visibility_off : Icons.visibility,
+                ),
+                onPressed: onTogglePassword,
+              ),
+            ),
+            validator: (v) {
+              if (v == null || v.isEmpty) return 'Informe a senha';
+              return null;
+            },
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: isLoading ? null : onForgotPassword,
+              child: const Text('Esqueci minha senha'),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          FilledButton(
+            onPressed: isLoading ? null : onSubmit,
+            child: const Padding(
+              padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+              child: Text('Entrar'),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceMuted,
+              borderRadius: AppRadius.mdAll,
+              border: Border.all(color: AppColors.border),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(
+                  Icons.admin_panel_settings_outlined,
+                  color: AppColors.turquoise,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Novo acesso?',
+                        style: Theme.of(context).textTheme.titleSmall,
+                      ),
+                      const SizedBox(height: AppSpacing.xxs),
+                      Text(
+                        'Profissionais devem solicitar o cadastro ao '
+                        'administrador da clínica. Pacientes entram pelo '
+                        'convite recebido.',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Wrap(
+            alignment: WrapAlignment.center,
+            children: [
+              TextButton(
+                onPressed: () => context.push(AppRoutes.terms),
+                child: const Text('Termos'),
+              ),
+              TextButton(
+                onPressed: () => context.push(AppRoutes.privacy),
+                child: const Text('Privacidade'),
+              ),
+            ],
+          ),
+          if (showTestAccounts) ...[
+            const SizedBox(height: AppSpacing.xl),
+            Text(
+              'Contas de teste (ambiente local)',
+              style: Theme.of(context).textTheme.labelMedium,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Wrap(
+              spacing: AppSpacing.xs,
+              runSpacing: AppSpacing.xs,
+              children: [
+                ActionChip(
+                  label: const Text('Admin'),
+                  onPressed: () => onFillSeed('admin@clinicateste-mvp.example'),
+                ),
+                ActionChip(
+                  label: const Text('Psicólogo'),
+                  onPressed: () =>
+                      onFillSeed('psicologo@clinicateste-mvp.example'),
+                ),
+                ActionChip(
+                  label: const Text('Paciente'),
+                  onPressed: () =>
+                      onFillSeed('paciente.login@clinicateste-mvp.example'),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }

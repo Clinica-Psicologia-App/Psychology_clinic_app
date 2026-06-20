@@ -1,4 +1,4 @@
-/// Período de referência temporal configurado em `questionnaire_versions.reference_period`.
+﻿/// Período de referência temporal configurado em `questionnaire_versions.reference_period`.
 enum ReferencePeriod {
   unspecified,
   lastMonth,
@@ -47,7 +47,8 @@ ReferencePeriod referencePeriodFromStorage(String? value) {
 }
 
 /// Extrai o período da versão ativa retornada pelo Supabase (lista ou detalhe).
-ReferencePeriod referencePeriodFromQuestionnaireJson(Map<String, dynamic> json) {
+ReferencePeriod referencePeriodFromQuestionnaireJson(
+    Map<String, dynamic> json) {
   final versions = json['questionnaire_versions'];
   if (versions is List && versions.isNotEmpty) {
     final first = versions.first;

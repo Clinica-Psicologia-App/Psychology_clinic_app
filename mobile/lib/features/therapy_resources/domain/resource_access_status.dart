@@ -1,4 +1,4 @@
-/// Progresso do paciente no recurso liberado.
+﻿/// Progresso do paciente no recurso liberado.
 enum ResourceAccessStatus {
   released,
   viewed,

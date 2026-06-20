@@ -1,9 +1,8 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/homologation_ui.dart';
-import '../../../clinical_dashboard/domain/clinical_dashboard_score_row.dart';
-import '../../../clinical_dashboard/presentation/widgets/clinical_dashboard_widgets.dart';
 import '../../../profile/domain/profile_role.dart';
 import '../../domain/mental_map_clinical_core.dart';
 import '../../domain/mental_map_history_links.dart';
@@ -100,28 +99,112 @@ class _FormulationTabBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: SegmentedButton<MentalMapFormulationTab>(
-        segments: const [
-          ButtonSegment(
-            value: MentalMapFormulationTab.nucleus,
-            label: Text('Núcleo'),
-            icon: Icon(Icons.psychology_outlined, size: 18),
+    final tabs = const [
+      _FormulationTabButton(
+        tab: MentalMapFormulationTab.nucleus,
+        label: 'Nucleo',
+        icon: Icons.psychology_outlined,
+      ),
+      _FormulationTabButton(
+        tab: MentalMapFormulationTab.history,
+        label: 'Historia',
+        icon: Icons.timeline_outlined,
+      ),
+      _FormulationTabButton(
+        tab: MentalMapFormulationTab.plan,
+        label: 'Plano',
+        icon: Icons.flag_outlined,
+      ),
+    ];
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Theme.of(context).colorScheme.outlineVariant,
           ),
-          ButtonSegment(
-            value: MentalMapFormulationTab.history,
-            label: Text('História'),
-            icon: Icon(Icons.timeline_outlined, size: 18),
+        ),
+      ),
+      child: Row(
+        children: tabs
+            .map(
+              (tab) => Expanded(
+                child: _FormulationTabItem(
+                  button: tab,
+                  selected: selected == tab.tab,
+                  onSelected: onSelected,
+                ),
+              ),
+            )
+            .toList(growable: false),
+      ),
+    );
+  }
+}
+
+class _FormulationTabButton {
+  const _FormulationTabButton({
+    required this.tab,
+    required this.label,
+    required this.icon,
+  });
+
+  final MentalMapFormulationTab tab;
+  final String label;
+  final IconData icon;
+}
+
+class _FormulationTabItem extends StatelessWidget {
+  const _FormulationTabItem({
+    required this.button,
+    required this.selected,
+    required this.onSelected,
+  });
+
+  final _FormulationTabButton button;
+  final bool selected;
+  final ValueChanged<MentalMapFormulationTab> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected
+        ? Theme.of(context).colorScheme.secondary
+        : Theme.of(context).colorScheme.onSurfaceVariant;
+
+    return InkWell(
+      onTap: () => onSelected(button.tab),
+      borderRadius: BorderRadius.circular(16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(vertical: 11),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: selected
+                  ? Theme.of(context).colorScheme.secondary
+                  : Colors.transparent,
+              width: 2.5,
+            ),
           ),
-          ButtonSegment(
-            value: MentalMapFormulationTab.plan,
-            label: Text('Plano'),
-            icon: Icon(Icons.flag_outlined, size: 18),
-          ),
-        ],
-        selected: {selected},
-        onSelectionChanged: (values) => onSelected(values.first),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(button.icon, color: color, size: 18),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                button.label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: color,
+                      fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                    ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -255,30 +338,34 @@ class _InstrumentScorePanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final loc = MaterialLocalizations.of(context);
-    final rows = highlights
-        .where((h) => h.score != null)
-        .map(
-          (h) => ClinicalDashboardScoreRow(
-            name: h.name,
-            code: h.code,
-            score: h.score!,
-          ),
-        )
-        .toList(growable: false);
+    final rows = highlights.where((h) => h.score != null).toList();
     final maxScore = rows.isEmpty
-        ? 1.0
-        : rows.map((r) => r.score).reduce((a, b) => a > b ? a : b);
+        ? 10.0
+        : rows.map((r) => r.score!).reduce((a, b) => a > b ? a : b);
 
     return DecoratedBox(
       decoration: BoxDecoration(
         color: Theme.of(context)
             .colorScheme
-            .surfaceContainerHighest
-            .withValues(alpha: 0.35),
-        borderRadius: BorderRadius.circular(16),
+            .surfaceContainerLowest
+            .withValues(alpha: 0.96),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: Theme.of(context)
+              .colorScheme
+              .outlineVariant
+              .withValues(alpha: 0.45),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.navy.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(18),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -307,14 +394,90 @@ class _InstrumentScorePanel extends StatelessWidget {
               )
             else
               ...rows.asMap().entries.map(
-                    (entry) => HorizontalScoreBar(
-                      row: entry.value,
-                      maxScore: maxScore,
+                    (entry) => _MentalMapProgressScoreRow(
+                      highlight: entry.value,
+                      maxScore: maxScore <= 0 ? 10 : maxScore,
                       rank: compact ? null : entry.key + 1,
+                      color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _MentalMapProgressScoreRow extends StatelessWidget {
+  const _MentalMapProgressScoreRow({
+    required this.highlight,
+    required this.maxScore,
+    required this.color,
+    this.rank,
+  });
+
+  final MentalMapScoreHighlight highlight;
+  final double maxScore;
+  final Color color;
+  final int? rank;
+
+  @override
+  Widget build(BuildContext context) {
+    final score = highlight.score ?? 0;
+    final progress = (score / maxScore).clamp(0.0, 1.0);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              if (rank != null) ...[
+                CircleAvatar(
+                  radius: 11,
+                  backgroundColor: color.withValues(alpha: 0.1),
+                  child: Text(
+                    '$rank',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: color,
+                          fontWeight: FontWeight.w800,
+                        ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Expanded(
+                child: Text(
+                  highlight.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ),
+              Text(
+                highlight.displayScore,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: AppColors.navy,
+                      fontWeight: FontWeight.w800,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              minHeight: 8,
+              value: progress,
+              color: color,
+              backgroundColor:
+                  Theme.of(context).colorScheme.surfaceContainerHighest,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -371,9 +534,10 @@ class _ActiveProblemsPanel extends StatelessWidget {
                       if (intensity != null)
                         Text(
                           '$intensity/10',
-                          style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                                fontWeight: FontWeight.w700,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.labelLarge?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  ),
                         ),
                     ],
                   ),
@@ -410,12 +574,12 @@ class MentalMapHistoryLinksSection extends StatelessWidget {
             hint: 'Use a linha do tempo e o genograma na trilha.',
           ),
           if (_route(
-                MentalMapNavigationTargets.timeline(
-                  role: role,
-                  patientId: patientId,
-                ),
-                context,
-              )
+            MentalMapNavigationTargets.timeline(
+              role: role,
+              patientId: patientId,
+            ),
+            context,
+          )
               case final open?)
             TextButton.icon(
               onPressed: open,
@@ -432,7 +596,8 @@ class MentalMapHistoryLinksSection extends StatelessWidget {
         _TimelinePanel(
           events: history.timelineEvents,
           onOpen: _route(
-            MentalMapNavigationTargets.timeline(role: role, patientId: patientId),
+            MentalMapNavigationTargets.timeline(
+                role: role, patientId: patientId),
             context,
           ),
         ),
@@ -440,7 +605,8 @@ class MentalMapHistoryLinksSection extends StatelessWidget {
         _GenogramPanel(
           history: history,
           onOpen: _route(
-            MentalMapNavigationTargets.genogram(role: role, patientId: patientId),
+            MentalMapNavigationTargets.genogram(
+                role: role, patientId: patientId),
             context,
           ),
         ),
@@ -500,9 +666,7 @@ class _TimelinePanel extends StatelessWidget {
                     (event) => ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: Icon(
-                        event.isSensitive
-                            ? Icons.lock_outline
-                            : Icons.circle,
+                        event.isSensitive ? Icons.lock_outline : Icons.circle,
                         size: event.isSensitive ? 20 : 10,
                         color: event.isSensitive
                             ? Theme.of(context).colorScheme.error
@@ -686,12 +850,12 @@ class MentalMapTherapyPlanSection extends StatelessWidget {
             hint: 'Objetivos e problemas aparecem lado a lado, sem inferência.',
           ),
           if (_route(
-                MentalMapNavigationTargets.therapyGoals(
-                  role: role,
-                  patientId: patientId,
-                ),
-                context,
-              )
+            MentalMapNavigationTargets.therapyGoals(
+              role: role,
+              patientId: patientId,
+            ),
+            context,
+          )
               case final open?)
             TextButton.icon(
               onPressed: open,
@@ -737,7 +901,8 @@ class MentalMapTherapyPlanSection extends StatelessWidget {
         _CheckInPlanPanel(
           plan: plan,
           onOpen: _route(
-            MentalMapNavigationTargets.checkIns(role: role, patientId: patientId),
+            MentalMapNavigationTargets.checkIns(
+                role: role, patientId: patientId),
             context,
           ),
         ),
@@ -861,15 +1026,13 @@ class _CheckInPlanPanel extends StatelessWidget {
                   Text(
                     'Registre mais check-ins para ver a tendência.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color:
-                              Theme.of(context).colorScheme.onSurfaceVariant,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                   ),
                 if (latest != null)
                   Text(
                     [
-                      if (latest.moodScore != null)
-                        'Humor ${latest.moodScore}',
+                      if (latest.moodScore != null) 'Humor ${latest.moodScore}',
                       if (latest.anxietyScore != null)
                         'Ansiedade ${latest.anxietyScore}',
                       if (latest.energyScore != null)
@@ -1116,3 +1279,4 @@ VoidCallback? _route(String? path, BuildContext context) {
   if (path == null) return null;
   return () => context.push(path);
 }
+

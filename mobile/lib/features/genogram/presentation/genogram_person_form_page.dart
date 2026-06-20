@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -31,7 +31,8 @@ class GenogramPersonFormPage extends ConsumerStatefulWidget {
       _GenogramPersonFormPageState();
 }
 
-class _GenogramPersonFormPageState extends ConsumerState<GenogramPersonFormPage> {
+class _GenogramPersonFormPageState
+    extends ConsumerState<GenogramPersonFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _fullNameController = TextEditingController();
   final _nicknameController = TextEditingController();
@@ -131,7 +132,9 @@ class _GenogramPersonFormPageState extends ConsumerState<GenogramPersonFormPage>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              e is AppException ? userMessageFor(e) : 'Não foi possível salvar.',
+              e is AppException
+                  ? userMessageFor(e)
+                  : 'Não foi possível salvar.',
             ),
           ),
         );
@@ -148,7 +151,7 @@ class _GenogramPersonFormPageState extends ConsumerState<GenogramPersonFormPage>
           ref.watch(genogramPersonDetailProvider(widget.personId!));
       return personAsync.when(
         loading: () => const AppScaffold(
-          title: 'Carregando…',
+          title: 'Carregando...',
           body: Center(child: CircularProgressIndicator()),
         ),
         error: (_, __) => AppScaffold(
@@ -212,7 +215,7 @@ class _GenogramPersonFormPageState extends ConsumerState<GenogramPersonFormPage>
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<GenogramGender?>(
-              value: _gender,
+              initialValue: _gender,
               decoration: const InputDecoration(labelText: 'Gênero'),
               items: [
                 const DropdownMenuItem<GenogramGender?>(
@@ -281,7 +284,8 @@ class _GenogramPersonFormPageState extends ConsumerState<GenogramPersonFormPage>
                       width: 22,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : Text(widget.isEdit ? 'Salvar alterações' : 'Adicionar pessoa'),
+                  : Text(
+                      widget.isEdit ? 'Salvar alterações' : 'Adicionar pessoa'),
             ),
           ],
         ),

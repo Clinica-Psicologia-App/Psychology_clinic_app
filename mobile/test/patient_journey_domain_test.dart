@@ -1,11 +1,12 @@
-import 'package:flutter_test/flutter_test.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
 import 'package:terapia_esquema/features/patient_journey/domain/journey_step.dart';
 import 'package:terapia_esquema/features/patient_journey/domain/journey_step_availability.dart';
 import 'package:terapia_esquema/features/patient_journey/domain/journey_step_id.dart';
 import 'package:terapia_esquema/features/patient_journey/domain/patient_journey_progress.dart';
 
 void main() {
-  test('buildPatientJourneySteps marks modules with correct base availability', () {
+  test('buildPatientJourneySteps marks modules with correct base availability',
+      () {
     final steps = buildPatientJourneySteps(null);
     expect(steps.length, 10);
 
@@ -27,7 +28,8 @@ void main() {
       byId[JourneyStepId.genogram]!.availability,
       JourneyStepAvailability.available,
     );
-    expect(steps.map((step) => step.order), orderedEquals([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));
+    expect(steps.map((step) => step.order),
+        orderedEquals([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));
     expect(byId[JourneyStepId.genogram]!.order, 2);
     expect(byId[JourneyStepId.timeline]!.order, 3);
     expect(byId[JourneyStepId.problems]!.order, 4);
@@ -58,6 +60,34 @@ void main() {
     final steps = buildPatientJourneySteps(progress);
     final q = steps.firstWhere((s) => s.id == JourneyStepId.questionnaires);
     expect(q.availability, JourneyStepAvailability.completed);
+  });
+
+  test('questionnaires are blocked when none are available to patient', () {
+    const progress = PatientJourneyProgress(
+      activeQuestionnaireCount: 0,
+      completedQuestionnaireCount: 0,
+      hasMonitorToday: false,
+      releasedResourceCount: 0,
+      completedResourceCount: 0,
+      activeTherapyGoalCount: 0,
+      completedTherapyGoalCount: 0,
+      totalProblemCount: 0,
+      openProblemCount: 0,
+      hasCheckInToday: false,
+      timelineEventCount: 0,
+      genogramPeopleCount: 0,
+      genogramRelationshipCount: 0,
+      checkInCount: 0,
+      dailyMonitorCount: 0,
+      hasYsqStructuredResult: false,
+      hasYamiStructuredResult: false,
+    );
+
+    final step = buildPatientJourneySteps(progress)
+        .firstWhere((item) => item.id == JourneyStepId.questionnaires);
+
+    expect(step.availability, JourneyStepAvailability.blocked);
+    expect(step.progressHint, contains('Nenhum instrumento'));
   });
 
   test('progress marks monitor completed when has record today', () {

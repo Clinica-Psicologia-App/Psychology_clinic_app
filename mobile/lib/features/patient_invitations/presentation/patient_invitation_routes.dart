@@ -1,16 +1,16 @@
-import '../../profile/domain/profile_role.dart';
+﻿import '../../profile/domain/profile_role.dart';
 
 abstract final class PatientInvitationRoutes {
   static const accept = '/accept-invitation';
 
   static String list(ProfileRole role) {
     switch (role) {
-      case ProfileRole.admin:
-        return '/admin/patient-invitations';
+      case ProfileRole.platformAdmin:
+        throw StateError('Convites não disponíveis para platform admin');
       case ProfileRole.psychologist:
         return '/psychologist/patient-invitations';
       case ProfileRole.patient:
-        throw StateError('Convites nao disponiveis para patient');
+        throw StateError('Convites não disponíveis para patient');
     }
   }
 

@@ -1,4 +1,4 @@
-import 'patient_problem.dart';
+﻿import 'patient_problem.dart';
 import 'patient_problem_status.dart';
 
 class PatientProblemInput {
@@ -70,8 +70,7 @@ class PatientProblemInput {
       'description': _nullableTrim(description),
       'category': _nullableTrim(category),
       'intensity': intensity,
-      'identified_at':
-          identifiedAt != null ? _formatDate(identifiedAt!) : null,
+      'identified_at': identifiedAt != null ? _formatDate(identifiedAt!) : null,
       if (status != null) 'status': status!.storageValue,
     };
   }

@@ -1,4 +1,4 @@
-import 'answered_question.dart';
+﻿import 'answered_question.dart';
 import 'category_result.dart';
 import 'patient_response_summary.dart';
 import 'questionnaire_response_status.dart';
@@ -135,7 +135,7 @@ class PatientResultDetail {
       patientId: json['patient_id'] as String,
       questionnaireId:
           qMap['id'] as String? ?? json['questionnaire_id'] as String,
-      questionnaireCode: qMap['code'] as String? ?? '—',
+      questionnaireCode: qMap['code'] as String? ?? '-',
       questionnaireName: qMap['name'] as String? ?? 'Questionário',
       questionnaireDescription: qMap['description'] as String?,
       status: QuestionnaireResponseStatus.fromString(

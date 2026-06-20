@@ -1,4 +1,4 @@
-import 'package:flutter_test/flutter_test.dart';
+﻿import 'package:flutter_test/flutter_test.dart';
 import 'package:terapia_esquema/features/mental_map/domain/mental_case_map.dart';
 import 'package:terapia_esquema/features/mental_map/domain/mental_map_case_summary.dart';
 import 'package:terapia_esquema/features/mental_map/domain/mental_map_check_in_summary.dart';
@@ -17,6 +17,7 @@ import 'package:terapia_esquema/features/therapy_resources/domain/therapy_resour
 import 'package:terapia_esquema/features/therapy_resources/domain/patient_resource_access.dart';
 import 'package:terapia_esquema/features/therapy_resources/domain/resource_access_status.dart';
 import 'package:terapia_esquema/features/therapy_resources/domain/therapy_resource.dart';
+import 'package:terapia_esquema/features/therapy_resources/domain/therapy_resource_input.dart';
 import 'package:terapia_esquema/features/therapy_resources/domain/therapy_resource_type.dart';
 
 void main() {
@@ -55,6 +56,32 @@ void main() {
     expect(r.title, 'Artigo teste');
     expect(r.type, TherapyResourceType.article);
     expect(r.url, 'https://example.com');
+  });
+
+  test('TherapyResourceInput validates title and link', () {
+    const emptyTitle = TherapyResourceInput(
+      title: ' ',
+      type: TherapyResourceType.exercise,
+    );
+    expect(emptyTitle.validate(), isNotNull);
+
+    const invalidUrl = TherapyResourceInput(
+      title: 'Registro emocional',
+      type: TherapyResourceType.exercise,
+      url: 'arquivo.pdf',
+    );
+    expect(invalidUrl.validate(), isNotNull);
+
+    const valid = TherapyResourceInput(
+      title: ' Registro emocional ',
+      type: TherapyResourceType.exercise,
+      description: '  Praticar ao fim do dia. ',
+      url: ' https://example.com/material ',
+    );
+    expect(valid.validate(), isNull);
+    expect(valid.toUpdateJson()['title'], 'Registro emocional');
+    expect(valid.toUpdateJson()['description'], 'Praticar ao fim do dia.');
+    expect(valid.toUpdateJson()['url'], 'https://example.com/material');
   });
 
   test('PatientResourceAccess.fromJson parses dates and nested resource', () {

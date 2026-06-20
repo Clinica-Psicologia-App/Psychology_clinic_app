@@ -31,7 +31,7 @@ Senha seed: **`TesteMVP2025!`** · contas `@clinicateste-mvp.example`
 ```bash
 supabase start
 supabase db reset
-supabase functions serve   # terminal separado (5 Edge Functions)
+supabase functions serve   # terminal separado (9 Edge Functions)
 
 cd mobile
 cp env.example.json env.local.json
@@ -47,7 +47,7 @@ flutter build apk --debug --dart-define-from-file=env.local.json
 # → build/app/outputs/flutter-apk/app-debug.apk
 ```
 
-`applicationId`: `br.com.terapiaesquema.mvp` · Nome no launcher: **Terapia do Esquema**
+`applicationId`: `br.com.esquemacore.app` · Nome no launcher: **EsquemaCore**
 
 ## Segurança (MVP)
 
@@ -72,6 +72,7 @@ supabase db reset
 - [Deploy Supabase](docs/deploy/supabase-deploy-checklist.md)
 - [Build mobile](docs/deploy/mobile-build-checklist.md)
 - [QA pós-roadmap](docs/qa/post-roadmap-stabilization.md)
+- [Estado de implementação para produção](docs/production-implementation-status.md)
 - [Homologação clínica YSQ/YAMI](docs/scoring-engine/clinical-homologation.md)
 
 ### Produto e roadmap

@@ -3,6 +3,25 @@ import 'package:terapia_esquema/features/patients/domain/create_patient_request.
 import 'package:terapia_esquema/features/patients/domain/patient.dart';
 
 void main() {
+  test('Patient humanizes clinical storage values', () {
+    const patient = Patient(
+      id: 'patient-1',
+      fullName: 'Maria',
+      responsiblePsychologistId: 'psych-1',
+      gender: 'nao_informado',
+      relationshipStatus: 'stable_union',
+      educationLevel: 'high_school',
+      sexualOrientation: 'nao_informado',
+      ethnicGroup: 'parda',
+    );
+
+    expect(patient.displayGender, 'Não informado');
+    expect(patient.displayRelationshipStatus, 'União estável');
+    expect(patient.displayEducationLevel, 'Ensino médio');
+    expect(patient.displaySexualOrientation, 'Não informado');
+    expect(patient.displayEthnicGroup, 'Parda');
+  });
+
   test('Patient.fromJson maps psychologist and status', () {
     final patient = Patient.fromJson({
       'id': 'p1',
@@ -23,6 +42,8 @@ void main() {
       'current_life_context': 'Paciente em transição profissional.',
       'therapy_demands': 'Reduzir ansiedade e organizar rotina.',
       'profile_id': 'prof1',
+      'is_active': false,
+      'inactivated_at': '2026-06-20T15:00:00Z',
       'responsible_psychologist_id': 'psych1',
       'responsible_psychologist': {'full_name': 'Dr. João'},
       'access_profile': {'is_active': true},
@@ -31,6 +52,8 @@ void main() {
     expect(patient.fullName, 'Ana Silva');
     expect(patient.responsiblePsychologistName, 'Dr. João');
     expect(patient.accessStatus, PatientAccessStatus.active);
+    expect(patient.isActive, isFalse);
+    expect(patient.inactivatedAt, DateTime.utc(2026, 6, 20, 15));
     expect(patient.gender, 'Feminino');
     expect(patient.relationshipStatus, 'Solteira');
     expect(patient.educationLevel, 'Ensino superior completo');
@@ -50,6 +73,17 @@ void main() {
       patient.therapyDemands,
       'Reduzir ansiedade e organizar rotina.',
     );
+  });
+
+  test('Patient defaults legacy records to active', () {
+    final patient = Patient.fromJson({
+      'id': 'legacy',
+      'full_name': 'Paciente legado',
+      'responsible_psychologist_id': 'psych1',
+    });
+
+    expect(patient.isActive, isTrue);
+    expect(patient.inactivatedAt, isNull);
   });
 
   test('CreatePatientRequest.toJson omits empty optional fields', () {

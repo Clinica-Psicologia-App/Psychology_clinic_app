@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -77,8 +77,7 @@ class _PatientTimelineEventFormPageState
       eventDate: _eventDate,
       periodLabel: _periodLabelController.text,
       category: _categoryController.text,
-      emotionalImpact:
-          _includeEmotionalImpact ? _emotionalImpact : null,
+      emotionalImpact: _includeEmotionalImpact ? _emotionalImpact : null,
       isSensitive: _isSensitive,
     );
   }
@@ -120,7 +119,9 @@ class _PatientTimelineEventFormPageState
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              e is AppException ? userMessageFor(e) : 'Não foi possível salvar.',
+              e is AppException
+                  ? userMessageFor(e)
+                  : 'Não foi possível salvar.',
             ),
           ),
         );
@@ -150,7 +151,7 @@ class _PatientTimelineEventFormPageState
           ref.watch(patientTimelineEventDetailProvider(widget.eventId!));
       return eventAsync.when(
         loading: () => const AppScaffold(
-          title: 'Carregando…',
+          title: 'Carregando...',
           body: Center(child: CircularProgressIndicator()),
         ),
         error: (_, __) => AppScaffold(
@@ -286,7 +287,8 @@ class _PatientTimelineEventFormPageState
                       width: 22,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : Text(widget.isEdit ? 'Salvar alterações' : 'Registrar evento'),
+                  : Text(
+                      widget.isEdit ? 'Salvar alterações' : 'Registrar evento'),
             ),
           ],
         ),

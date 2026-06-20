@@ -21,9 +21,11 @@ class Patient {
     this.currentLifeContext,
     this.therapyDemands,
     this.profileId,
-    required this.responsiblePsychologistId,
+    this.responsiblePsychologistId,
     this.responsiblePsychologistName,
     this.accessStatus,
+    this.isActive = true,
+    this.inactivatedAt,
     this.createdAt,
     this.supportsIntakeContext = true,
   });
@@ -48,11 +50,61 @@ class Patient {
   final String? currentLifeContext;
   final String? therapyDemands;
   final String? profileId;
-  final String responsiblePsychologistId;
+  final String? responsiblePsychologistId;
   final String? responsiblePsychologistName;
   final PatientAccessStatus? accessStatus;
+  final bool isActive;
+  final DateTime? inactivatedAt;
   final DateTime? createdAt;
   final bool supportsIntakeContext;
+
+  String? get displayGender => _humanizeClinicalValue(gender, const {
+        'female': 'Feminino',
+        'feminino': 'Feminino',
+        'male': 'Masculino',
+        'masculino': 'Masculino',
+        'non_binary': 'Não binário',
+        'other': 'Outro',
+        'outro': 'Outro',
+        'unknown': 'Não informado',
+        'nao_informado': 'Não informado',
+      });
+
+  String? get displayRelationshipStatus =>
+      _humanizeClinicalValue(relationshipStatus, const {
+        'single': 'Solteiro(a)',
+        'solteiro': 'Solteiro(a)',
+        'married': 'Casado(a)',
+        'casado': 'Casado(a)',
+        'divorced': 'Divorciado(a)',
+        'divorciado': 'Divorciado(a)',
+        'widowed': 'Viúvo(a)',
+        'viuvo': 'Viúvo(a)',
+        'stable_union': 'União estável',
+        'uniao_estavel': 'União estável',
+        'nao_informado': 'Não informado',
+      });
+
+  String? get displayEducationLevel =>
+      _humanizeClinicalValue(educationLevel, const {
+        'elementary': 'Ensino fundamental',
+        'high_school': 'Ensino médio',
+        'undergraduate': 'Ensino superior',
+        'graduate': 'Pós-graduação',
+        'nao_informado': 'Não informado',
+      });
+
+  String? get displaySexualOrientation =>
+      _humanizeClinicalValue(sexualOrientation, const {
+        'heterosexual': 'Heterossexual',
+        'homosexual': 'Homossexual',
+        'bisexual': 'Bissexual',
+        'asexual': 'Assexual',
+        'pansexual': 'Pansexual',
+        'nao_informado': 'Não informado',
+      });
+
+  String? get displayEthnicGroup => _humanizeClinicalValue(ethnicGroup);
 
   factory Patient.fromJson(
     Map<String, dynamic> json, {
@@ -82,15 +134,15 @@ class Patient {
       currentLifeContext: json['current_life_context'] as String?,
       therapyDemands: json['therapy_demands'] as String?,
       profileId: json['profile_id'] as String?,
-      responsiblePsychologistId:
-          json['responsible_psychologist_id'] as String,
-      responsiblePsychologistName: responsible is Map
-          ? responsible['full_name'] as String?
-          : null,
+      responsiblePsychologistId: json['responsible_psychologist_id'] as String?,
+      responsiblePsychologistName:
+          responsible is Map ? responsible['full_name'] as String? : null,
       accessStatus: _accessStatusFromJson(
         profileId: json['profile_id'],
         accessProfile: accessProfile,
       ),
+      isActive: json['is_active'] as bool? ?? true,
+      inactivatedAt: _parseDateTime(json['inactivated_at']),
       createdAt: _parseDateTime(json['created_at']),
       supportsIntakeContext: supportsIntakeContext,
     );
@@ -120,6 +172,25 @@ class Patient {
     if (value == null) return null;
     if (value is DateTime) return value;
     return DateTime.tryParse(value.toString());
+  }
+
+  static String? _humanizeClinicalValue(
+    String? value, [
+    Map<String, String> labels = const {},
+  ]) {
+    final normalized = value?.trim().toLowerCase();
+    if (normalized == null || normalized.isEmpty) return null;
+    final mapped = labels[normalized];
+    if (mapped != null) return mapped;
+
+    final words = normalized
+        .replaceAll('-', '_')
+        .split('_')
+        .where((word) => word.isNotEmpty)
+        .toList();
+    if (words.isEmpty) return null;
+    final text = words.join(' ');
+    return '${text[0].toUpperCase()}${text.substring(1)}';
   }
 }
 

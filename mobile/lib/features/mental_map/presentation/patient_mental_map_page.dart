@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -11,6 +11,7 @@ import '../domain/mental_map_data.dart';
 import '../domain/mental_map_hub_builder.dart';
 import '../providers/mental_map_providers.dart';
 import 'mental_map_navigation_targets.dart';
+import 'mental_map_node_state.dart';
 import 'widgets/mental_map_formulation_widgets.dart';
 import 'widgets/mental_map_widgets.dart';
 
@@ -450,6 +451,7 @@ class _MentalMapBody extends StatelessWidget {
         icon: icon,
         accentColor: accentColor,
         isFilled: node.isFilled,
+        visualState: resolveMentalMapNodeVisualState(node),
         onTap: () {
           final primaryRoute = resolvePrimaryRoute(
             detail: detail,

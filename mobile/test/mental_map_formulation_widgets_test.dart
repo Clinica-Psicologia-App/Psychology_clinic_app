@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:terapia_esquema/features/mental_map/domain/mental_map_check_in_summary.dart';
 import 'package:terapia_esquema/features/mental_map/domain/mental_map_clinical_core.dart';
@@ -12,7 +12,8 @@ import 'package:terapia_esquema/features/mental_map/presentation/widgets/mental_
 import 'package:terapia_esquema/features/profile/domain/profile_role.dart';
 
 void main() {
-  testWidgets('MentalMapFormulationTabs switches between layers', (tester) async {
+  testWidgets('MentalMapFormulationTabs switches between layers',
+      (tester) async {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
@@ -46,10 +47,11 @@ void main() {
     await tester.tap(find.text('Plano'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Plano terapêutico vazio'), findsOneWidget);
+    expect(find.text('Abrir objetivos'), findsOneWidget);
   });
 
-  testWidgets('MentalMapCheckInSparklineChart renders with data', (tester) async {
+  testWidgets('MentalMapCheckInSparklineChart renders with data',
+      (tester) async {
     final sparkline = buildCheckInSparkline([
       MentalMapCheckInSummary(
         id: 'c1',

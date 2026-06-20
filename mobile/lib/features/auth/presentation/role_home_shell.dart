@@ -1,15 +1,22 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
+import '../../../core/theme/app_breakpoints.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_radius.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
-import '../../patients/presentation/patient_routes.dart';
+import '../../../shared/widgets/clinical_module_card.dart';
+import '../../../shared/widgets/esquema_core_logo.dart';
+import '../../../shared/widgets/responsive_content.dart';
 import '../../patient_journey/presentation/patient_journey_routes.dart';
+import '../../patients/presentation/patient_routes.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../profile/domain/user_profile.dart';
-import '../../questionnaires/presentation/questionnaire_routes.dart';
 import '../providers/auth_providers.dart';
 
 class RoleHomeShell extends ConsumerWidget {
@@ -31,11 +38,12 @@ class RoleHomeShell extends ConsumerWidget {
 
     return AppScaffold(
       title: title,
+      subtitle: subtitle,
+      useResponsivePadding: false,
       actions: [
         IconButton(
           tooltip: 'Sair',
-          onPressed: () =>
-              ref.read(authControllerProvider.notifier).signOut(),
+          onPressed: () => ref.read(authControllerProvider.notifier).signOut(),
           icon: const Icon(Icons.logout),
         ),
       ],
@@ -71,71 +79,126 @@ class _HomeBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+    final isWide = AppBreakpoints.isWide(context);
+
+    return ResponsiveContent(
+      child: ListView(
+        padding: const EdgeInsets.all(AppSpacing.xl),
         children: [
-          Text(subtitle, style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 24),
-          Card(
-            child: ListTile(
-              leading: CircleAvatar(child: Text(profile.fullName[0])),
-              title: Text(profile.fullName),
-              subtitle: Text('${profile.role.label}\n${profile.email}'),
-              isThreeLine: true,
+          if (isWide)
+            const Padding(
+              padding: EdgeInsets.only(bottom: AppSpacing.xl),
+              child: EsquemaCoreLogo.horizontal(
+                size: 44,
+                showName: true,
+                showTagline: true,
+              ),
             ),
+          MotionReveal(
+            child: _ProfileHeader(profile: profile, subtitle: subtitle),
           ),
-          if (role == ProfileRole.admin ||
-              role == ProfileRole.psychologist) ...[
-            const SizedBox(height: 8),
-            Text(
-              'Módulos',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.people_outline),
-                title: const Text('Pacientes'),
-                subtitle: const Text('Listar, cadastrar e ver detalhes'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.push(PatientRoutes.list(role)),
-              ),
-            ),
-            if (role == ProfileRole.admin)
-              Card(
-                child: ListTile(
-                  leading: const Icon(Icons.assignment_ind_outlined),
-                  title: const Text('Acesso a questionários'),
-                  subtitle: const Text(
-                    'Liberar ou bloquear instrumentos por profissional.',
+          const SizedBox(height: AppSpacing.xl),
+          if (role == ProfileRole.psychologist) ...[
+            Text('Módulos', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: AppSpacing.sm),
+            MotionReveal(
+              delay: const Duration(milliseconds: 90),
+              child: ResponsiveGrid(
+                mediumColumns: 2,
+                expandedColumns: 2,
+                children: [
+                  ClinicalModuleCard(
+                    icon: Icons.people_outline,
+                    title: 'Pacientes',
+                    subtitle: 'Listar, cadastrar e ver detalhes',
+                    accentColor: AppColors.blue,
+                    onTap: () => context.push(PatientRoutes.list(role)),
                   ),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () => context.push(QuestionnaireRoutes.adminAccess),
-                ),
+                ],
               ),
+            ),
           ],
           if (role == ProfileRole.patient) ...[
-            const SizedBox(height: 8),
-            Text(
-              'Jornada',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.route_outlined),
-                title: const Text('Meu plano terapêutico'),
-                subtitle: const Text(
-                  'Trilha com questionários, monitor, biblioteca e próximos módulos.',
-                ),
-                trailing: const Icon(Icons.chevron_right),
+            Text('Jornada', style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: AppSpacing.sm),
+            MotionReveal(
+              delay: const Duration(milliseconds: 90),
+              child: ClinicalModuleCard(
+                icon: Icons.route_outlined,
+                title: 'Meu plano terapêutico',
+                subtitle:
+                    'Trilha com questionários, monitor, biblioteca e próximos módulos.',
+                accentColor: AppColors.purple,
                 onTap: () => context.push(PatientJourneyRoutes.journey),
               ),
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _ProfileHeader extends StatelessWidget {
+  const _ProfileHeader({
+    required this.profile,
+    required this.subtitle,
+  });
+
+  final UserProfile profile;
+  final String subtitle;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.surface,
+            AppColors.turquoise.withValues(alpha: 0.055),
+          ],
+        ),
+        borderRadius: AppRadius.xlAll,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 30,
+              backgroundColor: AppColors.turquoise.withValues(alpha: 0.15),
+              child: Text(
+                profile.fullName[0].toUpperCase(),
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      color: AppColors.navy,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    profile.fullName,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  const SizedBox(height: AppSpacing.xxs),
+                  Text(
+                    subtitle,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  Text(
+                    '${profile.role.label} · ${profile.email}',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

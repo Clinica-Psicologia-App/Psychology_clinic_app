@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_animations.dart';
+import '../../../../core/theme/app_breakpoints.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../shared/widgets/status_chip.dart';
 import '../../domain/journey_step.dart';
 import '../../domain/journey_step_availability.dart';
+import '../../domain/journey_step_id.dart';
 
 class JourneyStepCard extends StatelessWidget {
   const JourneyStepCard({
@@ -16,162 +23,194 @@ class JourneyStepCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colors = theme.colorScheme;
-    final statusStyle = _statusStyle(colors, step.availability);
-    final showChevron =
+    final enabled =
         step.availability != JourneyStepAvailability.blocked && onTap != null;
+    final accent = _accentForStep(step);
+    final compact = AppBreakpoints.isCompact(context);
 
-    return Card(
-      margin: EdgeInsets.zero,
-      elevation: step.availability == JourneyStepAvailability.available ? 1 : 0,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundColor: colors.primaryContainer.withValues(alpha: 0.6),
-                    child: Icon(step.icon, color: colors.primary, size: 22),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+    return AnimatedContainer(
+      duration: AppAnimations.standard,
+      curve: AppAnimations.standardCurve,
+      child: Card(
+        margin: EdgeInsets.zero,
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          borderRadius: AppRadius.lgAll,
+          child: Padding(
+            padding: EdgeInsets.all(compact ? AppSpacing.sm : AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _StepHeader(
+                  step: step,
+                  accent: accent,
+                  enabled: enabled,
+                  compact: compact,
+                ),
+                if (step.progressHint != null) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.xs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: accent.withValues(alpha: 0.08),
+                      borderRadius: AppRadius.smAll,
+                    ),
+                    child: Row(
                       children: [
-                        Text(
-                          step.title,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          step.subtitle,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: colors.onSurfaceVariant,
-                            height: 1.35,
+                        Icon(Icons.insights_outlined, size: 16, color: accent),
+                        const SizedBox(width: AppSpacing.xs),
+                        Expanded(
+                          child: Text(
+                            step.progressHint!,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: AppColors.textSecondary,
+                              height: 1.35,
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  _StatusChip(
-                    label: step.availability.label,
-                    background: statusStyle.background,
-                    foreground: statusStyle.foreground,
-                  ),
-                  if (showChevron) ...[
-                    const SizedBox(width: 4),
-                    Icon(
-                      Icons.chevron_right,
-                      color: colors.onSurfaceVariant,
-                    ),
-                  ],
                 ],
-              ),
-              if (step.progressHint != null) ...[
-                const SizedBox(height: 12),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: colors.primaryContainer.withValues(alpha: 0.25),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.lightbulb_outline,
-                        size: 16,
-                        color: colors.primary,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          step.progressHint!,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: colors.primary,
-                            height: 1.35,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ],
-            ],
+            ),
           ),
         ),
       ),
     );
   }
-}
 
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({
-    required this.label,
-    required this.background,
-    required this.foreground,
-  });
+  static AppStatusTone _toneFor(JourneyStepAvailability availability) {
+    return switch (availability) {
+      JourneyStepAvailability.available => AppStatusTone.available,
+      JourneyStepAvailability.inProgress => AppStatusTone.inProgress,
+      JourneyStepAvailability.completed => AppStatusTone.completed,
+      JourneyStepAvailability.inDevelopment => AppStatusTone.development,
+      JourneyStepAvailability.blocked => AppStatusTone.blocked,
+    };
+  }
 
-  final String label;
-  final Color background;
-  final Color foreground;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: foreground,
-              fontWeight: FontWeight.w600,
-            ),
-      ),
-    );
+  static Color _accentForStep(JourneyStep step) {
+    return switch (step.id) {
+      JourneyStepId.questionnaires => AppColors.moduleQuestionnaires,
+      JourneyStepId.mentalMap => AppColors.moduleMentalMap,
+      JourneyStepId.checkIn => AppColors.moduleCheckIn,
+      JourneyStepId.timeline => AppColors.moduleTimeline,
+      JourneyStepId.therapyGoals => AppColors.moduleGoals,
+      JourneyStepId.problems => AppColors.moduleProblems,
+      JourneyStepId.library => AppColors.moduleResources,
+      JourneyStepId.results => AppColors.moduleDashboard,
+      JourneyStepId.dailyMonitor => AppColors.moduleMonitor,
+      JourneyStepId.genogram => AppColors.moduleGenogram,
+    };
   }
 }
 
-({Color background, Color foreground}) _statusStyle(
-  ColorScheme colors,
-  JourneyStepAvailability availability,
-) {
-  return switch (availability) {
-    JourneyStepAvailability.available => (
-        background: colors.primaryContainer,
-        foreground: colors.onPrimaryContainer,
+class _StepHeader extends StatelessWidget {
+  const _StepHeader({
+    required this.step,
+    required this.accent,
+    required this.enabled,
+    required this.compact,
+  });
+
+  final JourneyStep step;
+  final Color accent;
+  final bool enabled;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final icon = Container(
+      width: 44,
+      height: 44,
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.12),
+        borderRadius: AppRadius.mdAll,
       ),
-    JourneyStepAvailability.inProgress => (
-        background: colors.secondaryContainer,
-        foreground: colors.onSecondaryContainer,
-      ),
-    JourneyStepAvailability.completed => (
-        background: colors.tertiaryContainer,
-        foreground: colors.onTertiaryContainer,
-      ),
-    JourneyStepAvailability.inDevelopment => (
-        background: colors.surfaceContainerHighest,
-        foreground: colors.onSurfaceVariant,
-      ),
-    JourneyStepAvailability.blocked => (
-        background: colors.errorContainer.withValues(alpha: 0.35),
-        foreground: colors.onErrorContainer,
-      ),
-  };
+      child: Icon(step.icon, color: accent, size: 22),
+    );
+    final status = StatusChip(
+      label: step.availability.label,
+      tone: JourneyStepCard._toneFor(step.availability),
+    );
+    final chevron = enabled
+        ? const Icon(Icons.chevron_right, color: AppColors.textMuted)
+        : null;
+
+    if (compact) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              icon,
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  step.title,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+              if (chevron != null) chevron,
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            step.subtitle,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+              height: 1.35,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          status,
+        ],
+      );
+    }
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        icon,
+        const SizedBox(width: AppSpacing.sm),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                step.title,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xxs),
+              Text(
+                step.subtitle,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                  height: 1.35,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        status,
+        if (chevron != null) ...[
+          const SizedBox(width: AppSpacing.xxs),
+          chevron,
+        ],
+      ],
+    );
+  }
 }

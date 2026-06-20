@@ -1,4 +1,4 @@
-/// Textos de aviso na tela de resultados (por código do questionário).
+﻿/// Textos de aviso na tela de resultados (por código do questionário).
 class ResultStructuredDisclaimer {
   ResultStructuredDisclaimer._();
 

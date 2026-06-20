@@ -75,7 +75,7 @@ responsible_psychologist_profile:profiles!patient_invitations_responsible_psycho
       if (inviteUrl == null || inviteUrl.trim().isEmpty) {
         throw AppException(
           code: AppExceptionCodes.unknown,
-          message: 'Convite criado, mas link nao retornado.',
+          message: 'Convite criado, mas link não retornado.',
         );
       }
 

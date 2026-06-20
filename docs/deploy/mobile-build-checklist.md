@@ -126,11 +126,12 @@ adb install build/app/outputs/flutter-apk/app-debug.apk
 
 **Não obrigatório** para homologação funcional; preparar quando for loja.
 
-### Android release (rascunho)
+### Android release
 
-1. Keystore + `key.properties` (não commitar)
-2. Assinatura em `android/app/build.gradle.kts`
-3. Build:
+1. Criar o keystore de upload fora do repositório.
+2. Copiar `android/key.properties.example` para `android/key.properties`.
+3. Preencher senhas, alias e caminho do keystore. Não commitar esses arquivos.
+4. Build:
 
 ```bash
 flutter build appbundle --release --dart-define-from-file=env.production.json
@@ -139,6 +140,8 @@ flutter build apk --release --dart-define-from-file=env.production.json
 ```
 
 - [ ] ProGuard/R8 revisado se ativado
+- [ ] `android/key.properties` configurado; release nunca usa chave debug
+- [ ] `SUPABASE_URL` de release usa HTTPS e foi passada explicitamente
 - [ ] `applicationId` final definido (pode sair de `.mvp` para produção)
 - [ ] Política de privacidade / LGPD alinhada ao cliente
 

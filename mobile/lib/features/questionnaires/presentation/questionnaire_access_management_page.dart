@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/widgets/app_scaffold.dart';
@@ -28,7 +28,8 @@ class _QuestionnaireAccessManagementPageState
     final staffAsync = ref.watch(questionnaireStaffOptionsProvider);
     final accessAsync = _selectedProfessionalId == null
         ? null
-        : ref.watch(questionnaireAccessManagementProvider(_selectedProfessionalId!));
+        : ref.watch(
+            questionnaireAccessManagementProvider(_selectedProfessionalId!));
 
     return AppScaffold(
       title: 'Acesso a questionários',
@@ -50,7 +51,8 @@ class _QuestionnaireAccessManagementPageState
             data: (options) => _ProfessionalSelector(
               value: _selectedProfessionalId,
               options: options,
-              onChanged: (value) => setState(() => _selectedProfessionalId = value),
+              onChanged: (value) =>
+                  setState(() => _selectedProfessionalId = value),
             ),
           ),
           const SizedBox(height: 16),
@@ -84,7 +86,8 @@ class _QuestionnaireAccessManagementPageState
                       (item) => _AccessTile(
                         item: item,
                         enabled: data.supportsAccessControl && !_saving,
-                        showPendingLicense: profile?.role == ProfileRole.admin,
+                        showPendingLicense:
+                            profile?.role == ProfileRole.platformAdmin,
                         onChanged: (value) => _toggleAccess(
                           item,
                           value,

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../../domain/patient_resource_access.dart';
 import '../../domain/resource_access_status.dart';

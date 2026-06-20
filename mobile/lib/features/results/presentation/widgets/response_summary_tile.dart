@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 import '../../domain/patient_response_summary.dart';
 import '../../domain/questionnaire_response_status.dart';
@@ -18,7 +18,7 @@ class ResponseSummaryTile extends StatelessWidget {
     final completed = summary.completedAt;
     final dateLabel = completed != null
         ? MaterialLocalizations.of(context).formatFullDate(completed)
-        : '—';
+        : '-';
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),

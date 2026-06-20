@@ -1,4 +1,4 @@
-/// Metadados de um nó do hub para o bottom sheet (M5).
+﻿/// Metadados de um nó do hub para o bottom sheet (M5).
 class MentalMapNodeDetail {
   const MentalMapNodeDetail({
     required this.id,

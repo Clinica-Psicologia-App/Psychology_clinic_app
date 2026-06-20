@@ -20,7 +20,7 @@ class QuestionnaireListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final meta = <Widget>[
-      Text('Codigo: ${questionnaire.code}'),
+      Text('Código: ${questionnaire.code}'),
       if (questionnaire.authorName != null &&
           questionnaire.authorName!.trim().isNotEmpty)
         Text('Autor: ${questionnaire.authorName}'),
@@ -35,8 +35,14 @@ class QuestionnaireListTile extends StatelessWidget {
       if (questionnaire.isParentalStyles)
         const _MetaChip(
           icon: Icons.family_restroom_outlined,
-          label: 'Mae e pai',
+          label: 'Mãe e pai',
         ),
+      _MetaChip(
+        icon: questionnaire.isClinicallyApproved
+            ? Icons.verified_outlined
+            : Icons.science_outlined,
+        label: questionnaire.clinicalStatus.label,
+      ),
     ];
 
     return Card(
@@ -84,7 +90,9 @@ class QuestionnaireListTile extends StatelessWidget {
               ),
           ],
         ),
-        trailing: const Icon(Icons.chevron_right),
+        trailing: enabled
+            ? const Icon(Icons.chevron_right)
+            : const Icon(Icons.lock_outline),
         isThreeLine: questionnaire.description != null || showStaffDetails,
         onTap: onTap,
       ),
@@ -94,10 +102,10 @@ class QuestionnaireListTile extends StatelessWidget {
 
 String _referencePeriodLabel(ReferencePeriod period) {
   return switch (period) {
-    ReferencePeriod.lastMonth => 'Ultimo mes',
-    ReferencePeriod.lastYear => 'Ultimos 12 meses',
-    ReferencePeriod.lifetime => 'Historia de vida',
-    ReferencePeriod.unspecified => 'Sem periodo',
+    ReferencePeriod.lastMonth => 'Último mês',
+    ReferencePeriod.lastYear => 'Últimos 12 meses',
+    ReferencePeriod.lifetime => 'História de vida',
+    ReferencePeriod.unspecified => 'Sem período',
   };
 }
 

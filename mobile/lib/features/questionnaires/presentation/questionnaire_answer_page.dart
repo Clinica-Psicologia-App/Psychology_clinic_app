@@ -1,9 +1,10 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
+import '../../../shared/widgets/gradient_progress_indicator.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/parental_contexts.dart';
 import '../domain/questionnaire_response_context.dart';
@@ -40,7 +41,8 @@ class _QuestionnaireAnswerPageState
 
   QuestionnaireSession get session => widget.session;
   bool get _hasPendingAnswers => _answers.isNotEmpty;
-  bool get _isParentalFlow => session.questionnaire.isParentalStyles && session.hasContexts;
+  bool get _isParentalFlow =>
+      session.questionnaire.isParentalStyles && session.hasContexts;
   QuestionnaireResponseContext? get _currentContext =>
       _isParentalFlow ? session.contexts[_currentContextIndex] : null;
   String get _currentAnswerKey =>
@@ -61,8 +63,8 @@ class _QuestionnaireAnswerPageState
     final question = questions[_currentIndex];
     final progress = (_currentIndex + 1) / questions.length;
     final isLastQuestion = _currentIndex == questions.length - 1;
-    final isLastContext = !_isParentalFlow ||
-        _currentContextIndex == session.contexts.length - 1;
+    final isLastContext =
+        !_isParentalFlow || _currentContextIndex == session.contexts.length - 1;
     final isLast = isLastQuestion && isLastContext;
 
     return PopScope(
@@ -96,7 +98,11 @@ class _QuestionnaireAnswerPageState
                   Row(
                     children: [
                       Expanded(
-                        child: LinearProgressIndicator(value: progress),
+                        child: GradientProgressIndicator(
+                          value: progress,
+                          label:
+                              'Pergunta ${_currentIndex + 1} de ${questions.length}',
+                        ),
                       ),
                       const SizedBox(width: 12),
                       Text(
@@ -120,28 +126,44 @@ class _QuestionnaireAnswerPageState
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Text(
-                      _isParentalFlow
-                          ? normalizeParentalQuestionText(question.text)
-                          : question.text,
-                      style: Theme.of(context).textTheme.titleMedium,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  transitionBuilder: (child, animation) => FadeTransition(
+                    opacity: animation,
+                    child: SlideTransition(
+                      position: Tween<Offset>(
+                        begin: const Offset(0.03, 0),
+                        end: Offset.zero,
+                      ).animate(animation),
+                      child: child,
                     ),
-                    const SizedBox(height: 24),
-                    QuestionInputWidget(
-                      question: question,
-                      value: _answers[_currentAnswerKey],
-                      errorText: _fieldError,
-                      onChanged: (v) {
-                        setState(() {
-                          _answers[_currentAnswerKey] = v;
-                          _fieldError = null;
-                        });
-                      },
-                    ),
-                  ],
+                  ),
+                  child: Column(
+                    key: ValueKey('${_currentIndex}_${_currentContext?.id}'),
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        _isParentalFlow
+                            ? normalizeParentalQuestionText(question.text)
+                            : question.text,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 24),
+                      QuestionInputWidget(
+                        question: question,
+                        value: _answers[_currentAnswerKey],
+                        errorText: _fieldError,
+                        onChanged: (v) {
+                          setState(() {
+                            _answers[_currentAnswerKey] = v;
+                            _fieldError = null;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

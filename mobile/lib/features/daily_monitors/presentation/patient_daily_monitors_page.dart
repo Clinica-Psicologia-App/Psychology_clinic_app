@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -26,8 +26,7 @@ class PatientDailyMonitorsPage extends ConsumerWidget {
       actions: [
         IconButton(
           tooltip: 'Atualizar',
-          onPressed: () =>
-              ref.read(myDailyMonitorsProvider.notifier).refresh(),
+          onPressed: () => ref.read(myDailyMonitorsProvider.notifier).refresh(),
           icon: const Icon(Icons.refresh),
         ),
       ],
@@ -53,7 +52,8 @@ class PatientDailyMonitorsPage extends ConsumerWidget {
               ...items.map(
                 (m) => DailyMonitorListTile(
                   monitor: m,
-                  onTap: () => context.push(DailyMonitorRoutes.patientDetail(m.id)),
+                  onTap: () =>
+                      context.push(DailyMonitorRoutes.patientDetail(m.id)),
                 ),
               ),
             ],

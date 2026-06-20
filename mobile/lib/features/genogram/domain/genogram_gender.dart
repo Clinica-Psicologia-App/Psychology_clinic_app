@@ -1,4 +1,4 @@
-enum GenogramGender {
+﻿enum GenogramGender {
   male,
   female,
   other,

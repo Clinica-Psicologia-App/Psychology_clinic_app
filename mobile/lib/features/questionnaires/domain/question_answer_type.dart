@@ -16,6 +16,5 @@ enum QuestionAnswerType {
     );
   }
 
-  bool get supportsNumericSubmission =>
-      this != QuestionAnswerType.text;
+  bool get supportsNumericSubmission => this != QuestionAnswerType.text;
 }

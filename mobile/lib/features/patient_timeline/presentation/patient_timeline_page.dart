@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -21,7 +21,8 @@ class PatientTimelinePage extends ConsumerWidget {
       title: 'Linha do tempo',
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
-          final created = await context.push<bool>(PatientTimelineRoutes.patientCreate);
+          final created =
+              await context.push<bool>(PatientTimelineRoutes.patientCreate);
           if (created == true) {
             ref.read(myPatientTimelineProvider.notifier).refresh();
           }

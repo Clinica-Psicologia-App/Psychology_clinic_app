@@ -1,4 +1,4 @@
-import 'input_formatters.dart';
+﻿import 'input_formatters.dart';
 
 String? validateOptionalCpf(String? value) {
   if (value == null || value.trim().isEmpty) return null;

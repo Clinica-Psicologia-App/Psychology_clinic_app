@@ -5,6 +5,7 @@ import '../../profile/domain/profile_role.dart';
 import '../data/therapy_resources_repository.dart';
 import '../domain/patient_resource_access.dart';
 import '../domain/therapy_resource.dart';
+import '../domain/therapy_resource_input.dart';
 import '../domain/therapy_resource_recommendation.dart';
 import '../domain/therapy_resource_recommendation_engine.dart';
 
@@ -34,6 +35,13 @@ class StaffTherapyContext {
 
 final clinicResourcesProvider = FutureProvider<List<TherapyResource>>((ref) {
   return ref.read(therapyResourcesRepositoryProvider).listClinicResources();
+});
+
+final therapyResourceDetailProvider =
+    FutureProvider.family<TherapyResource?, String>((ref, resourceId) {
+  return ref.read(therapyResourcesRepositoryProvider).getResourceById(
+        resourceId,
+      );
 });
 
 final patientResourceAccessProvider =
@@ -136,6 +144,75 @@ class AssignResourceArgs {
 
   @override
   int get hashCode => Object.hash(role, patientId, resourceId);
+}
+
+final therapyResourceFormProvider = AsyncNotifierProvider.family<
+    TherapyResourceFormNotifier, void, TherapyResourceFormArgs>(
+  TherapyResourceFormNotifier.new,
+);
+
+class TherapyResourceFormArgs {
+  const TherapyResourceFormArgs({
+    required this.role,
+    required this.patientId,
+    this.resourceId,
+  });
+
+  final ProfileRole role;
+  final String patientId;
+  final String? resourceId;
+
+  @override
+  bool operator ==(Object other) =>
+      other is TherapyResourceFormArgs &&
+      other.role == role &&
+      other.patientId == patientId &&
+      other.resourceId == resourceId;
+
+  @override
+  int get hashCode => Object.hash(role, patientId, resourceId);
+}
+
+class TherapyResourceFormNotifier
+    extends FamilyAsyncNotifier<void, TherapyResourceFormArgs> {
+  @override
+  Future<void> build(TherapyResourceFormArgs arg) async {}
+
+  Future<TherapyResource> save(TherapyResourceInput input) async {
+    state = const AsyncValue.loading();
+    try {
+      final repo = ref.read(therapyResourcesRepositoryProvider);
+      final saved = arg.resourceId == null
+          ? await repo.createResource(input)
+          : await repo.updateResource(
+              resourceId: arg.resourceId!,
+              input: input,
+            );
+
+      state = const AsyncValue.data(null);
+      _invalidateResourceCaches(saved.id);
+      return saved;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+
+  void _invalidateResourceCaches(String resourceId) {
+    ref.invalidate(clinicResourcesProvider);
+    ref.invalidate(therapyResourceDetailProvider(resourceId));
+    ref.invalidate(patientResourceAccessProvider(arg.patientId));
+    ref.invalidate(
+      staffTherapyBundleProvider(
+        StaffTherapyContext(role: arg.role, patientId: arg.patientId),
+      ),
+    );
+    ref.invalidate(
+      staffResourceRecommendationsProvider(
+        StaffTherapyContext(role: arg.role, patientId: arg.patientId),
+      ),
+    );
+  }
 }
 
 class AssignResourceNotifier

@@ -1,9 +1,9 @@
-import 'package:flutter/services.dart';
+﻿import 'package:flutter/services.dart';
 
 /// Mantém só dígitos (útil antes de enviar à API).
 String digitsOnly(String value) => value.replaceAll(RegExp(r'\D'), '');
 
-/// Telefone BR: (XX) XXXXX-XXXX ou (XX) XXXX-XXXX (10–11 dígitos).
+/// Telefone BR: (XX) XXXXX-XXXX ou (XX) XXXX-XXXX (10-11 dígitos).
 class BrazilPhoneInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(

@@ -1,4 +1,4 @@
-import '../../genogram/domain/genogram_data.dart';
+﻿import '../../genogram/domain/genogram_data.dart';
 import '../../genogram/domain/genogram_person.dart';
 import '../../genogram/domain/genogram_relationship.dart';
 import '../../patient_timeline/domain/patient_timeline_event.dart';
@@ -24,8 +24,7 @@ MentalMapHistoryLinks buildMentalMapHistoryLinks({
   );
   final attachmentBlock = _findBlockByCode(questionnaires, _attachmentCode);
 
-  final sortedTimeline = [...timelineEvents]
-    ..sort((a, b) {
+  final sortedTimeline = [...timelineEvents]..sort((a, b) {
       final byDate = b.eventDate?.compareTo(a.eventDate ?? DateTime(1900));
       if (byDate != null && byDate != 0) return byDate;
       return b.createdAt.compareTo(a.createdAt);
@@ -42,7 +41,8 @@ MentalMapHistoryLinks buildMentalMapHistoryLinks({
   for (final person in genogramData.people.take(_peopleLimit)) {
     if (person.isSensitive) sensitiveCount++;
   }
-  for (final relationship in genogramData.relationships.take(_relationshipLimit)) {
+  for (final relationship
+      in genogramData.relationships.take(_relationshipLimit)) {
     if (relationship.isSensitive) sensitiveCount++;
   }
 
@@ -87,9 +87,8 @@ MentalMapGenogramPersonHighlight _toPersonHighlight(GenogramPerson person) {
     displayName:
         person.isSensitive ? 'Pessoa sensível' : person.displayName.trim(),
     isSensitive: person.isSensitive,
-    relationshipToPatient: person.isSensitive
-        ? null
-        : person.relationshipToPatient?.trim(),
+    relationshipToPatient:
+        person.isSensitive ? null : person.relationshipToPatient?.trim(),
     isDeceased: person.isDeceased,
   );
 }
@@ -128,16 +127,16 @@ List<MentalMapParentalFigureHighlight> _buildParentalFigures(
   if (context == null || context.figureSummaries.isEmpty) return const [];
 
   return context.figureSummaries.take(_parentalLimit).map((summary) {
-    final parts = summary.split(' — ');
+    final parts = summary.split(' - ');
     if (parts.length >= 2) {
       return MentalMapParentalFigureHighlight(
         figureLabel: parts.first.trim(),
-        dominantStyle: parts.sublist(1).join(' — ').trim(),
+        dominantStyle: parts.sublist(1).join(' - ').trim(),
       );
     }
     return MentalMapParentalFigureHighlight(
       figureLabel: summary.trim(),
-      dominantStyle: '—',
+      dominantStyle: '-',
     );
   }).toList(growable: false);
 }

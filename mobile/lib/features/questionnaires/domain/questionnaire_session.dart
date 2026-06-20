@@ -1,4 +1,4 @@
-import 'questionnaire.dart';
+﻿import 'questionnaire.dart';
 import 'questionnaire_question.dart';
 import 'questionnaire_response_context.dart';
 
@@ -23,8 +23,8 @@ class QuestionnaireSession {
     String patientId,
   ) {
     final response = Map<String, dynamic>.from(data['response'] as Map);
-    final questionnaire =
-        Questionnaire.fromJson(Map<String, dynamic>.from(data['questionnaire'] as Map));
+    final questionnaire = Questionnaire.fromJson(
+        Map<String, dynamic>.from(data['questionnaire'] as Map));
     final questions = (data['questions'] as List? ?? [])
         .map(
           (q) => QuestionnaireQuestion.fromJson(

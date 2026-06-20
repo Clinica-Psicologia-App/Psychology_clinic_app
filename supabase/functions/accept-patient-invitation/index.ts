@@ -34,6 +34,10 @@ type AcceptPatientInvitationBody = {
     sexual_orientation?: string;
     has_children?: boolean;
   };
+  legal_consent?: {
+    terms_version?: string;
+    privacy_version?: string;
+  };
 };
 
 const FN = "accept-patient-invitation";
@@ -51,6 +55,16 @@ serve(async (req) => {
       throw new AppError(
         "VALIDATION_ERROR",
         "Senha deve ter pelo menos 8 caracteres.",
+        400,
+      );
+    }
+
+    const termsVersion = body.legal_consent?.terms_version?.trim();
+    const privacyVersion = body.legal_consent?.privacy_version?.trim();
+    if (!termsVersion || !privacyVersion) {
+      throw new AppError(
+        "VALIDATION_ERROR",
+        "Aceite dos Termos de Uso e da Política de Privacidade é obrigatório.",
         400,
       );
     }
@@ -189,6 +203,35 @@ serve(async (req) => {
         "Failed to create patient record",
         500,
         { hint: patientError?.message },
+      );
+    }
+
+    const { error: consentError } = await serviceClient
+      .from("legal_consents")
+      .insert([
+        {
+          clinic_id: invitation.clinic_id,
+          profile_id: profileId,
+          document_type: "terms",
+          document_version: termsVersion,
+          source: "patient-invitation",
+        },
+        {
+          clinic_id: invitation.clinic_id,
+          profile_id: profileId,
+          document_type: "privacy",
+          document_version: privacyVersion,
+          source: "patient-invitation",
+        },
+      ]);
+
+    if (consentError) {
+      await serviceClient.auth.admin.deleteUser(profileId);
+      throw new AppError(
+        "INTERNAL_ERROR",
+        "Failed to persist legal consent",
+        500,
+        { hint: consentError.message },
       );
     }
 

@@ -1,4 +1,4 @@
-import '../../../core/router/route_access.dart';
+﻿import '../../../core/router/route_access.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../patient_invitations/presentation/patient_invitation_routes.dart';
 
@@ -6,8 +6,8 @@ import '../../patient_invitations/presentation/patient_invitation_routes.dart';
 abstract final class PatientRoutes {
   static String list(ProfileRole role) {
     switch (role) {
-      case ProfileRole.admin:
-        return '/admin/patients';
+      case ProfileRole.platformAdmin:
+        return '/platform/patients';
       case ProfileRole.psychologist:
         return '/psychologist/patients';
       case ProfileRole.patient:
@@ -27,8 +27,8 @@ abstract final class PatientRoutes {
       PatientInvitationRoutes.create(role);
 
   static bool isStaffPatientsPath(String location) {
-    return location.startsWith('/admin/patients') ||
-        location.startsWith('/psychologist/patients');
+    return location.startsWith('/psychologist/patients') ||
+        location.startsWith('/platform/patients');
   }
 
   static bool pathMatchesRole(String location, ProfileRole role) =>

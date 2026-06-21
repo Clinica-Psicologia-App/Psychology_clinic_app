@@ -11,6 +11,16 @@ import '../../domain/mental_map_case_summary.dart';
 import '../../domain/mental_map_node_detail.dart';
 import '../../domain/mental_map_validation_summary.dart';
 
+/// Converte a severityColorKey do backend para uma cor concreta de UI.
+Color _resolveSeverityDotColor(String? key, Color fallback) =>
+    switch (key?.toLowerCase()) {
+      'green' => Colors.green.shade500,
+      'yellow' || 'amber' => Colors.amber.shade600,
+      'orange' => Colors.orange.shade600,
+      'red' => Colors.red.shade600,
+      _ => fallback,
+    };
+
 class MentalMapDisclaimerBanner extends StatelessWidget {
   const MentalMapDisclaimerBanner({super.key});
 
@@ -575,8 +585,11 @@ class _MentalMapOrbitNode extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = data.isFilled
-        ? data.accentColor
+
+    // Severity overrides the border/fill when available; icon/text keep
+    // accentColor to preserve the node's visual identity.
+    final effectiveRingColor = data.isFilled
+        ? (data.severityColor ?? data.accentColor)
         : theme.colorScheme.outlineVariant;
     final textColor = data.isFilled
         ? data.accentColor
@@ -595,17 +608,16 @@ class _MentalMapOrbitNode extends StatelessWidget {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: data.isFilled
-                  ? data.accentColor.withValues(alpha: 0.16)
+                  ? effectiveRingColor.withValues(alpha: 0.14)
                   : Colors.transparent,
               border: Border.all(
-                color: color,
+                color: effectiveRingColor,
                 width: data.isFilled ? 2 : 1.5,
-                style: data.isFilled ? BorderStyle.solid : BorderStyle.solid,
               ),
               boxShadow: data.isFilled
                   ? [
                       BoxShadow(
-                        color: data.accentColor.withValues(alpha: 0.18),
+                        color: effectiveRingColor.withValues(alpha: 0.22),
                         blurRadius: 18,
                         offset: const Offset(0, 6),
                       ),
@@ -614,7 +626,7 @@ class _MentalMapOrbitNode extends StatelessWidget {
             ),
             child: Icon(
               data.icon,
-              color: data.isFilled ? data.accentColor : color,
+              color: data.isFilled ? data.accentColor : effectiveRingColor,
               size: large ? 26 : 22,
             ),
           ),
@@ -647,6 +659,7 @@ class MentalMapHubNodeData {
     required this.accentColor,
     required this.isFilled,
     required this.visualState,
+    this.severityColor,
     this.onTap,
   });
 
@@ -657,6 +670,9 @@ class MentalMapHubNodeData {
   final String emptyLabel;
   final IconData icon;
   final Color accentColor;
+
+  /// Cor clínica de severidade resolvida (null = sem dados ou vazio).
+  final Color? severityColor;
   final bool isFilled;
   final MentalMapNodeVisualState visualState;
   final VoidCallback? onTap;
@@ -1050,7 +1066,10 @@ class MentalMapNodeDetailSheet extends StatelessWidget {
                       Icon(
                         Icons.circle,
                         size: 8,
-                        color: theme.colorScheme.primary,
+                        color: _resolveSeverityDotColor(
+                          detail.severityColorKey,
+                          theme.colorScheme.primary,
+                        ),
                       ),
                       const SizedBox(width: 10),
                       Expanded(child: Text(item)),

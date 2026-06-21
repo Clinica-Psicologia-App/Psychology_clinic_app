@@ -14,6 +14,15 @@ import '../domain/reference_period.dart';
 import '../providers/questionnaires_providers.dart';
 import 'questionnaire_routes.dart';
 
+const _roleEntries = [
+  ('mae', 'Mãe'),
+  ('pai', 'Pai'),
+  ('tia', 'Tia'),
+  ('avo', 'Avó'),
+  ('avoo', 'Avô'),
+  ('outro', 'Outro'),
+];
+
 class QuestionnaireIntroPage extends ConsumerStatefulWidget {
   const QuestionnaireIntroPage({
     super.key,
@@ -36,15 +45,116 @@ class QuestionnaireIntroPage extends ConsumerStatefulWidget {
 class _QuestionnaireIntroPageState
     extends ConsumerState<QuestionnaireIntroPage> {
   bool _starting = false;
-  bool _includeMother = true;
-  bool _includeFather = true;
-  bool _includeOther = false;
-  final _otherController = TextEditingController();
+
+  final _caregiverEnabled = [true, false, false];
+  final _caregiverRole = <String?>[null, null, null];
+  final _caregiverOtherController1 = [
+    TextEditingController(),
+    TextEditingController(),
+    TextEditingController(),
+  ];
+  final _caregiverOtherController2 = [
+    TextEditingController(),
+    TextEditingController(),
+    TextEditingController(),
+  ];
 
   @override
   void dispose() {
-    _otherController.dispose();
+    for (final c in _caregiverOtherController1) {
+      c.dispose();
+    }
+    for (final c in _caregiverOtherController2) {
+      c.dispose();
+    }
     super.dispose();
+  }
+
+  List<CaregiverInput> _buildCaregiverInputs() {
+    return List.generate(
+      3,
+      (i) => CaregiverInput(
+        enabled: _caregiverEnabled[i],
+        role: _caregiverRole[i],
+        otherText1: _caregiverOtherController1[i].text,
+        otherText2: _caregiverOtherController2[i].text,
+      ),
+    );
+  }
+
+  Widget _buildCaregiverCard(int index) {
+    final theme = Theme.of(context);
+    final enabled = _caregiverEnabled[index];
+    final selectedRole = _caregiverRole[index];
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Cuidador(a) ${index + 1}',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+                Switch(
+                  value: enabled,
+                  onChanged: (value) => setState(() {
+                    _caregiverEnabled[index] = value;
+                  }),
+                ),
+              ],
+            ),
+            if (enabled) ...[
+              const Divider(height: 20),
+              RadioGroup<String>(
+                groupValue: selectedRole,
+                onChanged: (value) => setState(() {
+                  _caregiverRole[index] = value;
+                }),
+                child: Column(
+                  children: _roleEntries.map((entry) {
+                    final (key, label) = entry;
+                    return RadioListTile<String>(
+                      value: key,
+                      title: Text(label),
+                      contentPadding: EdgeInsets.zero,
+                      dense: true,
+                    );
+                  }).toList(),
+                ),
+              ),
+              if (selectedRole == 'outro') ...[
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _caregiverOtherController1[index],
+                  decoration: const InputDecoration(
+                    labelText: 'Nome',
+                    border: OutlineInputBorder(),
+                  ),
+                  textCapitalization: TextCapitalization.words,
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _caregiverOtherController2[index],
+                  decoration: const InputDecoration(
+                    labelText: 'Relação com o paciente',
+                    border: OutlineInputBorder(),
+                  ),
+                  textCapitalization: TextCapitalization.words,
+                ),
+              ],
+            ],
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -157,62 +267,15 @@ class _QuestionnaireIntroPageState
                     ],
                     if (canStart && widget.questionnaire.isParentalStyles) ...[
                       const SizedBox(height: 16),
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Para quem você deseja responder?',
-                                style: theme.textTheme.titleMedium,
-                              ),
-                              const SizedBox(height: 12),
-                              CheckboxListTile(
-                                value: _includeMother,
-                                onChanged: (value) => setState(
-                                  () => _includeMother = value ?? false,
-                                ),
-                                title: const Text('Mãe'),
-                                contentPadding: EdgeInsets.zero,
-                                controlAffinity:
-                                    ListTileControlAffinity.leading,
-                              ),
-                              CheckboxListTile(
-                                value: _includeFather,
-                                onChanged: (value) => setState(
-                                  () => _includeFather = value ?? false,
-                                ),
-                                title: const Text('Pai'),
-                                contentPadding: EdgeInsets.zero,
-                                controlAffinity:
-                                    ListTileControlAffinity.leading,
-                              ),
-                              CheckboxListTile(
-                                value: _includeOther,
-                                onChanged: (value) => setState(
-                                  () => _includeOther = value ?? false,
-                                ),
-                                title: const Text('Outro'),
-                                contentPadding: EdgeInsets.zero,
-                                controlAffinity:
-                                    ListTileControlAffinity.leading,
-                              ),
-                              if (_includeOther) ...[
-                                const SizedBox(height: 8),
-                                TextField(
-                                  controller: _otherController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Qual figura parental?',
-                                    border: OutlineInputBorder(),
-                                  ),
-                                  textCapitalization: TextCapitalization.words,
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
+                      Text(
+                        'Para quem você deseja responder?',
+                        style: theme.textTheme.titleMedium,
                       ),
+                      const SizedBox(height: 8),
+                      for (int i = 0; i < 3; i++) ...[
+                        _buildCaregiverCard(i),
+                        if (i < 2) const SizedBox(height: 8),
+                      ],
                     ],
                     const SizedBox(height: 24),
                     FilledButton(
@@ -246,17 +309,10 @@ class _QuestionnaireIntroPageState
 
   Future<void> _onStart() async {
     if (widget.questionnaire.isParentalStyles) {
-      final error = validateParentalContextSelection(
-        includeMother: _includeMother,
-        includeFather: _includeFather,
-        includeOther: _includeOther,
-        otherLabel: _otherController.text,
-      );
+      final inputs = _buildCaregiverInputs();
+      final error = validateParentalContextSelection(caregivers: inputs);
       if (error != null) {
-        showErrorBanner(
-          context,
-          Exception(error),
-        );
+        showErrorBanner(context, Exception(error));
         return;
       }
     }
@@ -265,12 +321,7 @@ class _QuestionnaireIntroPageState
 
     try {
       final contexts = widget.questionnaire.isParentalStyles
-          ? buildParentalContextInputs(
-              includeMother: _includeMother,
-              includeFather: _includeFather,
-              includeOther: _includeOther,
-              otherLabel: _otherController.text,
-            )
+          ? buildParentalContextInputs(caregivers: _buildCaregiverInputs())
           : const <QuestionnaireContextInput>[];
       final session = await ref
           .read(

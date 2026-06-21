@@ -25,6 +25,7 @@ MentalMapNodeDetail buildMentalMapNodeDetail({
     ctaLabel: routes.primaryLabel,
     secondaryCtaLabel: routes.secondaryLabel,
     secondaryRoute: routes.secondaryRoute,
+    severityColorKey: node.aggregateSeverityColorKey,
   );
 }
 

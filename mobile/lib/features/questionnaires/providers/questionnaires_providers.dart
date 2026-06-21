@@ -4,6 +4,7 @@ import '../../profile/domain/profile_role.dart';
 import '../data/questionnaires_repository.dart';
 import '../domain/finish_questionnaire_result.dart';
 import '../domain/questionnaire_access_management_data.dart';
+import '../domain/questionnaire_patient_status.dart';
 import '../domain/questionnaire_professional_option.dart';
 import '../domain/questionnaire.dart';
 import '../domain/questionnaire_response_context.dart';
@@ -65,6 +66,14 @@ class QuestionnaireListContext {
   @override
   int get hashCode => Object.hash(role, patientId);
 }
+
+/// Status de resposta por `questionnaire_id` para um paciente específico.
+final questionnairePatientStatusProvider = FutureProvider.family<
+    Map<String, QuestionnairePatientStatus>, String>((ref, patientId) {
+  return ref
+      .read(questionnairesRepositoryProvider)
+      .getPatientResponseStatuses(patientId);
+});
 
 final startQuestionnaireProvider = AsyncNotifierProvider.family<
     StartQuestionnaireNotifier, void, StartQuestionnaireArgs>(

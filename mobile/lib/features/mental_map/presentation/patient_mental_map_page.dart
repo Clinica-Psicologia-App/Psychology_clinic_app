@@ -409,6 +409,17 @@ class _MentalMapBody extends StatelessWidget {
     return () => context.push(path);
   }
 
+  /// Resolve a cor clínica de severidade a partir da colorKey do backend.
+  /// Retorna [fallback] quando não há dado (nó vazio ou sem questionário).
+  Color _severityColor(String? key, Color fallback) =>
+      switch (key?.toLowerCase()) {
+        'green' => Colors.green.shade500,
+        'yellow' || 'amber' => Colors.amber.shade600,
+        'orange' => Colors.orange.shade600,
+        'red' => Colors.red.shade600,
+        _ => fallback,
+      };
+
   List<MentalMapHubNodeData> _buildHubNodes(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return data.caseMap.allNodes.map((node) {
@@ -442,6 +453,11 @@ class _MentalMapBody extends StatelessWidget {
         _ => colors.primary,
       };
 
+      // Severity color: only meaningful when the node has data.
+      final severityColor = node.isFilled
+          ? _severityColor(node.aggregateSeverityColorKey, accentColor)
+          : null;
+
       return MentalMapHubNodeData(
         id: node.id,
         title: node.title,
@@ -450,6 +466,7 @@ class _MentalMapBody extends StatelessWidget {
         emptyLabel: node.emptyLabel,
         icon: icon,
         accentColor: accentColor,
+        severityColor: severityColor,
         isFilled: node.isFilled,
         visualState: resolveMentalMapNodeVisualState(node),
         onTap: () {

@@ -49,6 +49,7 @@ class MentalCaseMapNode {
     required this.dataSource,
     this.lastUpdatedAt,
     this.responseId,
+    this.aggregateSeverityColorKey,
   });
 
   final String id;
@@ -59,6 +60,10 @@ class MentalCaseMapNode {
   final String dataSource;
   final DateTime? lastUpdatedAt;
   final String? responseId;
+
+  /// Pior severidade clínica entre os destaques deste nó.
+  /// Valores possíveis: `green`, `yellow`, `amber`, `orange`, `red` ou `null`.
+  final String? aggregateSeverityColorKey;
 
   bool get isEmpty => items.isEmpty;
 

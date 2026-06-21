@@ -157,40 +157,77 @@ void main() {
     expect(approved.canStart(allowUnvalidated: false), isTrue);
   });
 
-  test('parental context selection requires at least one option', () {
+  test('parental context selection requires at least one caregiver', () {
     expect(
       validateParentalContextSelection(
-        includeMother: false,
-        includeFather: false,
-        includeOther: false,
+        caregivers: const [
+          CaregiverInput(enabled: false),
+          CaregiverInput(enabled: false),
+          CaregiverInput(enabled: false),
+        ],
       ),
-      contains('pelo menos uma'),
+      contains('pelo menos um'),
     );
   });
 
-  test('parental context selection requires other label', () {
+  test('parental context selection requires role when caregiver is enabled', () {
     expect(
       validateParentalContextSelection(
-        includeMother: false,
-        includeFather: false,
-        includeOther: true,
-        otherLabel: '',
+        caregivers: const [
+          CaregiverInput(enabled: true, role: null),
+          CaregiverInput(enabled: false),
+          CaregiverInput(enabled: false),
+        ],
       ),
-      contains('Outro'),
+      contains('Cuidador(a) 1'),
+    );
+  });
+
+  test('parental context selection requires text fields when "outro" selected',
+      () {
+    expect(
+      validateParentalContextSelection(
+        caregivers: const [
+          CaregiverInput(enabled: true, role: 'outro', otherText1: '', otherText2: ''),
+          CaregiverInput(enabled: false),
+          CaregiverInput(enabled: false),
+        ],
+      ),
+      contains('Cuidador(a) 1'),
     );
   });
 
   test('buildParentalContextInputs builds selected contexts', () {
     final items = buildParentalContextInputs(
-      includeMother: true,
-      includeFather: false,
-      includeOther: true,
-      otherLabel: 'Avó',
+      caregivers: const [
+        CaregiverInput(enabled: true, role: 'mae'),
+        CaregiverInput(enabled: false, role: 'pai'),
+        CaregiverInput(enabled: true, role: 'avo'),
+      ],
     );
 
     expect(items.length, 2);
     expect(items.first.label, 'Mãe');
     expect(items.last.label, 'Avó');
+  });
+
+  test('buildParentalContextInputs uses "outro" text fields as label', () {
+    final items = buildParentalContextInputs(
+      caregivers: const [
+        CaregiverInput(
+          enabled: true,
+          role: 'outro',
+          otherText1: 'Maria',
+          otherText2: 'Tia-avó',
+        ),
+        CaregiverInput(enabled: false),
+        CaregiverInput(enabled: false),
+      ],
+    );
+
+    expect(items.length, 1);
+    expect(items.first.label, 'Maria — Tia-avó');
+    expect(items.first.key, 'other');
   });
 
   test('normalizeParentalQuestionText strips parent prefix', () {

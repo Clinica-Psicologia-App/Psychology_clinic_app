@@ -57,6 +57,12 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
         ),
         data: (patientId) {
           _resolvedPatientId = patientId;
+
+          final statusMap = ref
+                  .watch(questionnairePatientStatusProvider(patientId))
+                  .valueOrNull ??
+              {};
+
           final staffPatientHeader = widget.patientId != null
               ? ref.watch(patientDetailProvider(patientId))
               : null;
@@ -102,6 +108,8 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
                   dataBuilder: (items) => RefreshIndicator(
                     onRefresh: () async {
                       ref.invalidate(questionnairesListProvider(_listContext));
+                      ref.invalidate(
+                          questionnairePatientStatusProvider(patientId));
                       await ref.read(
                         questionnairesListProvider(_listContext).future,
                       );
@@ -119,6 +127,7 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
                           questionnaire: q,
                           enabled: canApply,
                           showStaffDetails: widget.role != ProfileRole.patient,
+                          patientStatus: statusMap[q.id],
                           onTap: canApply
                               ? () => _onQuestionnaireTap(q, patientId)
                               : null,
@@ -135,8 +144,9 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
     );
   }
 
-  void _onQuestionnaireTap(Questionnaire questionnaire, String patientId) {
-    context.push(
+  Future<void> _onQuestionnaireTap(
+      Questionnaire questionnaire, String patientId) async {
+    await context.push(
       QuestionnaireRoutes.intro(
         role: widget.role,
         patientId: widget.patientId ?? _resolvedPatientId,
@@ -146,5 +156,9 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
         patientId: patientId,
       ),
     );
+
+    if (mounted) {
+      ref.invalidate(questionnairePatientStatusProvider(patientId));
+    }
   }
 }

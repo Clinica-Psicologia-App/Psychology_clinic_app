@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../domain/questionnaire.dart';
+import '../../domain/questionnaire_patient_status.dart';
 import '../../domain/reference_period.dart';
 
 class QuestionnaireListTile extends StatelessWidget {
@@ -10,15 +11,20 @@ class QuestionnaireListTile extends StatelessWidget {
     required this.onTap,
     this.enabled = true,
     this.showStaffDetails = false,
+    this.patientStatus,
   });
 
   final Questionnaire questionnaire;
   final VoidCallback? onTap;
   final bool enabled;
   final bool showStaffDetails;
+  final QuestionnairePatientStatus? patientStatus;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+
     final meta = <Widget>[
       Text('Código: ${questionnaire.code}'),
       if (questionnaire.authorName != null &&
@@ -43,6 +49,20 @@ class QuestionnaireListTile extends StatelessWidget {
             : Icons.science_outlined,
         label: questionnaire.clinicalStatus.label,
       ),
+      if (patientStatus == QuestionnairePatientStatus.completed)
+        _MetaChip(
+          icon: Icons.check_circle_outline,
+          label: 'Já respondido',
+          backgroundColor: colors.secondaryContainer,
+          iconColor: colors.secondary,
+        ),
+      if (patientStatus == QuestionnairePatientStatus.draft)
+        _MetaChip(
+          icon: Icons.edit_note_outlined,
+          label: 'Em andamento',
+          backgroundColor: colors.tertiaryContainer,
+          iconColor: colors.tertiary,
+        ),
     ];
 
     return Card(
@@ -52,7 +72,7 @@ class QuestionnaireListTile extends StatelessWidget {
         leading: CircleAvatar(
           child: Icon(
             Icons.assignment_outlined,
-            color: Theme.of(context).colorScheme.onPrimaryContainer,
+            color: colors.onPrimaryContainer,
           ),
         ),
         title: Text(questionnaire.name),
@@ -81,11 +101,11 @@ class QuestionnaireListTile extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 8),
                 child: Text(
                   questionnaire.licenseNotes!,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: questionnaire.hasLicensePendingValidation
-                            ? Theme.of(context).colorScheme.error
-                            : Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: questionnaire.hasLicensePendingValidation
+                        ? colors.error
+                        : colors.onSurfaceVariant,
+                  ),
                 ),
               ),
           ],
@@ -113,17 +133,24 @@ class _MetaChip extends StatelessWidget {
   const _MetaChip({
     required this.icon,
     required this.label,
+    this.backgroundColor,
+    this.iconColor,
   });
 
   final IconData icon;
   final String label;
+  final Color? backgroundColor;
+  final Color? iconColor;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
+    final bg = backgroundColor ?? colors.surfaceContainerHighest;
+    final ic = iconColor ?? colors.primary;
+
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: colors.surfaceContainerHighest,
+        color: bg,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Padding(
@@ -131,7 +158,7 @@ class _MetaChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: colors.primary),
+            Icon(icon, size: 16, color: ic),
             const SizedBox(width: 6),
             Text(
               label,

@@ -1,4 +1,4 @@
-﻿/// Destaque numérico de esquema/modo/domínio (sem interpretação clínica).
+﻿/// Destaque numérico de esquema/modo/domínio com severidade opcional.
 class MentalMapScoreHighlight {
   const MentalMapScoreHighlight({
     required this.name,
@@ -6,6 +6,7 @@ class MentalMapScoreHighlight {
     required this.kind,
     this.score,
     this.scoreLabel,
+    this.severityColorKey,
   });
 
   final String name;
@@ -15,6 +16,10 @@ class MentalMapScoreHighlight {
   final String kind;
   final double? score;
   final String? scoreLabel;
+
+  /// Chave de cor de severidade do backend: `green`, `yellow`, `amber`,
+  /// `orange` ou `red`. Nulo quando não disponível.
+  final String? severityColorKey;
 
   String get displayScore {
     if (scoreLabel != null && scoreLabel!.isNotEmpty) return scoreLabel!;

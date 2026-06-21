@@ -35,6 +35,7 @@ import 'package:terapia_esquema/features/results/domain/patient_result_detail.da
 import 'package:terapia_esquema/features/results/domain/questionnaire_response_status.dart';
 import 'package:terapia_esquema/features/results/domain/result_snapshot.dart';
 import 'package:terapia_esquema/features/results/domain/scoring_schema_result.dart';
+import 'package:terapia_esquema/features/results/domain/scoring_severity.dart';
 import 'package:terapia_esquema/features/results/domain/scoring_snapshot.dart';
 import 'package:terapia_esquema/features/results/domain/snapshot_context_result.dart';
 import 'package:terapia_esquema/features/patient_timeline/domain/patient_timeline_event.dart';
@@ -989,6 +990,171 @@ void main() {
     expect(summary.releasedCount, 2);
     expect(summary.completedCount, 1);
     expect(ResourceAccessStatus.completed.label, 'Concluído');
+  });
+
+  // ---------------------------------------------------------------------------
+  // Severity propagation tests
+  // ---------------------------------------------------------------------------
+
+  test('extractScoreHighlights preserves severityColorKey from schema', () {
+    final detail = PatientResultDetail(
+      id: 'sev-1',
+      patientId: 'p1',
+      questionnaireId: 'q1',
+      questionnaireCode: 'YSQ_FOUNDATION_V1',
+      questionnaireName: 'YSQ',
+      status: QuestionnaireResponseStatus.completed,
+      answers: const [],
+      categoryResults: [
+        const CategoryResult(
+          id: 'cat1',
+          categoryName: 'Esquemas',
+          averageScore: 8,
+          snapshot: ResultSnapshot(
+            version: ScoringSnapshot.demoVersion,
+            scoring: ScoringSnapshot(
+              schemas: [
+                ScoringSchemaResult(
+                  id: 's1',
+                  code: 'ABANDONO',
+                  name: 'Abandono',
+                  weightedScore: 8,
+                  severity: ScoringSeverity(label: 'Severo', colorKey: 'red'),
+                ),
+                ScoringSchemaResult(
+                  id: 's2',
+                  code: 'PRIVACAO',
+                  name: 'Privação',
+                  weightedScore: 4,
+                  severity: ScoringSeverity(
+                    label: 'Moderado',
+                    colorKey: 'amber',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+
+    final highlights = extractScoreHighlights(detail);
+    expect(highlights.first.name, 'Abandono');
+    expect(highlights.first.severityColorKey, 'red');
+    expect(highlights[1].severityColorKey, 'amber');
+  });
+
+  test(
+      'buildMentalCaseMap schema node carries worst aggregateSeverityColorKey',
+      () {
+    final map = buildMentalCaseMap(
+      patientName: 'Teste',
+      questionnaires: const [
+        MentalMapQuestionnaireBlock(
+          responseId: 'ysq-sev',
+          questionnaireCode: 'YSQ_FOUNDATION_V1',
+          questionnaireName: 'YSQ',
+          highlights: [
+            MentalMapScoreHighlight(
+              name: 'Abandono',
+              code: 'ABANDONO',
+              kind: 'schema',
+              score: 8,
+              severityColorKey: 'red',
+            ),
+            MentalMapScoreHighlight(
+              name: 'Privação',
+              code: 'PRIVACAO',
+              kind: 'schema',
+              score: 4,
+              severityColorKey: 'amber',
+            ),
+          ],
+        ),
+      ],
+      activeProblems: const [],
+      activeGoals: const [],
+      recentCheckIn: null,
+      timelineEvents: const [],
+      genogramData: const GenogramData(people: [], relationships: []),
+    );
+
+    final schemaNode =
+        map.primaryNodes.firstWhere((n) => n.id == 'schemas');
+    // worst-of: red > amber → red
+    expect(schemaNode.aggregateSeverityColorKey, 'red');
+  });
+
+  test(
+      'buildMentalCaseMap problems node derives severity from intensity',
+      () {
+    final map = buildMentalCaseMap(
+      patientName: 'Teste',
+      questionnaires: const [],
+      activeProblems: const [
+        MentalMapProblemSummary(
+          id: 'p1',
+          title: 'Crise de pânico',
+          intensity: 8,
+          statusLabel: 'Ativo',
+        ),
+        MentalMapProblemSummary(
+          id: 'p2',
+          title: 'Insônia',
+          intensity: 3,
+          statusLabel: 'Ativo',
+        ),
+      ],
+      activeGoals: const [],
+      recentCheckIn: null,
+      timelineEvents: const [],
+      genogramData: const GenogramData(people: [], relationships: []),
+    );
+
+    final problemsNode =
+        map.primaryNodes.firstWhere((n) => n.id == 'problems');
+    // max intensity = 8 (≥ 7) → red
+    expect(problemsNode.aggregateSeverityColorKey, 'red');
+  });
+
+  test('buildMentalCaseMap problems node severity green for low intensity',
+      () {
+    final map = buildMentalCaseMap(
+      patientName: 'Teste',
+      questionnaires: const [],
+      activeProblems: const [
+        MentalMapProblemSummary(
+          id: 'p1',
+          title: 'Insônia leve',
+          intensity: 2,
+          statusLabel: 'Ativo',
+        ),
+      ],
+      activeGoals: const [],
+      recentCheckIn: null,
+      timelineEvents: const [],
+      genogramData: const GenogramData(people: [], relationships: []),
+    );
+
+    final problemsNode =
+        map.primaryNodes.firstWhere((n) => n.id == 'problems');
+    expect(problemsNode.aggregateSeverityColorKey, 'green');
+  });
+
+  test('buildMentalCaseMap history node has null severity', () {
+    final map = buildMentalCaseMap(
+      patientName: 'Teste',
+      questionnaires: const [],
+      activeProblems: const [],
+      activeGoals: const [],
+      recentCheckIn: null,
+      timelineEvents: const [],
+      genogramData: const GenogramData(people: [], relationships: []),
+    );
+
+    final historyNode =
+        map.contextNodes.firstWhere((n) => n.id == 'history');
+    expect(historyNode.aggregateSeverityColorKey, isNull);
   });
 }
 

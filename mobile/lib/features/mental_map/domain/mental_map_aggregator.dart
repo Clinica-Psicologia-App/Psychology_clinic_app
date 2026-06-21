@@ -181,6 +181,7 @@ MentalMapScoreHighlight _fromSchema(ScoringSchemaResult schema) {
     kind: 'schema',
     score: score,
     scoreLabel: score != null ? null : '-',
+    severityColorKey: schema.severity?.colorKey,
   );
 }
 
@@ -191,6 +192,7 @@ MentalMapScoreHighlight _fromDomain(ScoringDomainResult domain) {
     code: domain.code,
     kind: 'domain',
     score: score,
+    severityColorKey: domain.severity?.colorKey,
   );
 }
 

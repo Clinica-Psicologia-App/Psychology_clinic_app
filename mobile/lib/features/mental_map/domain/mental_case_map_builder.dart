@@ -85,6 +85,8 @@ MentalCaseMapNode _buildSchemaNode(
     dataSource: 'YSQ - última resposta concluída',
     lastUpdatedAt: block?.completedAt,
     responseId: block?.responseId,
+    aggregateSeverityColorKey:
+        _worstSeverityByMarker(questionnaires, _ysqCodeMarker),
   );
 }
 
@@ -102,6 +104,8 @@ MentalCaseMapNode _buildModeNode(
     dataSource: 'YAMI - última resposta concluída',
     lastUpdatedAt: block?.completedAt,
     responseId: block?.responseId,
+    aggregateSeverityColorKey:
+        _worstSeverityByMarker(questionnaires, _yamiCodeMarker),
   );
 }
 
@@ -124,6 +128,7 @@ MentalCaseMapNode _buildProblemsNode(
     items: items,
     emptyLabel: 'Pendente',
     dataSource: 'Problemas registrados pelo paciente/equipe',
+    aggregateSeverityColorKey: _problemsSeverityKey(activeProblems),
   );
 }
 
@@ -162,6 +167,8 @@ MentalCaseMapNode _buildAttachmentNode(
     dataSource: 'ATTACHMENT_STYLES_V1 - snapshot estruturado',
     lastUpdatedAt: block?.completedAt,
     responseId: block?.responseId,
+    aggregateSeverityColorKey:
+        _worstSeverityByCodes(questionnaires, [_attachmentCode]),
   );
 }
 
@@ -189,6 +196,8 @@ MentalCaseMapNode _buildCopingNode(
     dataSource: 'YCI / YRAI - snapshots estruturados',
     lastUpdatedAt: latest,
     responseId: yci?.responseId ?? yrai?.responseId,
+    aggregateSeverityColorKey:
+        _worstSeverityByCodes(questionnaires, [_yciCode, _yraiCode]),
   );
 }
 
@@ -211,6 +220,8 @@ MentalCaseMapNode _buildParentalNode(
     dataSource: 'PARENTAL_STYLES_V1 - figuras parentais',
     lastUpdatedAt: context?.completedAt ?? block?.completedAt,
     responseId: context?.responseId ?? block?.responseId,
+    aggregateSeverityColorKey:
+        _worstSeverityByCodes(questionnaires, [_parentalCode]),
   );
 }
 
@@ -377,4 +388,66 @@ String _buildCountLabel(
   if (count == 0) return 'Pendente';
   if (count == 1) return '1 $singular';
   return '$count $plural';
+}
+
+// ---------------------------------------------------------------------------
+// Severity helpers
+// ---------------------------------------------------------------------------
+
+/// Ordena severidades: red=4 > orange=3 > amber/yellow=2 > green=1 > null=0.
+int _severityOrder(String? key) => switch (key?.toLowerCase()) {
+      'red' => 4,
+      'orange' => 3,
+      'amber' => 2,
+      'yellow' => 2,
+      'green' => 1,
+      _ => 0,
+    };
+
+/// Pior severidade entre os highlights de um bloco.
+String? _worstSeverityFromBlock(MentalMapQuestionnaireBlock? block) {
+  if (block == null) return null;
+  String? worst;
+  for (final h in block.highlights) {
+    if (_severityOrder(h.severityColorKey) > _severityOrder(worst)) {
+      worst = h.severityColorKey;
+    }
+  }
+  return worst;
+}
+
+/// Pior severidade entre múltiplos blocos (por marker de código).
+String? _worstSeverityByMarker(
+  List<MentalMapQuestionnaireBlock> questionnaires,
+  String marker,
+) {
+  final block = _findQuestionnaireBlock(questionnaires, marker);
+  return _worstSeverityFromBlock(block);
+}
+
+/// Pior severidade entre múltiplos blocos (por código exato).
+String? _worstSeverityByCodes(
+  List<MentalMapQuestionnaireBlock> questionnaires,
+  List<String> codes,
+) {
+  String? worst;
+  for (final code in codes) {
+    final block = _findQuestionnaireBlockByCode(questionnaires, code);
+    final key = _worstSeverityFromBlock(block);
+    if (_severityOrder(key) > _severityOrder(worst)) worst = key;
+  }
+  return worst;
+}
+
+/// Severidade derivada da intensidade máxima dos problemas ativos.
+String? _problemsSeverityKey(List<MentalMapProblemSummary> problems) {
+  var maxIntensity = 0;
+  for (final p in problems) {
+    final i = p.intensity ?? 0;
+    if (i > maxIntensity) maxIntensity = i;
+  }
+  if (maxIntensity == 0) return null;
+  if (maxIntensity <= 3) return 'green';
+  if (maxIntensity <= 6) return 'amber';
+  return 'red';
 }

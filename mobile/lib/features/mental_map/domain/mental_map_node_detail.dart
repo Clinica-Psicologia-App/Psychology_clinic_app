@@ -10,6 +10,7 @@ class MentalMapNodeDetail {
     this.responseId,
     this.secondaryCtaLabel,
     this.secondaryRoute,
+    this.severityColorKey,
   });
 
   final String id;
@@ -21,6 +22,9 @@ class MentalMapNodeDetail {
   final String? responseId;
   final String? secondaryCtaLabel;
   final String? secondaryRoute;
+
+  /// Severidade agregada do nó: `green`, `yellow`, `amber`, `orange`, `red`.
+  final String? severityColorKey;
 
   bool get isFilled => items.isNotEmpty;
 }

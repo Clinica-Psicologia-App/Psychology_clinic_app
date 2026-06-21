@@ -8,6 +8,7 @@ import '../../../core/supabase/supabase_bootstrap.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/finish_questionnaire_result.dart';
 import '../domain/questionnaire_access_item.dart';
+import '../domain/questionnaire_patient_status.dart';
 import '../domain/questionnaire_access_management_data.dart';
 import '../domain/questionnaire_catalog_visibility.dart';
 import '../domain/questionnaire_professional_option.dart';
@@ -396,6 +397,41 @@ class QuestionnairesRepository {
             'response_context_id': responseContextId,
         },
       );
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  /// Retorna o melhor status de resposta por questionário para o paciente.
+  /// Prioridade: completed > draft.
+  Future<Map<String, QuestionnairePatientStatus>> getPatientResponseStatuses(
+    String patientId,
+  ) async {
+    try {
+      final rows = await _client
+          .from('questionnaire_responses')
+          .select('questionnaire_id, status')
+          .eq('patient_id', patientId)
+          .inFilter('status', ['draft', 'completed']);
+
+      final result = <String, QuestionnairePatientStatus>{};
+      for (final row in rows as List) {
+        final qId = row['questionnaire_id'] as String?;
+        final statusStr = row['status'] as String?;
+        if (qId == null || statusStr == null) continue;
+
+        final status = statusStr == 'completed'
+            ? QuestionnairePatientStatus.completed
+            : QuestionnairePatientStatus.draft;
+
+        if (status == QuestionnairePatientStatus.completed ||
+            !result.containsKey(qId)) {
+          result[qId] = status;
+        }
+      }
+      return result;
+    } on PostgrestException catch (e) {
+      throw mapToAppException(e);
     } catch (e) {
       throw mapToAppException(e);
     }

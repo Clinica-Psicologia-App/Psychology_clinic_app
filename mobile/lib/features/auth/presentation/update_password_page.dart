@@ -1,10 +1,13 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/errors/error_mapper.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/theme/app_gradients.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/auth_brand_badge.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../providers/auth_providers.dart';
@@ -34,62 +37,79 @@ class _UpdatePasswordPageState extends ConsumerState<UpdatePasswordPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Criar nova senha')),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.xl),
-          child: ResponsiveContent(
-            maxWidth: 480,
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Defina uma senha forte',
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  const Text(
-                    'Use pelo menos 8 caracteres, com letras maiúsculas, '
-                    'minúsculas e números.',
-                  ),
-                  const SizedBox(height: AppSpacing.xl),
-                  TextFormField(
-                    controller: _passwordController,
-                    obscureText: _obscure,
-                    decoration: InputDecoration(
-                      labelText: 'Nova senha',
-                      prefixIcon: const Icon(Icons.lock_outline),
-                      suffixIcon: IconButton(
-                        onPressed: () => setState(() => _obscure = !_obscure),
-                        icon: Icon(
-                          _obscure ? Icons.visibility : Icons.visibility_off,
+      body: DecoratedBox(
+        decoration:
+            const BoxDecoration(gradient: AppGradients.splashBackground),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpacing.xl),
+            child: ResponsiveContent(
+              maxWidth: 480,
+              child: MotionReveal(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const Center(
+                        child: AuthBrandBadge(icon: Icons.password_outlined),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      Text(
+                        'Defina uma senha forte',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      const Text(
+                        'Use pelo menos 8 caracteres, com letras maiúsculas, '
+                        'minúsculas e números.',
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      TextFormField(
+                        controller: _passwordController,
+                        obscureText: _obscure,
+                        decoration: InputDecoration(
+                          labelText: 'Nova senha',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            onPressed: () =>
+                                setState(() => _obscure = !_obscure),
+                            icon: Icon(
+                              _obscure
+                                  ? Icons.visibility
+                                  : Icons.visibility_off,
+                            ),
+                          ),
+                        ),
+                        validator: _validatePassword,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextFormField(
+                        controller: _confirmController,
+                        obscureText: _obscure,
+                        decoration: const InputDecoration(
+                          labelText: 'Confirmar nova senha',
+                          prefixIcon: Icon(Icons.lock_outline),
+                        ),
+                        validator: (value) {
+                          if (value != _passwordController.text) {
+                            return 'As senhas não conferem';
+                          }
+                          return _validatePassword(value);
+                        },
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      FilledButton(
+                        onPressed: _submitting ? null : _submit,
+                        child: Text(
+                          _submitting ? 'Salvando...' : 'Salvar senha',
                         ),
                       ),
-                    ),
-                    validator: _validatePassword,
+                    ],
                   ),
-                  const SizedBox(height: AppSpacing.md),
-                  TextFormField(
-                    controller: _confirmController,
-                    obscureText: _obscure,
-                    decoration: const InputDecoration(
-                      labelText: 'Confirmar nova senha',
-                      prefixIcon: Icon(Icons.lock_outline),
-                    ),
-                    validator: (value) {
-                      if (value != _passwordController.text) {
-                        return 'As senhas não conferem';
-                      }
-                      return _validatePassword(value);
-                    },
-                  ),
-                  const SizedBox(height: AppSpacing.xl),
-                  FilledButton(
-                    onPressed: _submitting ? null : _submit,
-                    child: Text(_submitting ? 'Salvando...' : 'Salvar senha'),
-                  ),
-                ],
+                ),
               ),
             ),
           ),

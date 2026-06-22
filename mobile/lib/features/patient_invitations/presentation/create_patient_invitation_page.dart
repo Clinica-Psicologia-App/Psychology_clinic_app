@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../../shared/utils/brazil_validators.dart';
 import '../../../shared/utils/input_formatters.dart';
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../auth/providers/auth_providers.dart';
@@ -70,121 +71,124 @@ class _CreatePatientInvitationPageState
       title: 'Convidar paciente',
       body: Form(
         key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Text(
-              'Crie um convite simples. O paciente definirá a senha e completará o cadastro no primeiro acesso.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _fullNameController,
-              decoration: const InputDecoration(
-                labelText: 'Nome',
-                border: OutlineInputBorder(),
+        child: MotionReveal(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Text(
+                'Crie um convite simples. O paciente definirá a senha e completará o cadastro no primeiro acesso.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
               ),
-              textCapitalization: TextCapitalization.words,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _emailController,
-              decoration: const InputDecoration(
-                labelText: 'E-mail *',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.emailAddress,
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Informe o e-mail';
-                }
-                if (!value.contains('@')) return 'E-mail inválido';
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _phoneController,
-              decoration: const InputDecoration(
-                labelText: 'Telefone',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.phone,
-              inputFormatters: [BrazilPhoneInputFormatter()],
-              validator: validateOptionalPhone,
-            ),
-            const SizedBox(height: 16),
-            if (_isAdmin)
-              psychologistsAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (_, __) => const Text(
-                  'Não foi possível carregar os psicólogos.',
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _fullNameController,
+                decoration: const InputDecoration(
+                  labelText: 'Nome',
+                  border: OutlineInputBorder(),
                 ),
-                data: (options) => DropdownButtonFormField<String>(
-                  initialValue: _selectedPsychologistId,
-                  isExpanded: true,
-                  decoration: const InputDecoration(
-                    labelText: 'Psicólogo responsável *',
-                    border: OutlineInputBorder(),
+                textCapitalization: TextCapitalization.words,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _emailController,
+                decoration: const InputDecoration(
+                  labelText: 'E-mail *',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.emailAddress,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Informe o e-mail';
+                  }
+                  if (!value.contains('@')) return 'E-mail inválido';
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _phoneController,
+                decoration: const InputDecoration(
+                  labelText: 'Telefone',
+                  border: OutlineInputBorder(),
+                ),
+                keyboardType: TextInputType.phone,
+                inputFormatters: [BrazilPhoneInputFormatter()],
+                validator: validateOptionalPhone,
+              ),
+              const SizedBox(height: 16),
+              if (_isAdmin)
+                psychologistsAsync.when(
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (_, __) => const Text(
+                    'Não foi possível carregar os psicólogos.',
                   ),
-                  items: options
-                      .map(
-                        (option) => DropdownMenuItem<String>(
-                          value: option.id,
-                          child: Text(
-                            option.displayLabel,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                  data: (options) => DropdownButtonFormField<String>(
+                    initialValue: _selectedPsychologistId,
+                    isExpanded: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Psicólogo responsável *',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: options
+                        .map(
+                          (option) => DropdownMenuItem<String>(
+                            value: option.id,
+                            child: Text(
+                              option.displayLabel,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                        ),
+                        )
+                        .toList(),
+                    onChanged: (value) =>
+                        setState(() => _selectedPsychologistId = value),
+                    validator: (value) => value == null || value.isEmpty
+                        ? 'Selecione o psicólogo responsável'
+                        : null,
+                  ),
+                )
+              else
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(Icons.psychology_outlined),
+                  title: const Text('Psicólogo responsável'),
+                  subtitle: Text(profile?.fullName ?? 'Não identificado'),
+                ),
+              const SizedBox(height: 24),
+              if (ref.watch(createPatientInvitationProvider).hasError)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: buildErrorBanner(
+                    ScaffoldMessenger.of(context),
+                    context,
+                    ref.watch(createPatientInvitationProvider).error
+                            is AppException
+                        ? ref.watch(createPatientInvitationProvider).error
+                            as AppException
+                        : AppException(
+                            code: AppExceptionCodes.unknown,
+                            message: 'Não foi possível criar o convite.',
+                          ),
+                  ),
+                ),
+              FilledButton.icon(
+                onPressed:
+                    _submitting ? null : () => _submit(profileId: profile?.id),
+                icon: _submitting
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                      .toList(),
-                  onChanged: (value) =>
-                      setState(() => _selectedPsychologistId = value),
-                  validator: (value) => value == null || value.isEmpty
-                      ? 'Selecione o psicólogo responsável'
-                      : null,
-                ),
-              )
-            else
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: const Icon(Icons.psychology_outlined),
-                title: const Text('Psicólogo responsável'),
-                subtitle: Text(profile?.fullName ?? 'Não identificado'),
+                    : const Icon(Icons.mark_email_unread_outlined),
+                label: const Text('Gerar convite'),
               ),
-            const SizedBox(height: 24),
-            if (ref.watch(createPatientInvitationProvider).hasError)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: buildErrorBanner(
-                  ScaffoldMessenger.of(context),
-                  context,
-                  ref.watch(createPatientInvitationProvider).error
-                          is AppException
-                      ? ref.watch(createPatientInvitationProvider).error
-                          as AppException
-                      : AppException(
-                          code: AppExceptionCodes.unknown,
-                          message: 'Não foi possível criar o convite.',
-                        ),
-                ),
-              ),
-            FilledButton.icon(
-              onPressed:
-                  _submitting ? null : () => _submit(profileId: profile?.id),
-              icon: _submitting
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.mark_email_unread_outlined),
-              label: const Text('Gerar convite'),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -11,6 +11,8 @@ import '../../features/auth/presentation/splash_page.dart';
 import '../../features/auth/presentation/forgot_password_page.dart';
 import '../../features/auth/presentation/update_password_page.dart';
 import '../../features/legal/presentation/legal_document_page.dart';
+import '../../features/onboarding/presentation/onboarding_page.dart';
+import '../../features/onboarding/providers/onboarding_providers.dart';
 import '../../features/auth/providers/auth_providers.dart';
 import '../../features/daily_monitors/presentation/daily_monitor_route_helpers.dart';
 import '../../features/patient_journey/presentation/patient_journey_route_helpers.dart';
@@ -26,6 +28,8 @@ import '../../features/patient_problems/presentation/patient_problem_route_helpe
 import '../../features/personality_reference/presentation/personality_reference_route_helpers.dart';
 import '../../features/therapy_goals/presentation/therapy_goal_route_helpers.dart';
 import '../../features/patients/presentation/create_patient_page.dart';
+import '../../features/patients/domain/patient.dart';
+import '../../features/patients/presentation/edit_patient_page.dart';
 import '../../features/patients/presentation/patient_details_page.dart';
 import '../../features/patients/presentation/patients_page.dart';
 import '../../features/patient_invitations/presentation/create_patient_invitation_page.dart';
@@ -43,6 +47,7 @@ import 'route_access.dart';
 
 abstract final class AppRoutes {
   static const splash = '/';
+  static const onboarding = '/onboarding';
   static const login = '/login';
   static const forgotPassword = '/forgot-password';
   static const updatePassword = '/update-password';
@@ -56,6 +61,7 @@ abstract final class AppRoutes {
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authControllerProvider);
   final isPasswordRecovery = ref.watch(passwordRecoveryActiveProvider);
+  final onboarding = ref.watch(onboardingSeenProvider);
 
   return GoRouter(
     initialLocation: AppRoutes.splash,
@@ -64,6 +70,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final location = state.matchedLocation;
       final isSplash = location == AppRoutes.splash;
       final isLogin = location == AppRoutes.login;
+      final isOnboarding = location == AppRoutes.onboarding;
       final isPublicRoute = RouteAccess.isPublic(location);
 
       // Sessão de recuperação de senha ativa: forçar /update-password.
@@ -85,10 +92,28 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final profile = authState.valueOrNull;
 
       if (profile == null) {
+        // Onboarding de primeiro acesso (apenas usuários não autenticados).
+        // Deep links públicos (convite, redefinição de senha, jurídico)
+        // nunca são interrompidos pelo onboarding.
+        final isDeepLinkPublic = isPublicRoute && !isSplash && !isOnboarding;
+        if (!isDeepLinkPublic) {
+          if (onboarding.isLoading) {
+            return isSplash ? null : AppRoutes.splash;
+          }
+          if (onboarding.valueOrNull == false) {
+            return isOnboarding ? null : AppRoutes.onboarding;
+          }
+        }
+
         if (isPublicRoute) {
           return isSplash ? AppRoutes.login : null;
         }
         return AppRoutes.login;
+      }
+
+      // Usuário autenticado nunca permanece no onboarding.
+      if (isOnboarding) {
+        return RouteAccess.homeFor(profile.role);
       }
 
       if (isLogin || isSplash) {
@@ -109,6 +134,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: AppRoutes.splash,
         builder: (_, __) => const SplashPage(),
+      ),
+      GoRoute(
+        path: AppRoutes.onboarding,
+        builder: (_, __) => const OnboardingPage(),
       ),
       GoRoute(
         path: AppRoutes.login,
@@ -147,11 +176,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (_, __) => const ClinicsPage(),
           ),
           GoRoute(
-            path: UserManagementRoutes.platformList.replaceFirst('/platform/', ''),
+            path: UserManagementRoutes.platformList
+                .replaceFirst('/platform/', ''),
             builder: (_, __) => const UserManagementPage(),
           ),
           GoRoute(
-            path: QuestionnaireRoutes.adminAccess.replaceFirst('/platform/', ''),
+            path:
+                QuestionnaireRoutes.adminAccess.replaceFirst('/platform/', ''),
             builder: (_, __) => const QuestionnaireAccessManagementPage(),
           ),
           GoRoute(
@@ -165,6 +196,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   role: ProfileRole.platformAdmin,
                   patientId: state.pathParameters['patientId']!,
                 ),
+                routes: [
+                  GoRoute(
+                    path: 'edit',
+                    builder: (_, state) => EditPatientPage(
+                      role: ProfileRole.platformAdmin,
+                      patient: state.extra as Patient,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -232,6 +272,13 @@ List<RouteBase> _staffPatientRoutes(ProfileRole role) {
             patientId: state.pathParameters['patientId']!,
           ),
           routes: [
+            GoRoute(
+              path: 'edit',
+              builder: (_, state) => EditPatientPage(
+                role: role,
+                patient: state.extra as Patient,
+              ),
+            ),
             ...questionnaireRoutesFor(
               role: role,
               patientIdPathParam: 'patientId',
@@ -264,6 +311,9 @@ class _RouterRefresh extends ChangeNotifier {
       notifyListeners();
     });
     _ref.listen<bool>(passwordRecoveryActiveProvider, (_, __) {
+      notifyListeners();
+    });
+    _ref.listen<AsyncValue<bool>>(onboardingSeenProvider, (_, __) {
       notifyListeners();
     });
   }

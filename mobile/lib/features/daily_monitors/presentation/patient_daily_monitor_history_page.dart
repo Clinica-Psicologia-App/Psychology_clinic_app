@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../patients/providers/patients_providers.dart';
@@ -76,22 +77,25 @@ class PatientDailyMonitorHistoryPage extends ConsumerWidget {
                   ref.invalidate(staffPatientMonitorsProvider(ctx));
                   await ref.read(staffPatientMonitorsProvider(ctx).future);
                 },
-                child: ListView(
+                child: ListView.builder(
                   padding: const EdgeInsets.all(16),
-                  children: items
-                      .map(
-                        (m) => DailyMonitorListTile(
-                          monitor: m,
-                          onTap: () => context.push(
-                            DailyMonitorRoutes.staffDetail(
-                              role: role,
-                              patientId: patientId,
-                              monitorId: m.id,
-                            ),
+                  itemCount: items.length,
+                  itemBuilder: (context, index) {
+                    final m = items[index];
+                    return MotionReveal(
+                      delay: staggerDelay(index),
+                      child: DailyMonitorListTile(
+                        monitor: m,
+                        onTap: () => context.push(
+                          DailyMonitorRoutes.staffDetail(
+                            role: role,
+                            patientId: patientId,
+                            monitorId: m.id,
                           ),
                         ),
-                      )
-                      .toList(),
+                      ),
+                    );
+                  },
                 ),
               ),
             ),

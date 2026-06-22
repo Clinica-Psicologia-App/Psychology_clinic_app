@@ -1,4 +1,4 @@
-﻿import '../../profile/domain/profile_role.dart';
+import '../../profile/domain/profile_role.dart';
 
 abstract final class QuestionnaireRoutes {
   static const adminAccess = '/platform/questionnaire-access';
@@ -6,7 +6,7 @@ abstract final class QuestionnaireRoutes {
   static String list({
     required ProfileRole role,
     String? patientId,
-    }) {
+  }) {
     switch (role) {
       case ProfileRole.platformAdmin:
         throw ArgumentError('Use rotas globais para platform admin');

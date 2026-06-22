@@ -1,7 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../profile/domain/profile_role.dart';
@@ -146,51 +147,53 @@ class _PatientProblemDetailBodyState
     return Column(
       children: [
         Expanded(
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Text(
-                      goal.title,
-                      style: theme.textTheme.headlineSmall,
+          child: MotionReveal(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        goal.title,
+                        style: theme.textTheme.headlineSmall,
+                      ),
                     ),
-                  ),
-                  PatientProblemStatusChip(status: goal.status),
+                    PatientProblemStatusChip(status: goal.status),
+                  ],
+                ),
+                if (goal.intensity != null) ...[
+                  const SizedBox(height: 12),
+                  PatientProblemIntensityBadge(intensity: goal.intensity!),
                 ],
-              ),
-              if (goal.intensity != null) ...[
-                const SizedBox(height: 12),
-                PatientProblemIntensityBadge(intensity: goal.intensity!),
-              ],
-              if (goal.category != null &&
-                  goal.category!.trim().isNotEmpty) ...[
-                const SizedBox(height: 16),
-                _InfoRow(label: 'Categoria', value: goal.category!),
-              ],
-              if (goal.description != null &&
-                  goal.description!.trim().isNotEmpty) ...[
-                const SizedBox(height: 16),
-                Text(goal.description!),
-              ],
-              const SizedBox(height: 24),
-              if (goal.identifiedAt != null)
+                if (goal.category != null &&
+                    goal.category!.trim().isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  _InfoRow(label: 'Categoria', value: goal.category!),
+                ],
+                if (goal.description != null &&
+                    goal.description!.trim().isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Text(goal.description!),
+                ],
+                const SizedBox(height: 24),
+                if (goal.identifiedAt != null)
+                  _InfoRow(
+                    label: 'Identificado em',
+                    value: loc.formatFullDate(goal.identifiedAt!),
+                  ),
+                if (goal.resolvedAt != null)
+                  _InfoRow(
+                    label: 'Resolvido em',
+                    value: loc.formatFullDate(goal.resolvedAt!),
+                  ),
                 _InfoRow(
-                  label: 'Identificado em',
-                  value: loc.formatFullDate(goal.identifiedAt!),
+                  label: 'Atualizado',
+                  value: loc.formatFullDate(goal.updatedAt),
                 ),
-              if (goal.resolvedAt != null)
-                _InfoRow(
-                  label: 'Resolvido em',
-                  value: loc.formatFullDate(goal.resolvedAt!),
-                ),
-              _InfoRow(
-                label: 'Atualizado',
-                value: loc.formatFullDate(goal.updatedAt),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
         if (_busy) const LinearProgressIndicator(),

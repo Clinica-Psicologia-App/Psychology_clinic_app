@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../profile/domain/profile_role.dart';
 import '../providers/daily_monitors_providers.dart';
@@ -62,9 +63,11 @@ class DailyMonitorDetailPage extends ConsumerWidget {
           return Column(
             children: [
               Expanded(
-                child: DailyMonitorDetailBody(
-                  monitor: monitor,
-                  readOnly: readOnly || !_isPatient,
+                child: MotionReveal(
+                  child: DailyMonitorDetailBody(
+                    monitor: monitor,
+                    readOnly: readOnly || !_isPatient,
+                  ),
                 ),
               ),
               if (_isPatient && monitor.isEditableToday) ...[

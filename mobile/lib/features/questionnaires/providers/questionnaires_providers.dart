@@ -68,8 +68,9 @@ class QuestionnaireListContext {
 }
 
 /// Status de resposta por `questionnaire_id` para um paciente específico.
-final questionnairePatientStatusProvider = FutureProvider.family<
-    Map<String, QuestionnairePatientStatus>, String>((ref, patientId) {
+final questionnairePatientStatusProvider =
+    FutureProvider.family<Map<String, QuestionnairePatientStatus>, String>(
+        (ref, patientId) {
   return ref
       .read(questionnairesRepositoryProvider)
       .getPatientResponseStatuses(patientId);

@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../profile/domain/profile_role.dart';
 import '../providers/patient_timeline_providers.dart';
@@ -58,7 +59,11 @@ class PatientTimelineEventDetailPage extends ConsumerWidget {
 
           return Column(
             children: [
-              Expanded(child: TimelineEventDetailBody(event: event)),
+              Expanded(
+                child: MotionReveal(
+                  child: TimelineEventDetailBody(event: event),
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: FilledButton.icon(

@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../profile/domain/profile_role.dart';
@@ -186,14 +187,17 @@ class _GenogramContent extends StatelessWidget {
             child: Text('Nenhuma pessoa cadastrada.'),
           )
         else
-          ...data.people.map(
-            (p) => GenogramPersonTile(
-              person: p,
-              onTap: () async {
-                await context.push(personDetailRoute(p.id));
-                onDataChanged();
-              },
-            ),
+          MotionStaggered(
+            children: [
+              for (final p in data.people)
+                GenogramPersonTile(
+                  person: p,
+                  onTap: () async {
+                    await context.push(personDetailRoute(p.id));
+                    onDataChanged();
+                  },
+                ),
+            ],
           ),
         const SizedBox(height: 24),
         Text('Relações', style: Theme.of(context).textTheme.titleMedium),
@@ -204,15 +208,18 @@ class _GenogramContent extends StatelessWidget {
             child: Text('Nenhuma relação registrada.'),
           )
         else
-          ...data.relationships.map(
-            (r) => GenogramRelationshipTile(
-              relationship: r,
-              data: data,
-              onTap: () async {
-                await context.push(relationshipDetailRoute(r.id));
-                onDataChanged();
-              },
-            ),
+          MotionStaggered(
+            children: [
+              for (final r in data.relationships)
+                GenogramRelationshipTile(
+                  relationship: r,
+                  data: data,
+                  onTap: () async {
+                    await context.push(relationshipDetailRoute(r.id));
+                    onDataChanged();
+                  },
+                ),
+            ],
           ),
       ],
     );

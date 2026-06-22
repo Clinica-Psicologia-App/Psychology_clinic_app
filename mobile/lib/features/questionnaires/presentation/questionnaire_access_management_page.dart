@@ -1,6 +1,7 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../auth/providers/auth_providers.dart';
@@ -82,18 +83,20 @@ class _QuestionnaireAccessManagementPageState
                           ),
                         ),
                       ),
-                    ...data.items.map(
-                      (item) => _AccessTile(
-                        item: item,
-                        enabled: data.supportsAccessControl && !_saving,
-                        showPendingLicense:
-                            profile?.role == ProfileRole.platformAdmin,
-                        onChanged: (value) => _toggleAccess(
-                          item,
-                          value,
+                    for (var i = 0; i < data.items.length; i++)
+                      MotionReveal(
+                        delay: staggerDelay(i),
+                        child: _AccessTile(
+                          item: data.items[i],
+                          enabled: data.supportsAccessControl && !_saving,
+                          showPendingLicense:
+                              profile?.role == ProfileRole.platformAdmin,
+                          onChanged: (value) => _toggleAccess(
+                            data.items[i],
+                            value,
+                          ),
                         ),
                       ),
-                    ),
                   ],
                 );
               },

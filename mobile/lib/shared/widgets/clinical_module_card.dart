@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
@@ -42,44 +42,44 @@ class ClinicalModuleCard extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.12),
-                  borderRadius: AppRadius.mdAll,
-                  boxShadow: AppShadows.soft,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.12),
+                    borderRadius: AppRadius.mdAll,
+                    boxShadow: AppShadows.soft,
+                  ),
+                  child: Icon(icon, color: accent, size: 24),
                 ),
-                child: Icon(icon, color: accent, size: 24),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: enabled
-                            ? AppColors.textPrimary
-                            : AppColors.disabled,
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: enabled
+                              ? AppColors.textPrimary
+                              : AppColors.disabled,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.xxs),
-                    Text(
-                      subtitle,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: enabled
-                            ? AppColors.textSecondary
-                            : AppColors.disabled,
-                        height: 1.4,
+                      const SizedBox(height: AppSpacing.xxs),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: enabled
+                              ? AppColors.textSecondary
+                              : AppColors.disabled,
+                          height: 1.4,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
                 trailing ??
                     Container(
                       width: 34,
@@ -91,8 +91,7 @@ class ClinicalModuleCard extends StatelessWidget {
                       child: Icon(
                         Icons.arrow_forward_rounded,
                         size: 18,
-                        color:
-                            enabled ? accent : AppColors.disabled,
+                        color: enabled ? accent : AppColors.disabled,
                       ),
                     ),
               ],

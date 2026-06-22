@@ -43,7 +43,7 @@ class LoadingSkeletonList extends StatelessWidget {
       padding: const EdgeInsets.all(AppSpacing.md),
       itemCount: itemCount,
       separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
-      itemBuilder: (_, __) => LoadingSkeleton.card(),
+      itemBuilder: (_, __) => const LoadingSkeleton.card(),
     );
   }
 }

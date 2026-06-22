@@ -1,9 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/genogram_data.dart';
@@ -220,70 +221,73 @@ class _GenogramRelationshipFormPageState
   Widget _buildForm(GenogramData data) {
     return AppScaffold(
       title: widget.isEdit ? 'Editar relação' : 'Nova relação',
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            DropdownButtonFormField<String>(
-              initialValue: _personAId,
-              decoration: const InputDecoration(labelText: 'Pessoa A *'),
-              items: _personItems(data),
-              onChanged: (v) => setState(() => _personAId = v),
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              initialValue: _personBId,
-              decoration: const InputDecoration(labelText: 'Pessoa B *'),
-              items: _personItems(data, excludeId: _personAId),
-              onChanged: (v) => setState(() => _personBId = v),
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<GenogramRelationshipType>(
-              initialValue: _type,
-              decoration: const InputDecoration(labelText: 'Tipo da relação *'),
-              items: GenogramRelationshipType.values
-                  .map(
-                    (t) => DropdownMenuItem(
-                      value: t,
-                      child: Text(t.label),
-                    ),
-                  )
-                  .toList(),
-              onChanged: (v) {
-                if (v != null) setState(() => _type = v);
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _notesController,
-              decoration: const InputDecoration(
-                labelText: 'Observações',
-                alignLabelWithHint: true,
+      body: MotionReveal(
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              DropdownButtonFormField<String>(
+                initialValue: _personAId,
+                decoration: const InputDecoration(labelText: 'Pessoa A *'),
+                items: _personItems(data),
+                onChanged: (v) => setState(() => _personAId = v),
               ),
-              maxLines: 3,
-            ),
-            const SizedBox(height: 8),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Conteúdo sensível'),
-              value: _isSensitive,
-              onChanged: (v) => setState(() => _isSensitive = v),
-            ),
-            const SizedBox(height: 32),
-            FilledButton(
-              onPressed: _saving ? null : _save,
-              child: _saving
-                  ? const SizedBox(
-                      height: 22,
-                      width: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String>(
+                initialValue: _personBId,
+                decoration: const InputDecoration(labelText: 'Pessoa B *'),
+                items: _personItems(data, excludeId: _personAId),
+                onChanged: (v) => setState(() => _personBId = v),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<GenogramRelationshipType>(
+                initialValue: _type,
+                decoration:
+                    const InputDecoration(labelText: 'Tipo da relação *'),
+                items: GenogramRelationshipType.values
+                    .map(
+                      (t) => DropdownMenuItem(
+                        value: t,
+                        child: Text(t.label),
+                      ),
                     )
-                  : Text(widget.isEdit
-                      ? 'Salvar alterações'
-                      : 'Registrar relação'),
-            ),
-          ],
+                    .toList(),
+                onChanged: (v) {
+                  if (v != null) setState(() => _type = v);
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _notesController,
+                decoration: const InputDecoration(
+                  labelText: 'Observações',
+                  alignLabelWithHint: true,
+                ),
+                maxLines: 3,
+              ),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Conteúdo sensível'),
+                value: _isSensitive,
+                onChanged: (v) => setState(() => _isSensitive = v),
+              ),
+              const SizedBox(height: 32),
+              FilledButton(
+                onPressed: _saving ? null : _save,
+                child: _saving
+                    ? const SizedBox(
+                        height: 22,
+                        width: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(widget.isEdit
+                        ? 'Salvar alterações'
+                        : 'Registrar relação'),
+              ),
+            ],
+          ),
         ),
       ),
     );

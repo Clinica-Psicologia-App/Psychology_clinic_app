@@ -1,9 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../domain/patient_check_in.dart';
 import '../domain/patient_check_in_input.dart';
@@ -149,11 +150,11 @@ class _PatientCheckInFormPageState
             );
           }
           if (!checkIn.isEditableToday) {
-            return AppScaffold(
+            return const AppScaffold(
               title: 'Check-in',
               body: Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(24),
+                  padding: EdgeInsets.all(24),
                   child: Text(
                     'Este check-in não pode mais ser editado (apenas o de hoje).',
                     textAlign: TextAlign.center,
@@ -174,66 +175,69 @@ class _PatientCheckInFormPageState
   Widget _buildForm(BuildContext context, {required bool isEditToday}) {
     return AppScaffold(
       title: widget.isEdit || isEditToday ? 'Editar check-in' : 'Novo check-in',
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Text(
-            'Como você está agora? Use as escalas de 0 (muito baixo) a 10 (muito alto).',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-          ),
-          const SizedBox(height: 24),
-          ScoreSliderField(
-            label: 'Humor',
-            value: _mood,
-            onChanged: (v) => setState(() => _mood = v),
-            lowLabel: 'Muito baixo',
-            highLabel: 'Muito bom',
-          ),
-          ScoreSliderField(
-            label: 'Ansiedade',
-            value: _anxiety,
-            onChanged: (v) => setState(() => _anxiety = v),
-            lowLabel: 'Calmo',
-            highLabel: 'Muito ansioso',
-          ),
-          ScoreSliderField(
-            label: 'Energia',
-            value: _energy,
-            onChanged: (v) => setState(() => _energy = v),
-            lowLabel: 'Exausto',
-            highLabel: 'Muita energia',
-          ),
-          ScoreSliderField(
-            label: 'Intensidade dos problemas',
-            value: _problemIntensity,
-            onChanged: (v) => setState(() => _problemIntensity = v),
-            lowLabel: 'Leve',
-            highLabel: 'Muito intenso',
-          ),
-          TextField(
-            controller: _notesController,
-            decoration: const InputDecoration(
-              labelText: 'Observações (opcional)',
-              alignLabelWithHint: true,
+      body: MotionReveal(
+        child: ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            Text(
+              'Como você está agora? Use as escalas de 0 (muito baixo) a 10 (muito alto).',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
             ),
-            maxLines: 4,
-            textCapitalization: TextCapitalization.sentences,
-          ),
-          const SizedBox(height: 32),
-          FilledButton(
-            onPressed: _saving ? null : _save,
-            child: _saving
-                ? const SizedBox(
-                    height: 22,
-                    width: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(
-                    widget.isEdit ? 'Salvar alterações' : 'Registrar check-in'),
-          ),
-        ],
+            const SizedBox(height: 24),
+            ScoreSliderField(
+              label: 'Humor',
+              value: _mood,
+              onChanged: (v) => setState(() => _mood = v),
+              lowLabel: 'Muito baixo',
+              highLabel: 'Muito bom',
+            ),
+            ScoreSliderField(
+              label: 'Ansiedade',
+              value: _anxiety,
+              onChanged: (v) => setState(() => _anxiety = v),
+              lowLabel: 'Calmo',
+              highLabel: 'Muito ansioso',
+            ),
+            ScoreSliderField(
+              label: 'Energia',
+              value: _energy,
+              onChanged: (v) => setState(() => _energy = v),
+              lowLabel: 'Exausto',
+              highLabel: 'Muita energia',
+            ),
+            ScoreSliderField(
+              label: 'Intensidade dos problemas',
+              value: _problemIntensity,
+              onChanged: (v) => setState(() => _problemIntensity = v),
+              lowLabel: 'Leve',
+              highLabel: 'Muito intenso',
+            ),
+            TextField(
+              controller: _notesController,
+              decoration: const InputDecoration(
+                labelText: 'Observações (opcional)',
+                alignLabelWithHint: true,
+              ),
+              maxLines: 4,
+              textCapitalization: TextCapitalization.sentences,
+            ),
+            const SizedBox(height: 32),
+            FilledButton(
+              onPressed: _saving ? null : _save,
+              child: _saving
+                  ? const SizedBox(
+                      height: 22,
+                      width: 22,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(widget.isEdit
+                      ? 'Salvar alterações'
+                      : 'Registrar check-in'),
+            ),
+          ],
+        ),
       ),
     );
   }

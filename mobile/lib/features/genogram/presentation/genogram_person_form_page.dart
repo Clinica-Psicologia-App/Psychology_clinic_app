@@ -1,10 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/genogram_gender.dart';
@@ -184,110 +185,113 @@ class _GenogramPersonFormPageState
   Widget _buildForm() {
     return AppScaffold(
       title: widget.isEdit ? 'Editar pessoa' : 'Nova pessoa',
-      body: Form(
-        key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextFormField(
-              controller: _fullNameController,
-              decoration: const InputDecoration(
-                labelText: 'Nome completo *',
-              ),
-              textCapitalization: TextCapitalization.words,
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Informe o nome.' : null,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _nicknameController,
-              decoration: const InputDecoration(labelText: 'Apelido'),
-              textCapitalization: TextCapitalization.words,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _relationshipController,
-              decoration: const InputDecoration(
-                labelText: 'Relação com o paciente',
-                hintText: 'Ex.: Mãe, Pai, Avó',
-              ),
-              textCapitalization: TextCapitalization.sentences,
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<GenogramGender?>(
-              initialValue: _gender,
-              decoration: const InputDecoration(labelText: 'Gênero'),
-              items: [
-                const DropdownMenuItem<GenogramGender?>(
-                  value: null,
-                  child: Text('Não informado'),
-                ),
-                ...GenogramGender.values.map(
-                  (g) => DropdownMenuItem(
-                    value: g,
-                    child: Text(g.label),
-                  ),
-                ),
-              ],
-              onChanged: (v) => setState(() => _gender = v),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _birthYearController,
-              decoration: const InputDecoration(
-                labelText: 'Ano de nascimento',
-              ),
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              maxLength: 4,
-            ),
-            const SizedBox(height: 8),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Falecido'),
-              value: _isDeceased,
-              onChanged: (v) => setState(() => _isDeceased = v),
-            ),
-            if (_isDeceased) ...[
+      body: MotionReveal(
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
               TextFormField(
-                controller: _deathYearController,
+                controller: _fullNameController,
                 decoration: const InputDecoration(
-                  labelText: 'Ano de falecimento',
+                  labelText: 'Nome completo *',
+                ),
+                textCapitalization: TextCapitalization.words,
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'Informe o nome.' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _nicknameController,
+                decoration: const InputDecoration(labelText: 'Apelido'),
+                textCapitalization: TextCapitalization.words,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _relationshipController,
+                decoration: const InputDecoration(
+                  labelText: 'Relação com o paciente',
+                  hintText: 'Ex.: Mãe, Pai, Avó',
+                ),
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<GenogramGender?>(
+                initialValue: _gender,
+                decoration: const InputDecoration(labelText: 'Gênero'),
+                items: [
+                  const DropdownMenuItem<GenogramGender?>(
+                    value: null,
+                    child: Text('Não informado'),
+                  ),
+                  ...GenogramGender.values.map(
+                    (g) => DropdownMenuItem(
+                      value: g,
+                      child: Text(g.label),
+                    ),
+                  ),
+                ],
+                onChanged: (v) => setState(() => _gender = v),
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _birthYearController,
+                decoration: const InputDecoration(
+                  labelText: 'Ano de nascimento',
                 ),
                 keyboardType: TextInputType.number,
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 maxLength: 4,
               ),
               const SizedBox(height: 8),
-            ],
-            TextFormField(
-              controller: _notesController,
-              decoration: const InputDecoration(
-                labelText: 'Observações',
-                alignLabelWithHint: true,
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Falecido'),
+                value: _isDeceased,
+                onChanged: (v) => setState(() => _isDeceased = v),
               ),
-              maxLines: 4,
-            ),
-            const SizedBox(height: 8),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Conteúdo sensível'),
-              value: _isSensitive,
-              onChanged: (v) => setState(() => _isSensitive = v),
-            ),
-            const SizedBox(height: 32),
-            FilledButton(
-              onPressed: _saving ? null : _save,
-              child: _saving
-                  ? const SizedBox(
-                      height: 22,
-                      width: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(
-                      widget.isEdit ? 'Salvar alterações' : 'Adicionar pessoa'),
-            ),
-          ],
+              if (_isDeceased) ...[
+                TextFormField(
+                  controller: _deathYearController,
+                  decoration: const InputDecoration(
+                    labelText: 'Ano de falecimento',
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  maxLength: 4,
+                ),
+                const SizedBox(height: 8),
+              ],
+              TextFormField(
+                controller: _notesController,
+                decoration: const InputDecoration(
+                  labelText: 'Observações',
+                  alignLabelWithHint: true,
+                ),
+                maxLines: 4,
+              ),
+              const SizedBox(height: 8),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Conteúdo sensível'),
+                value: _isSensitive,
+                onChanged: (v) => setState(() => _isSensitive = v),
+              ),
+              const SizedBox(height: 32),
+              FilledButton(
+                onPressed: _saving ? null : _save,
+                child: _saving
+                    ? const SizedBox(
+                        height: 22,
+                        width: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(widget.isEdit
+                        ? 'Salvar alterações'
+                        : 'Adicionar pessoa'),
+              ),
+            ],
+          ),
         ),
       ),
     );

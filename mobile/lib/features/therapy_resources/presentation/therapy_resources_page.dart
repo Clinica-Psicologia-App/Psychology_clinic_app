@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../patients/providers/patients_providers.dart';
 import '../../profile/domain/profile_role.dart';
@@ -113,33 +114,32 @@ class TherapyResourcesPage extends ConsumerWidget {
                       );
                     }
 
-                    return Column(
-                      children: recommendations
-                          .map(
-                            (item) => TherapyRecommendationTile(
-                              recommendation: item,
-                              onTap: () {
-                                if (item.isAlreadyAssigned) {
-                                  context.push(
-                                    TherapyResourceRoutes.staffDetail(
-                                      role: role,
-                                      patientId: patientId,
-                                      resourceId: item.resource.id,
-                                    ),
-                                  );
-                                } else {
-                                  context.push(
-                                    TherapyResourceRoutes.assign(
-                                      role: role,
-                                      patientId: patientId,
-                                      resourceId: item.resource.id,
-                                    ),
-                                  );
-                                }
-                              },
-                            ),
-                          )
-                          .toList(),
+                    return MotionStaggered(
+                      children: [
+                        for (final item in recommendations)
+                          TherapyRecommendationTile(
+                            recommendation: item,
+                            onTap: () {
+                              if (item.isAlreadyAssigned) {
+                                context.push(
+                                  TherapyResourceRoutes.staffDetail(
+                                    role: role,
+                                    patientId: patientId,
+                                    resourceId: item.resource.id,
+                                  ),
+                                );
+                              } else {
+                                context.push(
+                                  TherapyResourceRoutes.assign(
+                                    role: role,
+                                    patientId: patientId,
+                                    resourceId: item.resource.id,
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+                      ],
                     );
                   },
                 ),
@@ -157,17 +157,20 @@ class TherapyResourcesPage extends ConsumerWidget {
                     ),
                   )
                 else
-                  ...activeAssigned.map(
-                    (access) => PatientAccessTile(
-                      access: access,
-                      onTap: () => context.push(
-                        TherapyResourceRoutes.staffDetail(
-                          role: role,
-                          patientId: patientId,
-                          resourceId: access.resourceId,
+                  MotionStaggered(
+                    children: [
+                      for (final access in activeAssigned)
+                        PatientAccessTile(
+                          access: access,
+                          onTap: () => context.push(
+                            TherapyResourceRoutes.staffDetail(
+                              role: role,
+                              patientId: patientId,
+                              resourceId: access.resourceId,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
+                    ],
                   ),
                 if (inactiveAssigned.isNotEmpty) ...[
                   const SizedBox(height: 16),
@@ -204,36 +207,44 @@ class TherapyResourcesPage extends ConsumerWidget {
                     ),
                   )
                 else
-                  ...bundle.library.map((resource) {
-                    final isAssigned =
-                        bundle.assignedResourceIds.contains(resource.id);
-                    return TherapyResourceTile(
-                      resource: resource,
-                      subtitle: isAssigned ? 'Já liberado' : 'Disponível',
-                      trailing: isAssigned
-                          ? const Icon(Icons.check_circle_outline)
-                          : const Icon(Icons.add_circle_outline),
-                      onTap: () {
-                        if (isAssigned) {
-                          context.push(
-                            TherapyResourceRoutes.staffDetail(
-                              role: role,
-                              patientId: patientId,
-                              resourceId: resource.id,
-                            ),
-                          );
-                        } else {
-                          context.push(
-                            TherapyResourceRoutes.assign(
-                              role: role,
-                              patientId: patientId,
-                              resourceId: resource.id,
-                            ),
-                          );
-                        }
-                      },
-                    );
-                  }),
+                  MotionStaggered(
+                    children: [
+                      for (final resource in bundle.library)
+                        Builder(
+                          builder: (context) {
+                            final isAssigned = bundle.assignedResourceIds
+                                .contains(resource.id);
+                            return TherapyResourceTile(
+                              resource: resource,
+                              subtitle:
+                                  isAssigned ? 'Já liberado' : 'Disponível',
+                              trailing: isAssigned
+                                  ? const Icon(Icons.check_circle_outline)
+                                  : const Icon(Icons.add_circle_outline),
+                              onTap: () {
+                                if (isAssigned) {
+                                  context.push(
+                                    TherapyResourceRoutes.staffDetail(
+                                      role: role,
+                                      patientId: patientId,
+                                      resourceId: resource.id,
+                                    ),
+                                  );
+                                } else {
+                                  context.push(
+                                    TherapyResourceRoutes.assign(
+                                      role: role,
+                                      patientId: patientId,
+                                      resourceId: resource.id,
+                                    ),
+                                  );
+                                }
+                              },
+                            );
+                          },
+                        ),
+                    ],
+                  ),
               ],
             ),
           );

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/app_exception.dart';
@@ -41,7 +41,9 @@ class ClinicsPage extends ConsumerWidget {
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Text(
-              e is AppException ? userMessageFor(e) : 'Erro ao carregar clínicas.',
+              e is AppException
+                  ? userMessageFor(e)
+                  : 'Erro ao carregar clínicas.',
               textAlign: TextAlign.center,
             ),
           ),
@@ -107,7 +109,8 @@ class ClinicsPage extends ConsumerWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('${nextActive ? 'Ativar' : 'Inativar'} ${clinic.typeLabel}'),
+        title:
+            Text('${nextActive ? 'Ativar' : 'Inativar'} ${clinic.typeLabel}'),
         content: Text(
           'Deseja ${nextActive ? 'ativar' : 'inativar'} ${clinic.name}? '
           'Isso impacta a operação dos usuários vinculados.',
@@ -236,15 +239,18 @@ class _ClinicsList extends StatelessWidget {
           if (clinics.isEmpty)
             const _EmptyClinicsCard()
           else
-            ...clinics.map(
-              (clinic) => Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                child: _ClinicCard(
-                  clinic: clinic,
-                  onToggleActive: () => onToggleActive(clinic),
-                  onDelete: () => onDelete(clinic),
-                ),
-              ),
+            MotionStaggered(
+              children: [
+                for (final clinic in clinics)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    child: _ClinicCard(
+                      clinic: clinic,
+                      onToggleActive: () => onToggleActive(clinic),
+                      onDelete: () => onDelete(clinic),
+                    ),
+                  ),
+              ],
             ),
         ],
       ),
@@ -568,8 +574,7 @@ class _CreateClinicSheetState extends State<_CreateClinicSheet> {
                       const SizedBox(height: AppSpacing.lg),
                       TextFormField(
                         controller: _nameController,
-                        decoration:
-                            const InputDecoration(labelText: 'Nome *'),
+                        decoration: const InputDecoration(labelText: 'Nome *'),
                         textInputAction: TextInputAction.next,
                         validator: (value) =>
                             value == null || value.trim().isEmpty

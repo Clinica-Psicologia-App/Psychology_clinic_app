@@ -1,7 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../profile/domain/profile_role.dart';
 import '../providers/patient_check_ins_providers.dart';
@@ -64,41 +65,43 @@ class PatientCheckInDetailPage extends ConsumerWidget {
           return Column(
             children: [
               Expanded(
-                child: ListView(
-                  padding: const EdgeInsets.all(16),
-                  children: [
-                    if (checkIn.isToday)
-                      Card(
-                        color: theme.colorScheme.primaryContainer
-                            .withValues(alpha: 0.4),
-                        child: const ListTile(
-                          leading: Icon(Icons.today),
-                          title: Text('Check-in de hoje'),
+                child: MotionReveal(
+                  child: ListView(
+                    padding: const EdgeInsets.all(16),
+                    children: [
+                      if (checkIn.isToday)
+                        Card(
+                          color: theme.colorScheme.primaryContainer
+                              .withValues(alpha: 0.4),
+                          child: const ListTile(
+                            leading: Icon(Icons.today),
+                            title: Text('Check-in de hoje'),
+                          ),
+                        ),
+                      const SizedBox(height: 16),
+                      Text(
+                        loc.formatFullDate(checkIn.checkedInAt.toLocal()),
+                        style: theme.textTheme.headlineSmall,
+                      ),
+                      Text(
+                        loc.formatTimeOfDay(
+                          TimeOfDay.fromDateTime(checkIn.checkedInAt.toLocal()),
+                        ),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
-                    const SizedBox(height: 16),
-                    Text(
-                      loc.formatFullDate(checkIn.checkedInAt.toLocal()),
-                      style: theme.textTheme.headlineSmall,
-                    ),
-                    Text(
-                      loc.formatTimeOfDay(
-                        TimeOfDay.fromDateTime(checkIn.checkedInAt.toLocal()),
-                      ),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    CheckInScoresSummary(checkIn: checkIn),
-                    if (checkIn.notes != null &&
-                        checkIn.notes!.trim().isNotEmpty) ...[
                       const SizedBox(height: 24),
-                      Text('Observações', style: theme.textTheme.titleSmall),
-                      const SizedBox(height: 8),
-                      Text(checkIn.notes!),
+                      CheckInScoresSummary(checkIn: checkIn),
+                      if (checkIn.notes != null &&
+                          checkIn.notes!.trim().isNotEmpty) ...[
+                        const SizedBox(height: 24),
+                        Text('Observações', style: theme.textTheme.titleSmall),
+                        const SizedBox(height: 8),
+                        Text(checkIn.notes!),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
               if (_isPatient && checkIn.isEditableToday) ...[

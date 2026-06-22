@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -46,41 +46,52 @@ class PlatformAdminHomePage extends ConsumerWidget {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: AppSpacing.sm),
-            MotionReveal(
-              child: ResponsiveGrid(
-                mediumColumns: 2,
-                expandedColumns: 2,
-                children: [
-                  ClinicalModuleCard(
+            ResponsiveGrid(
+              mediumColumns: 2,
+              expandedColumns: 2,
+              children: [
+                MotionReveal(
+                  delay: staggerDelay(0),
+                  child: ClinicalModuleCard(
                     icon: Icons.people_outline,
                     title: 'Pacientes',
                     subtitle: 'Visualizar, inativar e reativar pacientes.',
                     accentColor: AppColors.turquoise,
                     onTap: () => context.push('/platform/patients'),
                   ),
-                  ClinicalModuleCard(
+                ),
+                MotionReveal(
+                  delay: staggerDelay(1),
+                  child: ClinicalModuleCard(
                     icon: Icons.apartment_outlined,
                     title: 'Clínicas',
                     subtitle: 'Ver clínicas, individuais, status e volumes.',
                     accentColor: AppColors.blue,
                     onTap: () => context.push(ClinicRoutes.platformList),
                   ),
-                  ClinicalModuleCard(
+                ),
+                MotionReveal(
+                  delay: staggerDelay(2),
+                  child: ClinicalModuleCard(
                     icon: Icons.manage_accounts_outlined,
                     title: 'Usuários',
                     subtitle: 'Gerenciar usuários por clínica e status.',
                     accentColor: AppColors.purple,
-                    onTap: () => context.push(UserManagementRoutes.platformList),
+                    onTap: () =>
+                        context.push(UserManagementRoutes.platformList),
                   ),
-                  ClinicalModuleCard(
+                ),
+                MotionReveal(
+                  delay: staggerDelay(3),
+                  child: ClinicalModuleCard(
                     icon: Icons.assignment_ind_outlined,
                     title: 'Acesso a questionários',
                     subtitle: 'Liberar instrumentos para cada psicólogo.',
                     accentColor: AppColors.cyan,
                     onTap: () => context.push(QuestionnaireRoutes.adminAccess),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ],
         ),

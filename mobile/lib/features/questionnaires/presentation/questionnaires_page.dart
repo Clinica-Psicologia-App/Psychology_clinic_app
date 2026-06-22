@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/config/env_config.dart';
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../patients/providers/patients_providers.dart';
@@ -49,9 +50,9 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
       title: title,
       body: patientIdAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(
+        error: (e, _) => const Center(
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(24),
             child: Text('Não foi possível identificar o paciente.'),
           ),
         ),
@@ -123,14 +124,18 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
                           allowUnvalidated:
                               EnvConfig.allowsUnvalidatedInstruments,
                         );
-                        return QuestionnaireListTile(
-                          questionnaire: q,
-                          enabled: canApply,
-                          showStaffDetails: widget.role != ProfileRole.patient,
-                          patientStatus: statusMap[q.id],
-                          onTap: canApply
-                              ? () => _onQuestionnaireTap(q, patientId)
-                              : null,
+                        return MotionReveal(
+                          delay: staggerDelay(index),
+                          child: QuestionnaireListTile(
+                            questionnaire: q,
+                            enabled: canApply,
+                            showStaffDetails:
+                                widget.role != ProfileRole.patient,
+                            patientStatus: statusMap[q.id],
+                            onTap: canApply
+                                ? () => _onQuestionnaireTap(q, patientId)
+                                : null,
+                          ),
                         );
                       },
                     ),

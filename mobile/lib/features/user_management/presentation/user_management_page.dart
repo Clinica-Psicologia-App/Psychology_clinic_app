@@ -260,7 +260,8 @@ class UserManagementPage extends ConsumerWidget {
     );
   }
 
-  Future<void> _showCreateUserSheet(BuildContext context, WidgetRef ref) async {    final isPlatformAdmin =
+  Future<void> _showCreateUserSheet(BuildContext context, WidgetRef ref) async {
+    final isPlatformAdmin =
         ref.read(authControllerProvider).valueOrNull?.role ==
             ProfileRole.platformAdmin;
     final request = await showModalBottomSheet<CreateClinicUserRequest>(
@@ -377,19 +378,22 @@ class _UsersList extends StatelessWidget {
           if (users.isEmpty)
             const _EmptyUsersCard()
           else
-            ...groups.map(
-              (group) => Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                child: _ClinicGroupCard(
-                  group: group,
-                  currentProfileId: currentProfileId,
-                  isPlatformAdmin: isPlatformAdmin,
-                  onToggleActive: onToggleActive,
-                  onUpdateAccess: onUpdateAccess,
-                  onChangeRole: onChangeRole,
-                  onDelete: onDelete,
-                ),
-              ),
+            MotionStaggered(
+              children: [
+                for (final group in groups)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                    child: _ClinicGroupCard(
+                      group: group,
+                      currentProfileId: currentProfileId,
+                      isPlatformAdmin: isPlatformAdmin,
+                      onToggleActive: onToggleActive,
+                      onUpdateAccess: onUpdateAccess,
+                      onChangeRole: onChangeRole,
+                      onDelete: onDelete,
+                    ),
+                  ),
+              ],
             ),
         ],
       ),
@@ -1275,7 +1279,7 @@ class _ClinicTypePicker extends StatelessWidget {
           ],
           selected: {isIndividual},
           onSelectionChanged: (selection) => onChanged(selection.first),
-          style: ButtonStyle(
+          style: const ButtonStyle(
             visualDensity: VisualDensity.compact,
           ),
         ),

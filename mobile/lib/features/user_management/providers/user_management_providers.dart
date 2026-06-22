@@ -30,7 +30,9 @@ class ClinicUsersNotifier extends AsyncNotifier<List<ClinicUser>> {
 
   Future<void> create(CreateClinicUserRequest request) async {
     await _mutateAndRefresh(() async {
-      await ref.read(userManagementRepositoryProvider).createClinicUser(request);
+      await ref
+          .read(userManagementRepositoryProvider)
+          .createClinicUser(request);
     });
   }
 

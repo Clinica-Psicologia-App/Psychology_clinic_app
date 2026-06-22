@@ -42,10 +42,10 @@ abstract final class AppGradients {
     ],
   );
 
-  static LinearGradient progress({double? stops}) => LinearGradient(
+  static LinearGradient progress({double? stops}) => const LinearGradient(
         begin: Alignment.centerLeft,
         end: Alignment.centerRight,
-        colors: const [
+        colors: [
           AppColors.turquoise,
           AppColors.blue,
         ],

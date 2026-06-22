@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/config/env_config.dart';
+import '../../../core/theme/app_animations.dart';
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../../shared/widgets/homologation_ui.dart';
@@ -111,46 +113,56 @@ class _QuestionnaireIntroPageState
                 ),
               ],
             ),
-            if (enabled) ...[
-              const Divider(height: 20),
-              RadioGroup<String>(
-                groupValue: selectedRole,
-                onChanged: (value) => setState(() {
-                  _caregiverRole[index] = value;
-                }),
-                child: Column(
-                  children: _roleEntries.map((entry) {
-                    final (key, label) = entry;
-                    return RadioListTile<String>(
-                      value: key,
-                      title: Text(label),
-                      contentPadding: EdgeInsets.zero,
-                      dense: true,
-                    );
-                  }).toList(),
-                ),
-              ),
-              if (selectedRole == 'outro') ...[
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _caregiverOtherController1[index],
-                  decoration: const InputDecoration(
-                    labelText: 'Nome',
-                    border: OutlineInputBorder(),
-                  ),
-                  textCapitalization: TextCapitalization.words,
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _caregiverOtherController2[index],
-                  decoration: const InputDecoration(
-                    labelText: 'Relação com o paciente',
-                    border: OutlineInputBorder(),
-                  ),
-                  textCapitalization: TextCapitalization.words,
-                ),
-              ],
-            ],
+            AnimatedSize(
+              duration: AppAnimations.resolve(context, AppAnimations.section),
+              curve: AppAnimations.standardCurve,
+              alignment: Alignment.topCenter,
+              child: !enabled
+                  ? const SizedBox(width: double.infinity)
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Divider(height: 20),
+                        RadioGroup<String>(
+                          groupValue: selectedRole,
+                          onChanged: (value) => setState(() {
+                            _caregiverRole[index] = value;
+                          }),
+                          child: Column(
+                            children: _roleEntries.map((entry) {
+                              final (key, label) = entry;
+                              return RadioListTile<String>(
+                                value: key,
+                                title: Text(label),
+                                contentPadding: EdgeInsets.zero,
+                                dense: true,
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                        if (selectedRole == 'outro') ...[
+                          const SizedBox(height: 12),
+                          TextField(
+                            controller: _caregiverOtherController1[index],
+                            decoration: const InputDecoration(
+                              labelText: 'Nome',
+                              border: OutlineInputBorder(),
+                            ),
+                            textCapitalization: TextCapitalization.words,
+                          ),
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: _caregiverOtherController2[index],
+                            decoration: const InputDecoration(
+                              labelText: 'Relação com o paciente',
+                              border: OutlineInputBorder(),
+                            ),
+                            textCapitalization: TextCapitalization.words,
+                          ),
+                        ],
+                      ],
+                    ),
+            ),
           ],
         ),
       ),
@@ -184,10 +196,12 @@ class _QuestionnaireIntroPageState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Text(
-                      widget.questionnaire.name,
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
+                    MotionReveal(
+                      child: Text(
+                        widget.questionnaire.name,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                     if (widget.questionnaire.description != null &&
@@ -195,10 +209,13 @@ class _QuestionnaireIntroPageState
                             .trim()
                             .isNotEmpty) ...[
                       const SizedBox(height: 12),
-                      Text(
-                        widget.questionnaire.description!,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
+                      MotionReveal(
+                        delay: const Duration(milliseconds: 70),
+                        child: Text(
+                          widget.questionnaire.description!,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
                         ),
                       ),
                     ],
@@ -272,10 +289,15 @@ class _QuestionnaireIntroPageState
                         style: theme.textTheme.titleMedium,
                       ),
                       const SizedBox(height: 8),
-                      for (int i = 0; i < 3; i++) ...[
-                        _buildCaregiverCard(i),
-                        if (i < 2) const SizedBox(height: 8),
-                      ],
+                      MotionStaggered(
+                        children: [
+                          for (int i = 0; i < 3; i++)
+                            Padding(
+                              padding: EdgeInsets.only(bottom: i < 2 ? 8 : 0),
+                              child: _buildCaregiverCard(i),
+                            ),
+                        ],
+                      ),
                     ],
                     const SizedBox(height: 24),
                     FilledButton(

@@ -1,9 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../patient_check_ins/presentation/widgets/patient_check_in_widgets.dart';
 import '../../profile/domain/profile_role.dart';
@@ -186,111 +187,114 @@ class _PatientTimelineEventFormPageState
       title: widget.isEdit ? 'Editar evento' : 'Novo evento',
       body: Form(
         key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextFormField(
-              controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'Título *',
-                hintText: 'Ex.: Mudança de cidade',
+        child: MotionReveal(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              TextFormField(
+                controller: _titleController,
+                decoration: const InputDecoration(
+                  labelText: 'Título *',
+                  hintText: 'Ex.: Mudança de cidade',
+                ),
+                textCapitalization: TextCapitalization.sentences,
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'Informe o título.' : null,
               ),
-              textCapitalization: TextCapitalization.sentences,
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Informe o título.' : null,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Descrição',
-                alignLabelWithHint: true,
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(
+                  labelText: 'Descrição',
+                  alignLabelWithHint: true,
+                ),
+                maxLines: 5,
+                textCapitalization: TextCapitalization.sentences,
               ),
-              maxLines: 5,
-              textCapitalization: TextCapitalization.sentences,
-            ),
-            const SizedBox(height: 16),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Data do evento (opcional)'),
-              subtitle: Text(
-                _eventDate == null
-                    ? 'Não definida'
-                    : MaterialLocalizations.of(context).formatFullDate(
-                        _eventDate!,
-                      ),
-              ),
-              trailing: IconButton(
-                icon: const Icon(Icons.calendar_today_outlined),
-                onPressed: _pickEventDate,
-              ),
-            ),
-            if (_eventDate != null)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton(
-                  onPressed: () => setState(() => _eventDate = null),
-                  child: const Text('Remover data'),
+              const SizedBox(height: 16),
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Data do evento (opcional)'),
+                subtitle: Text(
+                  _eventDate == null
+                      ? 'Não definida'
+                      : MaterialLocalizations.of(context).formatFullDate(
+                          _eventDate!,
+                        ),
+                ),
+                trailing: IconButton(
+                  icon: const Icon(Icons.calendar_today_outlined),
+                  onPressed: _pickEventDate,
                 ),
               ),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _periodLabelController,
-              decoration: const InputDecoration(
-                labelText: 'Período textual (opcional)',
-                hintText: 'Ex.: Infância, Adolescência, 2020',
-              ),
-              textCapitalization: TextCapitalization.sentences,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _categoryController,
-              decoration: const InputDecoration(
-                labelText: 'Categoria (opcional)',
-                hintText: 'Ex.: Família, Trabalho, Saúde',
-              ),
-              textCapitalization: TextCapitalization.sentences,
-            ),
-            const SizedBox(height: 16),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Informar impacto emocional'),
-              subtitle: const Text('Escala de 0 a 10'),
-              value: _includeEmotionalImpact,
-              onChanged: (v) => setState(() => _includeEmotionalImpact = v),
-            ),
-            if (_includeEmotionalImpact) ...[
-              ScoreSliderField(
-                label: 'Impacto emocional',
-                value: _emotionalImpact,
-                onChanged: (v) => setState(() => _emotionalImpact = v),
-                lowLabel: 'Baixo',
-                highLabel: 'Alto',
-              ),
+              if (_eventDate != null)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: TextButton(
+                    onPressed: () => setState(() => _eventDate = null),
+                    child: const Text('Remover data'),
+                  ),
+                ),
               const SizedBox(height: 8),
-            ],
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Conteúdo sensível'),
-              subtitle: const Text(
-                'Destaca o evento na linha do tempo para atenção na leitura.',
+              TextFormField(
+                controller: _periodLabelController,
+                decoration: const InputDecoration(
+                  labelText: 'Período textual (opcional)',
+                  hintText: 'Ex.: Infância, Adolescência, 2020',
+                ),
+                textCapitalization: TextCapitalization.sentences,
               ),
-              value: _isSensitive,
-              onChanged: (v) => setState(() => _isSensitive = v),
-            ),
-            const SizedBox(height: 32),
-            FilledButton(
-              onPressed: _saving ? null : _save,
-              child: _saving
-                  ? const SizedBox(
-                      height: 22,
-                      width: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(
-                      widget.isEdit ? 'Salvar alterações' : 'Registrar evento'),
-            ),
-          ],
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _categoryController,
+                decoration: const InputDecoration(
+                  labelText: 'Categoria (opcional)',
+                  hintText: 'Ex.: Família, Trabalho, Saúde',
+                ),
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: 16),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Informar impacto emocional'),
+                subtitle: const Text('Escala de 0 a 10'),
+                value: _includeEmotionalImpact,
+                onChanged: (v) => setState(() => _includeEmotionalImpact = v),
+              ),
+              if (_includeEmotionalImpact) ...[
+                ScoreSliderField(
+                  label: 'Impacto emocional',
+                  value: _emotionalImpact,
+                  onChanged: (v) => setState(() => _emotionalImpact = v),
+                  lowLabel: 'Baixo',
+                  highLabel: 'Alto',
+                ),
+                const SizedBox(height: 8),
+              ],
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Conteúdo sensível'),
+                subtitle: const Text(
+                  'Destaca o evento na linha do tempo para atenção na leitura.',
+                ),
+                value: _isSensitive,
+                onChanged: (v) => setState(() => _isSensitive = v),
+              ),
+              const SizedBox(height: 32),
+              FilledButton(
+                onPressed: _saving ? null : _save,
+                child: _saving
+                    ? const SizedBox(
+                        height: 22,
+                        width: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(widget.isEdit
+                        ? 'Salvar alterações'
+                        : 'Registrar evento'),
+              ),
+            ],
+          ),
         ),
       ),
     );

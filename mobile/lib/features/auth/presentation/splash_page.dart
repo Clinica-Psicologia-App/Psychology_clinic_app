@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/app_exception.dart';
@@ -18,26 +18,57 @@ class SplashPage extends ConsumerStatefulWidget {
 }
 
 class _SplashPageState extends ConsumerState<SplashPage>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
-  late final Animation<double> _fade;
-  late final Animation<Offset> _slide;
+    with TickerProviderStateMixin {
+  late final AnimationController _intro;
+  late final AnimationController _breathe;
+
+  late final Animation<double> _markScale;
+  late final Animation<double> _markFade;
+  late final Animation<double> _glow;
+  late final Animation<double> _taglineFade;
+  late final Animation<Offset> _taglineSlide;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+    _intro = AnimationController(
       vsync: this,
-      duration: AppAnimations.emphasis,
+      duration: const Duration(milliseconds: 1300),
     );
-    _fade =
-        CurvedAnimation(parent: _controller, curve: AppAnimations.enterCurve);
-    _slide = Tween<Offset>(
-      begin: const Offset(0, 0.04),
+    _breathe = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2600),
+    )..repeat(reverse: true);
+
+    _markScale = Tween<double>(begin: 0.82, end: 1).animate(
+      CurvedAnimation(
+        parent: _intro,
+        curve: const Interval(0, 0.5, curve: Curves.easeOutBack),
+      ),
+    );
+    _markFade = CurvedAnimation(
+      parent: _intro,
+      curve: const Interval(0, 0.42, curve: Curves.easeOut),
+    );
+    _glow = CurvedAnimation(
+      parent: _intro,
+      curve: const Interval(0.08, 0.62, curve: Curves.easeOutCubic),
+    );
+    _taglineFade = CurvedAnimation(
+      parent: _intro,
+      curve: const Interval(0.46, 0.82, curve: Curves.easeOut),
+    );
+    _taglineSlide = Tween<Offset>(
+      begin: const Offset(0, 0.5),
       end: Offset.zero,
     ).animate(
-        CurvedAnimation(parent: _controller, curve: AppAnimations.enterCurve));
-    _controller.forward();
+      CurvedAnimation(
+        parent: _intro,
+        curve: const Interval(0.46, 0.82, curve: Curves.easeOutCubic),
+      ),
+    );
+
+    _intro.forward();
     Future.microtask(_bootstrap);
   }
 
@@ -47,7 +78,8 @@ class _SplashPageState extends ConsumerState<SplashPage>
 
   @override
   void dispose() {
-    _controller.dispose();
+    _intro.dispose();
+    _breathe.dispose();
     super.dispose();
   }
 
@@ -66,45 +98,30 @@ class _SplashPageState extends ConsumerState<SplashPage>
               padding: const EdgeInsets.all(AppSpacing.xxl),
               child: authState.when(
                 loading: () => _SplashContent(
-                  fade: animate ? _fade : const AlwaysStoppedAnimation(1),
-                  slide: animate
-                      ? _slide
-                      : const AlwaysStoppedAnimation(Offset.zero),
-                  footer: const _LoadingFooter(),
-                ),
-                error: (e, _) => Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const EsquemaCoreLogo(
-                      size: 100,
-                      showTagline: true,
-                    ),
-                    const SizedBox(height: AppSpacing.xxl),
-                    Icon(
-                      Icons.error_outline,
-                      size: 48,
-                      color: Theme.of(context).colorScheme.error,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      e is AppException
-                          ? userMessageFor(e)
-                          : 'Não foi possível restaurar a sessão.',
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
-                    FilledButton(
-                      onPressed: _bootstrap,
-                      child: const Text('Tentar novamente'),
-                    ),
-                  ],
+                  intro: _intro,
+                  breathe: _breathe,
+                  markScale: _markScale,
+                  markFade: _markFade,
+                  glow: _glow,
+                  taglineFade: _taglineFade,
+                  taglineSlide: _taglineSlide,
+                  animate: animate,
                 ),
                 data: (_) => _SplashContent(
-                  fade: animate ? _fade : const AlwaysStoppedAnimation(1),
-                  slide: animate
-                      ? _slide
-                      : const AlwaysStoppedAnimation(Offset.zero),
-                  footer: const _LoadingFooter(),
+                  intro: _intro,
+                  breathe: _breathe,
+                  markScale: _markScale,
+                  markFade: _markFade,
+                  glow: _glow,
+                  taglineFade: _taglineFade,
+                  taglineSlide: _taglineSlide,
+                  animate: animate,
+                ),
+                error: (e, _) => _ErrorContent(
+                  message: e is AppException
+                      ? userMessageFor(e)
+                      : 'Não foi possível restaurar a sessão.',
+                  onRetry: _bootstrap,
                 ),
               ),
             ),
@@ -117,32 +134,154 @@ class _SplashPageState extends ConsumerState<SplashPage>
 
 class _SplashContent extends StatelessWidget {
   const _SplashContent({
-    required this.fade,
-    required this.slide,
-    required this.footer,
+    required this.intro,
+    required this.breathe,
+    required this.markScale,
+    required this.markFade,
+    required this.glow,
+    required this.taglineFade,
+    required this.taglineSlide,
+    required this.animate,
   });
 
-  final Animation<double> fade;
-  final Animation<Offset> slide;
-  final Widget footer;
+  final Animation<double> intro;
+  final Animation<double> breathe;
+  final Animation<double> markScale;
+  final Animation<double> markFade;
+  final Animation<double> glow;
+  final Animation<double> taglineFade;
+  final Animation<Offset> taglineSlide;
+  final bool animate;
 
   @override
   Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: fade,
-      child: SlideTransition(
-        position: slide,
-        child: Column(
+    final theme = Theme.of(context);
+
+    if (!animate) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const _BrandMark(glow: 1, breathe: 0),
+          const SizedBox(height: AppSpacing.xl),
+          Text(
+            'EsquemaCore',
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.5,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Seu raciocínio clínico em mapa',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xxxl),
+          const _LoadingFooter(),
+        ],
+      );
+    }
+
+    return AnimatedBuilder(
+      animation: Listenable.merge([intro, breathe]),
+      builder: (context, _) {
+        return Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const EsquemaCoreLogo(
-              size: 108,
-              showTagline: true,
+            Transform.scale(
+              scale: markScale.value,
+              child: Opacity(
+                opacity: markFade.value.clamp(0.0, 1.0),
+                child: _BrandMark(
+                  glow: glow.value,
+                  breathe: breathe.value,
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            FadeTransition(
+              opacity: taglineFade,
+              child: SlideTransition(
+                position: taglineSlide,
+                child: Column(
+                  children: [
+                    Text(
+                      'EsquemaCore',
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      'Seu raciocínio clínico em mapa',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
             const SizedBox(height: AppSpacing.xxxl),
-            footer,
+            FadeTransition(
+              opacity: taglineFade,
+              child: const _LoadingFooter(),
+            ),
           ],
-        ),
+        );
+      },
+    );
+  }
+}
+
+/// Marca com halos concêntricos animados (glow de entrada + respiração).
+class _BrandMark extends StatelessWidget {
+  const _BrandMark({required this.glow, required this.breathe});
+
+  /// 0..1 — intensidade do halo de entrada.
+  final double glow;
+
+  /// 0..1 — ciclo de respiração contínua.
+  final double breathe;
+
+  @override
+  Widget build(BuildContext context) {
+    final pulse = 1 + breathe * 0.04;
+
+    return SizedBox(
+      width: 168,
+      height: 168,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          _Halo(size: 168, opacity: glow * 0.10 * (0.7 + breathe * 0.3)),
+          _Halo(size: 132, opacity: glow * 0.16),
+          Transform.scale(
+            scale: pulse,
+            child: const EsquemaCoreLogo(size: 96),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Halo extends StatelessWidget {
+  const _Halo({required this.size, required this.opacity});
+
+  final double size;
+  final double opacity;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: AppColors.turquoise.withValues(alpha: opacity.clamp(0.0, 1.0)),
       ),
     );
   }
@@ -156,20 +295,111 @@ class _LoadingFooter extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        SizedBox(
-          width: 28,
-          height: 28,
-          child: CircularProgressIndicator(
-            strokeWidth: 2.5,
-            color: AppColors.turquoise,
-          ),
-        ),
+        const _PulsingDots(),
         const SizedBox(height: AppSpacing.md),
         Text(
-          'Verificando sessão...',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: AppColors.textSecondary,
+          'Preparando seu espaço...',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: AppColors.textMuted,
               ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Três pontos pulsando em sequência (substitui o spinner por algo mais suave).
+class _PulsingDots extends StatefulWidget {
+  const _PulsingDots();
+
+  @override
+  State<_PulsingDots> createState() => _PulsingDotsState();
+}
+
+class _PulsingDotsState extends State<_PulsingDots>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1100),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!AppAnimations.shouldAnimate(context)) {
+      return const SizedBox(
+        width: 26,
+        height: 26,
+        child: CircularProgressIndicator(
+          strokeWidth: 2.5,
+          color: AppColors.turquoise,
+        ),
+      );
+    }
+
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(3, (i) {
+            final phase = (_controller.value - i * 0.18) % 1.0;
+            final t = (1 - (phase * 2 - 1).abs()).clamp(0.0, 1.0);
+            return Container(
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color.lerp(
+                  AppColors.border,
+                  AppColors.turquoise,
+                  t,
+                ),
+              ),
+            );
+          }),
+        );
+      },
+    );
+  }
+}
+
+class _ErrorContent extends StatelessWidget {
+  const _ErrorContent({required this.message, required this.onRetry});
+
+  final String message;
+  final Future<void> Function() onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const EsquemaCoreLogo(size: 96, showTagline: true),
+        const SizedBox(height: AppSpacing.xxl),
+        Icon(
+          Icons.error_outline,
+          size: 48,
+          color: Theme.of(context).colorScheme.error,
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Text(message, textAlign: TextAlign.center),
+        const SizedBox(height: AppSpacing.xl),
+        FilledButton(
+          onPressed: onRetry,
+          child: const Text('Tentar novamente'),
         ),
       ],
     );

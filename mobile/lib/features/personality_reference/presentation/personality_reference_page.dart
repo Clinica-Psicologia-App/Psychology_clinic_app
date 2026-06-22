@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/personality_reference_content.dart';
@@ -21,40 +22,44 @@ class StaffPersonalityReferencePage extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Matriz clínica de fatores e facetas',
-                    style: Theme.of(context).textTheme.titleLarge,
+          MotionStaggered(
+            children: [
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Matriz clínica de fatores e facetas',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Este conteúdo funciona como apoio de leitura clínica para a equipe. '
+                        'Não é um questionário respondido pelo paciente nesta versão do app.',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Este conteúdo funciona como apoio de leitura clínica para a equipe. '
-                    'Não é um questionário respondido pelo paciente nesta versão do app.',
+                ),
+              ),
+              const SizedBox(height: 16),
+              for (final factor in personalityReferenceFactors) ...[
+                _FactorCard(factor: factor),
+                const SizedBox(height: 16),
+              ],
+              Card(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    personalityReferenceNote,
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          for (final factor in personalityReferenceFactors) ...[
-            _FactorCard(factor: factor),
-            const SizedBox(height: 16),
-          ],
-          Card(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Text(
-                personalityReferenceNote,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ),
+            ],
           ),
         ],
       ),

@@ -1,9 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/therapy_goal.dart';
@@ -139,9 +140,9 @@ class _TherapyGoalFormPageState extends ConsumerState<TherapyGoalFormPage> {
     if (widget.isEdit) {
       final goalAsync = ref.watch(therapyGoalDetailProvider(widget.goalId!));
       return goalAsync.when(
-        loading: () => AppScaffold(
+        loading: () => const AppScaffold(
           title: 'Carregando...',
-          body: const Center(child: CircularProgressIndicator()),
+          body: Center(child: CircularProgressIndicator()),
         ),
         error: (_, __) => AppScaffold(
           title: 'Erro',
@@ -174,96 +175,98 @@ class _TherapyGoalFormPageState extends ConsumerState<TherapyGoalFormPage> {
       title: widget.isEdit ? 'Editar objetivo' : 'Novo objetivo',
       body: Form(
         key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextFormField(
-              controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'Título *',
-                hintText: 'Ex.: Reduzir episódios de ansiedade',
+        child: MotionReveal(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              TextFormField(
+                controller: _titleController,
+                decoration: const InputDecoration(
+                  labelText: 'Título *',
+                  hintText: 'Ex.: Reduzir episódios de ansiedade',
+                ),
+                textCapitalization: TextCapitalization.sentences,
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'Informe o título.' : null,
               ),
-              textCapitalization: TextCapitalization.sentences,
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Informe o título.' : null,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Descrição',
-                alignLabelWithHint: true,
-              ),
-              maxLines: 4,
-              textCapitalization: TextCapitalization.sentences,
-            ),
-            if (widget.isStaff) ...[
               const SizedBox(height: 16),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Data alvo (opcional)'),
-                subtitle: Text(
-                  _targetDate == null
-                      ? 'Não definida'
-                      : MaterialLocalizations.of(context).formatFullDate(
-                          _targetDate!,
-                        ),
+              TextFormField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(
+                  labelText: 'Descrição',
+                  alignLabelWithHint: true,
                 ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.calendar_today_outlined),
-                  onPressed: _pickTargetDate,
-                ),
+                maxLines: 4,
+                textCapitalization: TextCapitalization.sentences,
               ),
-              if (_targetDate != null)
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton(
-                    onPressed: () => setState(() => _targetDate = null),
-                    child: const Text('Remover data alvo'),
+              if (widget.isStaff) ...[
+                const SizedBox(height: 16),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Data alvo (opcional)'),
+                  subtitle: Text(
+                    _targetDate == null
+                        ? 'Não definida'
+                        : MaterialLocalizations.of(context).formatFullDate(
+                            _targetDate!,
+                          ),
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.calendar_today_outlined),
+                    onPressed: _pickTargetDate,
                   ),
                 ),
+                if (_targetDate != null)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton(
+                      onPressed: () => setState(() => _targetDate = null),
+                      child: const Text('Remover data alvo'),
+                    ),
+                  ),
+              ],
+              if (widget.isStaff && widget.isEdit) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Status',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                const SizedBox(height: 8),
+                SegmentedButton<TherapyGoalStatus>(
+                  segments: const [
+                    ButtonSegment(
+                      value: TherapyGoalStatus.active,
+                      label: Text('Ativo'),
+                    ),
+                    ButtonSegment(
+                      value: TherapyGoalStatus.completed,
+                      label: Text('Concluído'),
+                    ),
+                    ButtonSegment(
+                      value: TherapyGoalStatus.archived,
+                      label: Text('Arquivado'),
+                    ),
+                  ],
+                  selected: {_status},
+                  onSelectionChanged: (set) {
+                    setState(() => _status = set.first);
+                  },
+                ),
+              ],
+              const SizedBox(height: 32),
+              FilledButton(
+                onPressed: _saving ? null : _save,
+                child: _saving
+                    ? const SizedBox(
+                        height: 22,
+                        width: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(
+                        widget.isEdit ? 'Salvar alterações' : 'Criar objetivo'),
+              ),
             ],
-            if (widget.isStaff && widget.isEdit) ...[
-              const SizedBox(height: 8),
-              Text(
-                'Status',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: 8),
-              SegmentedButton<TherapyGoalStatus>(
-                segments: const [
-                  ButtonSegment(
-                    value: TherapyGoalStatus.active,
-                    label: Text('Ativo'),
-                  ),
-                  ButtonSegment(
-                    value: TherapyGoalStatus.completed,
-                    label: Text('Concluído'),
-                  ),
-                  ButtonSegment(
-                    value: TherapyGoalStatus.archived,
-                    label: Text('Arquivado'),
-                  ),
-                ],
-                selected: {_status},
-                onSelectionChanged: (set) {
-                  setState(() => _status = set.first);
-                },
-              ),
-            ],
-            const SizedBox(height: 32),
-            FilledButton(
-              onPressed: _saving ? null : _save,
-              child: _saving
-                  ? const SizedBox(
-                      height: 22,
-                      width: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(
-                      widget.isEdit ? 'Salvar alterações' : 'Criar objetivo'),
-            ),
-          ],
+          ),
         ),
       ),
     );

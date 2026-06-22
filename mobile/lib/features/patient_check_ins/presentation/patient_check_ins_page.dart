@@ -1,7 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../profile/domain/profile_role.dart';
@@ -37,10 +38,10 @@ class PatientCheckInsPage extends ConsumerWidget {
             label: const Text('Check-in de hoje'),
           );
         },
-        loading: () => FloatingActionButton.extended(
+        loading: () => const FloatingActionButton.extended(
           onPressed: null,
-          icon: const Icon(Icons.add),
-          label: const Text('Check-in de hoje'),
+          icon: Icon(Icons.add),
+          label: Text('Check-in de hoje'),
         ),
         error: (_, __) => FloatingActionButton.extended(
           onPressed: () => _openCreate(context, ref),
@@ -180,22 +181,28 @@ class _CheckInsList extends StatelessWidget {
                 ),
           ),
         const SizedBox(height: 16),
-        ...today.map(
-          (c) => PatientCheckInListTile(
-            checkIn: c,
-            highlightToday: true,
-            onTap: () => onTap(c),
-          ),
+        MotionStaggered(
+          children: [
+            for (final c in today)
+              PatientCheckInListTile(
+                checkIn: c,
+                highlightToday: true,
+                onTap: () => onTap(c),
+              ),
+          ],
         ),
         if (history.isNotEmpty) ...[
           const SizedBox(height: 8),
           Text('Anteriores', style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 8),
-          ...history.map(
-            (c) => PatientCheckInListTile(
-              checkIn: c,
-              onTap: () => onTap(c),
-            ),
+          MotionStaggered(
+            children: [
+              for (final c in history)
+                PatientCheckInListTile(
+                  checkIn: c,
+                  onTap: () => onTap(c),
+                ),
+            ],
           ),
         ],
       ],

@@ -1,9 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../domain/daily_monitor.dart';
@@ -134,9 +135,9 @@ class _CreateDailyMonitorPageState
           ref.watch(dailyMonitorDetailProvider(widget.monitorId!));
 
       return monitorAsync.when(
-        loading: () => AppScaffold(
+        loading: () => const AppScaffold(
           title: 'Editar registro',
-          body: const Center(child: CircularProgressIndicator()),
+          body: Center(child: CircularProgressIndicator()),
         ),
         error: (_, __) => AppScaffold(
           title: 'Editar registro',
@@ -192,93 +193,95 @@ class _CreateDailyMonitorPageState
       title: widget.isEdit ? 'Editar registro' : 'Novo registro',
       body: Form(
         key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Text(
-              'Data do registro: hoje (${_todayLabel()})',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _moodController,
-              decoration: const InputDecoration(
-                labelText: 'Humor / estado emocional',
-                hintText: 'Como você está se sentindo?',
-                border: OutlineInputBorder(),
+        child: MotionReveal(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Text(
+                'Data do registro: hoje (${_todayLabel()})',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
               ),
-              maxLines: 2,
-              textCapitalization: TextCapitalization.sentences,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Intensidade (1 a 10)',
-              style: Theme.of(context).textTheme.titleSmall,
-            ),
-            Slider(
-              value: (_intensity ?? 5).toDouble(),
-              min: 1,
-              max: 10,
-              divisions: 9,
-              label: '${_intensity ?? 5}',
-              onChanged: (v) => setState(() => _intensity = v.round()),
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: () => setState(() => _intensity = null),
-                child: const Text('Limpar intensidade'),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _moodController,
+                decoration: const InputDecoration(
+                  labelText: 'Humor / estado emocional',
+                  hintText: 'Como você está se sentindo?',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 2,
+                textCapitalization: TextCapitalization.sentences,
               ),
-            ),
-            const SizedBox(height: 8),
-            TextFormField(
-              controller: _triggersController,
-              decoration: const InputDecoration(
-                labelText: 'Gatilhos',
-                hintText: 'Situações ou pensamentos que impactaram',
-                border: OutlineInputBorder(),
+              const SizedBox(height: 16),
+              Text(
+                'Intensidade (1 a 10)',
+                style: Theme.of(context).textTheme.titleSmall,
               ),
-              maxLines: 3,
-              textCapitalization: TextCapitalization.sentences,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _behaviorsController,
-              decoration: const InputDecoration(
-                labelText: 'Comportamentos',
-                hintText: 'O que você fez ou evitou fazer',
-                border: OutlineInputBorder(),
+              Slider(
+                value: (_intensity ?? 5).toDouble(),
+                min: 1,
+                max: 10,
+                divisions: 9,
+                label: '${_intensity ?? 5}',
+                onChanged: (v) => setState(() => _intensity = v.round()),
               ),
-              maxLines: 3,
-              textCapitalization: TextCapitalization.sentences,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _observationsController,
-              decoration: const InputDecoration(
-                labelText: 'Observações',
-                hintText: 'Sono, notas gerais ou contexto do dia',
-                border: OutlineInputBorder(),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => setState(() => _intensity = null),
+                  child: const Text('Limpar intensidade'),
+                ),
               ),
-              maxLines: 3,
-              textCapitalization: TextCapitalization.sentences,
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: _saving ? null : _save,
-              icon: _saving
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.save_outlined),
-              label:
-                  Text(widget.isEdit ? 'Salvar alterações' : 'Salvar registro'),
-            ),
-          ],
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _triggersController,
+                decoration: const InputDecoration(
+                  labelText: 'Gatilhos',
+                  hintText: 'Situações ou pensamentos que impactaram',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _behaviorsController,
+                decoration: const InputDecoration(
+                  labelText: 'Comportamentos',
+                  hintText: 'O que você fez ou evitou fazer',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _observationsController,
+                decoration: const InputDecoration(
+                  labelText: 'Observações',
+                  hintText: 'Sono, notas gerais ou contexto do dia',
+                  border: OutlineInputBorder(),
+                ),
+                maxLines: 3,
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed: _saving ? null : _save,
+                icon: _saving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.save_outlined),
+                label: Text(
+                    widget.isEdit ? 'Salvar alterações' : 'Salvar registro'),
+              ),
+            ],
+          ),
         ),
       ),
     );

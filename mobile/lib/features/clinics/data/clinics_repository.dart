@@ -66,8 +66,7 @@ class ClinicsRepository {
     try {
       await _client
           .from('clinics')
-          .update({'is_active': isActive})
-          .eq('id', clinicId);
+          .update({'is_active': isActive}).eq('id', clinicId);
     } catch (e) {
       throw mapToAppException(e);
     }

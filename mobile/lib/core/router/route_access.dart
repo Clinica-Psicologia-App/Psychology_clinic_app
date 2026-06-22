@@ -4,6 +4,7 @@ import '../../features/profile/domain/profile_role.dart';
 abstract final class RouteAccess {
   static const publicPaths = {
     '/',
+    '/onboarding',
     '/login',
     '/accept-invitation',
     '/forgot-password',

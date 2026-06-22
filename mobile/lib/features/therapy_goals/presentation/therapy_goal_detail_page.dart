@@ -1,7 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../profile/domain/profile_role.dart';
@@ -143,41 +144,43 @@ class _TherapyGoalDetailBodyState
     return Column(
       children: [
         Expanded(
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      goal.title,
-                      style: theme.textTheme.headlineSmall,
+          child: MotionReveal(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        goal.title,
+                        style: theme.textTheme.headlineSmall,
+                      ),
                     ),
-                  ),
-                  TherapyGoalStatusChip(status: goal.status),
+                    TherapyGoalStatusChip(status: goal.status),
+                  ],
+                ),
+                if (goal.description != null &&
+                    goal.description!.trim().isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Text(goal.description!),
                 ],
-              ),
-              if (goal.description != null &&
-                  goal.description!.trim().isNotEmpty) ...[
-                const SizedBox(height: 16),
-                Text(goal.description!),
+                const SizedBox(height: 24),
+                if (goal.targetDate != null)
+                  _InfoRow(
+                    label: 'Data alvo',
+                    value: loc.formatFullDate(goal.targetDate!),
+                  ),
+                if (goal.completedAt != null)
+                  _InfoRow(
+                    label: 'Concluído em',
+                    value: loc.formatFullDate(goal.completedAt!),
+                  ),
+                _InfoRow(
+                  label: 'Atualizado',
+                  value: loc.formatFullDate(goal.updatedAt),
+                ),
               ],
-              const SizedBox(height: 24),
-              if (goal.targetDate != null)
-                _InfoRow(
-                  label: 'Data alvo',
-                  value: loc.formatFullDate(goal.targetDate!),
-                ),
-              if (goal.completedAt != null)
-                _InfoRow(
-                  label: 'Concluído em',
-                  value: loc.formatFullDate(goal.completedAt!),
-                ),
-              _InfoRow(
-                label: 'Atualizado',
-                value: loc.formatFullDate(goal.updatedAt),
-              ),
-            ],
+            ),
           ),
         ),
         if (_busy) const LinearProgressIndicator(),

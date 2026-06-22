@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../profile/domain/profile_role.dart';
@@ -69,7 +70,10 @@ class _PatientInvitationsPageState
                   itemCount: items.length,
                   itemBuilder: (context, index) {
                     final invitation = items[index];
-                    return _InvitationTile(invitation: invitation);
+                    return MotionReveal(
+                      delay: staggerDelay(index),
+                      child: _InvitationTile(invitation: invitation),
+                    );
                   },
                 ),
               ),

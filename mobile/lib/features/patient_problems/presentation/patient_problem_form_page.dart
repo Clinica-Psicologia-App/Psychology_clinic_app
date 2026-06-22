@@ -1,10 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/patient_problem.dart';
@@ -192,112 +193,114 @@ class _PatientProblemFormPageState
       title: widget.isEdit ? 'Editar problema' : 'Novo problema',
       body: Form(
         key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextFormField(
-              controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'Título *',
-                hintText: 'Ex.: Ansiedade em situações sociais',
+        child: MotionReveal(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              TextFormField(
+                controller: _titleController,
+                decoration: const InputDecoration(
+                  labelText: 'Título *',
+                  hintText: 'Ex.: Ansiedade em situações sociais',
+                ),
+                textCapitalization: TextCapitalization.sentences,
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'Informe o título.' : null,
               ),
-              textCapitalization: TextCapitalization.sentences,
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Informe o título.' : null,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Descrição',
-                alignLabelWithHint: true,
-              ),
-              maxLines: 4,
-              textCapitalization: TextCapitalization.sentences,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _categoryController,
-              decoration: const InputDecoration(
-                labelText: 'Categoria (opcional)',
-                hintText: 'Ex.: Humor, Relacionamentos',
-              ),
-              textCapitalization: TextCapitalization.sentences,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _intensityController,
-              decoration: const InputDecoration(
-                labelText: 'Intensidade (0-10)',
-                hintText: '0 = leve, 10 = muito intenso',
-              ),
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              validator: (v) {
-                if (v == null || v.trim().isEmpty) return null;
-                final n = int.tryParse(v.trim());
-                if (n == null || n < 0 || n > 10) {
-                  return 'Use um valor entre 0 e 10.';
-                }
-                return null;
-              },
-            ),
-            if (widget.isStaff) ...[
               const SizedBox(height: 16),
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Data de identificação (opcional)'),
-                subtitle: Text(
-                  _identifiedAt == null
-                      ? 'Não definida'
-                      : MaterialLocalizations.of(context).formatFullDate(
-                          _identifiedAt!,
-                        ),
+              TextFormField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(
+                  labelText: 'Descrição',
+                  alignLabelWithHint: true,
                 ),
-                trailing: IconButton(
-                  icon: const Icon(Icons.calendar_today_outlined),
-                  onPressed: _pickIdentifiedDate,
-                ),
+                maxLines: 4,
+                textCapitalization: TextCapitalization.sentences,
               ),
-              if (_identifiedAt != null)
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton(
-                    onPressed: () => setState(() => _identifiedAt = null),
-                    child: const Text('Remover data'),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _categoryController,
+                decoration: const InputDecoration(
+                  labelText: 'Categoria (opcional)',
+                  hintText: 'Ex.: Humor, Relacionamentos',
+                ),
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _intensityController,
+                decoration: const InputDecoration(
+                  labelText: 'Intensidade (0-10)',
+                  hintText: '0 = leve, 10 = muito intenso',
+                ),
+                keyboardType: TextInputType.number,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return null;
+                  final n = int.tryParse(v.trim());
+                  if (n == null || n < 0 || n > 10) {
+                    return 'Use um valor entre 0 e 10.';
+                  }
+                  return null;
+                },
+              ),
+              if (widget.isStaff) ...[
+                const SizedBox(height: 16),
+                ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Data de identificação (opcional)'),
+                  subtitle: Text(
+                    _identifiedAt == null
+                        ? 'Não definida'
+                        : MaterialLocalizations.of(context).formatFullDate(
+                            _identifiedAt!,
+                          ),
+                  ),
+                  trailing: IconButton(
+                    icon: const Icon(Icons.calendar_today_outlined),
+                    onPressed: _pickIdentifiedDate,
                   ),
                 ),
-            ],
-            if (widget.isStaff && widget.isEdit) ...[
-              const SizedBox(height: 8),
-              Text('Status', style: Theme.of(context).textTheme.titleSmall),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: PatientProblemStatus.values.map((s) {
-                  return ChoiceChip(
-                    label: Text(s.label),
-                    selected: _status == s,
-                    onSelected: (_) => setState(() => _status = s),
-                  );
-                }).toList(),
+                if (_identifiedAt != null)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton(
+                      onPressed: () => setState(() => _identifiedAt = null),
+                      child: const Text('Remover data'),
+                    ),
+                  ),
+              ],
+              if (widget.isStaff && widget.isEdit) ...[
+                const SizedBox(height: 8),
+                Text('Status', style: Theme.of(context).textTheme.titleSmall),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: PatientProblemStatus.values.map((s) {
+                    return ChoiceChip(
+                      label: Text(s.label),
+                      selected: _status == s,
+                      onSelected: (_) => setState(() => _status = s),
+                    );
+                  }).toList(),
+                ),
+              ],
+              const SizedBox(height: 32),
+              FilledButton(
+                onPressed: _saving ? null : _save,
+                child: _saving
+                    ? const SizedBox(
+                        height: 22,
+                        width: 22,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(widget.isEdit
+                        ? 'Salvar alterações'
+                        : 'Registrar problema'),
               ),
             ],
-            const SizedBox(height: 32),
-            FilledButton(
-              onPressed: _saving ? null : _save,
-              child: _saving
-                  ? const SizedBox(
-                      height: 22,
-                      width: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : Text(widget.isEdit
-                      ? 'Salvar alterações'
-                      : 'Registrar problema'),
-            ),
-          ],
+          ),
         ),
       ),
     );

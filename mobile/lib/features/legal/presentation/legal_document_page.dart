@@ -1,7 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../../../core/legal/legal_documents.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/responsive_content.dart';
 
 enum LegalDocumentType { terms, privacy }
@@ -19,9 +20,8 @@ class LegalDocumentPage extends StatelessWidget {
     final isTerms = type == LegalDocumentType.terms;
     final title =
         isTerms ? LegalDocuments.termsTitle : LegalDocuments.privacyTitle;
-    final version = isTerms
-        ? LegalDocuments.termsVersion
-        : LegalDocuments.privacyVersion;
+    final version =
+        isTerms ? LegalDocuments.termsVersion : LegalDocuments.privacyVersion;
     final text =
         isTerms ? LegalDocuments.termsText : LegalDocuments.privacyText;
 
@@ -32,23 +32,26 @@ class LegalDocumentPage extends StatelessWidget {
           padding: const EdgeInsets.all(AppSpacing.xl),
           child: ResponsiveContent(
             maxWidth: 760,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: Theme.of(context).textTheme.headlineMedium),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  'Versão $version',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-                const SizedBox(height: AppSpacing.xl),
-                Text(
-                  text,
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        height: 1.55,
-                      ),
-                ),
-              ],
+            child: MotionReveal(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: Theme.of(context).textTheme.headlineMedium),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Versão $version',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  Text(
+                    text,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          height: 1.55,
+                        ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

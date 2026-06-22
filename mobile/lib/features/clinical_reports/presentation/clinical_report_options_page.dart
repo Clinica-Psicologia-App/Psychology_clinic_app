@@ -1,9 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_filex/open_filex.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../../shared/widgets/homologation_ui.dart';
@@ -103,104 +104,110 @@ class _ClinicalReportOptionsPageState
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          const HomologationInfoBanner(
-            title: 'Apoio clínico',
-            icon: Icons.picture_as_pdf_outlined,
-            message: 'Relatório gerado como apoio clínico. A interpretação é '
-                'responsabilidade do profissional. Não constitui diagnóstico '
-                'automático.',
-          ),
-          const SizedBox(height: 20),
-          const HomologationSectionHeader(
-            icon: Icons.tune_outlined,
-            title: 'Conteúdo do PDF',
-            subtitle:
-                'Escolha quais módulos entram no relatório deste paciente',
-          ),
-          const SizedBox(height: 12),
-          Card(
-            child: Column(
-              children: [
-                _SectionSwitch(
-                  icon: Icons.assignment_outlined,
-                  title: 'Questionários (YSQ / YAMI)',
-                  subtitle: 'Scores e datas das últimas aplicações',
-                  value: _include.questionnaires,
-                  onChanged: (v) =>
-                      _toggle((o) => o.copyWith(questionnaires: v)),
+          MotionStaggered(
+            children: [
+              const HomologationInfoBanner(
+                title: 'Apoio clínico',
+                icon: Icons.picture_as_pdf_outlined,
+                message:
+                    'Relatório gerado como apoio clínico. A interpretação é '
+                    'responsabilidade do profissional. Não constitui diagnóstico '
+                    'automático.',
+              ),
+              const SizedBox(height: 20),
+              const HomologationSectionHeader(
+                icon: Icons.tune_outlined,
+                title: 'Conteúdo do PDF',
+                subtitle:
+                    'Escolha quais módulos entram no relatório deste paciente',
+              ),
+              const SizedBox(height: 12),
+              Card(
+                child: Column(
+                  children: [
+                    _SectionSwitch(
+                      icon: Icons.assignment_outlined,
+                      title: 'Questionários (YSQ / YAMI)',
+                      subtitle: 'Scores e datas das últimas aplicações',
+                      value: _include.questionnaires,
+                      onChanged: (v) =>
+                          _toggle((o) => o.copyWith(questionnaires: v)),
+                    ),
+                    const Divider(height: 1),
+                    _SectionSwitch(
+                      icon: Icons.hub_outlined,
+                      title: 'Mapa mental resumido',
+                      subtitle: 'Visão integrada dos módulos com dados',
+                      value: _include.mentalMap,
+                      onChanged: (v) =>
+                          _toggle((o) => o.copyWith(mentalMap: v)),
+                    ),
+                    const Divider(height: 1),
+                    _SectionSwitch(
+                      icon: Icons.flag_outlined,
+                      title: 'Objetivos da terapia',
+                      value: _include.goals,
+                      onChanged: (v) => _toggle((o) => o.copyWith(goals: v)),
+                    ),
+                    const Divider(height: 1),
+                    _SectionSwitch(
+                      icon: Icons.report_problem_outlined,
+                      title: 'Problemas',
+                      value: _include.problems,
+                      onChanged: (v) => _toggle((o) => o.copyWith(problems: v)),
+                    ),
+                    const Divider(height: 1),
+                    _SectionSwitch(
+                      icon: Icons.fact_check_outlined,
+                      title: 'Check-ins',
+                      value: _include.checkIns,
+                      onChanged: (v) => _toggle((o) => o.copyWith(checkIns: v)),
+                    ),
+                    const Divider(height: 1),
+                    _SectionSwitch(
+                      icon: Icons.monitor_heart_outlined,
+                      title: 'Monitor diário',
+                      value: _include.dailyMonitors,
+                      onChanged: (v) =>
+                          _toggle((o) => o.copyWith(dailyMonitors: v)),
+                    ),
+                    const Divider(height: 1),
+                    _SectionSwitch(
+                      icon: Icons.timeline_outlined,
+                      title: 'Linha do tempo',
+                      value: _include.timeline,
+                      onChanged: (v) => _toggle((o) => o.copyWith(timeline: v)),
+                    ),
+                    const Divider(height: 1),
+                    _SectionSwitch(
+                      icon: Icons.family_restroom_outlined,
+                      title: 'Genograma',
+                      value: _include.genogram,
+                      onChanged: (v) => _toggle((o) => o.copyWith(genogram: v)),
+                    ),
+                  ],
                 ),
-                const Divider(height: 1),
-                _SectionSwitch(
-                  icon: Icons.hub_outlined,
-                  title: 'Mapa mental resumido',
-                  subtitle: 'Visão integrada dos módulos com dados',
-                  value: _include.mentalMap,
-                  onChanged: (v) => _toggle((o) => o.copyWith(mentalMap: v)),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '$selectedCount de 8 seções selecionadas',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
-                const Divider(height: 1),
-                _SectionSwitch(
-                  icon: Icons.flag_outlined,
-                  title: 'Objetivos da terapia',
-                  value: _include.goals,
-                  onChanged: (v) => _toggle((o) => o.copyWith(goals: v)),
-                ),
-                const Divider(height: 1),
-                _SectionSwitch(
-                  icon: Icons.report_problem_outlined,
-                  title: 'Problemas',
-                  value: _include.problems,
-                  onChanged: (v) => _toggle((o) => o.copyWith(problems: v)),
-                ),
-                const Divider(height: 1),
-                _SectionSwitch(
-                  icon: Icons.fact_check_outlined,
-                  title: 'Check-ins',
-                  value: _include.checkIns,
-                  onChanged: (v) => _toggle((o) => o.copyWith(checkIns: v)),
-                ),
-                const Divider(height: 1),
-                _SectionSwitch(
-                  icon: Icons.monitor_heart_outlined,
-                  title: 'Monitor diário',
-                  value: _include.dailyMonitors,
-                  onChanged: (v) =>
-                      _toggle((o) => o.copyWith(dailyMonitors: v)),
-                ),
-                const Divider(height: 1),
-                _SectionSwitch(
-                  icon: Icons.timeline_outlined,
-                  title: 'Linha do tempo',
-                  value: _include.timeline,
-                  onChanged: (v) => _toggle((o) => o.copyWith(timeline: v)),
-                ),
-                const Divider(height: 1),
-                _SectionSwitch(
-                  icon: Icons.family_restroom_outlined,
-                  title: 'Genograma',
-                  value: _include.genogram,
-                  onChanged: (v) => _toggle((o) => o.copyWith(genogram: v)),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            '$selectedCount de 8 seções selecionadas',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-          ),
-          const SizedBox(height: 24),
-          FilledButton.icon(
-            onPressed: _generating ? null : _generate,
-            icon: _generating
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Icon(Icons.picture_as_pdf_outlined),
-            label: Text(_generating ? 'Gerando...' : 'Gerar relatório PDF'),
+              ),
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                onPressed: _generating ? null : _generate,
+                icon: _generating
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.picture_as_pdf_outlined),
+                label: Text(_generating ? 'Gerando...' : 'Gerar relatório PDF'),
+              ),
+            ],
           ),
         ],
       ),

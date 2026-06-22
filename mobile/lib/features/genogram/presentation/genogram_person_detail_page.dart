@@ -1,7 +1,8 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/genogram_data.dart';
@@ -108,89 +109,92 @@ class _PersonDetailBody extends ConsumerWidget {
     final linked =
         data.relationships.where((r) => r.involvesPerson(person.id)).toList();
 
-    return Column(
-      children: [
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              if (person.isSensitive)
+    return MotionReveal(
+      child: Column(
+        children: [
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                if (person.isSensitive)
+                  Card(
+                    color: theme.colorScheme.errorContainer
+                        .withValues(alpha: 0.35),
+                    child: const ListTile(
+                      leading: Icon(Icons.lock_outline),
+                      title: Text('Dados sensíveis'),
+                    ),
+                  ),
                 Card(
-                  color:
-                      theme.colorScheme.errorContainer.withValues(alpha: 0.35),
-                  child: const ListTile(
-                    leading: Icon(Icons.lock_outline),
-                    title: Text('Dados sensíveis'),
-                  ),
-                ),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        person.displayName,
-                        style: theme.textTheme.titleLarge,
-                      ),
-                      if (person.relationshipToPatient != null &&
-                          person.relationshipToPatient!.trim().isNotEmpty)
-                        _Row(
-                          'Relação',
-                          person.relationshipToPatient!.trim(),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          person.displayName,
+                          style: theme.textTheme.titleLarge,
                         ),
-                      if (person.gender != null)
-                        _Row('Gênero', person.gender!.label),
-                      if (person.lifeSpanLabel != null)
-                        _Row('Período', person.lifeSpanLabel!),
-                      if (person.isDeceased) const _Row('Status', 'Falecido'),
-                      if (person.notes != null &&
-                          person.notes!.trim().isNotEmpty) ...[
-                        const SizedBox(height: 12),
-                        Text('Observações', style: theme.textTheme.labelLarge),
-                        const SizedBox(height: 4),
-                        Text(person.notes!.trim()),
+                        if (person.relationshipToPatient != null &&
+                            person.relationshipToPatient!.trim().isNotEmpty)
+                          _Row(
+                            'Relação',
+                            person.relationshipToPatient!.trim(),
+                          ),
+                        if (person.gender != null)
+                          _Row('Gênero', person.gender!.label),
+                        if (person.lifeSpanLabel != null)
+                          _Row('Período', person.lifeSpanLabel!),
+                        if (person.isDeceased) const _Row('Status', 'Falecido'),
+                        if (person.notes != null &&
+                            person.notes!.trim().isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Text('Observações',
+                              style: theme.textTheme.labelLarge),
+                          const SizedBox(height: 4),
+                          Text(person.notes!.trim()),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
-              Text('Relações vinculadas', style: theme.textTheme.titleMedium),
-              const SizedBox(height: 8),
-              if (linked.isEmpty)
-                const Text('Nenhuma relação com esta pessoa ainda.')
-              else
-                ...linked.map(
-                  (r) => GenogramRelationshipTile(
-                    relationship: r,
-                    data: data,
-                    onTap: () => _openRelationship(context, r.id),
+                const SizedBox(height: 16),
+                Text('Relações vinculadas', style: theme.textTheme.titleMedium),
+                const SizedBox(height: 8),
+                if (linked.isEmpty)
+                  const Text('Nenhuma relação com esta pessoa ainda.')
+                else
+                  ...linked.map(
+                    (r) => GenogramRelationshipTile(
+                      relationship: r,
+                      data: data,
+                      onTap: () => _openRelationship(context, r.id),
+                    ),
                   ),
-                ),
-            ],
+              ],
+            ),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.all(16),
-          child: FilledButton.icon(
-            onPressed: () async {
-              final updated = await context.push<bool>(
-                role == ProfileRole.patient
-                    ? GenogramRoutes.patientPersonEdit(person.id)
-                    : GenogramRoutes.staffPersonEdit(
-                        role: role,
-                        patientId: patientId!,
-                        personId: person.id,
-                      ),
-              );
-              if (updated == true) onChanged();
-            },
-            icon: const Icon(Icons.edit_outlined),
-            label: const Text('Editar pessoa'),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: FilledButton.icon(
+              onPressed: () async {
+                final updated = await context.push<bool>(
+                  role == ProfileRole.patient
+                      ? GenogramRoutes.patientPersonEdit(person.id)
+                      : GenogramRoutes.staffPersonEdit(
+                          role: role,
+                          patientId: patientId!,
+                          personId: person.id,
+                        ),
+                );
+                if (updated == true) onChanged();
+              },
+              icon: const Icon(Icons.edit_outlined),
+              label: const Text('Editar pessoa'),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../domain/daily_monitor.dart';
@@ -49,12 +50,15 @@ class PatientDailyMonitorsPage extends ConsumerWidget {
                     ),
               ),
               const SizedBox(height: 16),
-              ...items.map(
-                (m) => DailyMonitorListTile(
-                  monitor: m,
-                  onTap: () =>
-                      context.push(DailyMonitorRoutes.patientDetail(m.id)),
-                ),
+              MotionStaggered(
+                children: [
+                  for (final m in items)
+                    DailyMonitorListTile(
+                      monitor: m,
+                      onTap: () =>
+                          context.push(DailyMonitorRoutes.patientDetail(m.id)),
+                    ),
+                ],
               ),
             ],
           ),

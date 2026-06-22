@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
@@ -53,57 +53,57 @@ class ClinicalRecordListTile extends StatelessWidget {
               vertical: dense ? AppSpacing.sm : AppSpacing.md,
             ),
             child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              leading ??
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: accent.withValues(alpha: 0.12),
-                      borderRadius: AppRadius.smAll,
-                    ),
-                    child: Icon(icon, color: accent, size: 20),
-                  ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                leading ??
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: 0.12),
+                        borderRadius: AppRadius.smAll,
                       ),
+                      child: Icon(icon, color: accent, size: 20),
                     ),
-                    if (subtitle != null && subtitle!.isNotEmpty) ...[
-                      const SizedBox(height: AppSpacing.xxs),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Text(
-                        subtitle!,
-                        maxLines: 3,
+                        title,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
+                      if (subtitle != null && subtitle!.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.xxs),
+                        Text(
+                          subtitle!,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                      if (statusLabel != null) ...[
+                        const SizedBox(height: AppSpacing.xs),
+                        StatusChip(
+                          label: statusLabel!,
+                          tone: statusTone ?? AppStatusTone.neutral,
+                        ),
+                      ],
                     ],
-                    if (statusLabel != null) ...[
-                      const SizedBox(height: AppSpacing.xs),
-                      StatusChip(
-                        label: statusLabel!,
-                        tone: statusTone ?? AppStatusTone.neutral,
-                      ),
-                    ],
-                  ],
+                  ),
                 ),
-              ),
-              if (trailing != null) ...[
-                const SizedBox(width: AppSpacing.xs),
-                trailing!,
-              ] else if (onTap != null)
-                Icon(Icons.chevron_right, color: AppColors.textMuted),
+                if (trailing != null) ...[
+                  const SizedBox(width: AppSpacing.xs),
+                  trailing!,
+                ] else if (onTap != null)
+                  const Icon(Icons.chevron_right, color: AppColors.textMuted),
               ],
             ),
           ),

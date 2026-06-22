@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../../core/theme/app_animations.dart';
 
@@ -69,6 +69,49 @@ class _MotionRevealState extends State<MotionReveal>
   }
 }
 
+/// Revela uma lista de blocos em cascata (cada item entra com um pequeno
+/// atraso em relação ao anterior). O atraso é limitado para listas longas.
+class MotionStaggered extends StatelessWidget {
+  const MotionStaggered({
+    super.key,
+    required this.children,
+    this.interval = const Duration(milliseconds: 55),
+    this.baseDelay = Duration.zero,
+    this.maxStaggered = 10,
+    this.crossAxisAlignment = CrossAxisAlignment.stretch,
+  });
+
+  final List<Widget> children;
+  final Duration interval;
+  final Duration baseDelay;
+  final int maxStaggered;
+  final CrossAxisAlignment crossAxisAlignment;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: crossAxisAlignment,
+      children: [
+        for (var i = 0; i < children.length; i++)
+          MotionReveal(
+            delay: baseDelay + interval * (i < maxStaggered ? i : maxStaggered),
+            child: children[i],
+          ),
+      ],
+    );
+  }
+}
+
+/// Atraso escalonado para uso em `ListView.builder` (limitado por [maxStaggered]).
+Duration staggerDelay(
+  int index, {
+  Duration interval = const Duration(milliseconds: 55),
+  int maxStaggered = 10,
+}) {
+  final steps = index < maxStaggered ? index : maxStaggered;
+  return interval * steps;
+}
+
 /// Superfície interativa com hover e pressão discretos.
 class MotionSurface extends StatefulWidget {
   const MotionSurface({
@@ -106,9 +149,8 @@ class _MotionSurfaceState extends State<MotionSurface> {
                 : 1.0;
 
     return MouseRegion(
-      cursor: widget.onTap == null
-          ? MouseCursor.defer
-          : SystemMouseCursors.click,
+      cursor:
+          widget.onTap == null ? MouseCursor.defer : SystemMouseCursors.click,
       onEnter: (_) => setState(() => _hovered = true),
       onExit: (_) => setState(() {
         _hovered = false;

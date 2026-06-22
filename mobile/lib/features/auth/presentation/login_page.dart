@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -185,8 +185,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               redirectMsg: redirectMsg,
               isLoading: isLoading,
               onSubmit: _submit,
-              onForgotPassword: () =>
-                  context.push(AppRoutes.forgotPassword),
+              onForgotPassword: () => context.push(AppRoutes.forgotPassword),
               onFillSeed: _fillSeed,
               showTestAccounts: EnvConfig.showTestAccounts,
               showHeaderLogo: true,

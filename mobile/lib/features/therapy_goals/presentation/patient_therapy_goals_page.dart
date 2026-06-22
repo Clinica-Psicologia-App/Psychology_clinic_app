@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../profile/domain/profile_role.dart';
@@ -153,8 +154,12 @@ class _GoalsList extends StatelessWidget {
               ),
         ),
         const SizedBox(height: 16),
-        ...visible
-            .map((g) => TherapyGoalListTile(goal: g, onTap: () => onTap(g))),
+        MotionStaggered(
+          children: [
+            for (final g in visible)
+              TherapyGoalListTile(goal: g, onTap: () => onTap(g)),
+          ],
+        ),
         if (archived.isNotEmpty) ...[
           const SizedBox(height: 16),
           Text(
@@ -162,8 +167,11 @@ class _GoalsList extends StatelessWidget {
             style: Theme.of(context).textTheme.titleSmall,
           ),
           const SizedBox(height: 8),
-          ...archived.map(
-            (g) => TherapyGoalListTile(goal: g, onTap: () => onTap(g)),
+          MotionStaggered(
+            children: [
+              for (final g in archived)
+                TherapyGoalListTile(goal: g, onTap: () => onTap(g)),
+            ],
           ),
         ],
       ],

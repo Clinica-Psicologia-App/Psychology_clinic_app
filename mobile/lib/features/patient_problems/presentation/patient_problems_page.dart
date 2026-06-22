@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../profile/domain/profile_role.dart';
@@ -161,16 +162,23 @@ class _ProblemsList extends StatelessWidget {
           Text('Em acompanhamento',
               style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 8),
-          ...open.map(
-              (p) => PatientProblemListTile(problem: p, onTap: () => onTap(p))),
+          MotionStaggered(
+            children: [
+              for (final p in open)
+                PatientProblemListTile(problem: p, onTap: () => onTap(p)),
+            ],
+          ),
         ],
         if (closed.isNotEmpty) ...[
           const SizedBox(height: 16),
           Text('Resolvidos / arquivados',
               style: Theme.of(context).textTheme.titleSmall),
           const SizedBox(height: 8),
-          ...closed.map(
-            (p) => PatientProblemListTile(problem: p, onTap: () => onTap(p)),
+          MotionStaggered(
+            children: [
+              for (final p in closed)
+                PatientProblemListTile(problem: p, onTap: () => onTap(p)),
+            ],
           ),
         ],
       ],

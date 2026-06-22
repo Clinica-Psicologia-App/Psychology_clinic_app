@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../domain/patient_resource_access.dart';
@@ -45,13 +46,16 @@ class PatientResourcesPage extends ConsumerWidget {
                     ),
               ),
               const SizedBox(height: 16),
-              ...items.map(
-                (access) => PatientAccessTile(
-                  access: access,
-                  onTap: () => context.push(
-                    TherapyResourceRoutes.patientDetail(access.id),
-                  ),
-                ),
+              MotionStaggered(
+                children: [
+                  for (final access in items)
+                    PatientAccessTile(
+                      access: access,
+                      onTap: () => context.push(
+                        TherapyResourceRoutes.patientDetail(access.id),
+                      ),
+                    ),
+                ],
               ),
             ],
           ),

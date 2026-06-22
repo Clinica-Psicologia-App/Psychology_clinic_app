@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../profile/domain/profile_role.dart';
@@ -142,11 +143,14 @@ class _TimelineList extends StatelessWidget {
       itemCount: events.length,
       itemBuilder: (context, index) {
         final event = events[index];
-        return PatientTimelineEventTile(
-          event: event,
-          onTap: () => onTap(event),
-          isFirst: index == 0,
-          isLast: index == events.length - 1,
+        return MotionReveal(
+          delay: staggerDelay(index),
+          child: PatientTimelineEventTile(
+            event: event,
+            onTap: () => onTap(event),
+            isFirst: index == 0,
+            isLast: index == events.length - 1,
+          ),
         );
       },
     );

@@ -1,4 +1,4 @@
-﻿import 'questionnaire_response_context.dart';
+import 'questionnaire_response_context.dart';
 
 class CaregiverInput {
   const CaregiverInput({
@@ -63,9 +63,7 @@ List<QuestionnaireContextInput> buildParentalContextInputs({
 String? validateParentalContextSelection({
   required List<CaregiverInput> caregivers,
 }) {
-  final enabled = caregivers.indexed
-      .where((e) => e.$2.enabled)
-      .toList();
+  final enabled = caregivers.indexed.where((e) => e.$2.enabled).toList();
 
   if (enabled.isEmpty) {
     return 'Selecione pelo menos um cuidador.';

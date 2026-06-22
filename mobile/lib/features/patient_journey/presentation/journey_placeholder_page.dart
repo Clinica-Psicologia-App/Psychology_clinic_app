@@ -1,5 +1,6 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../domain/journey_step.dart' show JourneyStep, buildPatientJourneySteps;
 import '../domain/journey_step_id.dart';
@@ -40,36 +41,38 @@ class JourneyPlaceholderPage extends StatelessWidget {
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.construction_outlined,
-                size: 64,
-                color: theme.colorScheme.primary,
-              ),
-              const SizedBox(height: 24),
-              Text(
-                _message,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.titleMedium,
-              ),
-              if (subtitle != null) ...[
-                const SizedBox(height: 16),
+          child: MotionReveal(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.construction_outlined,
+                  size: 64,
+                  color: theme.colorScheme.primary,
+                ),
+                const SizedBox(height: 24),
                 Text(
-                  subtitle!,
+                  _message,
                   textAlign: TextAlign.center,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                  style: theme.textTheme.titleMedium,
+                ),
+                if (subtitle != null) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    subtitle!,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
+                ],
+                const SizedBox(height: 32),
+                FilledButton(
+                  onPressed: () => Navigator.of(context).maybePop(),
+                  child: const Text('Voltar à trilha'),
                 ),
               ],
-              const SizedBox(height: 32),
-              FilledButton(
-                onPressed: () => Navigator.of(context).maybePop(),
-                child: const Text('Voltar à trilha'),
-              ),
-            ],
+            ),
           ),
         ),
       ),

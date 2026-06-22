@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/therapy_resource.dart';
@@ -158,109 +159,112 @@ class _TherapyResourceFormPageState
       title: widget.isEdit ? 'Editar material' : 'Novo material',
       body: Form(
         key: _formKey,
-        child: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            TextFormField(
-              controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'Título *',
-                hintText: 'Ex.: Exercício de registro emocional',
+        child: MotionReveal(
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              TextFormField(
+                controller: _titleController,
+                decoration: const InputDecoration(
+                  labelText: 'Título *',
+                  hintText: 'Ex.: Exercício de registro emocional',
+                ),
+                textCapitalization: TextCapitalization.sentences,
+                validator: (v) =>
+                    v == null || v.trim().isEmpty ? 'Informe o título.' : null,
               ),
-              textCapitalization: TextCapitalization.sentences,
-              validator: (v) =>
-                  v == null || v.trim().isEmpty ? 'Informe o título.' : null,
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<TherapyResourceType>(
-              initialValue: _type,
-              decoration: const InputDecoration(
-                labelText: 'Tipo de material',
-              ),
-              items: TherapyResourceType.values
-                  .map(
-                    (type) => DropdownMenuItem(
-                      value: type,
-                      child: Row(
-                        children: [
-                          Icon(type.icon, size: 20),
-                          const SizedBox(width: 8),
-                          Text(type.label),
-                        ],
+              const SizedBox(height: 16),
+              DropdownButtonFormField<TherapyResourceType>(
+                initialValue: _type,
+                decoration: const InputDecoration(
+                  labelText: 'Tipo de material',
+                ),
+                items: TherapyResourceType.values
+                    .map(
+                      (type) => DropdownMenuItem(
+                        value: type,
+                        child: Row(
+                          children: [
+                            Icon(type.icon, size: 20),
+                            const SizedBox(width: 8),
+                            Text(type.label),
+                          ],
+                        ),
                       ),
-                    ),
-                  )
-                  .toList(),
-              onChanged: saving
-                  ? null
-                  : (value) {
-                      if (value != null) setState(() => _type = value);
-                    },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Descrição',
-                alignLabelWithHint: true,
-                hintText: 'Oriente quando e como o paciente deve usar.',
-              ),
-              maxLines: 5,
-              textCapitalization: TextCapitalization.sentences,
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _urlController,
-              decoration: const InputDecoration(
-                labelText: 'Link do material',
-                hintText: 'https://...',
-              ),
-              keyboardType: TextInputType.url,
-              autocorrect: false,
-              validator: (v) {
-                final clean = v?.trim();
-                if (clean == null || clean.isEmpty) return null;
-                final uri = Uri.tryParse(clean);
-                if (uri == null ||
-                    (uri.scheme != 'http' && uri.scheme != 'https') ||
-                    uri.host.trim().isEmpty) {
-                  return 'Informe um link válido.';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Material ativo'),
-              subtitle: Text(
-                _isActive
-                    ? 'Aparece na biblioteca da clínica.'
-                    : 'Fica oculto para novas liberações.',
-              ),
-              value: _isActive,
-              onChanged:
-                  saving ? null : (value) => setState(() => _isActive = value),
-            ),
-            const SizedBox(height: 32),
-            FilledButton.icon(
-              onPressed: saving ? null : _save,
-              icon: saving
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Icon(Icons.save_outlined),
-              label: Text(
-                saving
-                    ? 'Salvando...'
-                    : widget.isEdit
-                        ? 'Salvar alterações'
-                        : 'Cadastrar material',
+                    .toList(),
+                onChanged: saving
+                    ? null
+                    : (value) {
+                        if (value != null) setState(() => _type = value);
+                      },
               ),
-            ),
-          ],
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _descriptionController,
+                decoration: const InputDecoration(
+                  labelText: 'Descrição',
+                  alignLabelWithHint: true,
+                  hintText: 'Oriente quando e como o paciente deve usar.',
+                ),
+                maxLines: 5,
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _urlController,
+                decoration: const InputDecoration(
+                  labelText: 'Link do material',
+                  hintText: 'https://...',
+                ),
+                keyboardType: TextInputType.url,
+                autocorrect: false,
+                validator: (v) {
+                  final clean = v?.trim();
+                  if (clean == null || clean.isEmpty) return null;
+                  final uri = Uri.tryParse(clean);
+                  if (uri == null ||
+                      (uri.scheme != 'http' && uri.scheme != 'https') ||
+                      uri.host.trim().isEmpty) {
+                    return 'Informe um link válido.';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Material ativo'),
+                subtitle: Text(
+                  _isActive
+                      ? 'Aparece na biblioteca da clínica.'
+                      : 'Fica oculto para novas liberações.',
+                ),
+                value: _isActive,
+                onChanged: saving
+                    ? null
+                    : (value) => setState(() => _isActive = value),
+              ),
+              const SizedBox(height: 32),
+              FilledButton.icon(
+                onPressed: saving ? null : _save,
+                icon: saving
+                    ? const SizedBox(
+                        height: 20,
+                        width: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.save_outlined),
+                label: Text(
+                  saving
+                      ? 'Salvando...'
+                      : widget.isEdit
+                          ? 'Salvar alterações'
+                          : 'Cadastrar material',
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

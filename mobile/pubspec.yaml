@@ -24,14 +24,13 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
-  # Após validar esquema_core_icon.png (≥1024px, sem texto, margens OK):
-  # flutter_launcher_icons: ^0.14.3
+  flutter_launcher_icons: ^0.14.3
 
-# flutter_launcher_icons:
-#   android: true
-#   ios: true
-#   image_path: assets/branding/esquema_core_icon.png
-#   remove_alpha_ios: true
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: assets/branding/esquema_core_icon.png
+  remove_alpha_ios: true
 
 flutter:
   uses-material-design: true

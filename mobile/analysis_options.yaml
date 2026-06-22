@@ -4,3 +4,8 @@ linter:
   rules:
     prefer_const_constructors: true
     avoid_print: true
+    avoid_empty_else: true
+    empty_statements: true
+    prefer_final_in_for_each: true
+    use_rethrow_when_possible: true
+    unnecessary_parenthesis: true

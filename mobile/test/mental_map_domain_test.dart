@@ -1,4 +1,4 @@
-﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:terapia_esquema/features/genogram/domain/genogram_data.dart';
 import 'package:terapia_esquema/features/genogram/domain/genogram_person.dart';
 import 'package:terapia_esquema/features/genogram/domain/genogram_relationship.dart';
@@ -134,14 +134,14 @@ void main() {
   });
 
   test('extractParentalFigureSummaries reads snapshot contexts', () {
-    final detail = PatientResultDetail(
+    final detail = const PatientResultDetail(
       id: 'parental-1',
       patientId: 'p1',
       questionnaireId: 'q4',
       questionnaireCode: 'PARENTAL_STYLES_V1',
       questionnaireName: 'Parentais',
       status: QuestionnaireResponseStatus.completed,
-      answers: const [],
+      answers: [],
       categoryResults: [
         CategoryResult(
           id: 'cat1',
@@ -156,7 +156,7 @@ void main() {
                 key: 'mother',
                 label: 'Mãe',
                 status: 'completed',
-                schemas: const [
+                schemas: [
                   ScoringSchemaResult(
                     id: 's1',
                     code: 'OVERPROTECTIVE',
@@ -673,7 +673,7 @@ void main() {
           responseId: 'parental-1',
           questionnaireCode: 'PARENTAL_STYLES_V1',
           questionnaireName: 'Parentais',
-          highlights: const [],
+          highlights: [],
         ),
       ],
       activeProblems: const [],
@@ -964,7 +964,7 @@ void main() {
         resourceId: 'r1',
         isActive: true,
         completedAt: DateTime(2025, 1, 1),
-        resource: TherapyResource(
+        resource: const TherapyResource(
           id: 'r1',
           title: 'Recurso 1',
           type: TherapyResourceType.article,
@@ -972,7 +972,7 @@ void main() {
           isActive: true,
         ),
       ),
-      PatientResourceAccess(
+      const PatientResourceAccess(
         id: 'a2',
         patientId: 'p1',
         resourceId: 'r2',
@@ -997,16 +997,16 @@ void main() {
   // ---------------------------------------------------------------------------
 
   test('extractScoreHighlights preserves severityColorKey from schema', () {
-    final detail = PatientResultDetail(
+    final detail = const PatientResultDetail(
       id: 'sev-1',
       patientId: 'p1',
       questionnaireId: 'q1',
       questionnaireCode: 'YSQ_FOUNDATION_V1',
       questionnaireName: 'YSQ',
       status: QuestionnaireResponseStatus.completed,
-      answers: const [],
+      answers: [],
       categoryResults: [
-        const CategoryResult(
+        CategoryResult(
           id: 'cat1',
           categoryName: 'Esquemas',
           averageScore: 8,

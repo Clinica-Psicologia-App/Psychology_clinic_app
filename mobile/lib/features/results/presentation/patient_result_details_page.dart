@@ -1,6 +1,7 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../mental_map/providers/mental_map_providers.dart';
 import '../../profile/domain/profile_role.dart';
@@ -124,60 +125,11 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
           )
         : null;
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        _SectionTitle('Resposta'),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  detail.questionnaireName,
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                const SizedBox(height: 8),
-                _InfoRow(label: 'Código', value: detail.questionnaireCode),
-                _InfoRow(label: 'Status', value: detail.status.label),
-                _InfoRow(
-                  label: 'Início',
-                  value: detail.startedAt != null
-                      ? loc.formatFullDate(detail.startedAt!)
-                      : '-',
-                ),
-                _InfoRow(
-                  label: 'Conclusão',
-                  value: detail.completedAt != null
-                      ? loc.formatFullDate(detail.completedAt!)
-                      : '-',
-                ),
-                _InfoRow(
-                  label: 'Respostas registradas',
-                  value: '${detail.answeredCount} de ${detail.answers.length}',
-                ),
-                if (_supportsClinicalReview)
-                  _InfoRow(
-                    label: 'Revisão clínica',
-                    value: detail.isReviewed ? 'Concluída' : 'Pendente',
-                  ),
-                if (_supportsClinicalReview && detail.reviewedAt != null)
-                  _InfoRow(
-                    label: 'Revisado em',
-                    value: loc.formatFullDate(detail.reviewedAt!),
-                  ),
-                if (_supportsClinicalReview && detail.reviewedByName != null)
-                  _InfoRow(
-                    label: 'Revisado por',
-                    value: detail.reviewedByName!,
-                  ),
-              ],
-            ),
-          ),
-        ),
-        if (_supportsClinicalReview && widget.role != ProfileRole.patient) ...[
-          const SizedBox(height: 16),
+    return MotionReveal(
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const _SectionTitle('Resposta'),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
@@ -185,131 +137,184 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Validação do terapeuta',
-                    style: Theme.of(context).textTheme.titleMedium,
+                    detail.questionnaireName,
+                    style: Theme.of(context).textTheme.titleLarge,
                   ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _reviewNotesController,
-                    minLines: 2,
-                    maxLines: 4,
-                    decoration: const InputDecoration(
-                      labelText: 'Observação da revisão',
-                      border: OutlineInputBorder(),
+                  const SizedBox(height: 8),
+                  _InfoRow(label: 'Código', value: detail.questionnaireCode),
+                  _InfoRow(label: 'Status', value: detail.status.label),
+                  _InfoRow(
+                    label: 'Início',
+                    value: detail.startedAt != null
+                        ? loc.formatFullDate(detail.startedAt!)
+                        : '-',
+                  ),
+                  _InfoRow(
+                    label: 'Conclusão',
+                    value: detail.completedAt != null
+                        ? loc.formatFullDate(detail.completedAt!)
+                        : '-',
+                  ),
+                  _InfoRow(
+                    label: 'Respostas registradas',
+                    value:
+                        '${detail.answeredCount} de ${detail.answers.length}',
+                  ),
+                  if (_supportsClinicalReview)
+                    _InfoRow(
+                      label: 'Revisão clínica',
+                      value: detail.isReviewed ? 'Concluída' : 'Pendente',
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: _savingReview || !detail.isReviewed
-                              ? null
-                              : () => _setReviewed(false),
-                          icon: const Icon(Icons.undo_outlined),
-                          label: const Text('Remover revisão'),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: FilledButton.icon(
-                          onPressed: _savingReview || detail.isReviewed
-                              ? null
-                              : () => _setReviewed(true),
-                          icon: _savingReview
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Icon(Icons.verified_outlined),
-                          label: Text(
-                            detail.isReviewed
-                                ? 'Revisado'
-                                : 'Marcar como revisado',
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
+                  if (_supportsClinicalReview && detail.reviewedAt != null)
+                    _InfoRow(
+                      label: 'Revisado em',
+                      value: loc.formatFullDate(detail.reviewedAt!),
+                    ),
+                  if (_supportsClinicalReview && detail.reviewedByName != null)
+                    _InfoRow(
+                      label: 'Revisado por',
+                      value: detail.reviewedByName!,
+                    ),
                 ],
               ),
             ),
           ),
-        ],
-        if (_supportsClinicalReview && detail.requiresTherapistReview) ...[
-          const SizedBox(height: 16),
-          const Card(
-            child: ListTile(
-              leading: Icon(Icons.verified_user_outlined),
-              title: Text('Revisão clínica pendente'),
-              subtitle: Text(
-                'Este resultado ainda deve ser revisado pelo terapeuta antes de ser usado como leitura consolidada do caso.',
-              ),
-            ),
-          ),
-        ],
-        if (showScoringDemo && scoring != null) ...[
-          const SizedBox(height: 16),
-          ScoringStructuredDisclaimerBanner(message: structuredDisclaimer!),
-          const SizedBox(height: 16),
-          _SectionTitle('Apuração estruturada'),
-          ScoringDemoSection(
-            scoring: scoring,
-            snapshotVersion: detail.snapshotVersion,
-          ),
-          const SizedBox(height: 24),
-        ],
-        if (detail.isParentalStyles && snapshotContexts.isNotEmpty) ...[
-          _SectionTitle('Resultados por figura parental'),
-          ...snapshotContexts
-              .map((context) => _ParentalContextCard(context: context)),
-        ] else ...[
-          _SectionTitle(
-            showScoringDemo
-                ? 'Categorias (legado)'
-                : 'Resultados por categoria',
-          ),
-          if (!detail.hasResults)
+          if (_supportsClinicalReview &&
+              widget.role != ProfileRole.patient) ...[
+            const SizedBox(height: 16),
             Card(
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Text(
-                  showScoringDemo
-                      ? 'Nenhum resultado por categoria.'
-                      : 'Nenhum resultado calculado ainda. '
-                          'Finalize o questionário para gerar o snapshot MVP.',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Validação do terapeuta',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _reviewNotesController,
+                      minLines: 2,
+                      maxLines: 4,
+                      decoration: const InputDecoration(
+                        labelText: 'Observação da revisão',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: _savingReview || !detail.isReviewed
+                                ? null
+                                : () => _setReviewed(false),
+                            icon: const Icon(Icons.undo_outlined),
+                            label: const Text('Remover revisão'),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: FilledButton.icon(
+                            onPressed: _savingReview || detail.isReviewed
+                                ? null
+                                : () => _setReviewed(true),
+                            icon: _savingReview
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.verified_outlined),
+                            label: Text(
+                              detail.isReviewed
+                                  ? 'Revisado'
+                                  : 'Marcar como revisado',
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
+              ),
+            ),
+          ],
+          if (_supportsClinicalReview && detail.requiresTherapistReview) ...[
+            const SizedBox(height: 16),
+            const Card(
+              child: ListTile(
+                leading: Icon(Icons.verified_user_outlined),
+                title: Text('Revisão clínica pendente'),
+                subtitle: Text(
+                  'Este resultado ainda deve ser revisado pelo terapeuta antes de ser usado como leitura consolidada do caso.',
+                ),
+              ),
+            ),
+          ],
+          if (showScoringDemo && scoring != null) ...[
+            const SizedBox(height: 16),
+            ScoringStructuredDisclaimerBanner(message: structuredDisclaimer!),
+            const SizedBox(height: 16),
+            const _SectionTitle('Apuração estruturada'),
+            ScoringDemoSection(
+              scoring: scoring,
+              snapshotVersion: detail.snapshotVersion,
+            ),
+            const SizedBox(height: 24),
+          ],
+          if (detail.isParentalStyles && snapshotContexts.isNotEmpty) ...[
+            const _SectionTitle('Resultados por figura parental'),
+            ...snapshotContexts
+                .map((context) => _ParentalContextCard(context: context)),
+          ] else ...[
+            _SectionTitle(
+              showScoringDemo
+                  ? 'Categorias (legado)'
+                  : 'Resultados por categoria',
+            ),
+            if (!detail.hasResults)
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Text(
+                    showScoringDemo
+                        ? 'Nenhum resultado por categoria.'
+                        : 'Nenhum resultado calculado ainda. '
+                            'Finalize o questionário para gerar o snapshot MVP.',
+                  ),
+                ),
+              )
+            else
+              ..._buildCategoryCards(detail, showScoringDemo),
+          ],
+          const SizedBox(height: 24),
+          const _SectionTitle('Perguntas e respostas'),
+          if (detail.answers.isEmpty)
+            const Card(
+              child: Padding(
+                padding: EdgeInsets.all(16),
+                child: Text('Nenhuma resposta gravada.'),
               ),
             )
           else
-            ..._buildCategoryCards(detail, showScoringDemo),
-        ],
-        const SizedBox(height: 24),
-        _SectionTitle('Perguntas e respostas'),
-        if (detail.answers.isEmpty)
-          const Card(
-            child: Padding(
-              padding: EdgeInsets.all(16),
-              child: Text('Nenhuma resposta gravada.'),
+            ...detail.answers.map((a) => _AnswerCard(answer: a)),
+          const SizedBox(height: 16),
+          if (detail.status == QuestionnaireResponseStatus.completed)
+            Text(
+              showScoringDemo
+                  ? 'Sem interpretação clínica automática nesta versão.'
+                  : 'Interpretação clínica automática não está disponível nesta versão.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+              textAlign: TextAlign.center,
             ),
-          )
-        else
-          ...detail.answers.map((a) => _AnswerCard(answer: a)),
-        const SizedBox(height: 16),
-        if (detail.status == QuestionnaireResponseStatus.completed)
-          Text(
-            showScoringDemo
-                ? 'Sem interpretação clínica automática nesta versão.'
-                : 'Interpretação clínica automática não está disponível nesta versão.',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-            textAlign: TextAlign.center,
-          ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -602,41 +607,41 @@ class _ParentalContextCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              this.context.label,
+              context.label,
               style: Theme.of(contextWidget).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             _InfoRow(
               label: 'Progresso',
               value:
-                  '${this.context.answerCount ?? 0}/${this.context.totalQuestions ?? 0}',
+                  '${context.answerCount ?? 0}/${context.totalQuestions ?? 0}',
             ),
-            if (this.context.summary.averageScore != null)
+            if (context.summary.averageScore != null)
               _InfoRow(
                 label: 'Média geral',
-                value: this.context.summary.averageScore!.toStringAsFixed(2),
+                value: context.summary.averageScore!.toStringAsFixed(2),
               ),
-            if (this.context.schemas.isNotEmpty) ...[
+            if (context.schemas.isNotEmpty) ...[
               const SizedBox(height: 12),
               Text(
                 'Esquemas',
                 style: Theme.of(contextWidget).textTheme.labelLarge,
               ),
               const SizedBox(height: 8),
-              ...this.context.schemas.map(
-                    (schema) => Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Row(
-                        children: [
-                          Expanded(child: Text(schema.name)),
-                          Text(
-                            schema.averageScore?.toStringAsFixed(2) ?? '-',
-                            style: Theme.of(contextWidget).textTheme.labelLarge,
-                          ),
-                        ],
+              ...context.schemas.map(
+                (schema) => Padding(
+                  padding: const EdgeInsets.only(bottom: 6),
+                  child: Row(
+                    children: [
+                      Expanded(child: Text(schema.name)),
+                      Text(
+                        schema.averageScore?.toStringAsFixed(2) ?? '-',
+                        style: Theme.of(contextWidget).textTheme.labelLarge,
                       ),
-                    ),
+                    ],
                   ),
+                ),
+              ),
             ],
           ],
         ),

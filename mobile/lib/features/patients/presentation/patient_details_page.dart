@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/errors/app_exception.dart';
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../questionnaires/presentation/questionnaire_routes.dart';
@@ -41,6 +42,23 @@ class PatientDetailsPage extends ConsumerWidget {
 
     return AppScaffold(
       title: 'Paciente',
+      actions: [
+        if (role == ProfileRole.psychologist ||
+            role == ProfileRole.platformAdmin)
+          asyncPatient.whenOrNull(
+                data: (patient) => patient != null
+                    ? IconButton(
+                        icon: const Icon(Icons.edit_outlined),
+                        tooltip: 'Editar paciente',
+                        onPressed: () => context.push(
+                          PatientRoutes.edit(role, patientId),
+                          extra: patient,
+                        ),
+                      )
+                    : null,
+              ) ??
+              const SizedBox.shrink(),
+      ],
       body: asyncPatient.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
@@ -49,7 +67,7 @@ class PatientDetailsPage extends ConsumerWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text('Não foi possível carregar o paciente.'),
+                const Text('Não foi possível carregar o paciente.'),
                 const SizedBox(height: 16),
                 FilledButton(
                   onPressed: () =>
@@ -84,214 +102,217 @@ class _PatientDetailsBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final dateFormat = MaterialLocalizations.of(context);
 
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  patient.fullName,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
-                const SizedBox(height: 16),
-                _InfoRow(label: 'E-mail', value: patient.email),
-                _SensitiveInfoRow(
-                  label: 'Telefone',
-                  value: patient.phone,
-                  maskedValue: _maskPhone(patient.phone),
-                ),
-                _SensitiveInfoRow(
-                  label: 'CPF',
-                  value: patient.cpf,
-                  maskedValue: _maskCpf(patient.cpf),
-                ),
-                _InfoRow(
-                  label: 'Data de nascimento',
-                  value: patient.birthDate != null
-                      ? dateFormat.formatFullDate(patient.birthDate!)
-                      : null,
-                ),
-                _InfoRow(label: 'Gênero', value: patient.displayGender),
-                _InfoRow(
-                  label: 'Estado civil',
-                  value: patient.displayRelationshipStatus,
-                ),
-                _InfoRow(
-                  label: 'Escolaridade',
-                  value: patient.displayEducationLevel,
-                ),
-                _InfoRow(label: 'Ocupação', value: patient.occupation),
-                _InfoRow(
-                  label: 'Naturalidade',
-                  value: _birthPlace(patient),
-                ),
-                _InfoRow(
-                  label: 'Orientação religiosa',
-                  value: patient.religiousOrientation,
-                ),
-                _InfoRow(
-                  label: 'Grupo étnico',
-                  value: patient.displayEthnicGroup,
-                ),
-                _InfoRow(
-                  label: 'Orientação sexual',
-                  value: patient.displaySexualOrientation,
-                ),
-                _InfoRow(
-                  label: 'Filhos',
-                  value: _hasChildrenLabel(patient.hasChildren),
-                ),
-                _InfoRow(
-                  label: 'Psicólogo responsável',
-                  value: patient.responsiblePsychologistName,
-                ),
-                _InfoRow(
-                  label: 'Cadastro clínico',
-                  value: patient.isActive ? 'Ativo' : 'Inativo',
-                ),
-                _InfoRow(
-                  label: 'Acesso ao aplicativo',
-                  value: patient.accessStatus?.label,
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        if (role == ProfileRole.psychologist ||
-            role == ProfileRole.platformAdmin) ...[
-          _PatientLifecycleCard(patient: patient),
-          const SizedBox(height: 16),
-        ],
-        _IntakeContextCard(patient: patient),
-        const SizedBox(height: 16),
-        if (role != ProfileRole.platformAdmin &&
-            patient.isActive &&
-            patient.accessStatus == PatientAccessStatus.noAppAccess) ...[
+    return MotionReveal(
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
           Card(
-            child: ListTile(
-              leading: const Icon(Icons.mark_email_unread_outlined),
-              title: const Text('Convidar paciente'),
-              subtitle: const Text(
-                'Gerar link para o paciente criar senha e concluir o primeiro acesso.',
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push(
-                PatientRoutes.invitationCreate(role),
-                extra: PatientInvitationDraft(
-                  fullName: patient.fullName,
-                  email: patient.email,
-                  phone: patient.phone,
-                  responsiblePsychologistId: patient.responsiblePsychologistId,
-                ),
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    patient.fullName,
+                    style: Theme.of(context).textTheme.headlineSmall,
+                  ),
+                  const SizedBox(height: 16),
+                  _InfoRow(label: 'E-mail', value: patient.email),
+                  _SensitiveInfoRow(
+                    label: 'Telefone',
+                    value: patient.phone,
+                    maskedValue: _maskPhone(patient.phone),
+                  ),
+                  _SensitiveInfoRow(
+                    label: 'CPF',
+                    value: patient.cpf,
+                    maskedValue: _maskCpf(patient.cpf),
+                  ),
+                  _InfoRow(
+                    label: 'Data de nascimento',
+                    value: patient.birthDate != null
+                        ? dateFormat.formatFullDate(patient.birthDate!)
+                        : null,
+                  ),
+                  _InfoRow(label: 'Gênero', value: patient.displayGender),
+                  _InfoRow(
+                    label: 'Estado civil',
+                    value: patient.displayRelationshipStatus,
+                  ),
+                  _InfoRow(
+                    label: 'Escolaridade',
+                    value: patient.displayEducationLevel,
+                  ),
+                  _InfoRow(label: 'Ocupação', value: patient.occupation),
+                  _InfoRow(
+                    label: 'Naturalidade',
+                    value: _birthPlace(patient),
+                  ),
+                  _InfoRow(
+                    label: 'Orientação religiosa',
+                    value: patient.religiousOrientation,
+                  ),
+                  _InfoRow(
+                    label: 'Grupo étnico',
+                    value: patient.displayEthnicGroup,
+                  ),
+                  _InfoRow(
+                    label: 'Orientação sexual',
+                    value: patient.displaySexualOrientation,
+                  ),
+                  _InfoRow(
+                    label: 'Filhos',
+                    value: _hasChildrenLabel(patient.hasChildren),
+                  ),
+                  _InfoRow(
+                    label: 'Psicólogo responsável',
+                    value: patient.responsiblePsychologistName,
+                  ),
+                  _InfoRow(
+                    label: 'Cadastro clínico',
+                    value: patient.isActive ? 'Ativo' : 'Inativo',
+                  ),
+                  _InfoRow(
+                    label: 'Acesso ao aplicativo',
+                    value: patient.accessStatus?.label,
+                  ),
+                ],
               ),
             ),
           ),
           const SizedBox(height: 16),
-        ],
-        if (role != ProfileRole.platformAdmin) ...[
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.picture_as_pdf_outlined),
-              title: const Text('Gerar relatório'),
-              subtitle: const Text(
-                'PDF clínico supervisionado (somente equipe).',
+          if (role == ProfileRole.psychologist ||
+              role == ProfileRole.platformAdmin) ...[
+            _PatientLifecycleCard(patient: patient),
+            const SizedBox(height: 16),
+          ],
+          _IntakeContextCard(patient: patient),
+          const SizedBox(height: 16),
+          if (role != ProfileRole.platformAdmin &&
+              patient.isActive &&
+              patient.accessStatus == PatientAccessStatus.noAppAccess) ...[
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.mark_email_unread_outlined),
+                title: const Text('Convidar paciente'),
+                subtitle: const Text(
+                  'Gerar link para o paciente criar senha e concluir o primeiro acesso.',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push(
+                  PatientRoutes.invitationCreate(role),
+                  extra: PatientInvitationDraft(
+                    fullName: patient.fullName,
+                    email: patient.email,
+                    phone: patient.phone,
+                    responsiblePsychologistId:
+                        patient.responsiblePsychologistId,
+                  ),
+                ),
               ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push(
-                ClinicalReportRoutes.staffOptions(
+            ),
+            const SizedBox(height: 16),
+          ],
+          if (role != ProfileRole.platformAdmin) ...[
+            Card(
+              child: ListTile(
+                leading: const Icon(Icons.picture_as_pdf_outlined),
+                title: const Text('Gerar relatório'),
+                subtitle: const Text(
+                  'PDF clínico supervisionado (somente equipe).',
+                ),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push(
+                  ClinicalReportRoutes.staffOptions(
+                    role: role,
+                    patientId: patient.id,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            FutureModulesSection(
+              onQuestionnairesTap: () => context.push(
+                QuestionnaireRoutes.list(
+                  role: role,
+                  patientId: patient.id,
+                ),
+              ),
+              onResultsTap: () => context.push(
+                ResultRoutes.list(
+                  role: role,
+                  patientId: patient.id,
+                ),
+              ),
+              onTherapyResourcesTap: () => context.push(
+                TherapyResourceRoutes.staffList(
+                  role: role,
+                  patientId: patient.id,
+                ),
+              ),
+              onDailyMonitorsTap: () => context.push(
+                DailyMonitorRoutes.staffHistory(
+                  role: role,
+                  patientId: patient.id,
+                ),
+              ),
+              onTherapyGoalsTap: () => context.push(
+                TherapyGoalRoutes.staffList(
+                  role: role,
+                  patientId: patient.id,
+                ),
+              ),
+              onProblemsTap: () => context.push(
+                PatientProblemRoutes.staffList(
+                  role: role,
+                  patientId: patient.id,
+                ),
+              ),
+              onCheckInsTap: () => context.push(
+                PatientCheckInRoutes.staffList(
+                  role: role,
+                  patientId: patient.id,
+                ),
+              ),
+              onTimelineTap: () => context.push(
+                PatientTimelineRoutes.staffList(
+                  role: role,
+                  patientId: patient.id,
+                ),
+              ),
+              onGenogramTap: () => context.push(
+                GenogramRoutes.staffList(
+                  role: role,
+                  patientId: patient.id,
+                ),
+              ),
+              onMentalMapTap: () => context.push(
+                MentalMapRoutes.staffList(
+                  role: role,
+                  patientId: patient.id,
+                ),
+              ),
+              onClinicalDashboardTap: () => context.push(
+                ClinicalDashboardRoutes.staffList(
+                  role: role,
+                  patientId: patient.id,
+                ),
+              ),
+              onPersonalityReferenceTap: () => context.push(
+                PersonalityReferenceRoutes.staffList(
                   role: role,
                   patientId: patient.id,
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 24),
-          FutureModulesSection(
-          onQuestionnairesTap: () => context.push(
-            QuestionnaireRoutes.list(
-              role: role,
-              patientId: patient.id,
-            ),
-          ),
-          onResultsTap: () => context.push(
-            ResultRoutes.list(
-              role: role,
-              patientId: patient.id,
-            ),
-          ),
-          onTherapyResourcesTap: () => context.push(
-            TherapyResourceRoutes.staffList(
-              role: role,
-              patientId: patient.id,
-            ),
-          ),
-          onDailyMonitorsTap: () => context.push(
-            DailyMonitorRoutes.staffHistory(
-              role: role,
-              patientId: patient.id,
-            ),
-          ),
-          onTherapyGoalsTap: () => context.push(
-            TherapyGoalRoutes.staffList(
-              role: role,
-              patientId: patient.id,
-            ),
-          ),
-          onProblemsTap: () => context.push(
-            PatientProblemRoutes.staffList(
-              role: role,
-              patientId: patient.id,
-            ),
-          ),
-          onCheckInsTap: () => context.push(
-            PatientCheckInRoutes.staffList(
-              role: role,
-              patientId: patient.id,
-            ),
-          ),
-          onTimelineTap: () => context.push(
-            PatientTimelineRoutes.staffList(
-              role: role,
-              patientId: patient.id,
-            ),
-          ),
-          onGenogramTap: () => context.push(
-            GenogramRoutes.staffList(
-              role: role,
-              patientId: patient.id,
-            ),
-          ),
-          onMentalMapTap: () => context.push(
-            MentalMapRoutes.staffList(
-              role: role,
-              patientId: patient.id,
-            ),
-          ),
-          onClinicalDashboardTap: () => context.push(
-            ClinicalDashboardRoutes.staffList(
-              role: role,
-              patientId: patient.id,
-            ),
-          ),
-          onPersonalityReferenceTap: () => context.push(
-            PersonalityReferenceRoutes.staffList(
-              role: role,
-              patientId: patient.id,
-            ),
-          ),
-        ),
+          ],
+          if (role == ProfileRole.platformAdmin) ...[
+            const SizedBox(height: 8),
+            _PatientDeleteCard(patient: patient),
+            const SizedBox(height: 16),
+          ],
         ],
-        if (role == ProfileRole.platformAdmin) ...[
-          const SizedBox(height: 8),
-          _PatientDeleteCard(patient: patient),
-          const SizedBox(height: 16),
-        ],
-      ],
+      ),
     );
   }
 
@@ -903,9 +924,7 @@ class _PatientDeleteCardState extends ConsumerState<_PatientDeleteCard> {
 
     setState(() => _deleting = true);
     try {
-      await ref
-          .read(patientsRepositoryProvider)
-          .deletePatient(patient.id);
+      await ref.read(patientsRepositoryProvider).deletePatient(patient.id);
 
       if (!mounted) return;
       ref.invalidate(patientsListProvider);
@@ -922,9 +941,7 @@ class _PatientDeleteCardState extends ConsumerState<_PatientDeleteCard> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            e is AppException
-                ? e.message
-                : 'Erro ao excluir. Tente novamente.',
+            e is AppException ? e.message : 'Erro ao excluir. Tente novamente.',
           ),
           backgroundColor: Theme.of(context).colorScheme.error,
         ),

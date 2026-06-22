@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../../domain/scoring_domain_result.dart';
 import '../../domain/scoring_item_result.dart';
@@ -70,17 +70,17 @@ class ScoringDemoSection extends StatelessWidget {
         ],
         if (scoring.domains.isNotEmpty) ...[
           const SizedBox(height: 16),
-          _GroupSectionTitle('Domínios'),
+          const _GroupSectionTitle('Domínios'),
           ...scoring.domains.map((d) => _DomainCard(domain: d)),
         ],
         if (scoring.schemas.isNotEmpty) ...[
           const SizedBox(height: 16),
-          _GroupSectionTitle('Esquemas'),
+          const _GroupSectionTitle('Esquemas'),
           ...scoring.schemas.map((s) => _SchemaCard(schema: s)),
         ],
         if (scoring.items.isNotEmpty) ...[
           const SizedBox(height: 16),
-          _GroupSectionTitle('Itens respondidos'),
+          const _GroupSectionTitle('Itens respondidos'),
           ...scoring.items.map((i) => _ScoringItemCard(item: i)),
         ],
       ],

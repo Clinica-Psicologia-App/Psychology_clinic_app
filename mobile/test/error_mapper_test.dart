@@ -1,4 +1,4 @@
-﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:terapia_esquema/core/errors/app_exception.dart';
 import 'package:terapia_esquema/core/errors/error_mapper.dart';
@@ -6,7 +6,7 @@ import 'package:terapia_esquema/core/errors/error_mapper.dart';
 void main() {
   test('maps RLS PostgrestException to forbidden', () {
     final ex = mapToAppException(
-      PostgrestException(
+      const PostgrestException(
         message: 'new row violates row-level security policy',
         code: '42501',
       ),
@@ -16,7 +16,7 @@ void main() {
 
   test('maps JWT expired to sessionExpired', () {
     final ex = mapToAppException(
-      PostgrestException(message: 'JWT expired', code: 'PGRST301'),
+      const PostgrestException(message: 'JWT expired', code: 'PGRST301'),
     );
     expect(ex.code, AppExceptionCodes.sessionExpired);
   });
@@ -32,7 +32,7 @@ void main() {
 
   test('maps invalid credentials AuthException', () {
     final ex = mapToAppException(
-      AuthException('Invalid login credentials'),
+      const AuthException('Invalid login credentials'),
     );
     expect(ex.code, AppExceptionCodes.invalidCredentials);
   });

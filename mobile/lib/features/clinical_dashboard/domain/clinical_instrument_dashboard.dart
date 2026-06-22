@@ -8,6 +8,8 @@ class ClinicalInstrumentDashboard {
     required this.questionnaireName,
     this.completedAt,
     required this.topScores,
+    this.allScores = const [],
+    this.domainRows = const [],
     this.scaleMax,
   });
 
@@ -15,14 +17,26 @@ class ClinicalInstrumentDashboard {
   final String questionnaireCode;
   final String questionnaireName;
   final DateTime? completedAt;
+
+  /// Top N scores (padrão: 8), mostrados por padrão.
   final List<ClinicalDashboardScoreRow> topScores;
+
+  /// Todos os scores do instrumento ordenados por score (D2).
+  final List<ClinicalDashboardScoreRow> allScores;
+
+  /// Scores agrupados por domínio clínico (D5 — YSQ com snapshot demo).
+  final List<ClinicalDashboardScoreRow> domainRows;
+
   final double? scaleMax;
 
   bool get isEmpty => topScores.isEmpty;
+  bool get hasMoreScores => allScores.length > topScores.length;
+  bool get hasDomains => domainRows.isNotEmpty;
 
   double get barMaxScore {
     if (scaleMax != null && scaleMax! > 0) return scaleMax!;
-    if (topScores.isEmpty) return 6;
-    return topScores.map((r) => r.score).reduce((a, b) => a > b ? a : b);
+    final scores = allScores.isNotEmpty ? allScores : topScores;
+    if (scores.isEmpty) return 6;
+    return scores.map((r) => r.score).reduce((a, b) => a > b ? a : b);
   }
 }

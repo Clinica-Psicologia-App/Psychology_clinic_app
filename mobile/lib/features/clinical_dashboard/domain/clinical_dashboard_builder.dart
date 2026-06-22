@@ -1,4 +1,4 @@
-﻿import '../../mental_map/domain/mental_map_aggregator.dart';
+import '../../mental_map/domain/mental_map_aggregator.dart';
 import '../../results/domain/patient_response_summary.dart';
 import '../../results/domain/patient_result_detail.dart';
 import '../../results/domain/questionnaire_response_status.dart';
@@ -127,6 +127,8 @@ ClinicalInstrumentDashboard? buildInstrumentDashboard({
   final topScores = extractTopSchemaRows(detail, limit: topLimit);
   if (topScores.isEmpty) return null;
 
+  final allScores = extractTopSchemaRows(detail, limit: 9999);
+  final domainRows = _extractDomainRows(detail);
   final scoring = detail.scoringDemo;
   return ClinicalInstrumentDashboard(
     responseId: summary.id,
@@ -134,8 +136,34 @@ ClinicalInstrumentDashboard? buildInstrumentDashboard({
     questionnaireName: summary.questionnaireName,
     completedAt: summary.completedAt ?? detail.completedAt,
     topScores: topScores,
+    allScores: allScores,
+    domainRows: domainRows,
     scaleMax: scoring?.scaleMax?.toDouble(),
   );
+}
+
+List<ClinicalDashboardScoreRow> _extractDomainRows(PatientResultDetail detail) {
+  final rows = <ClinicalDashboardScoreRow>[];
+  final scoring = detail.scoringDemo;
+  if (scoring == null) return rows;
+
+  for (final domain in scoring.domains) {
+    final score =
+        domain.weightedScore ?? domain.averageScore ?? domain.rawScore;
+    if (score == null) continue;
+    rows.add(
+      ClinicalDashboardScoreRow(
+        name: domain.name,
+        code: domain.code,
+        score: score,
+        severityLabel: domain.hasSeverity ? domain.severity!.label : null,
+        severityColorKey: domain.severity?.colorKey,
+      ),
+    );
+  }
+
+  rows.sort((a, b) => b.score.compareTo(a.score));
+  return rows;
 }
 
 List<ClinicalDashboardHistoryEntry> buildStructuredHistory(

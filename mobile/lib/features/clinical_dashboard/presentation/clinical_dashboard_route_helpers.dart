@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../../profile/domain/profile_role.dart';
+import 'clinical_dashboard_compare_page.dart';
 import 'patient_clinical_dashboard_page.dart';
 
 List<RouteBase> patientClinicalDashboardRoutes() {
@@ -20,6 +21,16 @@ List<RouteBase> staffClinicalDashboardRoutes({required ProfileRole role}) {
         role: role,
         patientId: state.pathParameters['patientId']!,
       ),
+      routes: [
+        GoRoute(
+          path: 'compare/:questionnaireCode',
+          builder: (context, state) => ClinicalDashboardComparePage(
+            role: role,
+            patientId: state.pathParameters['patientId']!,
+            questionnaireCode: state.pathParameters['questionnaireCode']!,
+          ),
+        ),
+      ],
     ),
   ];
 }

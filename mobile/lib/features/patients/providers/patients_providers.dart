@@ -4,6 +4,7 @@ import '../data/patients_repository.dart';
 import '../domain/create_patient_request.dart';
 import '../domain/patient.dart';
 import '../domain/psychologist_option.dart';
+import '../domain/update_patient_request.dart';
 
 final patientsRepositoryProvider = Provider<PatientsRepository>((ref) {
   return PatientsRepository();
@@ -53,6 +54,31 @@ class CreatePatientNotifier extends AsyncNotifier<void> {
       final patient =
           await ref.read(patientsRepositoryProvider).createPatient(request);
       state = const AsyncValue.data(null);
+      ref.invalidate(patientsListProvider);
+      return patient;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+}
+
+final updatePatientProvider =
+    AsyncNotifierProvider<UpdatePatientNotifier, void>(
+  UpdatePatientNotifier.new,
+);
+
+class UpdatePatientNotifier extends AsyncNotifier<void> {
+  @override
+  Future<void> build() async {}
+
+  Future<Patient> submit(UpdatePatientRequest request) async {
+    state = const AsyncValue.loading();
+    try {
+      final patient =
+          await ref.read(patientsRepositoryProvider).updatePatient(request);
+      state = const AsyncValue.data(null);
+      ref.invalidate(patientDetailProvider(request.patientId));
       ref.invalidate(patientsListProvider);
       return patient;
     } catch (e, st) {

@@ -1,9 +1,11 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../shared/widgets/clinical_kpi_chip.dart';
 import '../../../../shared/widgets/homologation_ui.dart';
 import 'clinical_dashboard_shared_widgets.dart';
 import '../../../patient_problems/domain/patient_problem_status.dart';
+import '../../../profile/domain/profile_role.dart';
 import '../../../therapy_goals/domain/therapy_goal_status.dart';
 import '../../domain/clinical_case_summary.dart';
 import '../../domain/clinical_dashboard_callouts.dart';
@@ -11,6 +13,7 @@ import '../../domain/clinical_dashboard_data.dart';
 import '../../domain/clinical_dashboard_score_row.dart';
 import '../../domain/clinical_instrument_dashboard.dart';
 import '../../domain/clinical_parental_dashboard.dart';
+import '../clinical_dashboard_routes.dart';
 
 class ClinicalDashboardDisclaimerBanner extends StatelessWidget {
   const ClinicalDashboardDisclaimerBanner({super.key});
@@ -27,22 +30,39 @@ class ClinicalDashboardDisclaimerBanner extends StatelessWidget {
   }
 }
 
-class InstrumentDashboardCard extends StatelessWidget {
+class InstrumentDashboardCard extends StatefulWidget {
   const InstrumentDashboardCard({
     super.key,
     required this.title,
     required this.panel,
     this.icon = Icons.bar_chart_outlined,
+    this.isStaff = false,
+    this.patientId,
+    this.role,
   });
 
   final String title;
   final ClinicalInstrumentDashboard panel;
   final IconData icon;
+  final bool isStaff;
+  final String? patientId;
+  final ProfileRole? role;
+
+  @override
+  State<InstrumentDashboardCard> createState() =>
+      _InstrumentDashboardCardState();
+}
+
+class _InstrumentDashboardCardState extends State<InstrumentDashboardCard> {
+  bool _showAllScores = false;
+  bool _showDomains = false;
 
   @override
   Widget build(BuildContext context) {
     final loc = MaterialLocalizations.of(context);
     final theme = Theme.of(context);
+    final panel = widget.panel;
+    final scoresShown = _showAllScores ? panel.allScores : panel.topScores;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -52,8 +72,8 @@ class InstrumentDashboardCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             HomologationSectionHeader(
-              icon: icon,
-              title: title,
+              icon: widget.icon,
+              title: widget.title,
               subtitle: panel.questionnaireCode,
             ),
             if (panel.completedAt != null)
@@ -87,19 +107,99 @@ class InstrumentDashboardCard extends StatelessWidget {
               )
             else ...[
               Text(
-                'Principais scores (ordem decrescente)',
+                _showAllScores
+                    ? 'Todos os scores (ordem decrescente)'
+                    : 'Principais scores (ordem decrescente)',
                 style: theme.textTheme.labelLarge?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 12),
-              ...panel.topScores.asMap().entries.map(
+              ...scoresShown.asMap().entries.map(
                     (entry) => HorizontalScoreBar(
                       rank: entry.key + 1,
                       row: entry.value,
                       maxScore: panel.barMaxScore,
                     ),
                   ),
+              if (panel.hasMoreScores) ...[
+                const SizedBox(height: 4),
+                TextButton.icon(
+                  onPressed: () =>
+                      setState(() => _showAllScores = !_showAllScores),
+                  icon: Icon(
+                    _showAllScores ? Icons.expand_less : Icons.expand_more,
+                  ),
+                  label: Text(
+                    _showAllScores
+                        ? 'Ver menos scores'
+                        : 'Ver todos (${panel.allScores.length})',
+                  ),
+                ),
+              ],
+              if (panel.hasDomains) ...[
+                const SizedBox(height: 4),
+                const Divider(),
+                const SizedBox(height: 4),
+                InkWell(
+                  onTap: () => setState(() => _showDomains = !_showDomains),
+                  borderRadius: BorderRadius.circular(8),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 6),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.category_outlined,
+                          size: 18,
+                          color: theme.colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Domínios clínicos (${panel.domainRows.length})',
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: theme.colorScheme.primary,
+                            ),
+                          ),
+                        ),
+                        Icon(
+                          _showDomains ? Icons.expand_less : Icons.expand_more,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (_showDomains) ...[
+                  const SizedBox(height: 8),
+                  ...panel.domainRows.asMap().entries.map(
+                        (entry) => HorizontalScoreBar(
+                          rank: entry.key + 1,
+                          row: entry.value,
+                          maxScore: panel.barMaxScore,
+                        ),
+                      ),
+                ],
+              ],
+              if (widget.isStaff &&
+                  widget.patientId != null &&
+                  widget.role != null) ...[
+                const SizedBox(height: 4),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: () => context.push(
+                      ClinicalDashboardRoutes.staffCompare(
+                        role: widget.role!,
+                        patientId: widget.patientId!,
+                        questionnaireCode: panel.questionnaireCode,
+                      ),
+                    ),
+                    icon: const Icon(Icons.compare_arrows_outlined, size: 18),
+                    label: const Text('Histórico comparativo'),
+                  ),
+                ),
+              ],
             ],
           ],
         ),
@@ -1102,9 +1202,15 @@ class ClinicalInstrumentDetailsSection extends StatelessWidget {
   const ClinicalInstrumentDetailsSection({
     super.key,
     required this.data,
+    this.isStaff = false,
+    this.patientId,
+    this.role,
   });
 
   final ClinicalDashboardData data;
+  final bool isStaff;
+  final String? patientId;
+  final ProfileRole? role;
 
   @override
   Widget build(BuildContext context) {
@@ -1120,6 +1226,9 @@ class ClinicalInstrumentDetailsSection extends StatelessWidget {
               title: 'Esquemas - YSQ',
               panel: data.ysq!,
               icon: Icons.psychology_outlined,
+              isStaff: isStaff,
+              patientId: patientId,
+              role: role,
             )
           else
             const ClinicalDashboardEmptyInstrumentCard(
@@ -1133,6 +1242,9 @@ class ClinicalInstrumentDetailsSection extends StatelessWidget {
               title: 'Modos - YAMI',
               panel: data.yami!,
               icon: Icons.self_improvement_outlined,
+              isStaff: isStaff,
+              patientId: patientId,
+              role: role,
             )
           else
             const ClinicalDashboardEmptyInstrumentCard(
@@ -1156,6 +1268,9 @@ class ClinicalInstrumentDetailsSection extends StatelessWidget {
               title: 'Estilos de apego',
               panel: data.attachment!,
               icon: Icons.favorite_border,
+              isStaff: isStaff,
+              patientId: patientId,
+              role: role,
             )
           else
             const ClinicalDashboardEmptyInstrumentCard(
@@ -1169,6 +1284,9 @@ class ClinicalInstrumentDetailsSection extends StatelessWidget {
               title: 'Enfrentamento - YCI',
               panel: data.yci!,
               icon: Icons.shield_outlined,
+              isStaff: isStaff,
+              patientId: patientId,
+              role: role,
             )
           else
             const ClinicalDashboardEmptyInstrumentCard(
@@ -1182,6 +1300,9 @@ class ClinicalInstrumentDetailsSection extends StatelessWidget {
               title: 'Enfrentamento - YRAI',
               panel: data.yrai!,
               icon: Icons.shield_outlined,
+              isStaff: isStaff,
+              patientId: patientId,
+              role: role,
             )
           else
             const ClinicalDashboardEmptyInstrumentCard(

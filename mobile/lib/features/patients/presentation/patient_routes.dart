@@ -20,6 +20,9 @@ abstract final class PatientRoutes {
   static String detail(ProfileRole role, String patientId) =>
       '${list(role)}/$patientId';
 
+  static String edit(ProfileRole role, String patientId) =>
+      '${detail(role, patientId)}/edit';
+
   static String invitationList(ProfileRole role) =>
       PatientInvitationRoutes.list(role);
 

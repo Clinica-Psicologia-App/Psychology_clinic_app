@@ -119,10 +119,11 @@ class DashboardHomePage extends StatelessWidget {
                 ClinicalPriorityGrid(summary: data.caseSummary),
                 ClinicalRecentSignalsCard(summary: data.caseSummary),
                 ClinicalDashboardCalloutsSection(callouts: data.callouts),
-                ClinicalInstrumentDetailsSection(data: data),
-                const ClinicalDashboardFutureSectionCard(
-                  title: 'Personalidade',
-                  icon: Icons.psychology_alt_outlined,
+                ClinicalInstrumentDetailsSection(
+                  data: data,
+                  isStaff: isStaff,
+                  patientId: patientId,
+                  role: role,
                 ),
                 if (isStaff)
                   ClinicalDashboardHistoryCard(

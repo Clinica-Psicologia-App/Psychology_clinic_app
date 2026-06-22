@@ -1,4 +1,4 @@
-﻿import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:terapia_esquema/features/clinical_dashboard/domain/clinical_case_summary_builder.dart';
 import 'package:terapia_esquema/features/clinical_dashboard/domain/clinical_dashboard_builder.dart';
 import 'package:terapia_esquema/features/clinical_dashboard/domain/clinical_dashboard_callouts.dart';
@@ -592,7 +592,7 @@ void main() {
     );
 
     final dashboard = buildParentalDashboard(
-      summary: PatientResponseSummary(
+      summary: const PatientResponseSummary(
         id: 'parental-empty',
         questionnaireId: 'q1',
         questionnaireCode: 'PARENTAL_STYLES_V1',

@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../patients/providers/patients_providers.dart';
@@ -84,13 +85,16 @@ class PatientResultsPage extends ConsumerWidget {
                   itemCount: items.length,
                   itemBuilder: (context, index) {
                     final item = items[index];
-                    return ResponseSummaryTile(
-                      summary: item,
-                      onTap: () => context.push(
-                        ResultRoutes.detail(
-                          role: role,
-                          patientId: patientId,
-                          responseId: item.id,
+                    return MotionReveal(
+                      delay: staggerDelay(index),
+                      child: ResponseSummaryTile(
+                        summary: item,
+                        onTap: () => context.push(
+                          ResultRoutes.detail(
+                            role: role,
+                            patientId: patientId,
+                            responseId: item.id,
+                          ),
                         ),
                       ),
                     );

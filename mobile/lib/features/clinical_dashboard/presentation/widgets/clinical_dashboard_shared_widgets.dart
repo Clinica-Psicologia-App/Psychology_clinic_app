@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_animations.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -30,7 +30,8 @@ class ExpandableDashboardSection extends StatefulWidget {
       _ExpandableDashboardSectionState();
 }
 
-class _ExpandableDashboardSectionState extends State<ExpandableDashboardSection> {
+class _ExpandableDashboardSectionState
+    extends State<ExpandableDashboardSection> {
   late bool _expanded = widget.initiallyExpanded;
 
   @override
@@ -80,7 +81,7 @@ class _ExpandableDashboardSectionState extends State<ExpandableDashboardSection>
                   AnimatedRotation(
                     duration: duration,
                     turns: _expanded ? 0.5 : 0,
-                    child: Icon(
+                    child: const Icon(
                       Icons.expand_more,
                       color: AppColors.textMuted,
                     ),
@@ -198,8 +199,7 @@ class AnimatedClinicalScoreBar extends StatelessWidget {
                   child: LinearProgressIndicator(
                     value: value,
                     minHeight: 10,
-                    backgroundColor:
-                        theme.colorScheme.surfaceContainerHighest,
+                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
                     color: _barColor(theme, row),
                   ),
                 );

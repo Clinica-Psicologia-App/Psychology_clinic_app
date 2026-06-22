@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:terapia_esquema/features/mental_map/domain/mental_map_check_in_summary.dart';
 import 'package:terapia_esquema/features/mental_map/domain/mental_map_clinical_core.dart';
@@ -15,11 +15,11 @@ void main() {
   testWidgets('MentalMapFormulationTabs switches between layers',
       (tester) async {
     await tester.pumpWidget(
-      MaterialApp(
+      const MaterialApp(
         home: Scaffold(
           body: SingleChildScrollView(
             child: MentalMapFormulationTabs(
-              clinicalCore: const MentalMapClinicalCore(
+              clinicalCore: MentalMapClinicalCore(
                 topSchemas: [
                   MentalMapScoreHighlight(
                     name: 'Abandono',
@@ -98,7 +98,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      const MaterialApp(
         home: Scaffold(
           body: SingleChildScrollView(
             child: MentalMapHistoryLinksSection(
@@ -137,7 +137,7 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(
+      const MaterialApp(
         home: Scaffold(
           body: SingleChildScrollView(
             child: MentalMapTherapyPlanSection(

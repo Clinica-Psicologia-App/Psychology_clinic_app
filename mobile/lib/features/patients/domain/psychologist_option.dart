@@ -1,4 +1,4 @@
-﻿/// Psicólogo da clínica para seleção no cadastro (admin).
+/// Psicólogo da clínica para seleção no cadastro (admin).
 class PsychologistOption {
   const PsychologistOption({
     required this.id,
@@ -35,7 +35,8 @@ class PsychologistOption {
       assignedPatientsCount + pendingPatientInvitationsCount;
 
   bool get reachedPatientAssignmentLimit =>
-      patientAssignmentLimit != null && reservedPatientSlots >= patientAssignmentLimit!;
+      patientAssignmentLimit != null &&
+      reservedPatientSlots >= patientAssignmentLimit!;
 
   bool get canAssignNewPatient =>
       canReceivePatients && !reachedPatientAssignmentLimit;
@@ -47,8 +48,7 @@ class PsychologistOption {
     return '$reservedPatientSlots/$limit vagas em uso';
   }
 
-  String get displayLabel =>
-      email != null && email!.isNotEmpty
-          ? '$fullName ($email) · $accessSummary'
-          : '$fullName · $accessSummary';
+  String get displayLabel => email != null && email!.isNotEmpty
+      ? '$fullName ($email) · $accessSummary'
+      : '$fullName · $accessSummary';
 }

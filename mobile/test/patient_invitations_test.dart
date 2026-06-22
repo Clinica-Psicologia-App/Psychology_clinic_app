@@ -135,10 +135,10 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    final request = AcceptPatientInvitationRequest(
+    final request = const AcceptPatientInvitationRequest(
       token: 'secure-token',
       password: 'SenhaSegura1',
-      profile: const AcceptPatientInvitationProfile(
+      profile: AcceptPatientInvitationProfile(
         fullName: 'Bruno Costa',
       ),
     );

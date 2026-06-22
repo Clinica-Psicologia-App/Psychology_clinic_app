@@ -7,6 +7,7 @@ import '../../../core/supabase/supabase_bootstrap.dart';
 import '../domain/create_patient_request.dart';
 import '../domain/patient.dart';
 import '../domain/psychologist_option.dart';
+import '../domain/update_patient_request.dart';
 
 class PatientsRepository {
   PatientsRepository({
@@ -249,6 +250,32 @@ therapy_demands
       throw mapToAppException(e);
     }
   }
+
+  Future<Patient> updatePatient(UpdatePatientRequest request) async {
+    try {
+      final data = request.toJson();
+      if (data.isEmpty) {
+        final patient = await getPatientById(request.patientId);
+        if (patient == null) {
+          throw AppException(
+            code: AppExceptionCodes.notFound,
+            message: 'Paciente não encontrado.',
+          );
+        }
+        return patient;
+      }
+      final row = await _client
+          .from('patients')
+          .update(data)
+          .eq('id', request.patientId)
+          .select(_patientBaseSelect)
+          .single();
+      return Patient.fromJson(Map<String, dynamic>.from(row));
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
   Future<void> deletePatient(String patientId) async {
     try {
       await _client.rpc(

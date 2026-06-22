@@ -1,4 +1,4 @@
-﻿import 'dart:math' as math;
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
@@ -304,11 +304,11 @@ class MentalMapVisualHub extends StatelessWidget {
     final hubNodes = [
       ...nodes,
       if (!nodes.any((node) => node.id == 'personality'))
-        MentalMapHubNodeData(
+        const MentalMapHubNodeData(
           id: 'personality',
           title: 'Personalidade',
           subtitle: 'Versão futura',
-          items: const [],
+          items: [],
           emptyLabel: 'Placeholder clínico',
           icon: Icons.psychology_alt_outlined,
           accentColor: AppColors.purple,
@@ -591,9 +591,8 @@ class _MentalMapOrbitNode extends StatelessWidget {
     final effectiveRingColor = data.isFilled
         ? (data.severityColor ?? data.accentColor)
         : theme.colorScheme.outlineVariant;
-    final textColor = data.isFilled
-        ? data.accentColor
-        : theme.colorScheme.onSurfaceVariant;
+    final textColor =
+        data.isFilled ? data.accentColor : theme.colorScheme.onSurfaceVariant;
 
     return InkWell(
       onTap: data.onTap,
@@ -646,7 +645,6 @@ class _MentalMapOrbitNode extends StatelessWidget {
     );
   }
 }
-
 
 class MentalMapHubNodeData {
   const MentalMapHubNodeData({
@@ -767,8 +765,8 @@ class MentalMapHubNode extends StatelessWidget {
                             size: 14,
                             semanticLabel:
                                 mentalMapNodeStateLabel(data.visualState),
-                            color: _stateColor(data.visualState, data.accentColor,
-                                theme),
+                            color: _stateColor(
+                                data.visualState, data.accentColor, theme),
                           ),
                         ],
                       ),
@@ -850,7 +848,8 @@ class _MentalMapHubCenter extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
-          border: Border.all(color: AppColors.turquoise.withValues(alpha: 0.35)),
+          border:
+              Border.all(color: AppColors.turquoise.withValues(alpha: 0.35)),
           boxShadow: [
             BoxShadow(
               color: AppColors.turquoise.withValues(alpha: 0.15),
@@ -876,41 +875,41 @@ class _MentalMapHubCenter extends StatelessWidget {
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-              const SizedBox(height: 4),
-              Text(
-                center.activeProblemsLabel,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                style: theme.textTheme.labelMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w600,
+                const SizedBox(height: 4),
+                Text(
+                  center.activeProblemsLabel,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                center.activeGoalsLabel,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                const SizedBox(height: 2),
+                Text(
+                  center.activeGoalsLabel,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                center.lastCheckInLabel,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                const SizedBox(height: 2),
+                Text(
+                  center.lastCheckInLabel,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    ),
     );
   }
 }
@@ -1110,4 +1109,3 @@ class MentalMapNodeDetailSheet extends StatelessWidget {
     );
   }
 }
-

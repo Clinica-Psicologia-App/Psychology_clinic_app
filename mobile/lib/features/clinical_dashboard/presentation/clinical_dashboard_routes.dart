@@ -23,4 +23,11 @@ abstract final class ClinicalDashboardRoutes {
     required String responseId,
   }) =>
       '${staffList(role: role, patientId: patientId)}/results/$responseId';
+
+  static String staffCompare({
+    required ProfileRole role,
+    required String patientId,
+    required String questionnaireCode,
+  }) =>
+      '${staffList(role: role, patientId: patientId)}/compare/$questionnaireCode';
 }

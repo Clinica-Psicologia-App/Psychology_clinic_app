@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../auth/providers/auth_providers.dart';
@@ -129,12 +130,15 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
                           itemCount: filtered.length,
                           itemBuilder: (context, index) {
                             final patient = filtered[index];
-                            return PatientListTile(
-                              patient: patient,
-                              onTap: () => context.push(
-                                PatientRoutes.detail(
-                                  widget.role,
-                                  patient.id,
+                            return MotionReveal(
+                              delay: staggerDelay(index),
+                              child: PatientListTile(
+                                patient: patient,
+                                onTap: () => context.push(
+                                  PatientRoutes.detail(
+                                    widget.role,
+                                    patient.id,
+                                  ),
                                 ),
                               ),
                             );

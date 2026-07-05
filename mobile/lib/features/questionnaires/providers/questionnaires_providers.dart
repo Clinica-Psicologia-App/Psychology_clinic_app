@@ -48,6 +48,14 @@ final questionnaireAdminCatalogProvider =
       .listQuestionnaireCatalogForAdmin();
 });
 
+final psychologistQuestionnairesProvider =
+    FutureProvider<List<Questionnaire>>((ref) {
+  return ref.read(questionnairesRepositoryProvider).listVisibleQuestionnaires(
+        role: ProfileRole.psychologist,
+        patientId: '',
+      );
+});
+
 final questionnaireAdminQuestionsProvider =
     FutureProvider.family<List<QuestionnaireQuestion>, String>(
         (ref, questionnaireId) {

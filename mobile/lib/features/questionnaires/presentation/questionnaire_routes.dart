@@ -2,6 +2,7 @@ import '../../profile/domain/profile_role.dart';
 
 abstract final class QuestionnaireRoutes {
   static const adminAccess = '/platform/questionnaires';
+  static const psychologistCatalog = '/psychologist/questionnaires';
 
   static String list({
     required ProfileRole role,

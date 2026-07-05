@@ -39,6 +39,7 @@ import '../../features/profile/domain/profile_role.dart';
 import '../../features/questionnaires/presentation/questionnaire_route_helpers.dart';
 import '../../features/questionnaires/presentation/questionnaire_access_management_page.dart';
 import '../../features/questionnaires/presentation/questionnaire_routes.dart';
+import '../../features/questionnaires/presentation/psychologist_questionnaires_page.dart';
 import '../../features/results/presentation/result_route_helpers.dart';
 import '../../features/therapy_resources/presentation/therapy_resource_route_helpers.dart';
 import '../../features/user_management/presentation/user_management_page.dart';
@@ -214,6 +215,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.psychologistHome,
         builder: (_, __) => const PsychologistHomePage(),
         routes: [
+          GoRoute(
+            path: 'questionnaires',
+            builder: (_, __) => const PsychologistQuestionnairesPage(),
+          ),
           ...patientInvitationRoutesFor(ProfileRole.psychologist),
           ..._staffPatientRoutes(ProfileRole.psychologist),
         ],

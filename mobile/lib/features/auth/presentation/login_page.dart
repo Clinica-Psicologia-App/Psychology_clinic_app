@@ -168,42 +168,34 @@ class _LoginPageState extends ConsumerState<LoginPage>
   Widget _buildMobileLayout(String? redirectMsg, bool isLoading) {
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg,
-        AppSpacing.xl,
-        AppSpacing.lg,
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
         AppSpacing.xxl,
       ),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 430),
-          child: Column(
-            children: [
-              MotionReveal(
-                child: _CompactBrandPanel(controller: _ambientController),
+          constraints: const BoxConstraints(maxWidth: 398),
+          child: MotionReveal(
+            delay: const Duration(milliseconds: 80),
+            child: _LoginCard(
+              compact: true,
+              child: _LoginForm(
+                formKey: _formKey,
+                emailController: _emailController,
+                passwordController: _passwordController,
+                obscurePassword: _obscurePassword,
+                onTogglePassword: () =>
+                    setState(() => _obscurePassword = !_obscurePassword),
+                redirectMsg: redirectMsg,
+                isLoading: isLoading,
+                onSubmit: _submit,
+                onForgotPassword: () => context.push(AppRoutes.forgotPassword),
+                onFillSeed: _fillSeed,
+                showTestAccounts: EnvConfig.showTestAccounts,
+                showHeaderLogo: true,
               ),
-              const SizedBox(height: AppSpacing.lg),
-              MotionReveal(
-                delay: const Duration(milliseconds: 120),
-                child: _LoginCard(
-                  child: _LoginForm(
-                    formKey: _formKey,
-                    emailController: _emailController,
-                    passwordController: _passwordController,
-                    obscurePassword: _obscurePassword,
-                    onTogglePassword: () =>
-                        setState(() => _obscurePassword = !_obscurePassword),
-                    redirectMsg: redirectMsg,
-                    isLoading: isLoading,
-                    onSubmit: _submit,
-                    onForgotPassword: () =>
-                        context.push(AppRoutes.forgotPassword),
-                    onFillSeed: _fillSeed,
-                    showTestAccounts: EnvConfig.showTestAccounts,
-                    showHeaderLogo: false,
-                  ),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -381,71 +373,23 @@ class _LoginStoryPanel extends StatelessWidget {
   }
 }
 
-class _CompactBrandPanel extends StatelessWidget {
-  const _CompactBrandPanel({required this.controller});
-
-  final Animation<double> controller;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 174,
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppRadius.xxl),
-        gradient: AppGradients.brand,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.blue.withValues(alpha: 0.14),
-            blurRadius: 24,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          _ClinicalSignalAnimation(controller: controller, compact: true),
-          const Padding(
-            padding: EdgeInsets.all(AppSpacing.xl),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: EsquemaCoreLogo.monochrome(
-                size: 72,
-                showTagline: true,
-                taglineColor: AppColors.textOnBrand,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _ClinicalSignalAnimation extends StatelessWidget {
   const _ClinicalSignalAnimation({
     required this.controller,
-    this.compact = false,
   });
 
   final Animation<double> controller;
-  final bool compact;
 
   @override
   Widget build(BuildContext context) {
     if (!AppAnimations.shouldAnimate(context)) {
-      return CustomPaint(painter: _ClinicalSignalPainter(0, compact: compact));
+      return const CustomPaint(painter: _ClinicalSignalPainter(0));
     }
     return AnimatedBuilder(
       animation: controller,
       builder: (context, _) {
         return CustomPaint(
-          painter: _ClinicalSignalPainter(
-            controller.value,
-            compact: compact,
-          ),
+          painter: _ClinicalSignalPainter(controller.value),
         );
       },
     );
@@ -453,58 +397,52 @@ class _ClinicalSignalAnimation extends StatelessWidget {
 }
 
 class _ClinicalSignalPainter extends CustomPainter {
-  const _ClinicalSignalPainter(this.phase, {required this.compact});
+  const _ClinicalSignalPainter(this.phase);
 
   final double phase;
-  final bool compact;
 
   @override
   void paint(Canvas canvas, Size size) {
     final linePaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = compact ? 1.2 : 1.4
-      ..color = Colors.white.withValues(alpha: compact ? 0.16 : 0.2);
+      ..strokeWidth = 1.4
+      ..color = Colors.white.withValues(alpha: 0.2);
     final strongLinePaint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = compact ? 2 : 2.4
+      ..strokeWidth = 2.4
       ..strokeCap = StrokeCap.round
       ..color = Colors.white.withValues(alpha: 0.36);
     final nodePaint = Paint()
       ..style = PaintingStyle.fill
       ..color = Colors.white.withValues(alpha: 0.18);
 
-    final baseY = compact ? size.height * 0.66 : size.height * 0.56;
+    final baseY = size.height * 0.56;
     for (var i = 0; i < 5; i++) {
-      final y = baseY + (i - 2) * (compact ? 22 : 38);
+      final y = baseY + (i - 2) * 38;
       final path = Path()..moveTo(size.width * -0.06, y);
       for (var x = size.width * -0.06; x < size.width * 1.08; x += 90) {
         final t = phase * math.pi * 2 + i * 0.7 + x * 0.015;
         path.quadraticBezierTo(
           x + 45,
-          y + math.sin(t) * (compact ? 13 : 24),
+          y + math.sin(t) * 24,
           x + 90,
-          y + math.cos(t * 0.7) * (compact ? 8 : 16),
+          y + math.cos(t * 0.7) * 16,
         );
       }
       canvas.drawPath(path, i == 2 ? strongLinePaint : linePaint);
     }
 
-    final nodes = compact
-        ? <Offset>[
-            Offset(size.width * 0.72, size.height * 0.32),
-            Offset(size.width * 0.84, size.height * 0.52),
-          ]
-        : <Offset>[
-            Offset(size.width * 0.68, size.height * 0.26),
-            Offset(size.width * 0.82, size.height * 0.42),
-            Offset(size.width * 0.72, size.height * 0.68),
-            Offset(size.width * 0.9, size.height * 0.74),
-          ];
+    final nodes = <Offset>[
+      Offset(size.width * 0.68, size.height * 0.26),
+      Offset(size.width * 0.82, size.height * 0.42),
+      Offset(size.width * 0.72, size.height * 0.68),
+      Offset(size.width * 0.9, size.height * 0.74),
+    ];
     for (final node in nodes) {
       final pulse = 0.5 + math.sin(phase * math.pi * 2 + node.dx) * 0.5;
       canvas.drawCircle(
         node,
-        compact ? 5 + pulse * 2 : 7 + pulse * 3,
+        7 + pulse * 3,
         nodePaint,
       );
     }
@@ -512,7 +450,7 @@ class _ClinicalSignalPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _ClinicalSignalPainter oldDelegate) {
-    return oldDelegate.phase != phase || oldDelegate.compact != compact;
+    return oldDelegate.phase != phase;
   }
 }
 
@@ -572,9 +510,13 @@ class _TrustPill extends StatelessWidget {
 }
 
 class _LoginCard extends StatelessWidget {
-  const _LoginCard({required this.child});
+  const _LoginCard({
+    required this.child,
+    this.compact = false,
+  });
 
   final Widget child;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -592,7 +534,7 @@ class _LoginCard extends StatelessWidget {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
+        padding: EdgeInsets.all(compact ? AppSpacing.lg : AppSpacing.xl),
         child: child,
       ),
     );
@@ -636,11 +578,32 @@ class _LoginForm extends StatelessWidget {
         interval: const Duration(milliseconds: 45),
         children: [
           if (showHeaderLogo) ...[
-            const EsquemaCoreLogo(
-              size: 80,
-              showTagline: true,
+            const Center(
+              child: EsquemaCoreLogo.horizontal(
+                size: 48,
+                showTagline: true,
+              ),
             ),
-            const SizedBox(height: AppSpacing.xxl),
+            const SizedBox(height: AppSpacing.lg),
+            Text(
+              'Entrar com segurança',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w800,
+                    height: 1.05,
+                  ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Use seu e-mail cadastrado para continuar.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.35,
+                  ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
           ] else ...[
             const EsquemaCoreLogo.horizontal(
               size: 40,
@@ -716,7 +679,7 @@ class _LoginForm extends StatelessWidget {
               child: const Text('Esqueci minha senha'),
             ),
           ),
-          const SizedBox(height: AppSpacing.xl),
+          const SizedBox(height: AppSpacing.lg),
           _AnimatedSubmitButton(
             isLoading: isLoading,
             onPressed: onSubmit,

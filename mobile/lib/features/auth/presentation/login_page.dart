@@ -1,9 +1,12 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/config/env_config.dart';
 import '../../../core/router/app_router.dart';
+import '../../../core/theme/app_animations.dart';
 import '../../../core/theme/app_breakpoints.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_gradients.dart';
@@ -22,15 +25,21 @@ class LoginPage extends ConsumerStatefulWidget {
   ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends ConsumerState<LoginPage> {
+class _LoginPageState extends ConsumerState<LoginPage>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  late final AnimationController _ambientController;
   bool _obscurePassword = true;
 
   @override
   void initState() {
     super.initState();
+    _ambientController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 16),
+    )..repeat();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final msg = ref.read(authRedirectMessageProvider);
       if (msg != null && mounted) {
@@ -44,6 +53,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   void dispose() {
+    _ambientController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -82,10 +92,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       children: [
         Scaffold(
           backgroundColor: AppColors.background,
-          body: SafeArea(
-            child: isWide
-                ? _buildSplitLayout(redirectMsg, isLoading)
-                : _buildMobileLayout(redirectMsg, isLoading),
+          body: _AnimatedLoginBackdrop(
+            controller: _ambientController,
+            child: SafeArea(
+              child: isWide
+                  ? _buildSplitLayout(redirectMsg, isLoading)
+                  : _buildMobileLayout(redirectMsg, isLoading),
+            ),
           ),
         ),
         if (isLoading) const LoadingOverlay(message: 'Entrando...'),
@@ -94,55 +107,84 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Widget _buildSplitLayout(String? redirectMsg, bool isLoading) {
-    return Row(
-      children: [
-        Expanded(
-          child: DecoratedBox(
-            decoration: const BoxDecoration(gradient: AppGradients.brand),
-            child: Center(
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.xxxl),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const EsquemaCoreLogo.monochrome(
-                      size: 88,
-                      showTagline: true,
-                      taglineColor: AppColors.textOnBrand,
-                    ),
-                    const SizedBox(height: AppSpacing.xxl),
-                    Text(
-                      'Plataforma clínica para Terapia do Esquema',
-                      style:
-                          Theme.of(context).textTheme.headlineSmall?.copyWith(
-                                color: AppColors.textOnBrand,
-                                fontWeight: FontWeight.w500,
-                              ),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      'Organize formulação, instrumentos e jornada terapêutica '
-                      'em um único fluxo profissional.',
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                            color: AppColors.textOnBrand.withValues(alpha: 0.9),
-                            height: 1.5,
-                          ),
-                    ),
-                  ],
+    return Center(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 1180),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.xxl),
+          child: Row(
+            children: [
+              Expanded(
+                flex: 6,
+                child: MotionReveal(
+                  offset: const Offset(-0.025, 0),
+                  child: _LoginStoryPanel(controller: _ambientController),
                 ),
               ),
-            ),
+              const SizedBox(width: AppSpacing.xxl),
+              Expanded(
+                flex: 5,
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.symmetric(
+                      vertical: AppSpacing.xl,
+                    ),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 430),
+                      child: MotionReveal(
+                        offset: const Offset(0.035, 0),
+                        delay: const Duration(milliseconds: 120),
+                        child: _LoginCard(
+                          child: _LoginForm(
+                            formKey: _formKey,
+                            emailController: _emailController,
+                            passwordController: _passwordController,
+                            obscurePassword: _obscurePassword,
+                            onTogglePassword: () => setState(
+                              () => _obscurePassword = !_obscurePassword,
+                            ),
+                            redirectMsg: redirectMsg,
+                            isLoading: isLoading,
+                            onSubmit: _submit,
+                            onForgotPassword: () =>
+                                context.push(AppRoutes.forgotPassword),
+                            onFillSeed: _fillSeed,
+                            showTestAccounts: EnvConfig.showTestAccounts,
+                            showHeaderLogo: false,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        Expanded(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(AppSpacing.xxxl),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 420),
-                child: MotionReveal(
-                  offset: const Offset(0.035, 0),
+      ),
+    );
+  }
+
+  Widget _buildMobileLayout(String? redirectMsg, bool isLoading) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.xl,
+        AppSpacing.lg,
+        AppSpacing.xxl,
+      ),
+      child: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 430),
+          child: Column(
+            children: [
+              MotionReveal(
+                child: _CompactBrandPanel(controller: _ambientController),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              MotionReveal(
+                delay: const Duration(milliseconds: 120),
+                child: _LoginCard(
                   child: _LoginForm(
                     formKey: _formKey,
                     emailController: _emailController,
@@ -161,37 +203,397 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                   ),
                 ),
               ),
-            ),
+            ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _AnimatedLoginBackdrop extends StatelessWidget {
+  const _AnimatedLoginBackdrop({
+    required this.controller,
+    required this.child,
+  });
+
+  final Animation<double> controller;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!AppAnimations.shouldAnimate(context)) {
+      return DecoratedBox(
+        decoration:
+            const BoxDecoration(gradient: AppGradients.splashBackground),
+        child: child,
+      );
+    }
+
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) {
+        return CustomPaint(
+          painter: _LoginBackdropPainter(controller.value),
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  const Color(0xFFFFFFFF),
+                  Color.lerp(
+                    const Color(0xFFF0F9FF),
+                    const Color(0xFFF7F3FF),
+                    0.5 + math.sin(controller.value * math.pi * 2) * 0.18,
+                  )!,
+                  const Color(0xFFEFF6FF),
+                ],
+              ),
+            ),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _LoginBackdropPainter extends CustomPainter {
+  const _LoginBackdropPainter(this.phase);
+
+  final double phase;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..color = AppColors.border.withValues(alpha: 0.55);
+    final wavePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.6
+      ..color = AppColors.cyan.withValues(alpha: 0.18);
+    final accentPaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1
+      ..color = AppColors.purple.withValues(alpha: 0.14);
+
+    for (var y = 36.0; y < size.height; y += 64) {
+      final path = Path();
+      final offset = math.sin(phase * math.pi * 2 + y * 0.018) * 14;
+      path.moveTo(-40, y + offset);
+      for (var x = -40.0; x <= size.width + 40; x += 80) {
+        final controlY =
+            y + math.sin(phase * math.pi * 2 + x * 0.012) * 18 + offset;
+        path.quadraticBezierTo(x + 40, controlY, x + 80, y - offset * 0.35);
+      }
+      canvas.drawPath(path, y % 128 == 36 ? wavePaint : paint);
+    }
+
+    final clinicalPath = Path()
+      ..moveTo(size.width * 0.08, size.height * 0.78)
+      ..cubicTo(
+        size.width * 0.25,
+        size.height * (0.58 + phase * 0.02),
+        size.width * 0.48,
+        size.height * 0.92,
+        size.width * 0.72,
+        size.height * (0.68 - phase * 0.02),
+      )
+      ..cubicTo(
+        size.width * 0.84,
+        size.height * 0.55,
+        size.width * 0.92,
+        size.height * 0.64,
+        size.width * 1.04,
+        size.height * 0.5,
+      );
+    canvas.drawPath(clinicalPath, accentPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _LoginBackdropPainter oldDelegate) {
+    return oldDelegate.phase != phase;
+  }
+}
+
+class _LoginStoryPanel extends StatelessWidget {
+  const _LoginStoryPanel({required this.controller});
+
+  final Animation<double> controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      constraints: const BoxConstraints(minHeight: 620),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.xxl),
+        gradient: AppGradients.brand,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.blue.withValues(alpha: 0.18),
+            blurRadius: 34,
+            offset: const Offset(0, 18),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          _ClinicalSignalAnimation(controller: controller),
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.xxxl),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const EsquemaCoreLogo.monochrome(
+                  size: 86,
+                  showTagline: true,
+                  taglineColor: AppColors.textOnBrand,
+                ),
+                const Spacer(),
+                Text(
+                  'Acesso clínico',
+                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                        color: AppColors.textOnBrand,
+                        fontWeight: FontWeight.w800,
+                        height: 1.05,
+                      ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'Entre para continuar seu trabalho com segurança.',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: AppColors.textOnBrand.withValues(alpha: 0.9),
+                        height: 1.35,
+                      ),
+                ),
+                const SizedBox(height: AppSpacing.xxl),
+                const _TrustRow(),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CompactBrandPanel extends StatelessWidget {
+  const _CompactBrandPanel({required this.controller});
+
+  final Animation<double> controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 174,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.xxl),
+        gradient: AppGradients.brand,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.blue.withValues(alpha: 0.14),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          _ClinicalSignalAnimation(controller: controller, compact: true),
+          const Padding(
+            padding: EdgeInsets.all(AppSpacing.xl),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: EsquemaCoreLogo.monochrome(
+                size: 72,
+                showTagline: true,
+                taglineColor: AppColors.textOnBrand,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ClinicalSignalAnimation extends StatelessWidget {
+  const _ClinicalSignalAnimation({
+    required this.controller,
+    this.compact = false,
+  });
+
+  final Animation<double> controller;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!AppAnimations.shouldAnimate(context)) {
+      return CustomPaint(painter: _ClinicalSignalPainter(0, compact: compact));
+    }
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) {
+        return CustomPaint(
+          painter: _ClinicalSignalPainter(
+            controller.value,
+            compact: compact,
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ClinicalSignalPainter extends CustomPainter {
+  const _ClinicalSignalPainter(this.phase, {required this.compact});
+
+  final double phase;
+  final bool compact;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final linePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = compact ? 1.2 : 1.4
+      ..color = Colors.white.withValues(alpha: compact ? 0.16 : 0.2);
+    final strongLinePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = compact ? 2 : 2.4
+      ..strokeCap = StrokeCap.round
+      ..color = Colors.white.withValues(alpha: 0.36);
+    final nodePaint = Paint()
+      ..style = PaintingStyle.fill
+      ..color = Colors.white.withValues(alpha: 0.18);
+
+    final baseY = compact ? size.height * 0.66 : size.height * 0.56;
+    for (var i = 0; i < 5; i++) {
+      final y = baseY + (i - 2) * (compact ? 22 : 38);
+      final path = Path()..moveTo(size.width * -0.06, y);
+      for (var x = size.width * -0.06; x < size.width * 1.08; x += 90) {
+        final t = phase * math.pi * 2 + i * 0.7 + x * 0.015;
+        path.quadraticBezierTo(
+          x + 45,
+          y + math.sin(t) * (compact ? 13 : 24),
+          x + 90,
+          y + math.cos(t * 0.7) * (compact ? 8 : 16),
+        );
+      }
+      canvas.drawPath(path, i == 2 ? strongLinePaint : linePaint);
+    }
+
+    final nodes = compact
+        ? <Offset>[
+            Offset(size.width * 0.72, size.height * 0.32),
+            Offset(size.width * 0.84, size.height * 0.52),
+          ]
+        : <Offset>[
+            Offset(size.width * 0.68, size.height * 0.26),
+            Offset(size.width * 0.82, size.height * 0.42),
+            Offset(size.width * 0.72, size.height * 0.68),
+            Offset(size.width * 0.9, size.height * 0.74),
+          ];
+    for (final node in nodes) {
+      final pulse = 0.5 + math.sin(phase * math.pi * 2 + node.dx) * 0.5;
+      canvas.drawCircle(
+        node,
+        compact ? 5 + pulse * 2 : 7 + pulse * 3,
+        nodePaint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ClinicalSignalPainter oldDelegate) {
+    return oldDelegate.phase != phase || oldDelegate.compact != compact;
+  }
+}
+
+class _TrustRow extends StatelessWidget {
+  const _TrustRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.sm,
+      children: [
+        _TrustPill(icon: Icons.lock_outline, label: 'Seguro'),
+        _TrustPill(icon: Icons.verified_user_outlined, label: 'Profissional'),
+        _TrustPill(icon: Icons.favorite_border, label: 'Clínico'),
       ],
     );
   }
+}
 
-  Widget _buildMobileLayout(String? redirectMsg, bool isLoading) {
-    return Center(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 420),
-          child: MotionReveal(
-            child: _LoginForm(
-              formKey: _formKey,
-              emailController: _emailController,
-              passwordController: _passwordController,
-              obscurePassword: _obscurePassword,
-              onTogglePassword: () =>
-                  setState(() => _obscurePassword = !_obscurePassword),
-              redirectMsg: redirectMsg,
-              isLoading: isLoading,
-              onSubmit: _submit,
-              onForgotPassword: () => context.push(AppRoutes.forgotPassword),
-              onFillSeed: _fillSeed,
-              showTestAccounts: EnvConfig.showTestAccounts,
-              showHeaderLogo: true,
-            ),
-          ),
+class _TrustPill extends StatelessWidget {
+  const _TrustPill({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
         ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 17, color: AppColors.textOnBrand),
+            const SizedBox(width: AppSpacing.xs),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: AppColors.textOnBrand,
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _LoginCard extends StatelessWidget {
+  const _LoginCard({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface.withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(AppRadius.xxl),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.72)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.navy.withValues(alpha: 0.1),
+            blurRadius: 30,
+            offset: const Offset(0, 18),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xl),
+        child: child,
       ),
     );
   }
@@ -230,8 +632,8 @@ class _LoginForm extends StatelessWidget {
   Widget build(BuildContext context) {
     return Form(
       key: formKey,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      child: MotionStaggered(
+        interval: const Duration(milliseconds: 45),
         children: [
           if (showHeaderLogo) ...[
             const EsquemaCoreLogo(
@@ -240,13 +642,21 @@ class _LoginForm extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xxl),
           ] else ...[
+            const EsquemaCoreLogo.horizontal(
+              size: 40,
+              showTagline: true,
+            ),
+            const SizedBox(height: AppSpacing.xl),
             Text(
-              'Entrar',
-              style: Theme.of(context).textTheme.headlineMedium,
+              'Entrar com segurança',
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w800,
+                  ),
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              'Acesse com seu e-mail e senha',
+              'Use seu e-mail cadastrado para continuar.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.textSecondary,
                   ),
@@ -265,6 +675,7 @@ class _LoginForm extends StatelessWidget {
             controller: emailController,
             keyboardType: TextInputType.emailAddress,
             autocorrect: false,
+            autofillHints: const [AutofillHints.email],
             textInputAction: TextInputAction.next,
             decoration: const InputDecoration(
               labelText: 'E-mail',
@@ -280,6 +691,7 @@ class _LoginForm extends StatelessWidget {
           TextFormField(
             controller: passwordController,
             obscureText: obscurePassword,
+            autofillHints: const [AutofillHints.password],
             textInputAction: TextInputAction.done,
             onFieldSubmitted: (_) => onSubmit(),
             decoration: InputDecoration(
@@ -305,52 +717,12 @@ class _LoginForm extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
-          FilledButton(
-            onPressed: isLoading ? null : onSubmit,
-            child: const Padding(
-              padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
-              child: Text('Entrar'),
-            ),
+          _AnimatedSubmitButton(
+            isLoading: isLoading,
+            onPressed: onSubmit,
           ),
           const SizedBox(height: AppSpacing.md),
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceMuted,
-              borderRadius: AppRadius.mdAll,
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(
-                  Icons.admin_panel_settings_outlined,
-                  color: AppColors.turquoise,
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Novo acesso?',
-                        style: Theme.of(context).textTheme.titleSmall,
-                      ),
-                      const SizedBox(height: AppSpacing.xxs),
-                      Text(
-                        'Profissionais devem solicitar o cadastro ao '
-                        'administrador da clínica. Pacientes entram pelo '
-                        'convite recebido.',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+          _AccessNotice(),
           Wrap(
             alignment: WrapAlignment.center,
             children: [
@@ -365,7 +737,7 @@ class _LoginForm extends StatelessWidget {
             ],
           ),
           if (showTestAccounts) ...[
-            const SizedBox(height: AppSpacing.xl),
+            const SizedBox(height: AppSpacing.md),
             Text(
               'Contas de teste (ambiente local)',
               style: Theme.of(context).textTheme.labelMedium,
@@ -392,6 +764,109 @@ class _LoginForm extends StatelessWidget {
               ],
             ),
           ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AnimatedSubmitButton extends StatelessWidget {
+  const _AnimatedSubmitButton({
+    required this.isLoading,
+    required this.onPressed,
+  });
+
+  final bool isLoading;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: AppAnimations.resolve(context, AppAnimations.fast),
+      curve: AppAnimations.standardCurve,
+      height: 52,
+      decoration: BoxDecoration(
+        borderRadius: AppRadius.lgAll,
+        boxShadow: isLoading
+            ? const []
+            : [
+                BoxShadow(
+                  color: AppColors.blue.withValues(alpha: 0.24),
+                  blurRadius: 18,
+                  offset: const Offset(0, 9),
+                ),
+              ],
+      ),
+      child: FilledButton.icon(
+        onPressed: isLoading ? null : onPressed,
+        icon: AnimatedSwitcher(
+          duration: AppAnimations.resolve(context, AppAnimations.fast),
+          child: isLoading
+              ? const SizedBox(
+                  key: ValueKey('loading'),
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                )
+              : const Icon(
+                  Icons.arrow_forward_rounded,
+                  key: ValueKey('arrow'),
+                ),
+        ),
+        label: Text(isLoading ? 'Entrando...' : 'Entrar'),
+      ),
+    );
+  }
+}
+
+class _AccessNotice extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceTint,
+        borderRadius: AppRadius.lgAll,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: AppColors.turquoise.withValues(alpha: 0.12),
+              borderRadius: AppRadius.mdAll,
+            ),
+            child: const Icon(
+              Icons.admin_panel_settings_outlined,
+              color: AppColors.turquoise,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Novo acesso?',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                ),
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  'Profissionais entram após cadastro administrativo. Pacientes entram pelo convite recebido.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondary,
+                        height: 1.35,
+                      ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

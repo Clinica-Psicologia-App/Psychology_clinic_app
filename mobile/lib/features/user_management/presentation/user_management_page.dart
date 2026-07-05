@@ -10,8 +10,10 @@ import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_shadows.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/responsive_content.dart';
+import '../../../shared/widgets/status_chip.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../clinics/domain/clinic_summary.dart';
 import '../../clinics/providers/clinics_providers.dart';
@@ -30,9 +32,9 @@ class UserManagementPage extends ConsumerWidget {
     final isPlatformAdmin = profile?.role == ProfileRole.platformAdmin;
 
     return AppScaffold(
-      title: 'Usuários',
+      title: 'Equipe e permissões',
       subtitle: isPlatformAdmin
-          ? 'Gestão global por clínica e profissionais individuais'
+          ? 'Psicólogos e administradores da plataforma'
           : 'Gestão da equipe da clínica',
       actions: [
         IconButton(
@@ -41,11 +43,6 @@ class UserManagementPage extends ConsumerWidget {
           icon: const Icon(Icons.refresh),
         ),
       ],
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showCreateUserSheet(context, ref),
-        icon: const Icon(Icons.person_add_alt_1_outlined),
-        label: const Text('Novo usuário'),
-      ),
       body: usersState.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
@@ -68,6 +65,7 @@ class UserManagementPage extends ConsumerWidget {
               _updatePsychologistAccess(context, ref, user),
           onChangeRole: (user) => _changeRole(context, ref, user),
           onDelete: (user) => _deleteUser(context, ref, user),
+          onCreate: () => _showCreateUserSheet(context, ref),
         ),
       ),
     );
@@ -331,6 +329,7 @@ class _UsersList extends StatelessWidget {
     required this.onUpdateAccess,
     required this.onChangeRole,
     required this.onDelete,
+    required this.onCreate,
   });
 
   final List<ClinicUser> users;
@@ -340,10 +339,21 @@ class _UsersList extends StatelessWidget {
   final ValueChanged<ClinicUser> onUpdateAccess;
   final ValueChanged<ClinicUser> onChangeRole;
   final ValueChanged<ClinicUser> onDelete;
+  final VoidCallback onCreate;
 
   @override
   Widget build(BuildContext context) {
     final groups = _groupUsersByClinic(users);
+    final active = users.where((user) => user.isActive).length;
+    final inactive = users.length - active;
+    final platformAdmins = users
+        .where(
+          (user) => user.role == ProfileRole.platformAdmin && user.isActive,
+        )
+        .length;
+    final psychologists =
+        users.where((user) => user.role == ProfileRole.psychologist).length;
+    final personal = users.where((user) => user.isPersonalClinic).length;
 
     return ResponsiveContent(
       child: ListView(
@@ -354,25 +364,61 @@ class _UsersList extends StatelessWidget {
           AppSpacing.xxxl + 40,
         ),
         children: [
-          MotionReveal(
-            child: _SummaryHeader(users: users, groupCount: groups.length),
+          AppPageHeader(
+            icon: Icons.manage_accounts_outlined,
+            title: 'Psicólogos e administradores',
+            subtitle:
+                'Gerencie quem acessa a plataforma. Psicólogos ficam separados por clínica ou consultório individual; administradores aparecem com permissão global.',
+            metadata: [
+              StatusChip(
+                label: '${users.length} acesso(s)',
+                tone: AppStatusTone.info,
+                icon: Icons.badge_outlined,
+              ),
+              StatusChip(
+                label: '$psychologists psicólogo(s)',
+                tone: AppStatusTone.success,
+                icon: Icons.psychology_outlined,
+              ),
+              StatusChip(
+                label: '$platformAdmins admin(s)',
+                tone: AppStatusTone.neutral,
+                icon: Icons.admin_panel_settings_outlined,
+              ),
+              StatusChip(
+                label: '$active ativo(s)',
+                tone: AppStatusTone.completed,
+                icon: Icons.check_circle_outline,
+              ),
+              if (inactive > 0)
+                StatusChip(
+                  label: '$inactive inativo(s)',
+                  tone: AppStatusTone.warning,
+                  icon: Icons.pause_circle_outline,
+                ),
+              if (personal > 0)
+                StatusChip(
+                  label: '$personal individual(is)',
+                  tone: AppStatusTone.info,
+                  icon: Icons.person_pin_circle_outlined,
+                ),
+            ],
+            primaryAction: FilledButton.icon(
+              onPressed: onCreate,
+              icon: const Icon(Icons.person_add_alt_1_outlined),
+              label: const Text('Novo acesso'),
+            ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Organização por clínica',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ),
-              Text(
-                '${groups.length} grupos',
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: AppColors.textMuted,
-                    ),
-              ),
-            ],
+          AppSectionHeader(
+            title: 'Separação por vínculo',
+            subtitle:
+                'Cada bloco representa uma clínica ou um consultório individual. Dentro dele ficam os profissionais vinculados.',
+            action: StatusChip(
+              label: '${groups.length} grupo(s)',
+              tone: AppStatusTone.neutral,
+              icon: Icons.account_tree_outlined,
+            ),
           ),
           const SizedBox(height: AppSpacing.sm),
           if (users.isEmpty)
@@ -395,96 +441,6 @@ class _UsersList extends StatelessWidget {
                   ),
               ],
             ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SummaryHeader extends StatelessWidget {
-  const _SummaryHeader({required this.users, required this.groupCount});
-
-  final List<ClinicUser> users;
-  final int groupCount;
-
-  @override
-  Widget build(BuildContext context) {
-    final active = users.where((user) => user.isActive).length;
-    final inactive = users.length - active;
-    final platformAdmins = users
-        .where(
-          (user) => user.role == ProfileRole.platformAdmin && user.isActive,
-        )
-        .length;
-    final psychologists =
-        users.where((user) => user.role == ProfileRole.psychologist).length;
-    final personal = users.where((user) => user.isPersonalClinic).length;
-
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: AppRadius.xlAll,
-        border: Border.all(color: AppColors.border),
-        boxShadow: AppShadows.soft,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration: BoxDecoration(
-                  color: AppColors.turquoise.withValues(alpha: 0.12),
-                  borderRadius: AppRadius.mdAll,
-                ),
-                child: const Icon(
-                  Icons.manage_accounts_outlined,
-                  color: AppColors.turquoise,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Visão administrativa',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    Text(
-                      'Status, clínicas e permissões em uma tela.',
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Wrap(
-            spacing: AppSpacing.xs,
-            runSpacing: AppSpacing.xs,
-            children: [
-              _MetricPill(label: 'Grupos', value: groupCount.toString()),
-              _MetricPill(label: 'Usuários', value: users.length.toString()),
-              _MetricPill(label: 'Ativos', value: active.toString()),
-              _MetricPill(label: 'Inativos', value: inactive.toString()),
-              if (platformAdmins > 0)
-                _MetricPill(
-                  label: 'Administradores',
-                  value: platformAdmins.toString(),
-                ),
-              _MetricPill(label: 'Psicólogos', value: psychologists.toString()),
-              _MetricPill(label: 'Individuais', value: personal.toString()),
-            ],
-          ),
         ],
       ),
     );
@@ -778,35 +734,6 @@ class _UserRow extends StatelessWidget {
   }
 }
 
-class _MetricPill extends StatelessWidget {
-  const _MetricPill({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.turquoise.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppColors.turquoise.withValues(alpha: 0.14)),
-      ),
-      child: Text(
-        '$label: $value',
-        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: AppColors.navy,
-              fontWeight: FontWeight.w800,
-            ),
-      ),
-    );
-  }
-}
-
 class _TinyStatusChip extends StatelessWidget {
   const _TinyStatusChip({required this.label, required this.color});
 
@@ -854,12 +781,12 @@ class _EmptyUsersCard extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Nenhum usuário de equipe encontrado.',
+              'Nenhum acesso de equipe encontrado.',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              'Crie administradores ou psicólogos para começar.',
+              'Crie psicólogos ou administradores para começar.',
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall,
             ),

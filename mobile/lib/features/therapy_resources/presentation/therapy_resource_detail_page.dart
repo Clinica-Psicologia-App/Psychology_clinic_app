@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../profile/domain/profile_role.dart';
@@ -261,38 +263,59 @@ class _DetailBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return MotionReveal(
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.xxxl,
+        ),
         children: [
-          TherapyResourceTile(resource: resource, onTap: null),
+          AppPageHeader(
+            title: resource.title,
+            subtitle: isPatient
+                ? 'Material liberado pelo seu psicólogo para apoiar sua prática entre as sessões.'
+                : 'Material da biblioteca terapêutica associado ao acompanhamento deste paciente.',
+            icon: resource.type.icon,
+            metadata: [
+              Chip(label: Text(resource.type.label)),
+              if (access != null)
+                ResourceStatusChip(status: access!.progressStatus),
+            ],
+          ),
           if (access != null) ...[
-            const SizedBox(height: 12),
-            ResourceStatusChip(status: access!.progressStatus),
-          ],
-          const SizedBox(height: 16),
-          if (resource.description != null &&
-              resource.description!.trim().isNotEmpty)
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(resource.description!),
-              ),
+            const SizedBox(height: AppSpacing.xl),
+            AppInfoCard(
+              title: isPatient ? 'Seu acesso' : 'Acesso do paciente',
+              body: access!.releasedAt != null
+                  ? 'Liberado em ${MaterialLocalizations.of(context).formatFullDate(access!.releasedAt!)}.'
+                  : 'Este recurso está liberado para acesso.',
+              icon: Icons.lock_open_outlined,
+              tone: AppInfoCardTone.info,
             ),
+          ],
+          if (resource.description != null &&
+              resource.description!.trim().isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.xl),
+            AppInfoCard(
+              title: 'Descrição',
+              body: resource.description!,
+              icon: Icons.notes_outlined,
+            ),
+          ],
           if (resource.url != null && resource.url!.trim().isNotEmpty) ...[
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.xl),
+            const AppSectionHeader(
+              title: 'Link do recurso',
+              subtitle: 'Abra o material em uma nova tela.',
+            ),
+            const SizedBox(height: AppSpacing.sm),
             OutlinedButton.icon(
               onPressed: onOpenUrl,
               icon: const Icon(Icons.open_in_new),
               label: const Text('Abrir link'),
             ),
           ],
-          if (access?.releasedAt != null) ...[
-            const SizedBox(height: 16),
-            Text(
-              'Liberado em ${MaterialLocalizations.of(context).formatFullDate(access!.releasedAt!)}',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
-          const SizedBox(height: 24),
+          const SizedBox(height: AppSpacing.xl),
           if (isPatient && onMarkCompleted != null)
             FilledButton.icon(
               onPressed: updating ? null : onMarkCompleted,

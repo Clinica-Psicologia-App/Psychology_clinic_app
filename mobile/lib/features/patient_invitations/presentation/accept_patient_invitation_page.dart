@@ -7,14 +7,13 @@ import '../../../core/errors/error_mapper.dart';
 import '../../../core/legal/legal_documents.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_gradients.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/utils/brazil_validators.dart';
 import '../../../shared/utils/input_formatters.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/esquema_core_logo.dart';
 import '../../../shared/widgets/form_section.dart';
-import '../../../shared/widgets/homologation_ui.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../domain/accept_patient_invitation_request.dart';
 import '../providers/patient_invitations_providers.dart';
@@ -139,57 +138,20 @@ class _AcceptPatientInvitationPageState
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        DecoratedBox(
-                          decoration: const BoxDecoration(
-                            gradient: AppGradients.brand,
-                            borderRadius: BorderRadius.all(Radius.circular(20)),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(AppSpacing.xl),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                const EsquemaCoreLogo.monochrome(
-                                  size: 56,
-                                  showTagline: true,
-                                  taglineColor: AppColors.textOnBrand,
-                                ),
-                                const SizedBox(height: AppSpacing.md),
-                                Text(
-                                  'Primeiro acesso',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineSmall
-                                      ?.copyWith(
-                                        color: AppColors.textOnBrand,
-                                        fontWeight: FontWeight.w700,
-                                      ),
-                                ),
-                                const SizedBox(height: AppSpacing.xs),
-                                Text(
-                                  'Você foi convidado(a) a acessar a plataforma '
-                                  'clínica. Complete seus dados e crie uma senha '
-                                  'para entrar.',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(
-                                        color: AppColors.textOnBrand
-                                            .withValues(alpha: 0.92),
-                                        height: 1.45,
-                                      ),
-                                ),
-                              ],
-                            ),
-                          ),
+                        const AppPageHeader(
+                          title: 'Primeiro acesso',
+                          subtitle:
+                              'Você foi convidado(a) a acessar a plataforma clínica. Complete seus dados e crie uma senha para entrar.',
+                          icon: Icons.mark_email_read_outlined,
                         ),
                         const SizedBox(height: AppSpacing.lg),
-                        const HomologationInfoBanner(
+                        const AppInfoCard(
                           title: 'Privacidade',
                           icon: Icons.lock_outline,
-                          message:
+                          body:
                               'Seus dados serão usados apenas para cadastro e '
                               'acompanhamento clínico na clínica que enviou o convite.',
+                          tone: AppInfoCardTone.info,
                         ),
                         const SizedBox(height: AppSpacing.lg),
                         if (ref.watch(acceptPatientInvitationProvider).hasError)
@@ -209,6 +171,8 @@ class _AcceptPatientInvitationPageState
                             children: [
                               FormSection(
                                 title: 'Dados pessoais',
+                                subtitle:
+                                    'Essas informações ajudam a clínica a identificar seu cadastro.',
                                 icon: Icons.person_outline,
                                 children: [
                                   TextFormField(
@@ -238,7 +202,7 @@ class _AcceptPatientInvitationPageState
                                   ),
                                   const SizedBox(height: AppSpacing.md),
                                   _SimpleDropdownField(
-                                    label: 'Genero',
+                                    label: 'Gênero',
                                     value: _selectedGender,
                                     options: _genderOptions,
                                     onChanged: (value) =>
@@ -248,6 +212,8 @@ class _AcceptPatientInvitationPageState
                               ),
                               FormSection(
                                 title: 'Contato',
+                                subtitle:
+                                    'Telefone e CPF são opcionais e podem ser atualizados depois.',
                                 icon: Icons.phone_outlined,
                                 children: [
                                   TextFormField(
@@ -271,6 +237,8 @@ class _AcceptPatientInvitationPageState
                               ),
                               FormSection(
                                 title: 'Informações sociodemográficas',
+                                subtitle:
+                                    'Preencha apenas o que fizer sentido para você neste momento.',
                                 icon: Icons.groups_outlined,
                                 children: [
                                   FormFieldGrid(

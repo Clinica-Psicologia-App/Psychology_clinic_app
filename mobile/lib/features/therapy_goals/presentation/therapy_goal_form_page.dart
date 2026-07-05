@@ -4,8 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/widgets/status_chip.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/therapy_goal.dart';
 import '../domain/therapy_goal_input.dart';
@@ -177,8 +180,41 @@ class _TherapyGoalFormPageState extends ConsumerState<TherapyGoalFormPage> {
         key: _formKey,
         child: MotionReveal(
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.xxl,
+            ),
             children: [
+              AppPageHeader(
+                icon: Icons.flag_outlined,
+                title: widget.isEdit ? 'Editar objetivo' : 'Novo objetivo',
+                subtitle:
+                    'Registre metas terapêuticas de forma clara para acompanhar direção, avanço e conclusão do trabalho clínico.',
+                metadata: [
+                  StatusChip(
+                    label: widget.isStaff ? 'Visível à equipe' : 'Sua jornada',
+                    tone: AppStatusTone.info,
+                    icon: widget.isStaff
+                        ? Icons.groups_outlined
+                        : Icons.person_outline,
+                  ),
+                  if (widget.isEdit)
+                    StatusChip(
+                      label: _status.label,
+                      tone: _goalStatusTone(_status),
+                      icon: Icons.flag_outlined,
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              const AppSectionHeader(
+                title: 'Dados principais',
+                subtitle:
+                    'Use um título objetivo e complemente com uma descrição quando necessário.',
+              ),
+              const SizedBox(height: AppSpacing.sm),
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(
@@ -189,7 +225,7 @@ class _TherapyGoalFormPageState extends ConsumerState<TherapyGoalFormPage> {
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? 'Informe o título.' : null,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _descriptionController,
                 decoration: const InputDecoration(
@@ -200,7 +236,13 @@ class _TherapyGoalFormPageState extends ConsumerState<TherapyGoalFormPage> {
                 textCapitalization: TextCapitalization.sentences,
               ),
               if (widget.isStaff) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
+                const AppSectionHeader(
+                  title: 'Acompanhamento',
+                  subtitle:
+                      'Defina prazo e status quando o objetivo estiver sendo conduzido pela equipe.',
+                ),
+                const SizedBox(height: AppSpacing.sm),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Data alvo (opcional)'),
@@ -226,12 +268,12 @@ class _TherapyGoalFormPageState extends ConsumerState<TherapyGoalFormPage> {
                   ),
               ],
               if (widget.isStaff && widget.isEdit) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 Text(
                   'Status',
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 SegmentedButton<TherapyGoalStatus>(
                   segments: const [
                     ButtonSegment(
@@ -253,7 +295,7 @@ class _TherapyGoalFormPageState extends ConsumerState<TherapyGoalFormPage> {
                   },
                 ),
               ],
-              const SizedBox(height: 32),
+              const SizedBox(height: AppSpacing.xl),
               FilledButton(
                 onPressed: _saving ? null : _save,
                 child: _saving
@@ -271,4 +313,12 @@ class _TherapyGoalFormPageState extends ConsumerState<TherapyGoalFormPage> {
       ),
     );
   }
+}
+
+AppStatusTone _goalStatusTone(TherapyGoalStatus status) {
+  return switch (status) {
+    TherapyGoalStatus.active => AppStatusTone.inProgress,
+    TherapyGoalStatus.completed => AppStatusTone.completed,
+    TherapyGoalStatus.archived => AppStatusTone.neutral,
+  };
 }

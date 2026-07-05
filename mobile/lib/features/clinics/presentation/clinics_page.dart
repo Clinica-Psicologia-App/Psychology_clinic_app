@@ -8,8 +8,10 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/responsive_content.dart';
+import '../../../shared/widgets/status_chip.dart';
 import '../domain/clinic_summary.dart';
 import '../providers/clinics_providers.dart';
 
@@ -30,11 +32,6 @@ class ClinicsPage extends ConsumerWidget {
           icon: const Icon(Icons.refresh),
         ),
       ],
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showCreateClinicSheet(context, ref),
-        icon: const Icon(Icons.add_business_outlined),
-        label: const Text('Nova clínica'),
-      ),
       body: state.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
@@ -52,6 +49,7 @@ class ClinicsPage extends ConsumerWidget {
           clinics: clinics,
           onToggleActive: (clinic) => _toggleActive(context, ref, clinic),
           onDelete: (clinic) => _deleteClinic(context, ref, clinic),
+          onCreate: () => _showCreateClinicSheet(context, ref),
         ),
       ),
     );
@@ -210,31 +208,71 @@ class _ClinicsList extends StatelessWidget {
     required this.clinics,
     required this.onToggleActive,
     required this.onDelete,
+    required this.onCreate,
   });
 
   final List<ClinicSummary> clinics;
   final ValueChanged<ClinicSummary> onToggleActive;
   final ValueChanged<ClinicSummary> onDelete;
+  final VoidCallback onCreate;
 
   @override
   Widget build(BuildContext context) {
     final active = clinics.where((clinic) => clinic.isActive).length;
+    final inactive = clinics.length - active;
     final personal = clinics.where((clinic) => clinic.isPersonal).length;
+    final institutional = clinics.length - personal;
 
     return ResponsiveContent(
       child: ListView(
         padding: const EdgeInsets.all(AppSpacing.xl),
         children: [
-          MotionReveal(
-            child: _SummaryHeader(
-              total: clinics.length,
-              active: active,
-              inactive: clinics.length - active,
-              personal: personal,
+          AppPageHeader(
+            icon: Icons.apartment_outlined,
+            title: 'Clínicas e consultórios',
+            subtitle:
+                'Gerencie os cadastros institucionais. A equipe e os psicólogos vinculados ficam no módulo separado de Psicólogos e administradores.',
+            metadata: [
+              StatusChip(
+                label: '${clinics.length} cadastro(s)',
+                tone: AppStatusTone.info,
+                icon: Icons.business_outlined,
+              ),
+              StatusChip(
+                label: '$institutional clínica(s)',
+                tone: AppStatusTone.success,
+                icon: Icons.apartment_outlined,
+              ),
+              if (personal > 0)
+                StatusChip(
+                  label: '$personal individual(is)',
+                  tone: AppStatusTone.neutral,
+                  icon: Icons.person_pin_circle_outlined,
+                ),
+              StatusChip(
+                label: '$active ativa(s)',
+                tone: AppStatusTone.completed,
+                icon: Icons.check_circle_outline,
+              ),
+              if (inactive > 0)
+                StatusChip(
+                  label: '$inactive inativa(s)',
+                  tone: AppStatusTone.warning,
+                  icon: Icons.pause_circle_outline,
+                ),
+            ],
+            primaryAction: FilledButton.icon(
+              onPressed: onCreate,
+              icon: const Icon(Icons.add_business_outlined),
+              label: const Text('Nova clínica'),
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          Text('Cadastros', style: Theme.of(context).textTheme.titleMedium),
+          const AppSectionHeader(
+            title: 'Cadastros institucionais',
+            subtitle:
+                'Use esta lista para ativar, inativar ou excluir cadastros sem vínculos clínicos.',
+          ),
           const SizedBox(height: AppSpacing.sm),
           if (clinics.isEmpty)
             const _EmptyClinicsCard()
@@ -252,42 +290,6 @@ class _ClinicsList extends StatelessWidget {
                   ),
               ],
             ),
-        ],
-      ),
-    );
-  }
-}
-
-class _SummaryHeader extends StatelessWidget {
-  const _SummaryHeader({
-    required this.total,
-    required this.active,
-    required this.inactive,
-    required this.personal,
-  });
-
-  final int total;
-  final int active;
-  final int inactive;
-  final int personal;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: AppRadius.xlAll,
-        border: Border.all(color: AppColors.border),
-      ),
-      child: Wrap(
-        spacing: AppSpacing.sm,
-        runSpacing: AppSpacing.sm,
-        children: [
-          _MetricPill(label: 'Total', value: total.toString()),
-          _MetricPill(label: 'Ativas', value: active.toString()),
-          _MetricPill(label: 'Inativas', value: inactive.toString()),
-          _MetricPill(label: 'Individuais', value: personal.toString()),
         ],
       ),
     );
@@ -644,22 +646,6 @@ class _CreateClinicSheetState extends State<_CreateClinicSheet> {
             ? null
             : _phoneController.text.trim(),
       ),
-    );
-  }
-}
-
-class _MetricPill extends StatelessWidget {
-  const _MetricPill({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Chip(
-      label: Text('$label: $value'),
-      backgroundColor: AppColors.turquoise.withValues(alpha: 0.08),
-      side: BorderSide.none,
     );
   }
 }

@@ -5,8 +5,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/widgets/status_chip.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/genogram_gender.dart';
 import '../domain/genogram_person.dart';
@@ -36,7 +39,6 @@ class _GenogramPersonFormPageState
     extends ConsumerState<GenogramPersonFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _fullNameController = TextEditingController();
-  final _nicknameController = TextEditingController();
   final _relationshipController = TextEditingController();
   final _birthYearController = TextEditingController();
   final _deathYearController = TextEditingController();
@@ -51,7 +53,6 @@ class _GenogramPersonFormPageState
   @override
   void dispose() {
     _fullNameController.dispose();
-    _nicknameController.dispose();
     _relationshipController.dispose();
     _birthYearController.dispose();
     _deathYearController.dispose();
@@ -64,7 +65,6 @@ class _GenogramPersonFormPageState
     _loaded = true;
     final input = GenogramPersonInput.fromPerson(person);
     _fullNameController.text = input.fullName;
-    _nicknameController.text = input.nickname ?? '';
     _relationshipController.text = input.relationshipToPatient ?? '';
     _birthYearController.text =
         input.birthYear != null ? '${input.birthYear}' : '';
@@ -85,7 +85,6 @@ class _GenogramPersonFormPageState
   GenogramPersonInput _buildInput() {
     return GenogramPersonInput(
       fullName: _fullNameController.text,
-      nickname: _nicknameController.text,
       relationshipToPatient: _relationshipController.text,
       gender: _gender,
       birthYear: _parseYear(_birthYearController.text),
@@ -189,8 +188,43 @@ class _GenogramPersonFormPageState
         child: Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.xxl,
+            ),
             children: [
+              AppPageHeader(
+                icon: Icons.person_outline,
+                title: widget.isEdit ? 'Editar pessoa' : 'Nova pessoa',
+                subtitle:
+                    'Registre membros e figuras significativas para compor o mapa familiar.',
+                metadata: [
+                  StatusChip(
+                    label: _isSensitive ? 'Sensível' : 'Visível',
+                    tone: _isSensitive
+                        ? AppStatusTone.warning
+                        : AppStatusTone.info,
+                    icon: _isSensitive
+                        ? Icons.lock_outline
+                        : Icons.visibility_outlined,
+                  ),
+                  if (_isDeceased)
+                    const StatusChip(
+                      label: 'Falecido',
+                      tone: AppStatusTone.neutral,
+                      icon: Icons.history_outlined,
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              const AppSectionHeader(
+                title: 'Identificação',
+                subtitle:
+                    'Informe nome, vínculo com o paciente e dados básicos da pessoa.',
+              ),
+              const SizedBox(height: AppSpacing.sm),
               TextFormField(
                 controller: _fullNameController,
                 decoration: const InputDecoration(
@@ -200,13 +234,7 @@ class _GenogramPersonFormPageState
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? 'Informe o nome.' : null,
               ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _nicknameController,
-                decoration: const InputDecoration(labelText: 'Apelido'),
-                textCapitalization: TextCapitalization.words,
-              ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _relationshipController,
                 decoration: const InputDecoration(
@@ -215,7 +243,7 @@ class _GenogramPersonFormPageState
                 ),
                 textCapitalization: TextCapitalization.sentences,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               DropdownButtonFormField<GenogramGender?>(
                 initialValue: _gender,
                 decoration: const InputDecoration(labelText: 'Gênero'),
@@ -233,7 +261,13 @@ class _GenogramPersonFormPageState
                 ],
                 onChanged: (v) => setState(() => _gender = v),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
+              const AppSectionHeader(
+                title: 'Ciclo de vida',
+                subtitle:
+                    'Anos aproximados já ajudam a organizar gerações e eventos familiares.',
+              ),
+              const SizedBox(height: AppSpacing.sm),
               TextFormField(
                 controller: _birthYearController,
                 decoration: const InputDecoration(
@@ -243,7 +277,7 @@ class _GenogramPersonFormPageState
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 maxLength: 4,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.xs),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Falecido'),
@@ -260,8 +294,15 @@ class _GenogramPersonFormPageState
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                   maxLength: 4,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.xs),
               ],
+              const SizedBox(height: AppSpacing.lg),
+              const AppSectionHeader(
+                title: 'Observações clínicas',
+                subtitle:
+                    'Use notas e marcação sensível quando houver informação que exige cuidado na visualização.',
+              ),
+              const SizedBox(height: AppSpacing.sm),
               TextFormField(
                 controller: _notesController,
                 decoration: const InputDecoration(
@@ -270,14 +311,17 @@ class _GenogramPersonFormPageState
                 ),
                 maxLines: 4,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.xs),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Conteúdo sensível'),
+                subtitle: const Text(
+                  'Oculta detalhes na visualização principal e exibe aviso antes do acesso.',
+                ),
                 value: _isSensitive,
                 onChanged: (v) => setState(() => _isSensitive = v),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: AppSpacing.xl),
               FilledButton(
                 onPressed: _saving ? null : _save,
                 child: _saving

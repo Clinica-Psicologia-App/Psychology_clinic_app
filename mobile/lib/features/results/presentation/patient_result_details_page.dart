@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/widgets/status_chip.dart';
 import '../../mental_map/providers/mental_map_providers.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/answered_question.dart';
@@ -127,8 +130,58 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
 
     return MotionReveal(
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.md,
+          AppSpacing.xxl,
+        ),
         children: [
+          AppPageHeader(
+            icon: Icons.analytics_outlined,
+            title: detail.questionnaireName,
+            subtitle:
+                'Detalhe da resposta, resultados calculados e revisão clínica do instrumento.',
+            metadata: [
+              StatusChip(
+                label: detail.questionnaireCode,
+                tone: AppStatusTone.info,
+                icon: Icons.tag_outlined,
+              ),
+              StatusChip(
+                label: detail.status.label,
+                tone: _responseStatusTone(detail.status),
+                icon: _responseStatusIcon(detail.status),
+              ),
+              StatusChip(
+                label: '${detail.answeredCount} resposta(s)',
+                tone: AppStatusTone.neutral,
+                icon: Icons.format_list_numbered_outlined,
+              ),
+              StatusChip(
+                label: detail.hasResults ? 'Com resultado' : 'Sem resultado',
+                tone: detail.hasResults
+                    ? AppStatusTone.completed
+                    : AppStatusTone.warning,
+                icon: detail.hasResults
+                    ? Icons.analytics_outlined
+                    : Icons.hourglass_empty_outlined,
+              ),
+              if (_supportsClinicalReview)
+                StatusChip(
+                  label: detail.isReviewed
+                      ? 'Revisão concluída'
+                      : 'Revisão pendente',
+                  tone: detail.isReviewed
+                      ? AppStatusTone.completed
+                      : AppStatusTone.warning,
+                  icon: detail.isReviewed
+                      ? Icons.verified_outlined
+                      : Icons.verified_user_outlined,
+                ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
           const _SectionTitle('Resposta'),
           Card(
             child: Padding(
@@ -391,6 +444,22 @@ List<Widget> _buildCategoryCards(
   }
 
   return cards;
+}
+
+AppStatusTone _responseStatusTone(QuestionnaireResponseStatus status) {
+  return switch (status) {
+    QuestionnaireResponseStatus.completed => AppStatusTone.completed,
+    QuestionnaireResponseStatus.cancelled => AppStatusTone.error,
+    QuestionnaireResponseStatus.draft => AppStatusTone.warning,
+  };
+}
+
+IconData _responseStatusIcon(QuestionnaireResponseStatus status) {
+  return switch (status) {
+    QuestionnaireResponseStatus.completed => Icons.check_circle_outline,
+    QuestionnaireResponseStatus.cancelled => Icons.cancel_outlined,
+    QuestionnaireResponseStatus.draft => Icons.edit_note_outlined,
+  };
 }
 
 class _SectionTitle extends StatelessWidget {

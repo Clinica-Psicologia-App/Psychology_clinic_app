@@ -4,7 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_radius.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../patient_check_ins/presentation/widgets/patient_check_in_widgets.dart';
 import '../../profile/domain/profile_role.dart';
@@ -38,10 +42,20 @@ class _PatientTimelineEventFormPageState
   final _descriptionController = TextEditingController();
   final _periodLabelController = TextEditingController();
   final _categoryController = TextEditingController();
+  final _emotionalNeedOtherController = TextEditingController();
+  final _emotionsFeltController = TextEditingController();
+  final _selfMeaningController = TextEditingController();
+  final _othersMeaningController = TextEditingController();
+  final _worldMeaningController = TextEditingController();
+  final _copingOtherController = TextEditingController();
+  final _presentReactionController = TextEditingController();
 
   DateTime? _eventDate;
-  bool _includeEmotionalImpact = false;
-  int _emotionalImpact = 5;
+  Set<String> _emotionalNeedKeys = {};
+  Set<String> _copingKeys = {};
+  bool _includePresentInfluence = false;
+  int _presentInfluence = 5;
+  Set<String> _presentAreaKeys = {};
   bool _isSensitive = false;
   bool _saving = false;
   bool _loaded = false;
@@ -52,6 +66,13 @@ class _PatientTimelineEventFormPageState
     _descriptionController.dispose();
     _periodLabelController.dispose();
     _categoryController.dispose();
+    _emotionalNeedOtherController.dispose();
+    _emotionsFeltController.dispose();
+    _selfMeaningController.dispose();
+    _othersMeaningController.dispose();
+    _worldMeaningController.dispose();
+    _copingOtherController.dispose();
+    _presentReactionController.dispose();
     super.dispose();
   }
 
@@ -63,11 +84,21 @@ class _PatientTimelineEventFormPageState
     _descriptionController.text = input.description ?? '';
     _periodLabelController.text = input.periodLabel ?? '';
     _categoryController.text = input.category ?? '';
+    _emotionalNeedKeys = input.emotionalNeedKeys.toSet();
+    _emotionalNeedOtherController.text = input.emotionalNeedOther ?? '';
+    _emotionsFeltController.text = input.emotionsFelt ?? '';
+    _selfMeaningController.text = input.selfMeaning ?? '';
+    _othersMeaningController.text = input.othersMeaning ?? '';
+    _worldMeaningController.text = input.worldMeaning ?? '';
+    _copingKeys = input.copingKeys.toSet();
+    _copingOtherController.text = input.copingOther ?? '';
+    _presentAreaKeys = input.presentAreaKeys.toSet();
+    _presentReactionController.text = input.presentReaction ?? '';
     _eventDate = input.eventDate;
     _isSensitive = input.isSensitive;
-    if (input.emotionalImpact != null) {
-      _includeEmotionalImpact = true;
-      _emotionalImpact = input.emotionalImpact!;
+    if (input.presentInfluence != null) {
+      _includePresentInfluence = true;
+      _presentInfluence = input.presentInfluence!;
     }
   }
 
@@ -78,7 +109,17 @@ class _PatientTimelineEventFormPageState
       eventDate: _eventDate,
       periodLabel: _periodLabelController.text,
       category: _categoryController.text,
-      emotionalImpact: _includeEmotionalImpact ? _emotionalImpact : null,
+      emotionalNeedKeys: _emotionalNeedKeys.toList(),
+      emotionalNeedOther: _emotionalNeedOtherController.text,
+      emotionsFelt: _emotionsFeltController.text,
+      selfMeaning: _selfMeaningController.text,
+      othersMeaning: _othersMeaningController.text,
+      worldMeaning: _worldMeaningController.text,
+      copingKeys: _copingKeys.toList(),
+      copingOther: _copingOtherController.text,
+      presentInfluence: _includePresentInfluence ? _presentInfluence : null,
+      presentAreaKeys: _presentAreaKeys.toList(),
+      presentReaction: _presentReactionController.text,
       isSensitive: _isSensitive,
     );
   }
@@ -189,29 +230,60 @@ class _PatientTimelineEventFormPageState
         key: _formKey,
         child: MotionReveal(
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.md),
             children: [
+              AppPageHeader(
+                icon: Icons.timeline_outlined,
+                title: widget.isEdit ? 'Editar evento' : 'Novo evento',
+                subtitle:
+                    'Registre o acontecimento, o impacto emocional e a ponte com o presente em etapas clínicas claras.',
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              DropdownButtonFormField<String>(
+                initialValue: _lifeStageValue,
+                decoration: const InputDecoration(
+                  labelText: 'Etapa da vida *',
+                ),
+                items: _lifeStageOptions
+                    .map(
+                      (option) => DropdownMenuItem(
+                        value: option.key,
+                        child: Text(option.label),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() => _periodLabelController.text = value);
+                  }
+                },
+                validator: (v) => v == null || v.trim().isEmpty
+                    ? 'Selecione a etapa da vida.'
+                    : null,
+              ),
+              const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(
                   labelText: 'Título *',
-                  hintText: 'Ex.: Mudança de cidade',
+                  hintText:
+                      'Ex.: falecimento, nascimento, viagem, conquista, mudança importante',
                 ),
                 textCapitalization: TextCapitalization.sentences,
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? 'Informe o título.' : null,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _descriptionController,
                 decoration: const InputDecoration(
-                  labelText: 'Descrição',
+                  labelText: 'Descrição do evento',
                   alignLabelWithHint: true,
                 ),
                 maxLines: 5,
                 textCapitalization: TextCapitalization.sentences,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               ListTile(
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Data do evento (opcional)'),
@@ -235,42 +307,149 @@ class _PatientTimelineEventFormPageState
                     child: const Text('Remover data'),
                   ),
                 ),
-              const SizedBox(height: 8),
-              TextFormField(
-                controller: _periodLabelController,
-                decoration: const InputDecoration(
-                  labelText: 'Período textual (opcional)',
-                  hintText: 'Ex.: Infância, Adolescência, 2020',
-                ),
-                textCapitalization: TextCapitalization.sentences,
-              ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.xs),
               TextFormField(
                 controller: _categoryController,
                 decoration: const InputDecoration(
-                  labelText: 'Categoria (opcional)',
-                  hintText: 'Ex.: Família, Trabalho, Saúde',
+                  labelText: 'Observações',
+                  hintText: 'Ex.: onde isso aconteceu, quem estava envolvido',
                 ),
                 textCapitalization: TextCapitalization.sentences,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
+              const _SectionTitle(
+                  '1. Esse evento impactou em qual necessidade emocional?'),
+              ..._emotionalNeedOptions.map(
+                (option) => CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  value: _emotionalNeedKeys.contains(option.key),
+                  title: Text(option.label),
+                  onChanged: (value) => _toggleKey(
+                    _emotionalNeedKeys,
+                    option.key,
+                    value,
+                  ),
+                ),
+              ),
+              if (_emotionalNeedKeys.contains('other')) ...[
+                const SizedBox(height: AppSpacing.xs),
+                TextFormField(
+                  controller: _emotionalNeedOtherController,
+                  decoration: const InputDecoration(
+                    labelText: 'Outra necessidade emocional *',
+                  ),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.md),
+              TextFormField(
+                controller: _emotionsFeltController,
+                decoration: const InputDecoration(
+                  labelText: '2. Que emoções você sentiu na época?',
+                  hintText:
+                      'Ex.: medo, insegurança, tristeza, desamparo, felicidade, entusiasmo, orgulho, realização',
+                ),
+                maxLines: 3,
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              const _SectionTitle('3. Significado'),
+              TextFormField(
+                controller: _selfMeaningController,
+                decoration: const InputDecoration(
+                  labelText: 'O que você concluiu sobre você mesmo?',
+                  hintText: 'Ex.: "não sou importante"',
+                ),
+                maxLines: 2,
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              TextFormField(
+                controller: _othersMeaningController,
+                decoration: const InputDecoration(
+                  labelText: 'O que você concluiu sobre os outros?',
+                  hintText: 'Ex.: "não posso confiar em ninguém"',
+                ),
+                maxLines: 2,
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              TextFormField(
+                controller: _worldMeaningController,
+                decoration: const InputDecoration(
+                  labelText: 'O que você concluiu sobre o mundo?',
+                ),
+                maxLines: 2,
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              const _SectionTitle('4. O que você fez para lidar com isso?'),
+              ..._copingOptions.map(
+                (option) => CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  value: _copingKeys.contains(option.key),
+                  title: Text(option.label),
+                  onChanged: (value) => _toggleKey(
+                    _copingKeys,
+                    option.key,
+                    value,
+                  ),
+                ),
+              ),
+              if (_copingKeys.contains('other')) ...[
+                const SizedBox(height: AppSpacing.xs),
+                TextFormField(
+                  controller: _copingOtherController,
+                  decoration: const InputDecoration(
+                    labelText: 'Outra forma de lidar *',
+                  ),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.md),
+              const _SectionTitle('5. Ponte com o presente'),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Informar impacto emocional'),
+                title:
+                    const Text('Esse evento ainda influencia sua vida hoje?'),
                 subtitle: const Text('Escala de 0 a 10'),
-                value: _includeEmotionalImpact,
-                onChanged: (v) => setState(() => _includeEmotionalImpact = v),
+                value: _includePresentInfluence,
+                onChanged: (v) => setState(() => _includePresentInfluence = v),
               ),
-              if (_includeEmotionalImpact) ...[
+              if (_includePresentInfluence)
                 ScoreSliderField(
-                  label: 'Impacto emocional',
-                  value: _emotionalImpact,
-                  onChanged: (v) => setState(() => _emotionalImpact = v),
-                  lowLabel: 'Baixo',
-                  highLabel: 'Alto',
+                  label: 'Influência atual',
+                  value: _presentInfluence,
+                  onChanged: (v) => setState(() => _presentInfluence = v),
+                  lowLabel: '0',
+                  highLabel: '10',
                 ),
-                const SizedBox(height: 8),
-              ],
+              const SizedBox(height: AppSpacing.xs),
+              Text('Em quais áreas?',
+                  style: Theme.of(context).textTheme.titleSmall),
+              ..._presentAreaOptions.map(
+                (option) => CheckboxListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  value: _presentAreaKeys.contains(option.key),
+                  title: Text(option.label),
+                  onChanged: (value) => _toggleKey(
+                    _presentAreaKeys,
+                    option.key,
+                    value,
+                  ),
+                ),
+              ),
+              TextFormField(
+                controller: _presentReactionController,
+                decoration: const InputDecoration(
+                  labelText:
+                      'Quando algo parecido acontece hoje, você reage como?',
+                ),
+                maxLines: 3,
+                textCapitalization: TextCapitalization.sentences,
+              ),
+              const SizedBox(height: AppSpacing.md),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Conteúdo sensível'),
@@ -280,7 +459,7 @@ class _PatientTimelineEventFormPageState
                 value: _isSensitive,
                 onChanged: (v) => setState(() => _isSensitive = v),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: AppSpacing.xxl),
               FilledButton(
                 onPressed: _saving ? null : _save,
                 child: _saving
@@ -299,4 +478,96 @@ class _PatientTimelineEventFormPageState
       ),
     );
   }
+
+  String? get _lifeStageValue {
+    final text = _periodLabelController.text.trim();
+    if (text.isEmpty) return null;
+    return _lifeStageOptions.any((option) => option.key == text) ? text : null;
+  }
+
+  void _toggleKey(Set<String> target, String key, bool? value) {
+    setState(() {
+      if (value == true) {
+        target.add(key);
+      } else {
+        target.remove(key);
+      }
+    });
+  }
 }
+
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceWarm,
+          borderRadius: AppRadius.mdAll,
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Text(
+          text,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                color: AppColors.navy,
+                fontWeight: FontWeight.w800,
+              ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Option {
+  const _Option(this.key, this.label);
+
+  final String key;
+  final String label;
+}
+
+const _lifeStageOptions = [
+  _Option('Infância', 'Infância'),
+  _Option('Adolescência', 'Adolescência'),
+  _Option('Vida adulta', 'Vida adulta'),
+  _Option('Maturidade', 'Maturidade'),
+];
+
+const _emotionalNeedOptions = [
+  _Option('connection_acceptance', 'Conexão e Aceitação'),
+  _Option(
+      'autonomy_competence_identity', 'Autonomia, competência e identidade'),
+  _Option('limits_self_control', 'Limites e autocontrole'),
+  _Option('expression_freedom', 'Liberdade de Expressão'),
+  _Option('recognition_value', 'Valorização e reconhecimento'),
+  _Option('spontaneity_leisure', 'Espontaneidade e Lazer'),
+  _Option('other', 'Outra'),
+];
+
+const _copingOptions = [
+  _Option('avoidance', 'Me afastei / evitei sentir'),
+  _Option('surrender_adaptation', 'Aceitei e busquei me adaptar'),
+  _Option('overcompensation_reaction', 'Explodi / reagi'),
+  _Option('emotional_shutdown', 'Desliguei emocionalmente'),
+  _Option('help_protection', 'Procurei ajuda / proteção'),
+  _Option('perfectionism', 'Tentei "ser perfeito"'),
+  _Option('other', 'Outro'),
+];
+
+const _presentAreaOptions = [
+  _Option('relationships', 'Relações'),
+  _Option('self_esteem', 'Autoestima'),
+  _Option('work', 'Trabalho'),
+  _Option('emotions', 'Emoções'),
+  _Option('decisions', 'Decisões'),
+  _Option('body', 'Corpo'),
+];

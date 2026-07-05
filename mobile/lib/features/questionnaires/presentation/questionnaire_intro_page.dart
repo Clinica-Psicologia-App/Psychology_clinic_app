@@ -4,7 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/config/env_config.dart';
 import '../../../core/theme/app_animations.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../../shared/widgets/homologation_ui.dart';
@@ -171,7 +173,6 @@ class _QuestionnaireIntroPageState
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final orientation =
         widget.questionnaire.referencePeriod.patientOrientationMessage;
     final canStart = widget.questionnaire.canStart(
@@ -185,10 +186,10 @@ class _QuestionnaireIntroPageState
           builder: (context, constraints) {
             return SingleChildScrollView(
               padding: EdgeInsets.fromLTRB(
-                24,
-                24,
-                24,
-                24 + MediaQuery.of(context).viewPadding.bottom,
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.md + MediaQuery.of(context).viewPadding.bottom,
               ),
               child: ConstrainedBox(
                 constraints:
@@ -197,30 +198,42 @@ class _QuestionnaireIntroPageState
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     MotionReveal(
-                      child: Text(
-                        widget.questionnaire.name,
-                        style: theme.textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
+                      child: AppPageHeader(
+                        title: widget.questionnaire.name,
+                        subtitle:
+                            'Revise as orientações antes de iniciar. Suas respostas ficam registradas para análise clínica do profissional responsável.',
+                        icon: Icons.assignment_outlined,
+                        metadata: [
+                          if (widget.questionnaire.referencePeriod !=
+                              ReferencePeriod.unspecified)
+                            Chip(
+                              label: Text(
+                                _referencePeriodLabel(
+                                  widget.questionnaire.referencePeriod,
+                                ),
+                              ),
+                            ),
+                          if (!canStart)
+                            const Chip(label: Text('Em homologação')),
+                        ],
                       ),
                     ),
                     if (widget.questionnaire.description != null &&
                         widget.questionnaire.description!
                             .trim()
                             .isNotEmpty) ...[
-                      const SizedBox(height: 12),
+                      const SizedBox(height: AppSpacing.lg),
                       MotionReveal(
                         delay: const Duration(milliseconds: 70),
-                        child: Text(
-                          widget.questionnaire.description!,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
+                        child: AppInfoCard(
+                          title: 'Sobre este instrumento',
+                          body: widget.questionnaire.description!,
+                          icon: Icons.info_outline,
                         ),
                       ),
                     ],
                     if (!canStart) ...[
-                      const SizedBox(height: 24),
+                      const SizedBox(height: AppSpacing.xl),
                       const HomologationInfoBanner(
                         title: 'Instrumento em homologação',
                         message: 'Este questionário ainda está passando por '
@@ -230,76 +243,45 @@ class _QuestionnaireIntroPageState
                       ),
                     ],
                     if (canStart && orientation != null) ...[
-                      const SizedBox(height: 24),
-                      Card(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.schedule_outlined,
-                                color: theme.colorScheme.primary,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  orientation,
-                                  style: theme.textTheme.bodyLarge,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                      const SizedBox(height: AppSpacing.lg),
+                      AppInfoCard(
+                        title: 'Período de referência',
+                        body: orientation,
+                        icon: Icons.schedule_outlined,
                       ),
                     ],
                     if (canStart &&
                         widget.questionnaire.patientSpecificGuidance !=
                             null) ...[
-                      const SizedBox(height: 16),
-                      Card(
-                        color: theme.colorScheme.primaryContainer,
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Icon(
-                                Icons.info_outline,
-                                color: theme.colorScheme.onPrimaryContainer,
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Text(
-                                  widget.questionnaire.patientSpecificGuidance!,
-                                  style: theme.textTheme.bodyLarge?.copyWith(
-                                    color: theme.colorScheme.onPrimaryContainer,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                      const SizedBox(height: AppSpacing.lg),
+                      AppInfoCard(
+                        title: 'Orientação para resposta',
+                        body: widget.questionnaire.patientSpecificGuidance!,
+                        icon: Icons.tips_and_updates_outlined,
+                        tone: AppInfoCardTone.info,
                       ),
                     ],
                     if (canStart && widget.questionnaire.isParentalStyles) ...[
-                      const SizedBox(height: 16),
-                      Text(
-                        'Para quem você deseja responder?',
-                        style: theme.textTheme.titleMedium,
+                      const SizedBox(height: AppSpacing.xl),
+                      const AppSectionHeader(
+                        title: 'Figuras parentais',
+                        subtitle:
+                            'Escolha para quem você deseja responder este instrumento.',
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: AppSpacing.sm),
                       MotionStaggered(
                         children: [
                           for (int i = 0; i < 3; i++)
                             Padding(
-                              padding: EdgeInsets.only(bottom: i < 2 ? 8 : 0),
+                              padding: EdgeInsets.only(
+                                bottom: i < 2 ? AppSpacing.xs : 0,
+                              ),
                               child: _buildCaregiverCard(i),
                             ),
                         ],
                       ),
                     ],
-                    const SizedBox(height: 24),
+                    const SizedBox(height: AppSpacing.xl),
                     FilledButton(
                       onPressed: _starting || !canStart ? null : _onStart,
                       child: _starting
@@ -373,3 +355,10 @@ class _QuestionnaireIntroPageState
     }
   }
 }
+
+String _referencePeriodLabel(ReferencePeriod period) => switch (period) {
+      ReferencePeriod.lastMonth => 'Último mês',
+      ReferencePeriod.lastYear => 'Últimos 12 meses',
+      ReferencePeriod.lifetime => 'História de vida',
+      ReferencePeriod.unspecified => 'Sem período definido',
+    };

@@ -2,7 +2,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../profile/domain/profile_role.dart';
@@ -145,15 +147,30 @@ class _GoalsList extends StatelessWidget {
         goals.where((g) => g.status == TherapyGoalStatus.archived).toList();
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        88,
+      ),
       children: [
-        Text(
-          'Metas acordadas com seu psicólogo. Toque para ver detalhes ou atualizar o status.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+        AppPageHeader(
+          title: 'Objetivos da terapia',
+          subtitle:
+              'Metas acordadas para acompanhar progresso, próximos passos e mudanças importantes ao longo do processo terapêutico.',
+          icon: Icons.flag_outlined,
+          metadata: [
+            Chip(label: Text('${visible.length} em andamento')),
+            if (archived.isNotEmpty)
+              Chip(label: Text('${archived.length} arquivados')),
+          ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.xl),
+        const AppSectionHeader(
+          title: 'Em acompanhamento',
+          subtitle: 'Toque em uma meta para ver detalhes ou atualizar status.',
+        ),
+        const SizedBox(height: AppSpacing.sm),
         MotionStaggered(
           children: [
             for (final g in visible)
@@ -161,12 +178,12 @@ class _GoalsList extends StatelessWidget {
           ],
         ),
         if (archived.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Text(
-            'Arquivados',
-            style: Theme.of(context).textTheme.titleSmall,
+          const SizedBox(height: AppSpacing.xl),
+          const AppSectionHeader(
+            title: 'Arquivados',
+            subtitle: 'Metas mantidas como histórico do processo.',
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           MotionStaggered(
             children: [
               for (final g in archived)

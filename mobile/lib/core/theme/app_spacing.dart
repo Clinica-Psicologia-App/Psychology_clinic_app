@@ -8,6 +8,8 @@ abstract final class AppSpacing {
   static const double xl = 24;
   static const double xxl = 32;
   static const double xxxl = 40;
+  static const double huge = 48;
+  static const double display = 64;
 
   /// Largura máxima do conteúdo em telas largas.
   static const double contentMaxWidth = 1200;

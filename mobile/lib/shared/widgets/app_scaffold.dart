@@ -29,7 +29,7 @@ class AppScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
       appBar: AppBar(
         title: subtitle == null
             ? Text(title)
@@ -48,36 +48,11 @@ class AppScaffold extends StatelessWidget {
         actions: actions,
       ),
       body: SafeArea(
-        child: Stack(
-          children: [
-            Positioned(
-              top: -120,
-              right: -100,
-              child: IgnorePointer(
-                child: Container(
-                  width: 280,
-                  height: 280,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      colors: [
-                        AppColors.turquoise.withValues(alpha: 0.07),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            Positioned.fill(
-              child: useResponsivePadding
-                  ? ResponsiveContent(
-                      child: centerBody ? Center(child: body) : body,
-                    )
-                  : (centerBody ? Center(child: body) : body),
-            ),
-          ],
-        ),
+        child: useResponsivePadding
+            ? ResponsiveContent(
+                child: centerBody ? Center(child: body) : body,
+              )
+            : (centerBody ? Center(child: body) : body),
       ),
       floatingActionButton: floatingActionButton,
     );
@@ -102,7 +77,7 @@ class AppFormScaffold extends StatelessWidget {
     final isWide = AppBreakpoints.isWide(context);
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
       appBar: AppBar(title: Text(title), actions: actions),
       body: SafeArea(
         child: Center(

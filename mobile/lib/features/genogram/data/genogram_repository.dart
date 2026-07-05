@@ -1,9 +1,10 @@
-﻿import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
 import '../../../core/supabase/supabase_bootstrap.dart';
 import '../domain/genogram_data.dart';
+import '../domain/genogram_family_patterns.dart';
 import '../domain/genogram_person.dart';
 import '../domain/genogram_person_input.dart';
 import '../domain/genogram_relationship.dart';
@@ -79,6 +80,8 @@ class GenogramRepository {
 
   Future<GenogramData> loadForPatient(String patientId) async {
     try {
+      await _ensurePatientPerson(patientId);
+
       final peopleRows = await _client
           .from('genogram_people')
           .select(_personSelect)
@@ -112,6 +115,37 @@ class GenogramRepository {
     return loadForPatient(patientId);
   }
 
+  Future<void> _ensurePatientPerson(String patientId) async {
+    final existing = await _client
+        .from('genogram_people')
+        .select('id')
+        .eq('patient_id', patientId)
+        .eq('relationship_to_patient', 'Paciente')
+        .limit(1);
+
+    if ((existing as List).isNotEmpty) return;
+
+    final patient = await _client
+        .from('patients')
+        .select('id, clinic_id, full_name')
+        .eq('id', patientId)
+        .maybeSingle();
+
+    if (patient == null) return;
+
+    final userId = _client.auth.currentUser?.id;
+    await _client.from('genogram_people').insert({
+      'clinic_id': patient['clinic_id'],
+      'patient_id': patient['id'],
+      if (userId != null) 'created_by': userId,
+      'full_name': patient['full_name'],
+      'nickname': null,
+      'relationship_to_patient': 'Paciente',
+      'is_deceased': false,
+      'is_sensitive': false,
+    });
+  }
+
   Future<GenogramPerson?> getPersonById(String id) async {
     try {
       final row = await _client
@@ -137,6 +171,52 @@ class GenogramRepository {
 
       if (row == null) return null;
       return GenogramRelationship.fromJson(Map<String, dynamic>.from(row));
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  Future<GenogramFamilyPatterns> getFamilyPatterns(String patientId) async {
+    try {
+      final row = await _client
+          .from('genogram_family_patterns')
+          .select('patient_id, pattern_keys, other_text')
+          .eq('patient_id', patientId)
+          .maybeSingle();
+
+      if (row == null) return GenogramFamilyPatterns.empty(patientId);
+      return GenogramFamilyPatterns.fromJson(Map<String, dynamic>.from(row));
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  Future<void> saveFamilyPatterns({
+    required String patientId,
+    required Set<String> selectedKeys,
+    String? otherText,
+  }) async {
+    final hasOther =
+        selectedKeys.contains(GenogramFamilyPatternOption.other.key);
+    final trimmedOther = otherText?.trim() ?? '';
+    if (hasOther && trimmedOther.isEmpty) {
+      throw AppException(
+        code: AppExceptionCodes.validation,
+        message: 'Descreva o outro padrão familiar percebido.',
+      );
+    }
+
+    try {
+      final ctx = await resolvePatientContext(patientId: patientId);
+      await _client.from('genogram_family_patterns').upsert(
+        {
+          'clinic_id': ctx.clinicId,
+          'patient_id': ctx.patientId,
+          'pattern_keys': selectedKeys.toList()..sort(),
+          'other_text': hasOther ? trimmedOther : null,
+        },
+        onConflict: 'patient_id',
+      );
     } catch (e) {
       throw mapToAppException(e);
     }

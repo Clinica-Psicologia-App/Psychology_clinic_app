@@ -3,11 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/errors/app_exception.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/utils/brazil_validators.dart';
 import '../../../shared/utils/input_formatters.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
+import '../../../shared/widgets/status_chip.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../patients/domain/psychologist_option.dart';
 import '../../patients/providers/patients_providers.dart';
@@ -73,15 +76,38 @@ class _CreatePatientInvitationPageState
         key: _formKey,
         child: MotionReveal(
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.xxl,
+            ),
             children: [
-              Text(
-                'Crie um convite simples. O paciente definirá a senha e completará o cadastro no primeiro acesso.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+              const AppPageHeader(
+                icon: Icons.mark_email_unread_outlined,
+                title: 'Convidar paciente',
+                subtitle:
+                    'Envie um convite para o paciente criar a senha e completar os dados no primeiro acesso.',
+                metadata: [
+                  StatusChip(
+                    label: 'Senha pelo paciente',
+                    tone: AppStatusTone.info,
+                    icon: Icons.lock_reset_outlined,
+                  ),
+                  StatusChip(
+                    label: 'Cadastro assistido',
+                    tone: AppStatusTone.neutral,
+                    icon: Icons.assignment_ind_outlined,
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
+              const AppSectionHeader(
+                title: 'Dados do convite',
+                subtitle:
+                    'O e-mail é obrigatório. Nome e telefone ajudam na identificação antes do aceite.',
+              ),
+              const SizedBox(height: AppSpacing.sm),
               TextFormField(
                 controller: _fullNameController,
                 decoration: const InputDecoration(
@@ -90,7 +116,7 @@ class _CreatePatientInvitationPageState
                 ),
                 textCapitalization: TextCapitalization.words,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _emailController,
                 decoration: const InputDecoration(
@@ -106,7 +132,7 @@ class _CreatePatientInvitationPageState
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _phoneController,
                 decoration: const InputDecoration(
@@ -117,7 +143,13 @@ class _CreatePatientInvitationPageState
                 inputFormatters: [BrazilPhoneInputFormatter()],
                 validator: validateOptionalPhone,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
+              const AppSectionHeader(
+                title: 'Responsável clínico',
+                subtitle:
+                    'O convite será vinculado ao psicólogo responsável pelo acompanhamento.',
+              ),
+              const SizedBox(height: AppSpacing.sm),
               if (_isAdmin)
                 psychologistsAsync.when(
                   loading: () =>
@@ -158,10 +190,10 @@ class _CreatePatientInvitationPageState
                   title: const Text('Psicólogo responsável'),
                   subtitle: Text(profile?.fullName ?? 'Não identificado'),
                 ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.lg),
               if (ref.watch(createPatientInvitationProvider).hasError)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
                   child: buildErrorBanner(
                     ScaffoldMessenger.of(context),
                     context,

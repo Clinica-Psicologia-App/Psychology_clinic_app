@@ -36,9 +36,6 @@ class GenogramPerson {
   final DateTime updatedAt;
 
   String get displayName {
-    if (nickname != null && nickname!.trim().isNotEmpty) {
-      return '${fullName.trim()} (${nickname!.trim()})';
-    }
     return fullName.trim();
   }
 

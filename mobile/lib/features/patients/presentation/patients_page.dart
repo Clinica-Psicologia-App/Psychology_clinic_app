@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
+import '../../../shared/widgets/status_chip.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/patient.dart';
@@ -40,13 +43,6 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
     return AppScaffold(
       title: 'Pacientes',
       actions: [
-        if (profile != null && widget.role.isStaff)
-          IconButton(
-            tooltip: 'Convidar paciente',
-            onPressed: () =>
-                context.push(PatientRoutes.invitationCreate(widget.role)),
-            icon: const Icon(Icons.mark_email_unread_outlined),
-          ),
         IconButton(
           tooltip: 'Atualizar',
           onPressed: () => ref.read(patientsListProvider.notifier).refresh(),
@@ -82,39 +78,91 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
           return Column(
             children: [
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-                child: SearchBar(
-                  controller: _searchController,
-                  hintText: 'Buscar por nome, e-mail ou psicólogo',
-                  leading: const Icon(Icons.search),
-                  trailing: [
-                    if (_query.isNotEmpty)
-                      IconButton(
-                        tooltip: 'Limpar busca',
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() => _query = '');
-                        },
-                        icon: const Icon(Icons.close),
-                      ),
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                ),
+                child: AppPageHeader(
+                  icon: Icons.people_outline,
+                  title: 'Pacientes',
+                  subtitle:
+                      'Gerencie a carteira clínica, convites e status de acompanhamento.',
+                  metadata: [
+                    StatusChip(
+                      label: '${filtered.length} na lista',
+                      tone: AppStatusTone.info,
+                      icon: Icons.filter_list,
+                    ),
+                    StatusChip(
+                      label:
+                          '${patients.where((p) => p.isActive).length} ativos',
+                      tone: AppStatusTone.success,
+                      icon: Icons.check_circle_outline,
+                    ),
                   ],
-                  onChanged: (value) => setState(() => _query = value),
+                  primaryAction: profile != null && widget.role.isStaff
+                      ? FilledButton.icon(
+                          onPressed: () =>
+                              context.push(PatientRoutes.create(widget.role)),
+                          icon: const Icon(Icons.person_add),
+                          label: const Text('Novo paciente'),
+                        )
+                      : null,
+                  secondaryAction: profile != null && widget.role.isStaff
+                      ? OutlinedButton.icon(
+                          onPressed: () => context.push(
+                            PatientRoutes.invitationCreate(widget.role),
+                          ),
+                          icon: const Icon(Icons.mark_email_unread_outlined),
+                          label: const Text('Convidar'),
+                        )
+                      : null,
                 ),
               ),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                child: Row(
-                  children: _PatientFilter.values.map((filter) {
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: FilterChip(
-                        selected: _filter == filter,
-                        label: Text(filter.label),
-                        onSelected: (_) => setState(() => _filter = filter),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  0,
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                ),
+                child: Column(
+                  children: [
+                    SearchBar(
+                      controller: _searchController,
+                      hintText: 'Buscar por nome, e-mail ou psicólogo',
+                      leading: const Icon(Icons.search),
+                      trailing: [
+                        if (_query.isNotEmpty)
+                          IconButton(
+                            tooltip: 'Limpar busca',
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() => _query = '');
+                            },
+                            icon: const Icon(Icons.close),
+                          ),
+                      ],
+                      onChanged: (value) => setState(() => _query = value),
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Wrap(
+                        spacing: AppSpacing.xs,
+                        runSpacing: AppSpacing.xs,
+                        children: _PatientFilter.values.map((filter) {
+                          return FilterChip(
+                            selected: _filter == filter,
+                            label: Text(filter.label),
+                            onSelected: (_) => setState(() => _filter = filter),
+                          );
+                        }).toList(),
                       ),
-                    );
-                  }).toList(),
+                    ),
+                  ],
                 ),
               ),
               Expanded(
@@ -150,13 +198,6 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
           );
         },
       ),
-      floatingActionButton: profile != null && widget.role.isStaff
-          ? FloatingActionButton.extended(
-              onPressed: () => context.push(PatientRoutes.create(widget.role)),
-              icon: const Icon(Icons.person_add),
-              label: const Text('Novo paciente'),
-            )
-          : null,
     );
   }
 }

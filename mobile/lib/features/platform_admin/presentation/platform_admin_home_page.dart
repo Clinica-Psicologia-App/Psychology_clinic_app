@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/clinical_module_card.dart';
 import '../../../shared/widgets/esquema_core_logo.dart';
@@ -41,9 +42,16 @@ class PlatformAdminHomePage extends ConsumerWidget {
                 showTagline: true,
               ),
             ),
-            Text(
-              'Gestão global',
-              style: Theme.of(context).textTheme.titleMedium,
+            const AppPageHeader(
+              icon: Icons.admin_panel_settings_outlined,
+              title: 'Gestão global',
+              subtitle:
+                  'Administre operação, equipe e instrumentos clínicos com separação clara entre atendimento e estrutura da plataforma.',
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            const AppSectionHeader(
+              title: 'Atendimento',
+              subtitle: 'Fluxos ligados diretamente ao cuidado dos pacientes.',
             ),
             const SizedBox(height: AppSpacing.sm),
             ResponsiveGrid(
@@ -63,6 +71,30 @@ class PlatformAdminHomePage extends ConsumerWidget {
                 MotionReveal(
                   delay: staggerDelay(1),
                   child: ClinicalModuleCard(
+                    icon: Icons.psychology_alt_outlined,
+                    title: 'Psicólogos',
+                    subtitle: 'Gerenciar profissionais, CRP, clínica e vagas.',
+                    accentColor: AppColors.blue,
+                    onTap: () =>
+                        context.push(UserManagementRoutes.platformList),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            const AppSectionHeader(
+              title: 'Estrutura da plataforma',
+              subtitle:
+                  'Configurações globais, acessos administrativos e instrumentos.',
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            ResponsiveGrid(
+              mediumColumns: 2,
+              expandedColumns: 2,
+              children: [
+                MotionReveal(
+                  delay: staggerDelay(2),
+                  child: ClinicalModuleCard(
                     icon: Icons.apartment_outlined,
                     title: 'Clínicas',
                     subtitle: 'Ver clínicas, individuais, status e volumes.',
@@ -71,22 +103,23 @@ class PlatformAdminHomePage extends ConsumerWidget {
                   ),
                 ),
                 MotionReveal(
-                  delay: staggerDelay(2),
+                  delay: staggerDelay(3),
                   child: ClinicalModuleCard(
-                    icon: Icons.manage_accounts_outlined,
-                    title: 'Usuários',
-                    subtitle: 'Gerenciar usuários por clínica e status.',
+                    icon: Icons.admin_panel_settings_outlined,
+                    title: 'Administradores',
+                    subtitle: 'Gerenciar acessos administrativos globais.',
                     accentColor: AppColors.purple,
                     onTap: () =>
                         context.push(UserManagementRoutes.platformList),
                   ),
                 ),
                 MotionReveal(
-                  delay: staggerDelay(3),
+                  delay: staggerDelay(4),
                   child: ClinicalModuleCard(
-                    icon: Icons.assignment_ind_outlined,
-                    title: 'Acesso a questionários',
-                    subtitle: 'Liberar instrumentos para cada psicólogo.',
+                    icon: Icons.fact_check_outlined,
+                    title: 'Questionários',
+                    subtitle:
+                        'Editar catálogo, adicionar e liberar por psicólogo.',
                     accentColor: AppColors.cyan,
                     onTap: () => context.push(QuestionnaireRoutes.adminAccess),
                   ),

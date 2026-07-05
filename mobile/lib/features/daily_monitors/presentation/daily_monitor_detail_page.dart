@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../profile/domain/profile_role.dart';
@@ -73,7 +74,7 @@ class DailyMonitorDetailPage extends ConsumerWidget {
               if (_isPatient && monitor.isEditableToday) ...[
                 const Divider(height: 1),
                 Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   child: FilledButton.icon(
                     onPressed: () => context.push(
                       DailyMonitorRoutes.patientEdit(monitorId),

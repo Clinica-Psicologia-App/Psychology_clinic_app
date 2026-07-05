@@ -4,8 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/widgets/status_chip.dart';
 import '../domain/patient_check_in.dart';
 import '../domain/patient_check_in_input.dart';
 import '../providers/patient_check_ins_providers.dart';
@@ -177,15 +180,44 @@ class _PatientCheckInFormPageState
       title: widget.isEdit || isEditToday ? 'Editar check-in' : 'Novo check-in',
       body: MotionReveal(
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.xxl,
+          ),
           children: [
-            Text(
-              'Como você está agora? Use as escalas de 0 (muito baixo) a 10 (muito alto).',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+            AppPageHeader(
+              icon: Icons.monitor_heart_outlined,
+              title:
+                  widget.isEdit || isEditToday ? 'Editar check-in' : 'Check-in',
+              subtitle:
+                  'Registre como você está hoje. As escalas vão de 0 a 10 e ajudam a acompanhar mudanças ao longo do tempo.',
+              metadata: [
+                StatusChip(
+                  label: isEditToday ? 'Editando hoje' : 'Registro de hoje',
+                  tone: AppStatusTone.info,
+                  icon: Icons.today_outlined,
+                ),
+                StatusChip(
+                  label: 'Humor $_mood',
+                  tone: AppStatusTone.neutral,
+                  icon: Icons.mood_outlined,
+                ),
+                StatusChip(
+                  label: 'Ansiedade $_anxiety',
+                  tone: AppStatusTone.warning,
+                  icon: Icons.psychology_outlined,
+                ),
+              ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.lg),
+            const AppSectionHeader(
+              title: 'Estado geral',
+              subtitle:
+                  'Marque a intensidade que mais se aproxima de como você está agora.',
+            ),
+            const SizedBox(height: AppSpacing.sm),
             ScoreSliderField(
               label: 'Humor',
               value: _mood,
@@ -214,6 +246,13 @@ class _PatientCheckInFormPageState
               lowLabel: 'Leve',
               highLabel: 'Muito intenso',
             ),
+            const SizedBox(height: AppSpacing.lg),
+            const AppSectionHeader(
+              title: 'Observações',
+              subtitle:
+                  'Use este espaço para registrar algo que ajude seu psicólogo a entender o contexto do dia.',
+            ),
+            const SizedBox(height: AppSpacing.sm),
             TextField(
               controller: _notesController,
               decoration: const InputDecoration(
@@ -223,7 +262,7 @@ class _PatientCheckInFormPageState
               maxLines: 4,
               textCapitalization: TextCapitalization.sentences,
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: AppSpacing.xl),
             FilledButton(
               onPressed: _saving ? null : _save,
               child: _saving

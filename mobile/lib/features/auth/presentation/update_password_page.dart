@@ -7,7 +7,7 @@ import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_gradients.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
-import '../../../shared/widgets/auth_brand_badge.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../providers/auth_providers.dart';
@@ -51,20 +51,11 @@ class _UpdatePasswordPageState extends ConsumerState<UpdatePasswordPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Center(
-                        child: AuthBrandBadge(icon: Icons.password_outlined),
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      Text(
-                        'Defina uma senha forte',
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.headlineSmall,
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      const Text(
-                        'Use pelo menos 8 caracteres, com letras maiúsculas, '
-                        'minúsculas e números.',
-                        textAlign: TextAlign.center,
+                      const AppPageHeader(
+                        title: 'Criar nova senha',
+                        subtitle:
+                            'Use pelo menos 8 caracteres, com letras maiúsculas, minúsculas e números.',
+                        icon: Icons.password_outlined,
                       ),
                       const SizedBox(height: AppSpacing.xl),
                       TextFormField(
@@ -101,11 +92,28 @@ class _UpdatePasswordPageState extends ConsumerState<UpdatePasswordPage> {
                         },
                       ),
                       const SizedBox(height: AppSpacing.xl),
-                      FilledButton(
+                      FilledButton.icon(
                         onPressed: _submitting ? null : _submit,
-                        child: Text(
+                        icon: _submitting
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.lock_reset_outlined),
+                        label: Text(
                           _submitting ? 'Salvando...' : 'Salvar senha',
                         ),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      const AppInfoCard(
+                        title: 'Após salvar',
+                        body:
+                            'Depois de salvar, você será direcionado para entrar novamente.',
+                        icon: Icons.login_outlined,
+                        tone: AppInfoCardTone.info,
                       ),
                     ],
                   ),

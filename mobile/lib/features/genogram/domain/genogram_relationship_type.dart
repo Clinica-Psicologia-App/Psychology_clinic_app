@@ -5,7 +5,9 @@
   sibling,
   conflict,
   distant,
+  neutral,
   close,
+  ruptured,
   other,
 }
 
@@ -24,8 +26,12 @@ extension GenogramRelationshipTypeX on GenogramRelationshipType {
         return 'conflict';
       case GenogramRelationshipType.distant:
         return 'distant';
+      case GenogramRelationshipType.neutral:
+        return 'neutral';
       case GenogramRelationshipType.close:
         return 'close';
+      case GenogramRelationshipType.ruptured:
+        return 'ruptured';
       case GenogramRelationshipType.other:
         return 'other';
     }
@@ -42,11 +48,15 @@ extension GenogramRelationshipTypeX on GenogramRelationshipType {
       case GenogramRelationshipType.sibling:
         return 'Irmão(ã)';
       case GenogramRelationshipType.conflict:
-        return 'Conflito';
+        return 'Conflituosa';
       case GenogramRelationshipType.distant:
         return 'Distante';
+      case GenogramRelationshipType.neutral:
+        return 'Neutra';
       case GenogramRelationshipType.close:
-        return 'Próximo';
+        return 'Próxima';
+      case GenogramRelationshipType.ruptured:
+        return 'Rompida';
       case GenogramRelationshipType.other:
         return 'Outro';
     }

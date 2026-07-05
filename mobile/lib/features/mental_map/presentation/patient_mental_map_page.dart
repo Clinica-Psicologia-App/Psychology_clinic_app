@@ -2,8 +2,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
+import '../../../shared/widgets/status_chip.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../../shared/widgets/homologation_ui.dart';
 import '../domain/mental_map_check_in_summary.dart';
@@ -115,12 +118,39 @@ class _MentalMapBody extends StatelessWidget {
     final loc = MaterialLocalizations.of(context);
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.md),
       children: [
+        AppPageHeader(
+          icon: Icons.hub_outlined,
+          title: 'Mapa mental clínico',
+          subtitle: role == ProfileRole.patient
+              ? 'Visualize como seus registros começam a formar um panorama da jornada terapêutica.'
+              : 'Integre questionários, história, metas e sinais recentes em uma visão de formulação do caso.',
+          metadata: [
+            StatusChip(
+              label: data.hasRelevantData ? 'Em construção' : 'Inicial',
+              tone: data.hasRelevantData
+                  ? AppStatusTone.inProgress
+                  : AppStatusTone.neutral,
+              icon: Icons.auto_graph_outlined,
+            ),
+            StatusChip(
+              label: '${data.questionnaires.length} questionário(s)',
+              tone: AppStatusTone.info,
+              icon: Icons.assignment_outlined,
+            ),
+            StatusChip(
+              label: '${data.therapyPlan.activeGoals.length} meta(s)',
+              tone: AppStatusTone.success,
+              icon: Icons.flag_outlined,
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.md),
         const MentalMapDisclaimerBanner(),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.md),
         MentalMapValidationBanner(summary: data.validationSummary),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.md),
         MentalMapVisualHub(
           caseMap: data.caseMap,
           nodes: _buildHubNodes(context),

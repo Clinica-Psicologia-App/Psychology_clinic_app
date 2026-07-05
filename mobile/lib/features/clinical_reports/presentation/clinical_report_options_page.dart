@@ -4,10 +4,13 @@ import 'package:open_filex/open_filex.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../../shared/widgets/homologation_ui.dart';
+import '../../../shared/widgets/status_chip.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/clinical_report_include_options.dart';
 import '../providers/clinical_report_providers.dart';
@@ -102,10 +105,44 @@ class _ClinicalReportOptionsPageState
     return AppScaffold(
       title: 'Gerar relatório',
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.md),
         children: [
           MotionStaggered(
             children: [
+              AppPageHeader(
+                icon: Icons.picture_as_pdf_outlined,
+                title: 'Relatório clínico',
+                subtitle:
+                    'Monte um PDF com as seções úteis para discussão clínica, supervisão ou acompanhamento do caso.',
+                metadata: [
+                  StatusChip(
+                    label: '$selectedCount de 8 seções',
+                    tone: selectedCount == 0
+                        ? AppStatusTone.warning
+                        : AppStatusTone.info,
+                    icon: Icons.checklist_outlined,
+                  ),
+                  const StatusChip(
+                    label: 'Uso profissional',
+                    tone: AppStatusTone.neutral,
+                    icon: Icons.health_and_safety_outlined,
+                  ),
+                ],
+                primaryAction: FilledButton.icon(
+                  onPressed: _generating ? null : _generate,
+                  icon: _generating
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.picture_as_pdf_outlined),
+                  label: Text(
+                    _generating ? 'Gerando...' : 'Gerar PDF',
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
               const HomologationInfoBanner(
                 title: 'Apoio clínico',
                 icon: Icons.picture_as_pdf_outlined,
@@ -114,14 +151,14 @@ class _ClinicalReportOptionsPageState
                     'responsabilidade do profissional. Não constitui diagnóstico '
                     'automático.',
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpacing.lg),
               const HomologationSectionHeader(
                 icon: Icons.tune_outlined,
                 title: 'Conteúdo do PDF',
                 subtitle:
                     'Escolha quais módulos entram no relatório deste paciente',
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.sm),
               Card(
                 child: Column(
                   children: [
@@ -188,24 +225,12 @@ class _ClinicalReportOptionsPageState
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.sm),
               Text(
                 '$selectedCount de 8 seções selecionadas',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
-              ),
-              const SizedBox(height: 24),
-              FilledButton.icon(
-                onPressed: _generating ? null : _generate,
-                icon: _generating
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.picture_as_pdf_outlined),
-                label: Text(_generating ? 'Gerando...' : 'Gerar relatório PDF'),
               ),
             ],
           ),

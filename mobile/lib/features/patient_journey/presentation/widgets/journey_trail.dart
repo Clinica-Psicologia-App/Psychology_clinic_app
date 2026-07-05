@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../domain/journey_step.dart';
 import '../../domain/journey_step_availability.dart';
 import '../../../../shared/widgets/app_motion.dart';
+import '../../../../shared/widgets/app_page_header.dart';
 import 'journey_step_card.dart';
 
 /// Lista vertical com conector visual entre passos da trilha.
@@ -26,13 +27,14 @@ class JourneyTrail extends StatelessWidget {
       padding: EdgeInsets.fromLTRB(compact ? 12 : 16, 8, compact ? 12 : 16, 24),
       children: [
         Padding(
-          padding: EdgeInsets.only(bottom: 12, left: compact ? 44 : 48),
-          child: Text(
-            'Passos da trilha',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+          padding: EdgeInsets.only(
+            bottom: 12,
+            left: compact ? 0 : 48,
+            right: compact ? 0 : 8,
+          ),
+          child: const AppSectionHeader(
+            title: 'Próximos passos',
+            subtitle: 'Acompanhe o que está disponível e o que já foi enviado.',
           ),
         ),
         ...List.generate(sorted.length, (index) {

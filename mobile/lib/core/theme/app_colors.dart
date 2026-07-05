@@ -12,8 +12,10 @@ abstract final class AppColors {
   // Superfícies (light)
   static const Color background = Color(0xFFF4F7FB);
   static const Color surface = Color(0xFFFFFFFF);
+  static const Color surfaceElevated = Color(0xFFFCFEFF);
   static const Color surfaceMuted = Color(0xFFE8EEF6);
   static const Color surfaceTint = Color(0xFFF0F5FA);
+  static const Color surfaceWarm = Color(0xFFF8FAFC);
 
   // Texto
   static const Color textPrimary = navy;
@@ -25,6 +27,7 @@ abstract final class AppColors {
   // Bordas
   static const Color border = Color(0xFFD8E2EC);
   static const Color borderStrong = Color(0xFFB8C8D8);
+  static const Color focusRing = Color(0xFF0EA5A0);
 
   // Semânticas (não confundir com marca)
   static const Color success = Color(0xFF059669);

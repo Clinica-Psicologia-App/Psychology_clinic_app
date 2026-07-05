@@ -1,8 +1,11 @@
 ﻿import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../shared/widgets/app_page_header.dart';
 import '../../../../shared/widgets/clinical_module_card.dart';
+import '../../../../shared/widgets/responsive_content.dart';
 
 /// Módulos do paciente (staff).
 class FutureModulesSection extends StatelessWidget {
@@ -40,111 +43,175 @@ class FutureModulesSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Módulos', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: AppSpacing.sm),
-        _gap(ClinicalModuleCard(
-          icon: Icons.assignment_outlined,
-          title: 'Questionários',
-          subtitle: 'Ver disponíveis e iniciar aplicação para este paciente.',
-          accentColor: AppColors.moduleQuestionnaires,
-          onTap: onQuestionnairesTap,
-          enabled: onQuestionnairesTap != null,
-        )),
-        _gap(ClinicalModuleCard(
-          icon: Icons.analytics_outlined,
-          title: 'Resultados (lista)',
-          subtitle: 'Respostas concluídas e detalhe por categoria.',
-          accentColor: AppColors.cyan,
-          onTap: onResultsTap,
-          enabled: onResultsTap != null,
-        )),
-        _gap(ClinicalModuleCard(
-          icon: Icons.bar_chart_outlined,
-          title: 'Dashboard clínico',
-          subtitle: 'Gráficos YSQ/YAMI a partir do snapshot (somente leitura).',
-          accentColor: AppColors.moduleDashboard,
-          onTap: onClinicalDashboardTap,
-          enabled: onClinicalDashboardTap != null,
-        )),
-        _gap(ClinicalModuleCard(
-          icon: Icons.psychology_alt_outlined,
-          title: 'Referência de personalidade',
-          subtitle: 'Fatores, facetas e sugestões clínicas de leitura.',
-          accentColor: AppColors.purple,
-          onTap: onPersonalityReferenceTap,
-          enabled: onPersonalityReferenceTap != null,
-        )),
-        _gap(ClinicalModuleCard(
-          icon: Icons.menu_book_outlined,
-          title: 'Recursos terapêuticos',
-          subtitle: 'Liberar materiais e acompanhar progresso do paciente.',
-          accentColor: AppColors.moduleResources,
-          onTap: onTherapyResourcesTap,
-          enabled: onTherapyResourcesTap != null,
-        )),
-        _gap(ClinicalModuleCard(
-          icon: Icons.report_problem_outlined,
-          title: 'Problemas',
-          subtitle: 'Queixas e focos de trabalho do paciente.',
-          accentColor: AppColors.moduleProblems,
-          onTap: onProblemsTap,
-          enabled: onProblemsTap != null,
-        )),
-        _gap(ClinicalModuleCard(
-          icon: Icons.flag_outlined,
-          title: 'Objetivos da terapia',
-          subtitle: 'Metas terapêuticas do paciente.',
-          accentColor: AppColors.moduleGoals,
-          onTap: onTherapyGoalsTap,
-          enabled: onTherapyGoalsTap != null,
-        )),
-        _gap(ClinicalModuleCard(
-          icon: Icons.fact_check_outlined,
-          title: 'Check-ins',
-          subtitle: 'Registros rápidos do paciente (somente leitura).',
-          accentColor: AppColors.moduleCheckIn,
-          onTap: onCheckInsTap,
-          enabled: onCheckInsTap != null,
-        )),
-        _gap(ClinicalModuleCard(
-          icon: Icons.hub_outlined,
-          title: 'Mapa mental',
-          subtitle: 'Visão integrada dos dados clínicos do paciente.',
-          accentColor: AppColors.moduleMentalMap,
-          onTap: onMentalMapTap,
-          enabled: onMentalMapTap != null,
-        )),
-        _gap(ClinicalModuleCard(
-          icon: Icons.family_restroom_outlined,
-          title: 'Genograma',
-          subtitle: 'Pessoas e relações familiares do paciente.',
-          accentColor: AppColors.moduleGenogram,
-          onTap: onGenogramTap,
-          enabled: onGenogramTap != null,
-        )),
-        _gap(ClinicalModuleCard(
-          icon: Icons.timeline_outlined,
-          title: 'Linha do tempo',
+        const AppSectionHeader(
+          title: 'Central clínica',
           subtitle:
-              'Eventos importantes da história e do processo terapêutico.',
-          accentColor: AppColors.moduleTimeline,
-          onTap: onTimelineTap,
-          enabled: onTimelineTap != null,
-        )),
-        _gap(ClinicalModuleCard(
-          icon: Icons.monitor_heart_outlined,
-          title: 'Monitor diário',
-          subtitle: 'Histórico de acompanhamentos registrados pelo paciente.',
-          accentColor: AppColors.moduleMonitor,
-          onTap: onDailyMonitorsTap,
-          enabled: onDailyMonitorsTap != null,
-        )),
+              'Acesse os módulos por finalidade para reduzir ruído e acelerar a navegação.',
+        ),
+        const SizedBox(height: AppSpacing.md),
+        _ModuleGroup(
+          title: 'Avaliação',
+          children: [
+            ClinicalModuleCard(
+              icon: Icons.bar_chart_outlined,
+              title: 'Dashboard clínico',
+              subtitle: 'Síntese dos dados clínicos estruturados.',
+              accentColor: AppColors.moduleDashboard,
+              onTap: onClinicalDashboardTap,
+              enabled: onClinicalDashboardTap != null,
+            ),
+            ClinicalModuleCard(
+              icon: Icons.assignment_outlined,
+              title: 'Questionários',
+              subtitle: 'Ver disponíveis e iniciar aplicação.',
+              accentColor: AppColors.moduleQuestionnaires,
+              onTap: onQuestionnairesTap,
+              enabled: onQuestionnairesTap != null,
+            ),
+            ClinicalModuleCard(
+              icon: Icons.analytics_outlined,
+              title: 'Resultados',
+              subtitle: 'Respostas concluídas e detalhe por categoria.',
+              accentColor: AppColors.cyan,
+              onTap: onResultsTap,
+              enabled: onResultsTap != null,
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        _ModuleGroup(
+          title: 'Formulação',
+          children: [
+            ClinicalModuleCard(
+              icon: Icons.hub_outlined,
+              title: 'Mapa mental',
+              subtitle: 'Visão integrada dos dados clínicos.',
+              accentColor: AppColors.moduleMentalMap,
+              onTap: onMentalMapTap,
+              enabled: onMentalMapTap != null,
+            ),
+            ClinicalModuleCard(
+              icon: Icons.family_restroom_outlined,
+              title: 'Genograma',
+              subtitle: 'Pessoas e relações familiares.',
+              accentColor: AppColors.moduleGenogram,
+              onTap: onGenogramTap,
+              enabled: onGenogramTap != null,
+            ),
+            ClinicalModuleCard(
+              icon: Icons.timeline_outlined,
+              title: 'Linha do tempo',
+              subtitle: 'Eventos importantes da história.',
+              accentColor: AppColors.moduleTimeline,
+              onTap: onTimelineTap,
+              enabled: onTimelineTap != null,
+            ),
+            ClinicalModuleCard(
+              icon: Icons.psychology_alt_outlined,
+              title: 'Referência de personalidade',
+              subtitle: 'Fatores, facetas e leitura clínica.',
+              accentColor: AppColors.purple,
+              onTap: onPersonalityReferenceTap,
+              enabled: onPersonalityReferenceTap != null,
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        _ModuleGroup(
+          title: 'Acompanhamento',
+          children: [
+            ClinicalModuleCard(
+              icon: Icons.fact_check_outlined,
+              title: 'Check-ins',
+              subtitle: 'Registros rápidos do paciente.',
+              accentColor: AppColors.moduleCheckIn,
+              onTap: onCheckInsTap,
+              enabled: onCheckInsTap != null,
+            ),
+            ClinicalModuleCard(
+              icon: Icons.monitor_heart_outlined,
+              title: 'Monitor diário',
+              subtitle: 'Histórico de acompanhamentos.',
+              accentColor: AppColors.moduleMonitor,
+              onTap: onDailyMonitorsTap,
+              enabled: onDailyMonitorsTap != null,
+            ),
+            ClinicalModuleCard(
+              icon: Icons.flag_outlined,
+              title: 'Objetivos da terapia',
+              subtitle: 'Metas terapêuticas do paciente.',
+              accentColor: AppColors.moduleGoals,
+              onTap: onTherapyGoalsTap,
+              enabled: onTherapyGoalsTap != null,
+            ),
+            ClinicalModuleCard(
+              icon: Icons.report_problem_outlined,
+              title: 'Problemas',
+              subtitle: 'Queixas e focos de trabalho.',
+              accentColor: AppColors.moduleProblems,
+              onTap: onProblemsTap,
+              enabled: onProblemsTap != null,
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        _ModuleGroup(
+          title: 'Intervenção',
+          children: [
+            ClinicalModuleCard(
+              icon: Icons.menu_book_outlined,
+              title: 'Recursos terapêuticos',
+              subtitle: 'Liberar materiais e acompanhar progresso.',
+              accentColor: AppColors.moduleResources,
+              onTap: onTherapyResourcesTap,
+              enabled: onTherapyResourcesTap != null,
+            ),
+          ],
+        ),
       ],
     );
   }
+}
 
-  Widget _gap(Widget child) => Padding(
-        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-        child: child,
-      );
+class _ModuleGroup extends StatelessWidget {
+  const _ModuleGroup({
+    required this.title,
+    required this.children,
+  });
+
+  final String title;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceWarm,
+        borderRadius: AppRadius.lgAll,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.navy,
+                  ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            ResponsiveGrid(
+              mediumColumns: 2,
+              expandedColumns: 2,
+              spacing: AppSpacing.sm,
+              children: children,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

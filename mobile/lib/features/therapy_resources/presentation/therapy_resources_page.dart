@@ -1,8 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../patients/providers/patients_providers.dart';
 import '../../profile/domain/profile_role.dart';
@@ -76,41 +78,73 @@ class TherapyResourcesPage extends ConsumerWidget {
               await ref.read(staffTherapyBundleProvider(ctx).future);
             },
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.xxxl,
+              ),
               children: [
                 patientAsync.when(
-                  data: (p) => p != null
-                      ? Text(
-                          p.fullName,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        )
-                      : const SizedBox.shrink(),
+                  data: (p) => AppPageHeader(
+                    title: 'Recursos terapêuticos',
+                    subtitle: p != null
+                        ? 'Gerencie materiais liberados para ${p.fullName}, sugestões clínicas e biblioteca da clínica.'
+                        : 'Gerencie materiais liberados, sugestões clínicas e biblioteca da clínica.',
+                    icon: Icons.menu_book_outlined,
+                    metadata: [
+                      Chip(label: Text('${activeAssigned.length} liberados')),
+                      Chip(
+                          label:
+                              Text('${bundle.library.length} na biblioteca')),
+                    ],
+                    primaryAction: FilledButton.icon(
+                      onPressed: () => context.push(
+                        TherapyResourceRoutes.newResource(
+                          role: role,
+                          patientId: patientId,
+                        ),
+                      ),
+                      icon: const Icon(Icons.add),
+                      label: const Text('Novo material'),
+                    ),
+                  ),
                   loading: () => const LinearProgressIndicator(),
-                  error: (_, __) => const SizedBox.shrink(),
+                  error: (_, __) => AppPageHeader(
+                    title: 'Recursos terapêuticos',
+                    subtitle:
+                        'Gerencie materiais liberados, sugestões clínicas e biblioteca da clínica.',
+                    icon: Icons.menu_book_outlined,
+                    metadata: [
+                      Chip(label: Text('${activeAssigned.length} liberados')),
+                      Chip(
+                          label:
+                              Text('${bundle.library.length} na biblioteca')),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'Sugestões terapêuticas',
-                  style: Theme.of(context).textTheme.titleSmall,
+                const SizedBox(height: AppSpacing.xl),
+                const AppSectionHeader(
+                  title: 'Sugestões terapêuticas',
+                  subtitle:
+                      'Recursos sugeridos a partir dos sinais clínicos já registrados.',
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 recommendationsAsync.when(
                   loading: () => const Card(
                     child: Padding(
-                      padding: EdgeInsets.all(16),
+                      padding: EdgeInsets.all(AppSpacing.md),
                       child: LinearProgressIndicator(),
                     ),
                   ),
                   error: (_, __) => const SizedBox.shrink(),
                   data: (recommendations) {
                     if (recommendations.isEmpty) {
-                      return const Card(
-                        child: Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Text(
+                      return const AppInfoCard(
+                        title: 'Sem sugestões automáticas',
+                        body:
                             'Ainda não há sinais suficientes para sugerir recursos automaticamente.',
-                          ),
-                        ),
+                        icon: Icons.auto_awesome_outlined,
                       );
                     }
 
@@ -143,18 +177,19 @@ class TherapyResourcesPage extends ConsumerWidget {
                     );
                   },
                 ),
-                const SizedBox(height: 24),
-                Text(
-                  'Liberados para este paciente',
-                  style: Theme.of(context).textTheme.titleSmall,
+                const SizedBox(height: AppSpacing.xl),
+                const AppSectionHeader(
+                  title: 'Liberados para este paciente',
+                  subtitle:
+                      'Materiais ativos que o paciente consegue acessar no app.',
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 if (activeAssigned.isEmpty)
-                  const Card(
-                    child: Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Text('Nenhum recurso liberado ainda.'),
-                    ),
+                  const AppInfoCard(
+                    title: 'Nenhum recurso liberado',
+                    body:
+                        'Use a biblioteca ou as sugestões para liberar um material.',
+                    icon: Icons.lock_open_outlined,
                   )
                 else
                   MotionStaggered(
@@ -173,12 +208,13 @@ class TherapyResourcesPage extends ConsumerWidget {
                     ],
                   ),
                 if (inactiveAssigned.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    'Bloqueados anteriormente',
-                    style: Theme.of(context).textTheme.titleSmall,
+                  const SizedBox(height: AppSpacing.xl),
+                  const AppSectionHeader(
+                    title: 'Bloqueados anteriormente',
+                    subtitle:
+                        'Materiais já associados que podem ser liberados novamente.',
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.sm),
                   ...inactiveAssigned.map(
                     (access) => TherapyResourceTile(
                       resource: access.resource,
@@ -193,18 +229,19 @@ class TherapyResourcesPage extends ConsumerWidget {
                     ),
                   ),
                 ],
-                const SizedBox(height: 24),
-                Text(
-                  'Biblioteca da clínica',
-                  style: Theme.of(context).textTheme.titleSmall,
+                const SizedBox(height: AppSpacing.xl),
+                const AppSectionHeader(
+                  title: 'Biblioteca da clínica',
+                  subtitle:
+                      'Materiais cadastrados para uso nos acompanhamentos.',
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 if (bundle.library.isEmpty)
-                  const Card(
-                    child: Padding(
-                      padding: EdgeInsets.all(16),
-                      child: Text('Nenhum recurso cadastrado na clínica.'),
-                    ),
+                  const AppInfoCard(
+                    title: 'Biblioteca vazia',
+                    body:
+                        'Cadastre o primeiro material para começar a liberar.',
+                    icon: Icons.library_books_outlined,
                   )
                 else
                   MotionStaggered(

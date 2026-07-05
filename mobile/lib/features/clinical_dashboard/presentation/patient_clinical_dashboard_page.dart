@@ -1,10 +1,13 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../../shared/widgets/responsive_content.dart';
+import '../../../shared/widgets/status_chip.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../results/presentation/result_routes.dart';
 import '../domain/clinical_dashboard_data.dart';
@@ -108,6 +111,41 @@ class DashboardHomePage extends StatelessWidget {
     return ResponsiveContent(
       child: CustomScrollView(
         slivers: [
+          SliverPadding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              0,
+            ),
+            sliver: SliverToBoxAdapter(
+              child: AppPageHeader(
+                icon: Icons.dashboard_customize_outlined,
+                title: 'Dashboard clínico',
+                subtitle: isStaff
+                    ? 'Síntese técnica dos instrumentos, sinais recentes e focos ativos para apoiar a formulação do caso.'
+                    : 'Resumo dos registros clínicos disponíveis na sua jornada terapêutica.',
+                metadata: [
+                  StatusChip(
+                    label:
+                        '${data.caseSummary.structuredResultCount} resultado(s)',
+                    tone: AppStatusTone.info,
+                    icon: Icons.analytics_outlined,
+                  ),
+                  StatusChip(
+                    label: '${data.caseSummary.openProblemsCount} problema(s)',
+                    tone: AppStatusTone.warning,
+                    icon: Icons.report_problem_outlined,
+                  ),
+                  StatusChip(
+                    label: '${data.caseSummary.activeGoalsCount} objetivo(s)',
+                    tone: AppStatusTone.success,
+                    icon: Icons.flag_outlined,
+                  ),
+                ],
+              ),
+            ),
+          ),
           const SliverToBoxAdapter(
             child: ClinicalDashboardDisclaimerBanner(),
           ),

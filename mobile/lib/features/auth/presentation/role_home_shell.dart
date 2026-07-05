@@ -9,6 +9,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/clinical_module_card.dart';
 import '../../../shared/widgets/esquema_core_logo.dart';
@@ -99,7 +100,10 @@ class _HomeBody extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.xl),
           if (role == ProfileRole.psychologist) ...[
-            Text('Módulos', style: Theme.of(context).textTheme.titleMedium),
+            const AppSectionHeader(
+              title: 'Central de trabalho',
+              subtitle: 'Acesse a carteira de pacientes e os fluxos clínicos.',
+            ),
             const SizedBox(height: AppSpacing.sm),
             MotionReveal(
               delay: const Duration(milliseconds: 90),
@@ -119,7 +123,10 @@ class _HomeBody extends StatelessWidget {
             ),
           ],
           if (role == ProfileRole.patient) ...[
-            Text('Jornada', style: Theme.of(context).textTheme.titleMedium),
+            const AppSectionHeader(
+              title: 'Sua continuidade',
+              subtitle: 'Veja o próximo passo do seu acompanhamento.',
+            ),
             const SizedBox(height: AppSpacing.sm),
             MotionReveal(
               delay: const Duration(milliseconds: 90),
@@ -152,12 +159,7 @@ class _ProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.surface,
-            AppColors.turquoise.withValues(alpha: 0.055),
-          ],
-        ),
+        color: AppColors.surface,
         borderRadius: AppRadius.xlAll,
         border: Border.all(color: AppColors.border),
       ),

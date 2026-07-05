@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../profile/domain/profile_role.dart';
 import '../providers/patient_check_ins_providers.dart';
@@ -67,38 +69,40 @@ class PatientCheckInDetailPage extends ConsumerWidget {
               Expanded(
                 child: MotionReveal(
                   child: ListView(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     children: [
-                      if (checkIn.isToday)
-                        Card(
-                          color: theme.colorScheme.primaryContainer
-                              .withValues(alpha: 0.4),
-                          child: const ListTile(
-                            leading: Icon(Icons.today),
-                            title: Text('Check-in de hoje'),
+                      AppPageHeader(
+                        title: loc.formatFullDate(
+                          checkIn.checkedInAt.toLocal(),
+                        ),
+                        subtitle: loc.formatTimeOfDay(
+                          TimeOfDay.fromDateTime(
+                            checkIn.checkedInAt.toLocal(),
                           ),
                         ),
-                      const SizedBox(height: 16),
-                      Text(
-                        loc.formatFullDate(checkIn.checkedInAt.toLocal()),
-                        style: theme.textTheme.headlineSmall,
+                        icon: Icons.fact_check_outlined,
+                        metadata: [
+                          if (checkIn.isToday)
+                            const Chip(label: Text('Check-in de hoje')),
+                          if (_readOnly)
+                            const Chip(label: Text('Somente leitura')),
+                        ],
                       ),
-                      Text(
-                        loc.formatTimeOfDay(
-                          TimeOfDay.fromDateTime(checkIn.checkedInAt.toLocal()),
-                        ),
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
+                      const SizedBox(height: AppSpacing.xl),
+                      const AppSectionHeader(
+                        title: 'Resumo do dia',
+                        subtitle: 'Escalas preenchidas neste check-in.',
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: AppSpacing.sm),
                       CheckInScoresSummary(checkIn: checkIn),
                       if (checkIn.notes != null &&
                           checkIn.notes!.trim().isNotEmpty) ...[
-                        const SizedBox(height: 24),
-                        Text('Observações', style: theme.textTheme.titleSmall),
-                        const SizedBox(height: 8),
-                        Text(checkIn.notes!),
+                        const SizedBox(height: AppSpacing.xl),
+                        AppInfoCard(
+                          title: 'Observações',
+                          body: checkIn.notes!,
+                          icon: Icons.notes_outlined,
+                        ),
                       ],
                     ],
                   ),
@@ -107,7 +111,7 @@ class PatientCheckInDetailPage extends ConsumerWidget {
               if (_isPatient && checkIn.isEditableToday) ...[
                 const Divider(height: 1),
                 Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   child: FilledButton.icon(
                     onPressed: () => context.push(
                       PatientCheckInRoutes.patientEdit(checkInId),
@@ -119,7 +123,7 @@ class PatientCheckInDetailPage extends ConsumerWidget {
               ],
               if (_readOnly)
                 Padding(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   child: Text(
                     'Visualização somente leitura para a equipe.',
                     textAlign: TextAlign.center,

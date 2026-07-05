@@ -2,7 +2,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../profile/domain/profile_role.dart';
@@ -149,19 +151,31 @@ class _ProblemsList extends StatelessWidget {
         .toList();
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        88,
+      ),
       children: [
-        Text(
-          'Queixas e focos de trabalho em acompanhamento.',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+        AppPageHeader(
+          title: 'Problemas e focos clínicos',
+          subtitle:
+              'Organize queixas, padrões e temas que estão sendo acompanhados no plano terapêutico.',
+          icon: Icons.psychology_alt_outlined,
+          metadata: [
+            Chip(label: Text('${open.length} em acompanhamento')),
+            if (closed.isNotEmpty)
+              Chip(label: Text('${closed.length} resolvidos/arquivados')),
+          ],
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.xl),
         if (open.isNotEmpty) ...[
-          Text('Em acompanhamento',
-              style: Theme.of(context).textTheme.titleSmall),
-          const SizedBox(height: 8),
+          const AppSectionHeader(
+            title: 'Em acompanhamento',
+            subtitle: 'Temas ativos para observação e intervenção.',
+          ),
+          const SizedBox(height: AppSpacing.sm),
           MotionStaggered(
             children: [
               for (final p in open)
@@ -170,10 +184,12 @@ class _ProblemsList extends StatelessWidget {
           ),
         ],
         if (closed.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Text('Resolvidos / arquivados',
-              style: Theme.of(context).textTheme.titleSmall),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.xl),
+          const AppSectionHeader(
+            title: 'Resolvidos / arquivados',
+            subtitle: 'Registros preservados para histórico clínico.',
+          ),
+          const SizedBox(height: AppSpacing.sm),
           MotionStaggered(
             children: [
               for (final p in closed)

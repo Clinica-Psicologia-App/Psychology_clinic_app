@@ -1,7 +1,7 @@
 import '../../profile/domain/profile_role.dart';
 
 abstract final class QuestionnaireRoutes {
-  static const adminAccess = '/platform/questionnaire-access';
+  static const adminAccess = '/platform/questionnaires';
 
   static String list({
     required ProfileRole role,

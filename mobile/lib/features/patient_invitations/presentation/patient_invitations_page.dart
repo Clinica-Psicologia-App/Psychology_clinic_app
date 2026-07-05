@@ -3,7 +3,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../profile/domain/profile_role.dart';
@@ -46,15 +48,6 @@ class _PatientInvitationsPageState
       ],
       body: Column(
         children: [
-          if (_recentInvitation != null)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-              child: _RecentInvitationCard(
-                invitation: _recentInvitation!,
-                onCopy: () => _copyInviteUrl(_recentInvitation!.inviteUrl),
-                onDismiss: () => setState(() => _recentInvitation = null),
-              ),
-            ),
           Expanded(
             child: AsyncStateBody<List<PatientInvitation>>(
               asyncValue: listAsync,
@@ -66,12 +59,58 @@ class _PatientInvitationsPageState
                 onRefresh: () =>
                     ref.read(patientInvitationsListProvider.notifier).refresh(),
                 child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: items.length,
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    88,
+                  ),
+                  itemCount:
+                      items.length + 2 + (_recentInvitation != null ? 1 : 0),
                   itemBuilder: (context, index) {
-                    final invitation = items[index];
+                    if (index == 0) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.xl),
+                        child: AppPageHeader(
+                          title: 'Convites de pacientes',
+                          subtitle:
+                              'Envie convites de primeiro acesso e acompanhe o status de aceite.',
+                          icon: Icons.mark_email_unread_outlined,
+                          metadata: [
+                            Chip(label: Text('${items.length} convites')),
+                          ],
+                        ),
+                      );
+                    }
+
+                    if (_recentInvitation != null && index == 1) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.xl),
+                        child: _RecentInvitationCard(
+                          invitation: _recentInvitation!,
+                          onCopy: () =>
+                              _copyInviteUrl(_recentInvitation!.inviteUrl),
+                          onDismiss: () =>
+                              setState(() => _recentInvitation = null),
+                        ),
+                      );
+                    }
+
+                    final sectionIndex = _recentInvitation != null ? 2 : 1;
+                    if (index == sectionIndex) {
+                      return const Padding(
+                        padding: EdgeInsets.only(bottom: AppSpacing.sm),
+                        child: AppSectionHeader(
+                          title: 'Histórico de convites',
+                          subtitle: 'Status dos links enviados pela clínica.',
+                        ),
+                      );
+                    }
+
+                    final itemIndex = index - sectionIndex - 1;
+                    final invitation = items[itemIndex];
                     return MotionReveal(
-                      delay: staggerDelay(index),
+                      delay: staggerDelay(itemIndex),
                       child: _InvitationTile(invitation: invitation),
                     );
                   },
@@ -123,42 +162,27 @@ class _RecentInvitationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.link_outlined),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Convite gerado',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ),
-                IconButton(
-                  tooltip: 'Fechar',
-                  onPressed: onDismiss,
-                  icon: const Icon(Icons.close),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(invitation.invitation.email),
-            const SizedBox(height: 8),
-            SelectableText(invitation.inviteUrl),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              onPressed: onCopy,
-              icon: const Icon(Icons.copy_outlined),
-              label: const Text('Copiar link'),
-            ),
-          ],
-        ),
+    return AppInfoCard(
+      title: 'Convite gerado',
+      body: invitation.invitation.email,
+      icon: Icons.link_outlined,
+      tone: AppInfoCardTone.success,
+      action: IconButton(
+        tooltip: 'Fechar',
+        onPressed: onDismiss,
+        icon: const Icon(Icons.close),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SelectableText(invitation.inviteUrl),
+          const SizedBox(height: AppSpacing.sm),
+          FilledButton.icon(
+            onPressed: onCopy,
+            icon: const Icon(Icons.copy_outlined),
+            label: const Text('Copiar link'),
+          ),
+        ],
       ),
     );
   }

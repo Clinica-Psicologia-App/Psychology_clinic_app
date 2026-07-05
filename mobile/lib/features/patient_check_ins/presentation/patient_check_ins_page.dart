@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../profile/domain/profile_role.dart';
@@ -164,23 +166,32 @@ class _CheckInsList extends StatelessWidget {
     final history = items.where((c) => !c.isToday).toList();
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        88,
+      ),
       children: [
-        if (readOnly)
-          Text(
-            'Histórico de check-ins do paciente (somente leitura).',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-          )
-        else
-          Text(
-            'Registros rápidos entre as sessões. O check-in de hoje aparece em destaque.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+        AppPageHeader(
+          title: readOnly ? 'Check-ins do paciente' : 'Check-in emocional',
+          subtitle: readOnly
+              ? 'Histórico de registros do paciente para leitura clínica entre sessões.'
+              : 'Registros rápidos entre as sessões para acompanhar humor, energia e sinais importantes do dia.',
+          icon: Icons.fact_check_outlined,
+          metadata: [
+            if (today.isNotEmpty) const Chip(label: Text('Hoje preenchido')),
+            Chip(label: Text('${history.length} anteriores')),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        if (today.isNotEmpty) ...[
+          const AppSectionHeader(
+            title: 'Hoje',
+            subtitle: 'Registro mais recente em destaque.',
           ),
-        const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.sm),
+        ],
         MotionStaggered(
           children: [
             for (final c in today)
@@ -192,9 +203,12 @@ class _CheckInsList extends StatelessWidget {
           ],
         ),
         if (history.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Text('Anteriores', style: Theme.of(context).textTheme.titleSmall),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.xl),
+          const AppSectionHeader(
+            title: 'Anteriores',
+            subtitle: 'Linha de acompanhamento ao longo do tempo.',
+          ),
+          const SizedBox(height: AppSpacing.sm),
           MotionStaggered(
             children: [
               for (final c in history)

@@ -2,6 +2,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../../shared/widgets/gradient_progress_indicator.dart';
@@ -82,7 +84,12 @@ class _QuestionnaireAnswerPageState
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.sm,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -93,7 +100,7 @@ class _QuestionnaireAnswerPageState
                       totalQuestions: questions.length,
                       currentContextId: _currentContext?.id,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpacing.sm),
                   ],
                   Row(
                     children: [
@@ -104,14 +111,14 @@ class _QuestionnaireAnswerPageState
                               'Pergunta ${_currentIndex + 1} de ${questions.length}',
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: AppSpacing.sm),
                       Text(
                         '${_currentIndex + 1}/${questions.length}',
                         style: Theme.of(context).textTheme.labelLarge,
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.xs),
                   Text(
                     _isParentalFlow
                         ? 'Respondendo sobre: ${_currentContext?.label ?? 'Figura parental'}'
@@ -125,7 +132,7 @@ class _QuestionnaireAnswerPageState
             ),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 220),
                   switchInCurve: Curves.easeOutCubic,
@@ -144,13 +151,16 @@ class _QuestionnaireAnswerPageState
                     key: ValueKey('${_currentIndex}_${_currentContext?.id}'),
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text(
-                        _isParentalFlow
+                      AppInfoCard(
+                        title: _isParentalFlow
+                            ? 'Pergunta sobre ${_currentContext?.label ?? 'figura parental'}'
+                            : 'Pergunta ${question.code}',
+                        body: _isParentalFlow
                             ? normalizeParentalQuestionText(question.text)
                             : question.text,
-                        style: Theme.of(context).textTheme.titleMedium,
+                        icon: Icons.help_outline,
                       ),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: AppSpacing.xl),
                       QuestionInputWidget(
                         question: question,
                         value: _answers[_currentAnswerKey],
@@ -169,10 +179,10 @@ class _QuestionnaireAnswerPageState
             ),
             Padding(
               padding: EdgeInsets.fromLTRB(
-                16,
-                8,
-                16,
-                16 + MediaQuery.viewInsetsOf(context).bottom,
+                AppSpacing.md,
+                AppSpacing.xs,
+                AppSpacing.md,
+                AppSpacing.md + MediaQuery.viewInsetsOf(context).bottom,
               ),
               child: Row(
                 children: [

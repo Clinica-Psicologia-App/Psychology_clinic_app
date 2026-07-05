@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_spacing.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/widgets/status_chip.dart';
 import '../../questionnaires/presentation/questionnaire_routes.dart';
 import '../../results/presentation/result_routes.dart';
 import '../../therapy_resources/presentation/therapy_resource_routes.dart';
@@ -42,23 +45,6 @@ class PatientDetailsPage extends ConsumerWidget {
 
     return AppScaffold(
       title: 'Paciente',
-      actions: [
-        if (role == ProfileRole.psychologist ||
-            role == ProfileRole.platformAdmin)
-          asyncPatient.whenOrNull(
-                data: (patient) => patient != null
-                    ? IconButton(
-                        icon: const Icon(Icons.edit_outlined),
-                        tooltip: 'Editar paciente',
-                        onPressed: () => context.push(
-                          PatientRoutes.edit(role, patientId),
-                          extra: patient,
-                        ),
-                      )
-                    : null,
-              ) ??
-              const SizedBox.shrink(),
-      ],
       body: asyncPatient.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
@@ -104,102 +90,88 @@ class _PatientDetailsBody extends StatelessWidget {
 
     return MotionReveal(
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.md),
         children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    patient.fullName,
-                    style: Theme.of(context).textTheme.headlineSmall,
-                  ),
-                  const SizedBox(height: 16),
-                  _InfoRow(label: 'E-mail', value: patient.email),
-                  _SensitiveInfoRow(
-                    label: 'Telefone',
-                    value: patient.phone,
-                    maskedValue: _maskPhone(patient.phone),
-                  ),
-                  _SensitiveInfoRow(
-                    label: 'CPF',
-                    value: patient.cpf,
-                    maskedValue: _maskCpf(patient.cpf),
-                  ),
-                  _InfoRow(
-                    label: 'Data de nascimento',
-                    value: patient.birthDate != null
-                        ? dateFormat.formatFullDate(patient.birthDate!)
-                        : null,
-                  ),
-                  _InfoRow(label: 'Gênero', value: patient.displayGender),
-                  _InfoRow(
-                    label: 'Estado civil',
-                    value: patient.displayRelationshipStatus,
-                  ),
-                  _InfoRow(
-                    label: 'Escolaridade',
-                    value: patient.displayEducationLevel,
-                  ),
-                  _InfoRow(label: 'Ocupação', value: patient.occupation),
-                  _InfoRow(
-                    label: 'Naturalidade',
-                    value: _birthPlace(patient),
-                  ),
-                  _InfoRow(
-                    label: 'Orientação religiosa',
-                    value: patient.religiousOrientation,
-                  ),
-                  _InfoRow(
-                    label: 'Grupo étnico',
-                    value: patient.displayEthnicGroup,
-                  ),
-                  _InfoRow(
-                    label: 'Orientação sexual',
-                    value: patient.displaySexualOrientation,
-                  ),
-                  _InfoRow(
-                    label: 'Filhos',
-                    value: _hasChildrenLabel(patient.hasChildren),
-                  ),
-                  _InfoRow(
-                    label: 'Psicólogo responsável',
-                    value: patient.responsiblePsychologistName,
-                  ),
-                  _InfoRow(
-                    label: 'Cadastro clínico',
-                    value: patient.isActive ? 'Ativo' : 'Inativo',
-                  ),
-                  _InfoRow(
-                    label: 'Acesso ao aplicativo',
-                    value: patient.accessStatus?.label,
-                  ),
-                ],
-              ),
-            ),
+          _PatientHeader(
+            patient: patient,
+            role: role,
+            onEdit: role == ProfileRole.psychologist ||
+                    role == ProfileRole.platformAdmin
+                ? () => context.push(
+                      PatientRoutes.edit(role, patient.id),
+                      extra: patient,
+                    )
+                : null,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.md),
+          _DetailsSectionCard(
+            title: 'Dados do paciente',
+            subtitle:
+                'Informações principais para identificação, contato e contexto clínico.',
+            children: [
+              _InfoRow(label: 'E-mail', value: patient.email),
+              _SensitiveInfoRow(
+                label: 'Telefone',
+                value: patient.phone,
+                maskedValue: _maskPhone(patient.phone),
+              ),
+              _SensitiveInfoRow(
+                label: 'CPF',
+                value: patient.cpf,
+                maskedValue: _maskCpf(patient.cpf),
+              ),
+              _InfoRow(
+                label: 'Data de nascimento',
+                value: patient.birthDate != null
+                    ? dateFormat.formatFullDate(patient.birthDate!)
+                    : null,
+              ),
+              _InfoRow(label: 'Gênero', value: patient.displayGender),
+              _InfoRow(
+                label: 'Estado civil',
+                value: patient.displayRelationshipStatus,
+              ),
+              _InfoRow(
+                label: 'Escolaridade',
+                value: patient.displayEducationLevel,
+              ),
+              _InfoRow(label: 'Ocupação', value: patient.occupation),
+              _InfoRow(label: 'Naturalidade', value: _birthPlace(patient)),
+              _InfoRow(
+                label: 'Orientação religiosa',
+                value: patient.religiousOrientation,
+              ),
+              _InfoRow(
+                  label: 'Grupo étnico', value: patient.displayEthnicGroup),
+              _InfoRow(
+                label: 'Orientação sexual',
+                value: patient.displaySexualOrientation,
+              ),
+              _InfoRow(
+                label: 'Filhos',
+                value: _hasChildrenLabel(patient.hasChildren),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
           if (role == ProfileRole.psychologist ||
               role == ProfileRole.platformAdmin) ...[
             _PatientLifecycleCard(patient: patient),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
           ],
           _IntakeContextCard(patient: patient),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.md),
           if (role != ProfileRole.platformAdmin &&
               patient.isActive &&
               patient.accessStatus == PatientAccessStatus.noAppAccess) ...[
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.mark_email_unread_outlined),
-                title: const Text('Convidar paciente'),
-                subtitle: const Text(
-                  'Gerar link para o paciente criar senha e concluir o primeiro acesso.',
-                ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.push(
+            AppInfoCard(
+              icon: Icons.mark_email_unread_outlined,
+              title: 'Convidar paciente',
+              body:
+                  'Gere um link para o paciente criar senha e concluir o primeiro acesso.',
+              action: IconButton(
+                tooltip: 'Convidar paciente',
+                onPressed: () => context.push(
                   PatientRoutes.invitationCreate(role),
                   extra: PatientInvitationDraft(
                     fullName: patient.fullName,
@@ -209,28 +181,29 @@ class _PatientDetailsBody extends StatelessWidget {
                         patient.responsiblePsychologistId,
                   ),
                 ),
+                icon: const Icon(Icons.arrow_forward_rounded),
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
           ],
           if (role != ProfileRole.platformAdmin) ...[
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.picture_as_pdf_outlined),
-                title: const Text('Gerar relatório'),
-                subtitle: const Text(
-                  'PDF clínico supervisionado (somente equipe).',
-                ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () => context.push(
+            AppInfoCard(
+              icon: Icons.picture_as_pdf_outlined,
+              title: 'Relatório clínico',
+              body: 'Gere um PDF supervisionado com as seções clínicas.',
+              tone: AppInfoCardTone.info,
+              action: IconButton(
+                tooltip: 'Gerar relatório',
+                onPressed: () => context.push(
                   ClinicalReportRoutes.staffOptions(
                     role: role,
                     patientId: patient.id,
                   ),
                 ),
+                icon: const Icon(Icons.arrow_forward_rounded),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: AppSpacing.xl),
             FutureModulesSection(
               onQuestionnairesTap: () => context.push(
                 QuestionnaireRoutes.list(
@@ -307,9 +280,9 @@ class _PatientDetailsBody extends StatelessWidget {
             ),
           ],
           if (role == ProfileRole.platformAdmin) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.xs),
             _PatientDeleteCard(patient: patient),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
           ],
         ],
       ),
@@ -343,6 +316,98 @@ class _PatientDetailsBody extends StatelessWidget {
     final digits = value.replaceAll(RegExp(r'\D'), '');
     if (digits.length < 4) return '••••';
     return '•••••••${digits.substring(digits.length - 4)}';
+  }
+}
+
+class _PatientHeader extends StatelessWidget {
+  const _PatientHeader({
+    required this.patient,
+    required this.role,
+    this.onEdit,
+  });
+
+  final Patient patient;
+  final ProfileRole role;
+  final VoidCallback? onEdit;
+
+  @override
+  Widget build(BuildContext context) {
+    final statusTone =
+        patient.isActive ? AppStatusTone.success : AppStatusTone.error;
+    final accessLabel = patient.accessStatus?.label;
+
+    return AppPageHeader(
+      icon: Icons.person_outline,
+      title: patient.fullName,
+      subtitle: _subtitle,
+      metadata: [
+        StatusChip(
+          label: patient.isActive ? 'Cadastro ativo' : 'Cadastro inativo',
+          tone: statusTone,
+          icon: patient.isActive
+              ? Icons.check_circle_outline
+              : Icons.person_off_outlined,
+        ),
+        if (accessLabel != null && accessLabel.trim().isNotEmpty)
+          StatusChip(
+            label: accessLabel,
+            tone: patient.accessStatus == PatientAccessStatus.active
+                ? AppStatusTone.success
+                : AppStatusTone.neutral,
+            icon: Icons.phone_iphone_outlined,
+          ),
+        if (patient.responsiblePsychologistName != null &&
+            patient.responsiblePsychologistName!.trim().isNotEmpty)
+          StatusChip(
+            label: patient.responsiblePsychologistName!,
+            tone: AppStatusTone.info,
+            icon: Icons.psychology_alt_outlined,
+          ),
+      ],
+      primaryAction: onEdit != null
+          ? FilledButton.icon(
+              onPressed: onEdit,
+              icon: const Icon(Icons.edit_outlined),
+              label: const Text('Editar paciente'),
+            )
+          : null,
+    );
+  }
+
+  String? get _subtitle {
+    if (role == ProfileRole.platformAdmin) {
+      return 'Visão administrativa do cadastro, status e histórico preservado.';
+    }
+    return 'Resumo operacional do paciente e acesso aos módulos clínicos.';
+  }
+}
+
+class _DetailsSectionCard extends StatelessWidget {
+  const _DetailsSectionCard({
+    required this.title,
+    required this.children,
+    this.subtitle,
+  });
+
+  final String title;
+  final String? subtitle;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AppSectionHeader(title: title, subtitle: subtitle),
+            const SizedBox(height: AppSpacing.md),
+            ...children,
+          ],
+        ),
+      ),
+    );
   }
 }
 

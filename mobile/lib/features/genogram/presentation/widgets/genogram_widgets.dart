@@ -1,8 +1,13 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../shared/widgets/status_chip.dart';
 import '../../domain/genogram_data.dart';
 import '../../domain/genogram_person.dart';
 import '../../domain/genogram_relationship.dart';
+import '../../domain/genogram_relationship_type.dart';
 
 class GenogramGraphicNotice extends StatelessWidget {
   const GenogramGraphicNotice({super.key});
@@ -11,7 +16,7 @@ class GenogramGraphicNotice extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -19,7 +24,7 @@ class GenogramGraphicNotice extends StatelessWidget {
               Icons.info_outline,
               color: Theme.of(context).colorScheme.primary,
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Text(
                 'Visualização em árvore gráfica será adicionada em versão futura. '
@@ -43,7 +48,7 @@ class GenogramSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Row(
           children: [
             _Stat(
@@ -51,7 +56,7 @@ class GenogramSummaryCard extends StatelessWidget {
               label: 'Pessoas',
               value: '${data.people.length}',
             ),
-            const SizedBox(width: 24),
+            const SizedBox(width: AppSpacing.xl),
             _Stat(
               icon: Icons.link,
               label: 'Relações',
@@ -110,36 +115,93 @@ class GenogramPersonTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final sensitive = person.isSensitive;
+    final accent =
+        sensitive ? theme.colorScheme.error : AppColors.moduleGenogram;
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       color: sensitive
           ? theme.colorScheme.errorContainer.withValues(alpha: 0.25)
-          : null,
-      child: ListTile(
-        leading: Icon(
-          sensitive ? Icons.lock_outline : Icons.person_outline,
-          color:
-              sensitive ? theme.colorScheme.error : theme.colorScheme.primary,
-        ),
-        title: Text(person.displayName),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (person.relationshipToPatient != null &&
-                person.relationshipToPatient!.trim().isNotEmpty)
-              Text(person.relationshipToPatient!.trim()),
-            if (person.lifeSpanLabel != null) Text(person.lifeSpanLabel!),
-            if (person.isDeceased)
-              Text(
-                'Falecido',
-                style: theme.textTheme.labelSmall,
-              ),
-          ],
-        ),
-        isThreeLine: true,
-        trailing: const Icon(Icons.chevron_right),
+          : AppColors.surface,
+      child: InkWell(
+        borderRadius: AppRadius.lgAll,
         onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.12),
+                  borderRadius: AppRadius.mdAll,
+                ),
+                child: Icon(
+                  sensitive ? Icons.lock_outline : Icons.person_outline,
+                  color: accent,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      sensitive ? 'Conteúdo sensível' : person.displayName,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.navy,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xxs),
+                    if (sensitive)
+                      Text(
+                        'Toque para abrir com aviso.',
+                        style: theme.textTheme.bodySmall,
+                      )
+                    else ...[
+                      if (person.relationshipToPatient != null &&
+                          person.relationshipToPatient!.trim().isNotEmpty)
+                        Text(
+                          person.relationshipToPatient!.trim(),
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Wrap(
+                        spacing: AppSpacing.xs,
+                        runSpacing: AppSpacing.xs,
+                        children: [
+                          if (person.lifeSpanLabel != null)
+                            StatusChip(
+                              label: person.lifeSpanLabel!,
+                              tone: AppStatusTone.neutral,
+                              icon: Icons.calendar_today_outlined,
+                            ),
+                          if (person.isDeceased)
+                            const StatusChip(
+                              label: 'Falecido',
+                              tone: AppStatusTone.neutral,
+                              icon: Icons.history_outlined,
+                            ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Icon(
+                Icons.arrow_forward_rounded,
+                color:
+                    sensitive ? theme.colorScheme.error : AppColors.textMuted,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -163,30 +225,85 @@ class GenogramRelationshipTile extends StatelessWidget {
     final sensitive = relationship.isSensitive;
     final aName = data.personNameById(relationship.personAId);
     final bName = data.personNameById(relationship.personBId);
+    final accent =
+        sensitive ? theme.colorScheme.error : AppColors.moduleTimeline;
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       color: sensitive
           ? theme.colorScheme.errorContainer.withValues(alpha: 0.25)
-          : null,
-      child: ListTile(
-        leading: Icon(
-          sensitive ? Icons.lock_outline : Icons.link,
-          color:
-              sensitive ? theme.colorScheme.error : theme.colorScheme.primary,
-        ),
-        title: Text(relationship.labelBetween(aName, bName)),
-        subtitle:
-            relationship.notes != null && relationship.notes!.trim().isNotEmpty
-                ? Text(
-                    relationship.notes!.trim(),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  )
-                : null,
-        isThreeLine: relationship.notes != null,
-        trailing: const Icon(Icons.chevron_right),
+          : AppColors.surface,
+      child: InkWell(
+        borderRadius: AppRadius.lgAll,
         onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.12),
+                  borderRadius: AppRadius.mdAll,
+                ),
+                child: Icon(
+                  sensitive ? Icons.lock_outline : Icons.link,
+                  color: accent,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      sensitive
+                          ? 'Relação com conteúdo sensível'
+                          : relationship.labelBetween(aName, bName),
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.navy,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    if (sensitive)
+                      Text(
+                        'Toque para abrir com aviso.',
+                        style: theme.textTheme.bodySmall,
+                      )
+                    else ...[
+                      StatusChip(
+                        label: relationship.relationshipType.label,
+                        tone: AppStatusTone.info,
+                        icon: Icons.sync_alt_outlined,
+                      ),
+                      if (relationship.notes != null &&
+                          relationship.notes!.trim().isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          relationship.notes!.trim(),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Icon(
+                Icons.arrow_forward_rounded,
+                color:
+                    sensitive ? theme.colorScheme.error : AppColors.textMuted,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

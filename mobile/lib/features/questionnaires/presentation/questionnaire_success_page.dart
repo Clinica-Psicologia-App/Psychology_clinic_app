@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_animations.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/finish_questionnaire_result.dart';
@@ -74,10 +76,19 @@ class _QuestionnaireSuccessPageState extends State<QuestionnaireSuccessPage>
     return AppScaffold(
       title: 'Concluído',
       body: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           children: [
-            const SizedBox(height: 16),
+            AppPageHeader(
+              title: 'Questionário enviado',
+              subtitle:
+                  'As respostas foram registradas e ficarão disponíveis para revisão clínica do profissional responsável.',
+              icon: Icons.check_circle_outline,
+              metadata: [
+                if (dateLabel != null) Chip(label: Text(dateLabel)),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xl),
             _SuccessBadge(
               badgeScale:
                   animate ? _badgeScale : const AlwaysStoppedAnimation(1),
@@ -90,57 +101,24 @@ class _QuestionnaireSuccessPageState extends State<QuestionnaireSuccessPage>
               child: Column(
                 children: [
                   Text(
-                    'Questionário enviado',
-                    style: theme.textTheme.headlineSmall?.copyWith(
+                    widget.result.questionnaireName,
+                    style: theme.textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    widget.result.questionnaireName,
-                    style: theme.textTheme.titleMedium,
-                    textAlign: TextAlign.center,
-                  ),
-                  if (dateLabel != null) ...[
-                    const SizedBox(height: 8),
-                    Text(
-                      'Concluído em $dateLabel',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-            MotionReveal(
-              delay: const Duration(milliseconds: 340),
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        Icons.shield_outlined,
-                        size: 20,
-                        color: theme.colorScheme.primary,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Suas respostas foram registradas. A interpretação '
-                          'clínica será revisada pelo profissional responsável '
-                          '— não há resultado automático nesta versão.',
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+            const SizedBox(height: AppSpacing.xl),
+            const MotionReveal(
+              delay: Duration(milliseconds: 340),
+              child: AppInfoCard(
+                title: 'Revisão clínica',
+                body:
+                    'A interpretação clínica será revisada pelo profissional responsável. Não há resultado automático nesta versão.',
+                icon: Icons.shield_outlined,
+                tone: AppInfoCardTone.success,
               ),
             ),
             const Spacer(),

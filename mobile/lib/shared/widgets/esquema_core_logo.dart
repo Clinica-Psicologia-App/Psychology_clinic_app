@@ -77,7 +77,7 @@ class EsquemaCoreLogo extends StatelessWidget {
       return _LogoColumn(
         image: _LogoImage(
           assetPath: AppBrandingAssets.logoHorizontal,
-          width: size * 3.2,
+          width: size * 4.24,
           height: size,
           fallbackSize: size,
         ),

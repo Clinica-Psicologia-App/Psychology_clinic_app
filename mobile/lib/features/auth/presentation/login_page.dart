@@ -8,6 +8,7 @@ import '../../../core/config/env_config.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_animations.dart';
 import '../../../core/theme/app_breakpoints.dart';
+import '../../../core/theme/app_branding_assets.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_gradients.dart';
 import '../../../core/theme/app_radius.dart';
@@ -151,6 +152,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
                             onFillSeed: _fillSeed,
                             showTestAccounts: EnvConfig.showTestAccounts,
                             showHeaderLogo: false,
+                            showBrandHeader: true,
+                            centerHeader: false,
                           ),
                         ),
                       ),
@@ -169,35 +172,150 @@ class _LoginPageState extends ConsumerState<LoginPage>
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.md,
-        AppSpacing.md,
+        AppSpacing.lg,
         AppSpacing.md,
         AppSpacing.xxl,
       ),
       child: Center(
         child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 398),
-          child: MotionReveal(
-            delay: const Duration(milliseconds: 80),
-            child: _LoginCard(
-              compact: true,
-              child: _LoginForm(
-                formKey: _formKey,
-                emailController: _emailController,
-                passwordController: _passwordController,
-                obscurePassword: _obscurePassword,
-                onTogglePassword: () =>
-                    setState(() => _obscurePassword = !_obscurePassword),
-                redirectMsg: redirectMsg,
-                isLoading: isLoading,
-                onSubmit: _submit,
-                onForgotPassword: () => context.push(AppRoutes.forgotPassword),
-                onFillSeed: _fillSeed,
-                showTestAccounts: EnvConfig.showTestAccounts,
-                showHeaderLogo: true,
+          constraints: const BoxConstraints(maxWidth: 390),
+          child: Column(
+            children: [
+              MotionReveal(
+                child: _MobileBrandHero(controller: _ambientController),
               ),
-            ),
+              const SizedBox(height: AppSpacing.lg),
+              MotionReveal(
+                delay: const Duration(milliseconds: 90),
+                child: _LoginCard(
+                  compact: true,
+                  child: _LoginForm(
+                    formKey: _formKey,
+                    emailController: _emailController,
+                    passwordController: _passwordController,
+                    obscurePassword: _obscurePassword,
+                    onTogglePassword: () =>
+                        setState(() => _obscurePassword = !_obscurePassword),
+                    redirectMsg: redirectMsg,
+                    isLoading: isLoading,
+                    onSubmit: _submit,
+                    onForgotPassword: () =>
+                        context.push(AppRoutes.forgotPassword),
+                    onFillSeed: _fillSeed,
+                    showTestAccounts: EnvConfig.showTestAccounts,
+                    showHeaderLogo: false,
+                    showBrandHeader: false,
+                    centerHeader: true,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _MobileBrandHero extends StatelessWidget {
+  const _MobileBrandHero({required this.controller});
+
+  final Animation<double> controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppRadius.xxl),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFFFFFFFF),
+            Color(0xFFF4FBFF),
+            Color(0xFFF6F3FF),
+          ],
+        ),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.78)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.navy.withValues(alpha: 0.08),
+            blurRadius: 28,
+            offset: const Offset(0, 16),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: Opacity(
+              opacity: 0.72,
+              child: _ClinicalSignalAnimation(controller: controller),
+            ),
+          ),
+          Row(
+            children: [
+              Container(
+                width: 76,
+                height: 76,
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  borderRadius: BorderRadius.circular(AppRadius.xl),
+                  border: Border.all(color: AppColors.border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.cyan.withValues(alpha: 0.16),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Image.asset(
+                  AppBrandingAssets.icon,
+                  fit: BoxFit.contain,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    RichText(
+                      text: TextSpan(
+                        style:
+                            Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                  color: AppColors.navy,
+                                  fontWeight: FontWeight.w900,
+                                  height: 1,
+                                ),
+                        children: const [
+                          TextSpan(text: 'Esquema'),
+                          TextSpan(
+                            text: 'Core',
+                            style: TextStyle(color: AppColors.cyan),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      'seu raciocínio clínico em mapa',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            color: AppColors.textSecondary,
+                            height: 1.25,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -555,6 +673,8 @@ class _LoginForm extends StatelessWidget {
     required this.onFillSeed,
     required this.showTestAccounts,
     required this.showHeaderLogo,
+    this.showBrandHeader = true,
+    this.centerHeader = false,
   });
 
   final GlobalKey<FormState> formKey;
@@ -569,6 +689,8 @@ class _LoginForm extends StatelessWidget {
   final void Function(String email) onFillSeed;
   final bool showTestAccounts;
   final bool showHeaderLogo;
+  final bool showBrandHeader;
+  final bool centerHeader;
 
   @override
   Widget build(BuildContext context) {
@@ -604,7 +726,7 @@ class _LoginForm extends StatelessWidget {
                   ),
             ),
             const SizedBox(height: AppSpacing.lg),
-          ] else ...[
+          ] else if (showBrandHeader) ...[
             const EsquemaCoreLogo.horizontal(
               size: 40,
               showTagline: true,
@@ -612,6 +734,7 @@ class _LoginForm extends StatelessWidget {
             const SizedBox(height: AppSpacing.xl),
             Text(
               'Entrar com segurança',
+              textAlign: centerHeader ? TextAlign.center : TextAlign.start,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     color: AppColors.textPrimary,
                     fontWeight: FontWeight.w800,
@@ -620,11 +743,32 @@ class _LoginForm extends StatelessWidget {
             const SizedBox(height: AppSpacing.xs),
             Text(
               'Use seu e-mail cadastrado para continuar.',
+              textAlign: centerHeader ? TextAlign.center : TextAlign.start,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: AppColors.textSecondary,
                   ),
             ),
             const SizedBox(height: AppSpacing.xl),
+          ] else ...[
+            Text(
+              'Bem-vindo de volta',
+              textAlign: centerHeader ? TextAlign.center : TextAlign.start,
+              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w900,
+                    height: 1.05,
+                  ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Entre com seu e-mail e senha para acessar sua área.',
+              textAlign: centerHeader ? TextAlign.center : TextAlign.start,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.35,
+                  ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
           ],
           if (redirectMsg != null) ...[
             MaterialBanner(

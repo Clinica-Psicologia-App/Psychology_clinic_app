@@ -321,14 +321,24 @@ class _AppPageTransitionsBuilder extends PageTransitionsBuilder {
       curve: AppAnimations.enterCurve,
       reverseCurve: AppAnimations.exitCurve,
     );
+    final secondaryCurved = CurvedAnimation(
+      parent: secondaryAnimation,
+      curve: AppAnimations.standardCurve,
+    );
+
+    // Fade-through: a tela que entra surge com fade + leve scale; a tela
+    // que fica embaixo recua discretamente quando outra é empilhada.
     return FadeTransition(
-      opacity: Tween<double>(begin: 0, end: 1).animate(curved),
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0.025, 0.018),
-          end: Offset.zero,
-        ).animate(curved),
-        child: child,
+      opacity: curved,
+      child: ScaleTransition(
+        scale: Tween<double>(begin: 0.985, end: 1).animate(curved),
+        child: FadeTransition(
+          opacity: Tween<double>(begin: 1, end: 0.6).animate(secondaryCurved),
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 1, end: 0.99).animate(secondaryCurved),
+            child: child,
+          ),
+        ),
       ),
     );
   }

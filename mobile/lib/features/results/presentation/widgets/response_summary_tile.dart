@@ -62,10 +62,7 @@ class ResponseSummaryTile extends StatelessWidget {
                       summary.questionnaireName,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: AppColors.navy,
-                        fontWeight: FontWeight.w800,
-                      ),
+                      style: theme.textTheme.titleMedium,
                     ),
                     const SizedBox(height: AppSpacing.xxs),
                     Text(

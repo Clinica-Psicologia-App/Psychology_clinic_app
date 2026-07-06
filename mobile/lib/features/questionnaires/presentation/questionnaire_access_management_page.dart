@@ -492,7 +492,7 @@ class _QuestionnaireCatalogTile extends StatelessWidget {
                         questionnaire.name,
                         style:
                             Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  fontWeight: FontWeight.w800,
+                                  fontWeight: FontWeight.w700,
                                   color: AppColors.navy,
                                 ),
                       ),
@@ -688,7 +688,7 @@ class _AccessTile extends StatelessWidget {
                           questionnaire.name,
                           style:
                               Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.w800,
+                                    fontWeight: FontWeight.w700,
                                     color: AppColors.navy,
                                   ),
                         ),

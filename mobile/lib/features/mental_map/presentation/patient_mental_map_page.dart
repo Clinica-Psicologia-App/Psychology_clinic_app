@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_severity.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
@@ -441,14 +442,10 @@ class _MentalMapBody extends StatelessWidget {
 
   /// Resolve a cor clínica de severidade a partir da colorKey do backend.
   /// Retorna [fallback] quando não há dado (nó vazio ou sem questionário).
-  Color _severityColor(String? key, Color fallback) =>
-      switch (key?.toLowerCase()) {
-        'green' => Colors.green.shade500,
-        'yellow' || 'amber' => Colors.amber.shade600,
-        'orange' => Colors.orange.shade600,
-        'red' => Colors.red.shade600,
-        _ => fallback,
-      };
+  Color _severityColor(String? key, Color fallback) {
+    final severity = AppSeverity.fromColorKey(key);
+    return severity.hasSeverity ? severity.color : fallback;
+  }
 
   List<MentalMapHubNodeData> _buildHubNodes(BuildContext context) {
     final colors = Theme.of(context).colorScheme;

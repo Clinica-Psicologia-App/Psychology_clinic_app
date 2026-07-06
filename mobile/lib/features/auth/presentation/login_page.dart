@@ -290,7 +290,7 @@ class _MobileBrandHero extends StatelessWidget {
                         style:
                             Theme.of(context).textTheme.headlineSmall?.copyWith(
                                   color: AppColors.navy,
-                                  fontWeight: FontWeight.w900,
+                                  fontWeight: FontWeight.w700,
                                   height: 1,
                                 ),
                         children: const [
@@ -468,7 +468,7 @@ class _LoginStoryPanel extends StatelessWidget {
                   'Acesso clínico',
                   style: Theme.of(context).textTheme.displaySmall?.copyWith(
                         color: AppColors.textOnBrand,
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         height: 1.05,
                       ),
                 ),
@@ -712,7 +712,7 @@ class _LoginForm extends StatelessWidget {
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                     height: 1.05,
                   ),
             ),
@@ -737,7 +737,7 @@ class _LoginForm extends StatelessWidget {
               textAlign: centerHeader ? TextAlign.center : TextAlign.start,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                   ),
             ),
             const SizedBox(height: AppSpacing.xs),
@@ -755,7 +755,7 @@ class _LoginForm extends StatelessWidget {
               textAlign: centerHeader ? TextAlign.center : TextAlign.start,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w900,
+                    fontWeight: FontWeight.w700,
                     height: 1.05,
                   ),
             ),
@@ -960,7 +960,7 @@ class _AccessNotice extends StatelessWidget {
                 Text(
                   'Novo acesso?',
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                       ),
                 ),
                 const SizedBox(height: AppSpacing.xxs),

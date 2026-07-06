@@ -23,6 +23,11 @@ class PatientListTile extends StatelessWidget {
     final psychologist = patient.responsiblePsychologistName ?? 'Não informado';
     final status =
         patient.isActive ? patient.accessStatus?.label : 'Paciente inativo';
+    final avatarColor = patient.isActive
+        ? AppColors.blue.withValues(alpha: 0.12)
+        : AppColors.surfaceMuted;
+    final avatarTextColor =
+        patient.isActive ? AppColors.navy : AppColors.textMuted;
 
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -43,12 +48,12 @@ class PatientListTile extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     radius: 24,
-                    backgroundColor: AppColors.blue.withValues(alpha: 0.12),
+                    backgroundColor: avatarColor,
                     child: Text(
-                      patient.fullName.characters.first.toUpperCase(),
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: AppColors.navy,
-                        fontWeight: FontWeight.w700,
+                      _initials(patient.fullName),
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: avatarTextColor,
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
                   ),
@@ -113,5 +118,18 @@ class PatientListTile extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Primeira letra do primeiro e do último nome (ex.: "Maria Souza" → "MS").
+  static String _initials(String fullName) {
+    final parts = fullName
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts.first.characters.first.toUpperCase();
+    return (parts.first.characters.first + parts.last.characters.first)
+        .toUpperCase();
   }
 }

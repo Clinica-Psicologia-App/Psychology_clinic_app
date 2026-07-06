@@ -44,6 +44,7 @@ import '../../features/results/presentation/result_route_helpers.dart';
 import '../../features/therapy_resources/presentation/therapy_resource_route_helpers.dart';
 import '../../features/user_management/presentation/user_management_page.dart';
 import '../../features/user_management/presentation/user_management_routes.dart';
+import '../../shared/widgets/app_nav_shell.dart';
 import 'route_access.dart';
 
 abstract final class AppRoutes {
@@ -168,10 +169,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           token: state.uri.queryParameters['token'],
         ),
       ),
-      GoRoute(
-        path: AppRoutes.platformHome,
-        builder: (_, __) => const PlatformAdminHomePage(),
+      ShellRoute(
+        builder: (_, __, child) => AppNavShell(
+          destinations: _platformDestinations,
+          child: child,
+        ),
         routes: [
+          GoRoute(
+            path: AppRoutes.platformHome,
+            builder: (_, __) => const PlatformAdminHomePage(),
+            routes: [
           GoRoute(
             path: ClinicRoutes.platformList.replaceFirst('/platform/', ''),
             builder: (_, __) => const ClinicsPage(),
@@ -186,24 +193,26 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 QuestionnaireRoutes.adminAccess.replaceFirst('/platform/', ''),
             builder: (_, __) => const QuestionnaireAccessManagementPage(),
           ),
-          GoRoute(
-            path: 'patients',
-            builder: (_, __) =>
-                const PatientsPage(role: ProfileRole.platformAdmin),
-            routes: [
               GoRoute(
-                path: ':patientId',
-                builder: (_, state) => PatientDetailsPage(
-                  role: ProfileRole.platformAdmin,
-                  patientId: state.pathParameters['patientId']!,
-                ),
+                path: 'patients',
+                builder: (_, __) =>
+                    const PatientsPage(role: ProfileRole.platformAdmin),
                 routes: [
                   GoRoute(
-                    path: 'edit',
-                    builder: (_, state) => EditPatientPage(
+                    path: ':patientId',
+                    builder: (_, state) => PatientDetailsPage(
                       role: ProfileRole.platformAdmin,
-                      patient: state.extra as Patient,
+                      patientId: state.pathParameters['patientId']!,
                     ),
+                    routes: [
+                      GoRoute(
+                        path: 'edit',
+                        builder: (_, state) => EditPatientPage(
+                          role: ProfileRole.platformAdmin,
+                          patient: state.extra as Patient,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -211,16 +220,24 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      GoRoute(
-        path: AppRoutes.psychologistHome,
-        builder: (_, __) => const PsychologistHomePage(),
+      ShellRoute(
+        builder: (_, __, child) => AppNavShell(
+          destinations: _psychologistDestinations,
+          child: child,
+        ),
         routes: [
           GoRoute(
-            path: 'questionnaires',
-            builder: (_, __) => const PsychologistQuestionnairesPage(),
+            path: AppRoutes.psychologistHome,
+            builder: (_, __) => const PsychologistHomePage(),
+            routes: [
+              GoRoute(
+                path: 'questionnaires',
+                builder: (_, __) => const PsychologistQuestionnairesPage(),
+              ),
+              ...patientInvitationRoutesFor(ProfileRole.psychologist),
+              ..._staffPatientRoutes(ProfileRole.psychologist),
+            ],
           ),
-          ...patientInvitationRoutesFor(ProfileRole.psychologist),
-          ..._staffPatientRoutes(ProfileRole.psychologist),
         ],
       ),
       GoRoute(
@@ -241,6 +258,62 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     ],
   );
 });
+
+const _psychologistDestinations = [
+  AppNavDestination(
+    label: 'Início',
+    icon: Icons.home_outlined,
+    selectedIcon: Icons.home,
+    route: AppRoutes.psychologistHome,
+    exactMatch: true,
+  ),
+  AppNavDestination(
+    label: 'Pacientes',
+    icon: Icons.people_outline,
+    selectedIcon: Icons.people,
+    route: '${AppRoutes.psychologistHome}/patients',
+  ),
+  AppNavDestination(
+    label: 'Convites',
+    icon: Icons.mark_email_unread_outlined,
+    selectedIcon: Icons.mark_email_unread,
+    route: '${AppRoutes.psychologistHome}/patient-invitations',
+  ),
+  AppNavDestination(
+    label: 'Instrumentos',
+    icon: Icons.assignment_outlined,
+    selectedIcon: Icons.assignment,
+    route: '${AppRoutes.psychologistHome}/questionnaires',
+  ),
+];
+
+const _platformDestinations = [
+  AppNavDestination(
+    label: 'Início',
+    icon: Icons.home_outlined,
+    selectedIcon: Icons.home,
+    route: AppRoutes.platformHome,
+    exactMatch: true,
+  ),
+  AppNavDestination(
+    label: 'Clínicas',
+    icon: Icons.apartment_outlined,
+    selectedIcon: Icons.apartment,
+    route: '${AppRoutes.platformHome}/clinics',
+  ),
+  AppNavDestination(
+    label: 'Usuários',
+    icon: Icons.badge_outlined,
+    selectedIcon: Icons.badge,
+    route: '${AppRoutes.platformHome}/users',
+  ),
+  AppNavDestination(
+    label: 'Pacientes',
+    icon: Icons.people_outline,
+    selectedIcon: Icons.people,
+    route: '${AppRoutes.platformHome}/patients',
+  ),
+];
 
 List<RouteBase> patientInvitationRoutesFor(ProfileRole role) {
   return [

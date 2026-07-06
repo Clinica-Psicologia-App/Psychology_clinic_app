@@ -563,7 +563,7 @@ class _CreateClinicSheetState extends State<_CreateClinicSheet> {
                         style: Theme.of(context)
                             .textTheme
                             .headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.w800),
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(

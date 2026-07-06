@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/errors/app_exception.dart';
 import '../../core/errors/error_mapper.dart';
 import '../../core/theme/app_spacing.dart';
-import 'homologation_ui.dart';
+import 'app_empty_state.dart';
 import 'loading_skeleton.dart';
 import 'app_motion.dart';
 
@@ -17,7 +17,7 @@ class AsyncStateBody<T> extends StatelessWidget {
     required this.dataBuilder,
     this.emptyMessage = 'Nenhum item encontrado.',
     this.emptyIcon = Icons.inbox_outlined,
-    this.useSkeleton = false,
+    this.useSkeleton = true,
   });
 
   final AsyncValue<T> asyncValue;
@@ -56,12 +56,14 @@ class EmptyStatePanel extends StatelessWidget {
     required this.icon,
     this.title = 'Nada por aqui ainda',
     this.hint,
+    this.action,
   });
 
   final String message;
   final IconData icon;
   final String title;
   final String? hint;
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
@@ -69,11 +71,12 @@ class EmptyStatePanel extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xxl),
         child: MotionReveal(
-          child: HomologationEmptyPanel(
+          child: AppEmptyState(
             icon: icon,
             title: title,
             message: message,
             hint: hint,
+            action: action,
           ),
         ),
       ),

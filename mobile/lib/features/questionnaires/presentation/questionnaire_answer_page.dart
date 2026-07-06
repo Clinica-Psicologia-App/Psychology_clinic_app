@@ -1,7 +1,11 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'dart:async';
+
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_animations.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
@@ -40,6 +44,22 @@ class _QuestionnaireAnswerPageState
   String? _fieldError;
   bool _saving = false;
   bool _finishing = false;
+  bool _justSaved = false;
+  Timer? _savedFeedbackTimer;
+
+  @override
+  void dispose() {
+    _savedFeedbackTimer?.cancel();
+    super.dispose();
+  }
+
+  void _showSavedFeedback() {
+    _savedFeedbackTimer?.cancel();
+    setState(() => _justSaved = true);
+    _savedFeedbackTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _justSaved = false);
+    });
+  }
 
   QuestionnaireSession get session => widget.session;
   bool get _hasPendingAnswers => _answers.isNotEmpty;
@@ -133,7 +153,12 @@ class _QuestionnaireAnswerPageState
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(AppSpacing.md),
-                child: AnimatedSwitcher(
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: AppSpacing.formMaxWidth,
+                    ),
+                    child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 220),
                   switchInCurve: Curves.easeOutCubic,
                   switchOutCurve: Curves.easeInCubic,
@@ -174,6 +199,8 @@ class _QuestionnaireAnswerPageState
                       ),
                     ],
                   ),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -196,7 +223,38 @@ class _QuestionnaireAnswerPageState
                               }),
                       child: const Text('Anterior'),
                     ),
-                  const Spacer(),
+                  Expanded(
+                    child: Center(
+                      child: AnimatedOpacity(
+                        opacity: _justSaved ? 1 : 0,
+                        duration: AppAnimations.resolve(
+                          context,
+                          AppAnimations.fast,
+                        ),
+                        child: Semantics(
+                          liveRegion: true,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.check_circle_outline,
+                                size: 16,
+                                color: AppColors.success,
+                              ),
+                              const SizedBox(width: AppSpacing.xxs),
+                              Text(
+                                'Resposta salva',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelMedium
+                                    ?.copyWith(color: AppColors.success),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                   FilledButton(
                     onPressed: _saving || _finishing
                         ? null
@@ -283,6 +341,7 @@ class _QuestionnaireAnswerPageState
         }
         _fieldError = null;
       });
+      _showSavedFeedback();
     } catch (e) {
       if (mounted) showErrorBanner(context, e);
     } finally {

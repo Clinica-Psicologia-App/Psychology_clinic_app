@@ -152,7 +152,7 @@ class AppSectionHeader extends StatelessWidget {
                 title,
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: AppColors.navy,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
               if (subtitle != null && subtitle!.isNotEmpty) ...[

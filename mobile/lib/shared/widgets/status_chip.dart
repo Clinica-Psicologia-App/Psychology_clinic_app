@@ -87,7 +87,7 @@ class StatusChip extends StatelessWidget {
   return switch (tone) {
     AppStatusTone.available => (
         background: const Color(0xFFE0F7F5),
-        foreground: AppColors.turquoise,
+        foreground: const Color(0xFF0F766E),
         border: AppColors.turquoise.withValues(alpha: 0.25),
       ),
     AppStatusTone.inProgress => (

@@ -115,13 +115,13 @@ class GenogramPersonTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final sensitive = person.isSensitive;
-    final accent =
-        sensitive ? theme.colorScheme.error : AppColors.moduleGenogram;
+    // Confidencialidade discreta (cadeado + roxo), não alarme.
+    final accent = sensitive ? AppColors.purple : AppColors.moduleGenogram;
 
     return Card(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       color: sensitive
-          ? theme.colorScheme.errorContainer.withValues(alpha: 0.25)
+          ? AppColors.purple.withValues(alpha: 0.05)
           : AppColors.surface,
       child: InkWell(
         borderRadius: AppRadius.lgAll,
@@ -151,7 +151,7 @@ class GenogramPersonTile extends StatelessWidget {
                     Text(
                       sensitive ? 'Conteúdo sensível' : person.displayName,
                       style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: AppColors.navy,
                       ),
                     ),
@@ -194,10 +194,9 @@ class GenogramPersonTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              Icon(
+              const Icon(
                 Icons.arrow_forward_rounded,
-                color:
-                    sensitive ? theme.colorScheme.error : AppColors.textMuted,
+                color: AppColors.textMuted,
               ),
             ],
           ),
@@ -225,13 +224,13 @@ class GenogramRelationshipTile extends StatelessWidget {
     final sensitive = relationship.isSensitive;
     final aName = data.personNameById(relationship.personAId);
     final bName = data.personNameById(relationship.personBId);
-    final accent =
-        sensitive ? theme.colorScheme.error : AppColors.moduleTimeline;
+    // Confidencialidade discreta (cadeado + roxo), não alarme.
+    final accent = sensitive ? AppColors.purple : AppColors.moduleTimeline;
 
     return Card(
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       color: sensitive
-          ? theme.colorScheme.errorContainer.withValues(alpha: 0.25)
+          ? AppColors.purple.withValues(alpha: 0.05)
           : AppColors.surface,
       child: InkWell(
         borderRadius: AppRadius.lgAll,
@@ -263,7 +262,7 @@ class GenogramRelationshipTile extends StatelessWidget {
                           ? 'Relação com conteúdo sensível'
                           : relationship.labelBetween(aName, bName),
                       style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
+                        fontWeight: FontWeight.w700,
                         color: AppColors.navy,
                       ),
                     ),
@@ -296,10 +295,9 @@ class GenogramRelationshipTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              Icon(
+              const Icon(
                 Icons.arrow_forward_rounded,
-                color:
-                    sensitive ? theme.colorScheme.error : AppColors.textMuted,
+                color: AppColors.textMuted,
               ),
             ],
           ),

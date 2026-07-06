@@ -26,8 +26,10 @@ class PatientTimelineEventTile extends StatelessWidget {
     final theme = Theme.of(context);
     final sensitive = event.isSensitive;
     final hasPresentInfluence = event.presentInfluence != null;
+    // Evento sensível recebe tratamento de confidencialidade (discreto),
+    // não de alarme: cadeado + roxo clínico, nunca vermelho de erro.
     final accent = sensitive
-        ? theme.colorScheme.error
+        ? AppColors.purple
         : hasPresentInfluence
             ? AppColors.warning
             : AppColors.moduleTimeline;
@@ -84,7 +86,7 @@ class PatientTimelineEventTile extends StatelessWidget {
               ),
               child: Card(
                 color: sensitive
-                    ? theme.colorScheme.errorContainer.withValues(alpha: 0.22)
+                    ? AppColors.purple.withValues(alpha: 0.05)
                     : AppColors.surface,
                 child: InkWell(
                   borderRadius: AppRadius.lgAll,
@@ -106,7 +108,7 @@ class PatientTimelineEventTile extends StatelessWidget {
                                     style:
                                         theme.textTheme.labelMedium?.copyWith(
                                       color: accent,
-                                      fontWeight: FontWeight.w800,
+                                      fontWeight: FontWeight.w700,
                                     ),
                                   ),
                                   const SizedBox(height: AppSpacing.xxs),
@@ -115,19 +117,17 @@ class PatientTimelineEventTile extends StatelessWidget {
                                     style:
                                         theme.textTheme.titleMedium?.copyWith(
                                       color: AppColors.navy,
-                                      fontWeight: FontWeight.w800,
+                                      fontWeight: FontWeight.w700,
                                     ),
                                   ),
                                 ],
                               ),
                             ),
                             const SizedBox(width: AppSpacing.sm),
-                            Icon(
+                            const Icon(
                               Icons.arrow_forward_rounded,
                               size: 20,
-                              color: sensitive
-                                  ? theme.colorScheme.error
-                                  : AppColors.textMuted,
+                              color: AppColors.textMuted,
                             ),
                           ],
                         ),
@@ -153,7 +153,7 @@ class PatientTimelineEventTile extends StatelessWidget {
                             if (sensitive)
                               const StatusChip(
                                 label: 'Conteúdo sensível',
-                                tone: AppStatusTone.error,
+                                tone: AppStatusTone.neutral,
                                 icon: Icons.lock_outline,
                               ),
                           ],
@@ -426,7 +426,7 @@ class _ClinicalDetailSection extends StatelessWidget {
               title,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: AppColors.navy,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                   ),
             ),
             const SizedBox(height: AppSpacing.sm),

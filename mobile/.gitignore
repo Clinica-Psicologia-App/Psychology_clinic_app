@@ -13,3 +13,4 @@ coverage/
 
 # Env local (não commitar chaves de produção)
 env.local.json
+env.prod.json

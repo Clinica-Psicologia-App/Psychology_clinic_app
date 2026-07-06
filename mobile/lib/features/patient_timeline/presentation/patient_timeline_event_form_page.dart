@@ -520,7 +520,7 @@ class _SectionTitle extends StatelessWidget {
           text,
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 color: AppColors.navy,
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
               ),
         ),
       ),

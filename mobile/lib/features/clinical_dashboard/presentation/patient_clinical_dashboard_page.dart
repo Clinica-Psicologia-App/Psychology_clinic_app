@@ -152,11 +152,13 @@ class DashboardHomePage extends StatelessWidget {
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             sliver: SliverList(
+              // Ordem por prioridade clínica: estado atual → riscos/alertas →
+              // prioridades → sinais recentes → instrumentos → histórico.
               delegate: SliverChildListDelegate([
                 ClinicalExecutiveHeader(summary: data.caseSummary),
+                ClinicalDashboardCalloutsSection(callouts: data.callouts),
                 ClinicalPriorityGrid(summary: data.caseSummary),
                 ClinicalRecentSignalsCard(summary: data.caseSummary),
-                ClinicalDashboardCalloutsSection(callouts: data.callouts),
                 ClinicalInstrumentDetailsSection(
                   data: data,
                   isStaff: isStaff,

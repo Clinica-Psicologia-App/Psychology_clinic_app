@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/app_empty_state.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
@@ -42,6 +43,7 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
 
     return AppScaffold(
       title: 'Pacientes',
+      useResponsivePadding: true,
       actions: [
         IconButton(
           tooltip: 'Atualizar',
@@ -167,8 +169,24 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
               ),
               Expanded(
                 child: filtered.isEmpty
-                    ? const Center(
-                        child: Text('Nenhum paciente corresponde à busca.'),
+                    ? Center(
+                        child: AppEmptyState(
+                          icon: Icons.search_off_outlined,
+                          title: 'Nenhum resultado',
+                          message:
+                              'Nenhum paciente corresponde à busca ou aos filtros.',
+                          action: TextButton.icon(
+                            onPressed: () {
+                              _searchController.clear();
+                              setState(() {
+                                _query = '';
+                                _filter = _PatientFilter.all;
+                              });
+                            },
+                            icon: const Icon(Icons.filter_alt_off_outlined),
+                            label: const Text('Limpar busca e filtros'),
+                          ),
+                        ),
                       )
                     : RefreshIndicator(
                         onRefresh: () =>

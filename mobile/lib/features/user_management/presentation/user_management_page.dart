@@ -512,7 +512,7 @@ class _ClinicGroupCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style:
                               Theme.of(context).textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w800,
+                                    fontWeight: FontWeight.w700,
                                   ),
                         ),
                         const SizedBox(height: AppSpacing.xxs),
@@ -621,7 +621,7 @@ class _UserRow extends StatelessWidget {
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w800,
+                              fontWeight: FontWeight.w700,
                             ),
                       ),
                     ),
@@ -756,7 +756,7 @@ class _TinyStatusChip extends StatelessWidget {
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: color == AppColors.disabled ? AppColors.textMuted : color,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w700,
               height: 1,
             ),
       ),
@@ -990,7 +990,7 @@ class _CreateUserSheetState extends ConsumerState<_CreateUserSheet> {
                         style: Theme.of(context)
                             .textTheme
                             .headlineSmall
-                            ?.copyWith(fontWeight: FontWeight.w800),
+                            ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(

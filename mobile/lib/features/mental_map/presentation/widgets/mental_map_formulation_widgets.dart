@@ -199,7 +199,7 @@ class _FormulationTabItem extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       color: color,
-                      fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                      fontWeight: selected ? FontWeight.w700 : FontWeight.w600,
                     ),
               ),
             ),
@@ -441,7 +441,7 @@ class _MentalMapProgressScoreRow extends StatelessWidget {
                     '$rank',
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: color,
-                          fontWeight: FontWeight.w800,
+                          fontWeight: FontWeight.w700,
                         ),
                   ),
                 ),
@@ -461,7 +461,7 @@ class _MentalMapProgressScoreRow extends StatelessWidget {
                 highlight.displayScore,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
                       color: AppColors.navy,
-                      fontWeight: FontWeight.w800,
+                      fontWeight: FontWeight.w700,
                     ),
               ),
             ],

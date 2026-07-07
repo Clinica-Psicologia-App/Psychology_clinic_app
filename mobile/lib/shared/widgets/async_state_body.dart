@@ -16,7 +16,7 @@ class AsyncStateBody<T> extends StatelessWidget {
     required this.asyncValue,
     required this.onRetry,
     required this.dataBuilder,
-    this.emptyMessage = 'Nenhum item encontrado.',
+    this.emptyMessage = 'Ainda não há nada por aqui.',
     this.emptyIcon = Icons.inbox_outlined,
     this.useSkeleton = true,
   });
@@ -42,7 +42,7 @@ class AsyncStateBody<T> extends StatelessWidget {
         ErrorStatePanel(
           message: error is AppException
               ? userMessageFor(error)
-              : 'Não foi possível carregar os dados.',
+              : 'Não conseguimos carregar agora. Pode tentar de novo?',
           onRetry: onRetry,
         ),
       ),

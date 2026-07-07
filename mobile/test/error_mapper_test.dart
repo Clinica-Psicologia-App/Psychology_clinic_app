@@ -53,6 +53,9 @@ void main() {
     );
 
     expect(ex.code, AppExceptionCodes.network);
-    expect(ex.message, 'Serviço temporariamente indisponível. Tente novamente.');
+    expect(
+      ex.message,
+      'O serviço está instável neste momento. Tente de novo em instantes.',
+    );
   });
 }

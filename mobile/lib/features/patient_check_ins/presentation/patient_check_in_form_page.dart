@@ -106,6 +106,11 @@ class _PatientCheckInFormPageState
       }
 
       if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Check-in registrado. Obrigado por se cuidar hoje.'),
+        ),
+      );
       context.pop(true);
     } catch (e) {
       if (mounted) {

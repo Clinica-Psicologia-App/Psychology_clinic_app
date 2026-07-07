@@ -73,6 +73,8 @@ class _QuestionnaireSuccessPageState extends State<QuestionnaireSuccessPage>
         : null;
     final animate = AppAnimations.shouldAnimate(context);
 
+    final isPatient = widget.role == ProfileRole.patient;
+
     return AppScaffold(
       title: 'Concluído',
       body: Padding(
@@ -80,9 +82,12 @@ class _QuestionnaireSuccessPageState extends State<QuestionnaireSuccessPage>
         child: Column(
           children: [
             AppPageHeader(
-              title: 'Questionário enviado',
-              subtitle:
-                  'As respostas foram registradas e ficarão disponíveis para revisão clínica do profissional responsável.',
+              title: isPatient
+                  ? 'Pronto! Respostas enviadas'
+                  : 'Questionário enviado',
+              subtitle: isPatient
+                  ? 'Obrigado por dedicar esse tempo. Suas respostas ajudam seu psicólogo a acompanhar você de perto.'
+                  : 'As respostas foram registradas e ficarão disponíveis para revisão clínica do profissional responsável.',
               icon: Icons.check_circle_outline,
               metadata: [
                 if (dateLabel != null) Chip(label: Text(dateLabel)),
@@ -111,12 +116,13 @@ class _QuestionnaireSuccessPageState extends State<QuestionnaireSuccessPage>
               ),
             ),
             const SizedBox(height: AppSpacing.xl),
-            const MotionReveal(
-              delay: Duration(milliseconds: 340),
+            MotionReveal(
+              delay: const Duration(milliseconds: 340),
               child: AppInfoCard(
                 title: 'Revisão clínica',
-                body:
-                    'A interpretação clínica será revisada pelo profissional responsável. Não há resultado automático nesta versão.',
+                body: isPatient
+                    ? 'Seu psicólogo vai revisar as respostas com calma. Não existe resposta certa ou errada — o que importa é o seu momento.'
+                    : 'A interpretação clínica será revisada pelo profissional responsável. Não há resultado automático nesta versão.',
                 icon: Icons.shield_outlined,
                 tone: AppInfoCardTone.success,
               ),

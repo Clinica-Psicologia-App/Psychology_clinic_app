@@ -15,6 +15,8 @@ import '../../../shared/widgets/clinical_kpi_chip.dart';
 import '../../../shared/widgets/clinical_module_card.dart';
 import '../../../shared/widgets/esquema_core_logo.dart';
 import '../../../shared/widgets/responsive_content.dart';
+import '../../patient_check_ins/presentation/patient_check_in_routes.dart';
+import '../../patient_check_ins/providers/patient_check_ins_providers.dart';
 import '../../patient_journey/presentation/patient_journey_routes.dart';
 import '../../patient_invitations/providers/patient_invitations_providers.dart';
 import '../../patient_invitations/presentation/patient_invitation_routes.dart';
@@ -22,6 +24,7 @@ import '../../patients/providers/patients_providers.dart';
 import '../../patients/presentation/patient_routes.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../profile/domain/user_profile.dart';
+import '../../questionnaires/domain/questionnaire_patient_status.dart';
 import '../../questionnaires/presentation/questionnaire_routes.dart';
 import '../../questionnaires/providers/questionnaires_providers.dart';
 import '../providers/auth_providers.dart';
@@ -114,18 +117,25 @@ class _HomeBody extends StatelessWidget {
               ),
             ),
           MotionReveal(
-            child: _ProfileHeader(profile: profile, subtitle: subtitle),
+            child: role == ProfileRole.patient
+                ? _PatientGreetingHeader(profile: profile)
+                : _ProfileHeader(profile: profile, subtitle: subtitle),
           ),
           const SizedBox(height: AppSpacing.xl),
           if (role == ProfileRole.psychologist) const _PsychologistWorkspace(),
           if (role == ProfileRole.patient) ...[
+            const MotionReveal(
+              delay: Duration(milliseconds: 60),
+              child: _PatientNextStep(),
+            ),
+            const SizedBox(height: AppSpacing.xl),
             const AppSectionHeader(
               title: 'Sua continuidade',
               subtitle: 'Veja o próximo passo do seu acompanhamento.',
             ),
             const SizedBox(height: AppSpacing.sm),
             MotionReveal(
-              delay: const Duration(milliseconds: 90),
+              delay: const Duration(milliseconds: 120),
               child: ClinicalModuleCard(
                 icon: Icons.route_outlined,
                 title: 'Meu plano terapêutico',
@@ -313,6 +323,160 @@ class _PsychologistWorkspace extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Cabeçalho acolhedor da home do paciente: saudação pelo nome e
+/// período do dia, no lugar do cartão de perfil institucional.
+class _PatientGreetingHeader extends StatelessWidget {
+  const _PatientGreetingHeader({required this.profile});
+
+  final UserProfile profile;
+
+  static String greetingForHour(int hour) {
+    if (hour < 12) return 'Bom dia';
+    if (hour < 18) return 'Boa tarde';
+    return 'Boa noite';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final firstName = profile.fullName.trim().split(RegExp(r'\s+')).first;
+    final greeting = greetingForHour(DateTime.now().hour);
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: AppRadius.xlAll,
+        border: Border.all(color: AppColors.border),
+      ),
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '$greeting, $firstName',
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                  color: AppColors.navy,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: AppSpacing.xxs),
+          Text(
+            'Que bom te ver por aqui. Este é o seu espaço de cuidado.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Próximo passo concreto do paciente: questionário aguardando resposta,
+/// check-in do dia ainda não feito, ou reconhecimento de que está em dia.
+class _PatientNextStep extends ConsumerWidget {
+  const _PatientNextStep();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    const listContext = QuestionnaireListContext(role: ProfileRole.patient);
+
+    final questionnaires =
+        ref.watch(questionnairesListProvider(listContext)).valueOrNull;
+    final patientId =
+        ref.watch(questionnairePatientIdProvider(listContext)).valueOrNull;
+    final statuses = patientId == null
+        ? null
+        : ref.watch(questionnairePatientStatusProvider(patientId)).valueOrNull;
+    final todayCheckIn = ref.watch(todayCheckInProvider);
+
+    // Enquanto os dados carregam, não mostra nada — a home continua útil
+    // e o cartão surge sem "pulo" de layout graças ao MotionReveal.
+    if (questionnaires == null || statuses == null || todayCheckIn.isLoading) {
+      return const SizedBox.shrink();
+    }
+
+    final pendingCount = questionnaires
+        .where(
+          (q) => statuses[q.id] != QuestionnairePatientStatus.completed,
+        )
+        .length;
+
+    if (pendingCount > 0) {
+      final label = pendingCount == 1
+          ? 'Você tem 1 questionário aguardando'
+          : 'Você tem $pendingCount questionários aguardando';
+      return ClinicalModuleCard(
+        icon: Icons.assignment_outlined,
+        title: label,
+        subtitle: 'Responder agora ajuda seu acompanhamento a ficar em dia.',
+        accentColor: AppColors.purple,
+        onTap: () =>
+            context.push(QuestionnaireRoutes.list(role: ProfileRole.patient)),
+      );
+    }
+
+    if (todayCheckIn.valueOrNull == null) {
+      return ClinicalModuleCard(
+        icon: Icons.favorite_border,
+        title: 'Como você está hoje?',
+        subtitle:
+            'Seu check-in de hoje ainda não foi feito — leva menos de um minuto.',
+        accentColor: AppColors.turquoise,
+        onTap: () => context.push(PatientCheckInRoutes.patientCreate),
+      );
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: AppRadius.lgAll,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.turquoise.withValues(alpha: 0.12),
+              borderRadius: AppRadius.mdAll,
+            ),
+            child: const Icon(
+              Icons.check_circle_outline,
+              color: AppColors.turquoise,
+              size: 22,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Tudo em dia por hoje',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  'Você já cuidou do que precisava. Volte quando quiser.',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

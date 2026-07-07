@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -15,8 +16,8 @@ import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/error_banner.dart' show showErrorBanner;
 import '../../../shared/widgets/esquema_core_logo.dart';
-import '../../../shared/widgets/loading_overlay.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../data/login_prefs_store.dart';
 import '../providers/auth_providers.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
@@ -31,6 +32,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  static const _prefsStore = LoginPrefsStore();
   late final AnimationController _ambientController;
   bool _obscurePassword = true;
 
@@ -40,7 +42,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
     _ambientController = AnimationController(
       vsync: this,
       duration: const Duration(seconds: 16),
-    )..repeat();
+    );
+    _restoreLastEmail();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final msg = ref.read(authRedirectMessageProvider);
       if (msg != null && mounted) {
@@ -50,6 +53,24 @@ class _LoginPageState extends ConsumerState<LoginPage>
         ref.read(authControllerProvider.notifier).clearRedirectMessage();
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // O controller ambiente só roda quando o sistema permite animações.
+    if (AppAnimations.shouldAnimate(context)) {
+      if (!_ambientController.isAnimating) _ambientController.repeat();
+    } else {
+      _ambientController.stop();
+    }
+  }
+
+  Future<void> _restoreLastEmail() async {
+    final email = await _prefsStore.lastEmail();
+    if (email != null && mounted && _emailController.text.isEmpty) {
+      _emailController.text = email;
+    }
   }
 
   @override
@@ -63,9 +84,10 @@ class _LoginPageState extends ConsumerState<LoginPage>
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
+    final email = _emailController.text.trim();
     final notifier = ref.read(authControllerProvider.notifier);
     await notifier.signIn(
-      _emailController.text,
+      email,
       _passwordController.text,
     );
 
@@ -74,7 +96,12 @@ class _LoginPageState extends ConsumerState<LoginPage>
     final state = ref.read(authControllerProvider);
     if (state.hasError) {
       showErrorBanner(context, state.error!);
+      return;
     }
+
+    // Login ok: informa o autofill do sistema e lembra o e-mail.
+    TextInput.finishAutofillContext();
+    await _prefsStore.saveLastEmail(email);
   }
 
   void _fillSeed(String email) {
@@ -89,21 +116,18 @@ class _LoginPageState extends ConsumerState<LoginPage>
     final isLoading = authState.isLoading;
     final isWide = AppBreakpoints.fromContext(context) != AppLayoutSize.compact;
 
-    return Stack(
-      children: [
-        Scaffold(
-          backgroundColor: AppColors.background,
-          body: _AnimatedLoginBackdrop(
-            controller: _ambientController,
-            child: SafeArea(
-              child: isWide
-                  ? _buildSplitLayout(redirectMsg, isLoading)
-                  : _buildMobileLayout(redirectMsg, isLoading),
-            ),
-          ),
+    // O feedback de loading fica no próprio botão (spinner + "Entrando...")
+    // com os campos desabilitados — sem overlay cobrindo a tela.
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: _AnimatedLoginBackdrop(
+        controller: _ambientController,
+        child: SafeArea(
+          child: isWide
+              ? _buildSplitLayout(redirectMsg, isLoading)
+              : _buildMobileLayout(redirectMsg, isLoading),
         ),
-        if (isLoading) const LoadingOverlay(message: 'Entrando...'),
-      ],
+      ),
     );
   }
 
@@ -617,7 +641,7 @@ class _TrustPill extends StatelessWidget {
               label,
               style: Theme.of(context).textTheme.labelLarge?.copyWith(
                     color: AppColors.textOnBrand,
-                    fontWeight: FontWeight.w700,
+                    fontWeight: FontWeight.w600,
                   ),
             ),
           ],
@@ -696,182 +720,188 @@ class _LoginForm extends StatelessWidget {
   Widget build(BuildContext context) {
     return Form(
       key: formKey,
-      child: MotionStaggered(
-        interval: const Duration(milliseconds: 45),
-        children: [
-          if (showHeaderLogo) ...[
-            const Center(
-              child: EsquemaCoreLogo.horizontal(
-                size: 48,
+      child: AutofillGroup(
+        child: MotionStaggered(
+          interval: const Duration(milliseconds: 45),
+          children: [
+            if (showHeaderLogo) ...[
+              const Center(
+                child: EsquemaCoreLogo.horizontal(
+                  size: 48,
+                  showTagline: true,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                'Entrar com segurança',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                      height: 1.05,
+                    ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Use seu e-mail cadastrado para continuar.',
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                      height: 1.35,
+                    ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+            ] else if (showBrandHeader) ...[
+              const EsquemaCoreLogo.horizontal(
+                size: 40,
                 showTagline: true,
               ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            Text(
-              'Entrar com segurança',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w700,
-                    height: 1.05,
-                  ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Use seu e-mail cadastrado para continuar.',
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                    height: 1.35,
-                  ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-          ] else if (showBrandHeader) ...[
-            const EsquemaCoreLogo.horizontal(
-              size: 40,
-              showTagline: true,
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            Text(
-              'Entrar com segurança',
-              textAlign: centerHeader ? TextAlign.center : TextAlign.start,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w700,
-                  ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Use seu e-mail cadastrado para continuar.',
-              textAlign: centerHeader ? TextAlign.center : TextAlign.start,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-          ] else ...[
-            Text(
-              'Bem-vindo de volta',
-              textAlign: centerHeader ? TextAlign.center : TextAlign.start,
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w700,
-                    height: 1.05,
-                  ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'Entre com seu e-mail e senha para acessar sua área.',
-              textAlign: centerHeader ? TextAlign.center : TextAlign.start,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
-                    height: 1.35,
-                  ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-          ],
-          if (redirectMsg != null) ...[
-            MaterialBanner(
-              backgroundColor: AppColors.infoContainer,
-              content: Text(redirectMsg!),
-              actions: const [SizedBox.shrink()],
-            ),
-            const SizedBox(height: AppSpacing.md),
-          ],
-          TextFormField(
-            controller: emailController,
-            keyboardType: TextInputType.emailAddress,
-            autocorrect: false,
-            autofillHints: const [AutofillHints.email],
-            textInputAction: TextInputAction.next,
-            decoration: const InputDecoration(
-              labelText: 'E-mail',
-              prefixIcon: Icon(Icons.email_outlined),
-            ),
-            validator: (v) {
-              if (v == null || v.trim().isEmpty) return 'Informe o e-mail';
-              if (!v.contains('@')) return 'E-mail inválido';
-              return null;
-            },
-          ),
-          const SizedBox(height: AppSpacing.md),
-          TextFormField(
-            controller: passwordController,
-            obscureText: obscurePassword,
-            autofillHints: const [AutofillHints.password],
-            textInputAction: TextInputAction.done,
-            onFieldSubmitted: (_) => onSubmit(),
-            decoration: InputDecoration(
-              labelText: 'Senha',
-              prefixIcon: const Icon(Icons.lock_outline),
-              suffixIcon: IconButton(
-                icon: Icon(
-                  obscurePassword ? Icons.visibility_off : Icons.visibility,
-                ),
-                onPressed: onTogglePassword,
+              const SizedBox(height: AppSpacing.xl),
+              Text(
+                'Entrar com segurança',
+                textAlign: centerHeader ? TextAlign.center : TextAlign.start,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                    ),
               ),
-            ),
-            validator: (v) {
-              if (v == null || v.isEmpty) return 'Informe a senha';
-              return null;
-            },
-          ),
-          Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: isLoading ? null : onForgotPassword,
-              child: const Text('Esqueci minha senha'),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          _AnimatedSubmitButton(
-            isLoading: isLoading,
-            onPressed: onSubmit,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          _AccessNotice(),
-          Wrap(
-            alignment: WrapAlignment.center,
-            children: [
-              TextButton(
-                onPressed: () => context.push(AppRoutes.terms),
-                child: const Text('Termos'),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Use seu e-mail cadastrado para continuar.',
+                textAlign: centerHeader ? TextAlign.center : TextAlign.start,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
               ),
-              TextButton(
-                onPressed: () => context.push(AppRoutes.privacy),
-                child: const Text('Privacidade'),
+              const SizedBox(height: AppSpacing.xl),
+            ] else ...[
+              Text(
+                'Bem-vindo de volta',
+                textAlign: centerHeader ? TextAlign.center : TextAlign.start,
+                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w700,
+                      height: 1.05,
+                    ),
               ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Entre com seu e-mail e senha para acessar sua área.',
+                textAlign: centerHeader ? TextAlign.center : TextAlign.start,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                      height: 1.35,
+                    ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
             ],
-          ),
-          if (showTestAccounts) ...[
-            const SizedBox(height: AppSpacing.md),
-            Text(
-              'Contas de teste (ambiente local)',
-              style: Theme.of(context).textTheme.labelMedium,
+            if (redirectMsg != null) ...[
+              MaterialBanner(
+                backgroundColor: AppColors.infoContainer,
+                content: Text(redirectMsg!),
+                actions: const [SizedBox.shrink()],
+              ),
+              const SizedBox(height: AppSpacing.md),
+            ],
+            TextFormField(
+              controller: emailController,
+              enabled: !isLoading,
+              keyboardType: TextInputType.emailAddress,
+              autocorrect: false,
+              autofillHints: const [AutofillHints.email],
+              textInputAction: TextInputAction.next,
+              decoration: const InputDecoration(
+                labelText: 'E-mail',
+                prefixIcon: Icon(Icons.email_outlined),
+              ),
+              validator: (v) {
+                if (v == null || v.trim().isEmpty) return 'Informe o e-mail';
+                if (!v.contains('@')) return 'E-mail inválido';
+                return null;
+              },
             ),
-            const SizedBox(height: AppSpacing.xs),
+            const SizedBox(height: AppSpacing.md),
+            TextFormField(
+              controller: passwordController,
+              enabled: !isLoading,
+              obscureText: obscurePassword,
+              autofillHints: const [AutofillHints.password],
+              textInputAction: TextInputAction.done,
+              onFieldSubmitted: (_) => onSubmit(),
+              decoration: InputDecoration(
+                labelText: 'Senha',
+                prefixIcon: const Icon(Icons.lock_outline),
+                suffixIcon: IconButton(
+                  tooltip: obscurePassword ? 'Mostrar senha' : 'Ocultar senha',
+                  icon: Icon(
+                    obscurePassword ? Icons.visibility_off : Icons.visibility,
+                  ),
+                  onPressed: onTogglePassword,
+                ),
+              ),
+              validator: (v) {
+                if (v == null || v.isEmpty) return 'Informe a senha';
+                return null;
+              },
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: isLoading ? null : onForgotPassword,
+                child: const Text('Esqueci minha senha'),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            _AnimatedSubmitButton(
+              isLoading: isLoading,
+              onPressed: onSubmit,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            _AccessNotice(),
             Wrap(
-              spacing: AppSpacing.xs,
-              runSpacing: AppSpacing.xs,
+              alignment: WrapAlignment.center,
               children: [
-                ActionChip(
-                  label: const Text('Admin'),
-                  onPressed: () => onFillSeed('admin@clinicateste-mvp.example'),
+                TextButton(
+                  onPressed: () => context.push(AppRoutes.terms),
+                  child: const Text('Termos'),
                 ),
-                ActionChip(
-                  label: const Text('Psicólogo'),
-                  onPressed: () =>
-                      onFillSeed('psicologo@clinicateste-mvp.example'),
-                ),
-                ActionChip(
-                  label: const Text('Paciente'),
-                  onPressed: () =>
-                      onFillSeed('paciente.login@clinicateste-mvp.example'),
+                TextButton(
+                  onPressed: () => context.push(AppRoutes.privacy),
+                  child: const Text('Privacidade'),
                 ),
               ],
             ),
+            if (showTestAccounts) ...[
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'Contas de teste (ambiente local)',
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Wrap(
+                spacing: AppSpacing.xs,
+                runSpacing: AppSpacing.xs,
+                children: [
+                  ActionChip(
+                    label: const Text('Admin'),
+                    onPressed: () =>
+                        onFillSeed('admin@clinicateste-mvp.example'),
+                  ),
+                  ActionChip(
+                    label: const Text('Psicólogo'),
+                    onPressed: () =>
+                        onFillSeed('psicologo@clinicateste-mvp.example'),
+                  ),
+                  ActionChip(
+                    label: const Text('Paciente'),
+                    onPressed: () =>
+                        onFillSeed('paciente.login@clinicateste-mvp.example'),
+                  ),
+                ],
+              ),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }

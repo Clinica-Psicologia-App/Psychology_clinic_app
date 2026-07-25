@@ -2,13 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../daily_monitors/presentation/daily_monitor_routes.dart';
+import '../../initial_assessment/presentation/initial_assessment_routes.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../questionnaires/presentation/questionnaire_routes.dart';
-import '../../genogram/presentation/genogram_routes.dart';
-import '../../clinical_dashboard/presentation/clinical_dashboard_routes.dart';
 import '../../mental_map/presentation/mental_map_routes.dart';
 import '../../patient_check_ins/presentation/patient_check_in_routes.dart';
-import '../../patient_timeline/presentation/patient_timeline_routes.dart';
 import '../../patient_problems/presentation/patient_problem_routes.dart';
 import '../../therapy_goals/presentation/therapy_goal_routes.dart';
 import '../../therapy_resources/presentation/therapy_resource_routes.dart';
@@ -29,6 +27,8 @@ void navigateFromJourneyStep(BuildContext context, JourneyStep step) {
   }
 
   switch (step.id) {
+    case JourneyStepId.initialAssessment:
+      context.push(InitialAssessmentRoutes.patient);
     case JourneyStepId.questionnaires:
       context.push(
         QuestionnaireRoutes.list(role: ProfileRole.patient),
@@ -38,7 +38,9 @@ void navigateFromJourneyStep(BuildContext context, JourneyStep step) {
     case JourneyStepId.library:
       context.push(TherapyResourceRoutes.patientList);
     case JourneyStepId.results:
-      context.push(ClinicalDashboardRoutes.patientList);
+      // Lista de resultados liberados; o dashboard de gráficos é acessível
+      // a partir dela.
+      context.push('/patient/results');
     case JourneyStepId.therapyGoals:
       context.push(TherapyGoalRoutes.patientList);
     case JourneyStepId.problems:
@@ -46,9 +48,13 @@ void navigateFromJourneyStep(BuildContext context, JourneyStep step) {
     case JourneyStepId.checkIn:
       context.push(PatientCheckInRoutes.patientList);
     case JourneyStepId.timeline:
-      context.push(PatientTimelineRoutes.patientList);
+      // Repontado para a Tela 2 do fluxo Conhecer (Minha História), que
+      // estende a mesma linha do tempo com capítulos e crenças.
+      context.push(InitialAssessmentRoutes.patientHistory);
     case JourneyStepId.genogram:
-      context.push(GenogramRoutes.patientList);
+      // Repontado para a Tela 3 do fluxo Conhecer (Minha Família), que
+      // estende o genograma com a camada emocional.
+      context.push(InitialAssessmentRoutes.patientFamily);
     case JourneyStepId.mentalMap:
       context.push(MentalMapRoutes.patientList);
   }

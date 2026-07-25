@@ -9,11 +9,16 @@ abstract final class AppColors {
   static const Color purple = Color(0xFF7B5CF6);
   static const Color navy = Color(0xFF0D1B3D);
 
-  // Superfícies (light)
-  static const Color background = Color(0xFFF4F7FB);
-  static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceMuted = Color(0xFFE8EEF6);
-  static const Color surfaceTint = Color(0xFFF0F5FA);
+  // Superfícies (light) — pastéis do Claymorphism
+  static const Color background = Color(0xFFE9EEF9);
+  static const Color surface = Color(0xFFFDFDFF);
+  static const Color surfaceMuted = Color(0xFFDDE5F4);
+  static const Color surfaceTint = Color(0xFFEFF3FC);
+
+  // Tints de superfície por acento (fundos tonais suaves)
+  static const Color surfaceTintTurquoise = Color(0xFFE6F7F6);
+  static const Color surfaceTintBlue = Color(0xFFEAF1FE);
+  static const Color surfaceTintPurple = Color(0xFFF0EDFE);
 
   // Texto
   static const Color textPrimary = navy;
@@ -22,9 +27,9 @@ abstract final class AppColors {
   static const Color textOnBrand = Color(0xFFFFFFFF);
   static const Color textOnTurquoise = navy;
 
-  // Bordas
-  static const Color border = Color(0xFFD8E2EC);
-  static const Color borderStrong = Color(0xFFB8C8D8);
+  // Bordas — quase invisíveis no clay (profundidade vem das sombras)
+  static const Color border = Color(0xFFE2E9F6);
+  static const Color borderStrong = Color(0xFFCBD7EC);
 
   // Semânticas (não confundir com marca)
   static const Color success = Color(0xFF059669);

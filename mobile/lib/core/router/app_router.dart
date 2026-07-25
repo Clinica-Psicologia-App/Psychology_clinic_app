@@ -7,6 +7,7 @@ import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/patient_home_page.dart';
 import '../../features/auth/presentation/psychologist_home_page.dart';
 import '../../features/platform_admin/presentation/platform_admin_home_page.dart';
+import '../../features/platform_admin/presentation/patient_overview_page.dart';
 import '../../features/auth/presentation/splash_page.dart';
 import '../../features/auth/presentation/forgot_password_page.dart';
 import '../../features/auth/presentation/update_password_page.dart';
@@ -21,6 +22,7 @@ import '../../features/clinical_dashboard/presentation/clinical_dashboard_route_
 import '../../features/clinical_reports/presentation/clinical_report_route_helpers.dart';
 import '../../features/clinics/presentation/clinic_routes.dart';
 import '../../features/clinics/presentation/clinics_page.dart';
+import '../../features/initial_assessment/presentation/initial_assessment_route_helpers.dart';
 import '../../features/mental_map/presentation/mental_map_route_helpers.dart';
 import '../../features/patient_check_ins/presentation/patient_check_in_route_helpers.dart';
 import '../../features/patient_timeline/presentation/patient_timeline_route_helpers.dart';
@@ -38,6 +40,10 @@ import '../../features/patient_invitations/presentation/patient_invitations_page
 import '../../features/profile/domain/profile_role.dart';
 import '../../features/questionnaires/presentation/questionnaire_route_helpers.dart';
 import '../../features/questionnaires/presentation/questionnaire_access_management_page.dart';
+import '../../features/questionnaires/domain/questionnaire_session.dart';
+import '../../features/questionnaires/presentation/questionnaire_answer_page.dart';
+import '../../features/questionnaires/presentation/questionnaire_catalog_admin_page.dart';
+import '../../features/questionnaires/presentation/questionnaire_catalog_editor_page.dart';
 import '../../features/questionnaires/presentation/questionnaire_routes.dart';
 import '../../features/results/presentation/result_route_helpers.dart';
 import '../../features/therapy_resources/presentation/therapy_resource_route_helpers.dart';
@@ -59,14 +65,17 @@ abstract final class AppRoutes {
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authControllerProvider);
-  final isPasswordRecovery = ref.watch(passwordRecoveryActiveProvider);
-  final onboarding = ref.watch(onboardingSeenProvider);
-
-  return GoRouter(
+  final router = GoRouter(
     initialLocation: AppRoutes.splash,
     refreshListenable: _RouterRefresh(ref),
     redirect: (context, state) {
+      // State is read here (not watched at provider level) so GoRouter is
+      // created once and _RouterRefresh triggers re-evaluation of redirect
+      // without destroying the back-stack on every auth state change.
+      final authState = ref.read(authControllerProvider);
+      final isPasswordRecovery = ref.read(passwordRecoveryActiveProvider);
+      final onboarding = ref.read(onboardingSeenProvider);
+
       final location = state.matchedLocation;
       final isSplash = location == AppRoutes.splash;
       final isLogin = location == AppRoutes.login;
@@ -129,7 +138,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       return null;
-    },
+    }, // redirect
     routes: [
       GoRoute(
         path: AppRoutes.splash,
@@ -186,27 +195,45 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (_, __) => const QuestionnaireAccessManagementPage(),
           ),
           GoRoute(
-            path: 'patients',
-            builder: (_, __) =>
-                const PatientsPage(role: ProfileRole.platformAdmin),
+            path:
+                QuestionnaireRoutes.adminCatalog.replaceFirst('/platform/', ''),
+            builder: (_, __) => const QuestionnaireCatalogAdminPage(),
             routes: [
               GoRoute(
-                path: ':patientId',
-                builder: (_, state) => PatientDetailsPage(
-                  role: ProfileRole.platformAdmin,
-                  patientId: state.pathParameters['patientId']!,
+                path: 'new',
+                builder: (_, __) => const QuestionnaireCatalogEditorPage(),
+              ),
+              GoRoute(
+                path: ':questionnaireId',
+                builder: (_, state) => QuestionnaireCatalogEditorPage(
+                  questionnaireId: state.pathParameters['questionnaireId']!,
                 ),
                 routes: [
                   GoRoute(
-                    path: 'edit',
-                    builder: (_, state) => EditPatientPage(
-                      role: ProfileRole.platformAdmin,
-                      patient: state.extra as Patient,
-                    ),
+                    path: 'preview',
+                    builder: (_, state) {
+                      final session = state.extra;
+                      if (session is! QuestionnaireSession) {
+                        return const Scaffold(
+                          body: Center(
+                            child: Text('Pré-visualização indisponível.'),
+                          ),
+                        );
+                      }
+                      return QuestionnaireAnswerPage(
+                        session: session,
+                        role: ProfileRole.platformAdmin,
+                        previewMode: true,
+                      );
+                    },
                   ),
                 ],
               ),
             ],
+          ),
+          GoRoute(
+            path: 'patient-overview',
+            builder: (_, __) => const PatientOverviewPage(),
           ),
         ],
       ),
@@ -222,7 +249,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.patientHome,
         builder: (_, __) => const PatientHomePage(),
         routes: patientJourneyRoutes() +
+            patientInitialAssessmentRoutes() +
             questionnaireRoutesFor(role: ProfileRole.patient) +
+            patientResultsRoutes() +
             patientTherapyGoalRoutes() +
             patientProblemRoutes() +
             patientCheckInRoutes() +
@@ -235,6 +264,8 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
     ],
   );
+  ref.onDispose(router.dispose);
+  return router;
 });
 
 List<RouteBase> patientInvitationRoutesFor(ProfileRole role) {
@@ -284,6 +315,7 @@ List<RouteBase> _staffPatientRoutes(ProfileRole role) {
               patientIdPathParam: 'patientId',
             ),
             ...resultsRoutesFor(role: role),
+            ...staffPatientInitialAssessmentRoutes(role: role),
             ...staffTherapyResourceRoutes(role: role),
             ...staffDailyMonitorRoutes(role: role),
             ...staffTherapyGoalRoutes(role: role),

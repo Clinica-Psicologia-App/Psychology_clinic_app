@@ -1,8 +1,10 @@
 ﻿import 'package:flutter/material.dart';
 
+import 'journey_phase.dart';
 import 'journey_step_availability.dart';
 import 'journey_step_id.dart';
 import 'patient_journey_progress.dart';
+import '../../clinic_entitlements/domain/clinic_feature_entitlement.dart';
 
 /// Definição de um passo na trilha do paciente.
 class JourneyStep {
@@ -12,6 +14,7 @@ class JourneyStep {
     required this.subtitle,
     required this.icon,
     required this.availability,
+    required this.phase,
     this.progressHint,
     required this.order,
   });
@@ -21,15 +24,26 @@ class JourneyStep {
   final String subtitle;
   final IconData icon;
   final JourneyStepAvailability availability;
+
+  /// Fase clínica à qual o passo pertence.
+  final JourneyPhase phase;
   final String? progressHint;
   final int order;
 }
 
 /// Catálogo da trilha com disponibilidade derivada do progresso (quando houver).
-List<JourneyStep> buildPatientJourneySteps(PatientJourneyProgress? progress) {
+List<JourneyStep> buildPatientJourneySteps(
+  PatientJourneyProgress? progress, {
+  ClinicFeatureEntitlements entitlements = ClinicFeatureEntitlements.empty,
+}) {
   final p = progress;
 
+  bool enabled(String featureKey) {
+    return entitlements.isEnabled(featureKey);
+  }
+
   JourneyStepAvailability questionnairesStatus() {
+    if (!enabled('questionnaires')) return JourneyStepAvailability.blocked;
     if (p == null) return JourneyStepAvailability.available;
     if (p.activeQuestionnaireCount == 0) {
       return JourneyStepAvailability.blocked;
@@ -51,6 +65,7 @@ List<JourneyStep> buildPatientJourneySteps(PatientJourneyProgress? progress) {
   }
 
   JourneyStepAvailability libraryStatus() {
+    if (!enabled('resources')) return JourneyStepAvailability.blocked;
     if (p == null) return JourneyStepAvailability.available;
     if (p.completedResourceCount > 0) {
       return JourneyStepAvailability.completed;
@@ -62,6 +77,9 @@ List<JourneyStep> buildPatientJourneySteps(PatientJourneyProgress? progress) {
   }
 
   String? questionnairesHint() {
+    if (!enabled('questionnaires')) {
+      return 'Módulo bloqueado pelo plano da clínica.';
+    }
     if (p == null) return null;
     if (p.activeQuestionnaireCount == 0) {
       return 'Nenhum instrumento foi liberado para você.';
@@ -80,6 +98,7 @@ List<JourneyStep> buildPatientJourneySteps(PatientJourneyProgress? progress) {
   }
 
   JourneyStepAvailability clinicalDashboardStatus() {
+    if (!enabled('reports')) return JourneyStepAvailability.blocked;
     if (p == null) return JourneyStepAvailability.available;
     if (!p.hasClinicalDashboardData) {
       return JourneyStepAvailability.available;
@@ -88,6 +107,7 @@ List<JourneyStep> buildPatientJourneySteps(PatientJourneyProgress? progress) {
   }
 
   String? clinicalDashboardHint() {
+    if (!enabled('reports')) return 'Módulo bloqueado pelo plano da clínica.';
     if (p == null) return null;
     if (!p.hasClinicalDashboardData) {
       return 'Conclua YSQ ou YAMI para ver gráficos.';
@@ -99,6 +119,7 @@ List<JourneyStep> buildPatientJourneySteps(PatientJourneyProgress? progress) {
   }
 
   String? libraryHint() {
+    if (!enabled('resources')) return 'Módulo bloqueado pelo plano da clínica.';
     if (p == null) return null;
     if (p.releasedResourceCount == 0) {
       return 'Aguardando liberação pelo psicólogo.';
@@ -216,14 +237,15 @@ List<JourneyStep> buildPatientJourneySteps(PatientJourneyProgress? progress) {
   }
 
   return [
-    JourneyStep(
-      id: JourneyStepId.questionnaires,
-      title: 'Questionários',
-      subtitle: 'Instrumentos clínicos como YSQ, YAMI e complementares.',
-      icon: Icons.assignment_outlined,
-      availability: questionnairesStatus(),
-      progressHint: questionnairesHint(),
-      order: 1,
+    // ── Fase 1 · Conhecer ────────────────────────────────────────────────────
+    const JourneyStep(
+      id: JourneyStepId.initialAssessment,
+      title: 'Conhecendo você',
+      subtitle: 'Sua história atual e como está sua vida hoje.',
+      icon: Icons.assignment_ind_outlined,
+      availability: JourneyStepAvailability.available,
+      phase: JourneyPhase.conhecer,
+      order: 0,
     ),
     JourneyStep(
       id: JourneyStepId.genogram,
@@ -231,8 +253,9 @@ List<JourneyStep> buildPatientJourneySteps(PatientJourneyProgress? progress) {
       subtitle: 'Mapa das relações familiares e vínculos importantes.',
       icon: Icons.family_restroom_outlined,
       availability: genogramStatus(),
+      phase: JourneyPhase.conhecer,
       progressHint: genogramHint(),
-      order: 2,
+      order: 1,
     ),
     JourneyStep(
       id: JourneyStepId.timeline,
@@ -240,62 +263,31 @@ List<JourneyStep> buildPatientJourneySteps(PatientJourneyProgress? progress) {
       subtitle: 'Eventos importantes da sua história e da terapia.',
       icon: Icons.timeline_outlined,
       availability: timelineStatus(),
+      phase: JourneyPhase.conhecer,
       progressHint: timelineHint(),
+      order: 2,
+    ),
+    // ── Fase 2 · Avaliar ─────────────────────────────────────────────────────
+    JourneyStep(
+      id: JourneyStepId.questionnaires,
+      title: 'Questionários',
+      subtitle: 'Instrumentos clínicos como YSQ, YAMI e complementares.',
+      icon: Icons.assignment_outlined,
+      availability: questionnairesStatus(),
+      phase: JourneyPhase.avaliar,
+      progressHint: questionnairesHint(),
       order: 3,
     ),
+    // ── Fase 3 · Compreender ─────────────────────────────────────────────────
     JourneyStep(
       id: JourneyStepId.problems,
       title: 'Problemas e demandas',
       subtitle: 'Focos, queixas e pontos de atenção em acompanhamento.',
       icon: Icons.report_problem_outlined,
       availability: problemsStatus(),
+      phase: JourneyPhase.compreender,
       progressHint: problemsHint(),
       order: 4,
-    ),
-    JourneyStep(
-      id: JourneyStepId.therapyGoals,
-      title: 'Objetivos da terapia',
-      subtitle: 'Metas acordadas com seu psicólogo.',
-      icon: Icons.flag_outlined,
-      availability: therapyGoalsStatus(),
-      progressHint: therapyGoalsHint(),
-      order: 5,
-    ),
-    JourneyStep(
-      id: JourneyStepId.checkIn,
-      title: 'Check-in',
-      subtitle: 'Registro breve entre sessões.',
-      icon: Icons.fact_check_outlined,
-      availability: checkInStatus(),
-      progressHint: checkInHint(),
-      order: 6,
-    ),
-    JourneyStep(
-      id: JourneyStepId.dailyMonitor,
-      title: 'Monitor diário',
-      subtitle: 'Humor, rotina e percepção do dia a dia.',
-      icon: Icons.monitor_heart_outlined,
-      availability: monitorStatus(),
-      progressHint: monitorHint(),
-      order: 7,
-    ),
-    JourneyStep(
-      id: JourneyStepId.results,
-      title: 'Dashboard clínico',
-      subtitle: 'Resultados e gráficos dos principais instrumentos.',
-      icon: Icons.analytics_outlined,
-      availability: clinicalDashboardStatus(),
-      progressHint: clinicalDashboardHint(),
-      order: 8,
-    ),
-    JourneyStep(
-      id: JourneyStepId.library,
-      title: 'Biblioteca terapêutica',
-      subtitle: 'Psicoeducação e recursos liberados para você.',
-      icon: Icons.menu_book_outlined,
-      availability: libraryStatus(),
-      progressHint: libraryHint(),
-      order: 9,
     ),
     JourneyStep(
       id: JourneyStepId.mentalMap,
@@ -303,7 +295,60 @@ List<JourneyStep> buildPatientJourneySteps(PatientJourneyProgress? progress) {
       subtitle: 'Síntese integrada da sua formulação clínica.',
       icon: Icons.hub_outlined,
       availability: mentalMapStatus(),
+      phase: JourneyPhase.compreender,
       progressHint: mentalMapHint(),
+      order: 5,
+    ),
+    // ── Fase 4 · Intervir ────────────────────────────────────────────────────
+    JourneyStep(
+      id: JourneyStepId.therapyGoals,
+      title: 'Objetivos da terapia',
+      subtitle: 'Metas acordadas com seu psicólogo.',
+      icon: Icons.flag_outlined,
+      availability: therapyGoalsStatus(),
+      phase: JourneyPhase.intervir,
+      progressHint: therapyGoalsHint(),
+      order: 6,
+    ),
+    JourneyStep(
+      id: JourneyStepId.library,
+      title: 'Biblioteca terapêutica',
+      subtitle: 'Psicoeducação e recursos liberados para você.',
+      icon: Icons.menu_book_outlined,
+      availability: libraryStatus(),
+      phase: JourneyPhase.intervir,
+      progressHint: libraryHint(),
+      order: 7,
+    ),
+    // ── Fase 5 · Acompanhar ──────────────────────────────────────────────────
+    JourneyStep(
+      id: JourneyStepId.checkIn,
+      title: 'Check-in',
+      subtitle: 'Registro breve entre sessões.',
+      icon: Icons.fact_check_outlined,
+      availability: checkInStatus(),
+      phase: JourneyPhase.acompanhar,
+      progressHint: checkInHint(),
+      order: 8,
+    ),
+    JourneyStep(
+      id: JourneyStepId.dailyMonitor,
+      title: 'Monitor diário',
+      subtitle: 'Humor, rotina e percepção do dia a dia.',
+      icon: Icons.monitor_heart_outlined,
+      availability: monitorStatus(),
+      phase: JourneyPhase.acompanhar,
+      progressHint: monitorHint(),
+      order: 9,
+    ),
+    JourneyStep(
+      id: JourneyStepId.results,
+      title: 'Meus resultados',
+      subtitle: 'Resultados liberados e gráficos dos instrumentos.',
+      icon: Icons.analytics_outlined,
+      availability: clinicalDashboardStatus(),
+      phase: JourneyPhase.acompanhar,
+      progressHint: clinicalDashboardHint(),
       order: 10,
     ),
   ];

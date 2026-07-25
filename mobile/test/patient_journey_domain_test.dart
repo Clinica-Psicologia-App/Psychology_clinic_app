@@ -8,7 +8,7 @@ void main() {
   test('buildPatientJourneySteps marks modules with correct base availability',
       () {
     final steps = buildPatientJourneySteps(null);
-    expect(steps.length, 10);
+    expect(steps.length, 11);
 
     final byId = {for (final s in steps) s.id: s};
 
@@ -29,11 +29,12 @@ void main() {
       JourneyStepAvailability.available,
     );
     expect(steps.map((step) => step.order),
-        orderedEquals([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));
-    expect(byId[JourneyStepId.genogram]!.order, 2);
-    expect(byId[JourneyStepId.timeline]!.order, 3);
+        orderedEquals([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));
+    expect(byId[JourneyStepId.initialAssessment]!.order, 0);
+    expect(byId[JourneyStepId.genogram]!.order, 1);
+    expect(byId[JourneyStepId.timeline]!.order, 2);
     expect(byId[JourneyStepId.problems]!.order, 4);
-    expect(byId[JourneyStepId.dailyMonitor]!.order, 7);
+    expect(byId[JourneyStepId.dailyMonitor]!.order, 9);
   });
 
   test('progress marks questionnaires completed when all active done', () {

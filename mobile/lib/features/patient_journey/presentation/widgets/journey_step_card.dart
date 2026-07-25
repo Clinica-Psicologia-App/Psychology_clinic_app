@@ -4,6 +4,7 @@ import '../../../../core/theme/app_animations.dart';
 import '../../../../core/theme/app_breakpoints.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_shadows.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../shared/widgets/status_chip.dart';
 import '../../domain/journey_step.dart';
@@ -31,16 +32,23 @@ class JourneyStepCard extends StatelessWidget {
     return AnimatedContainer(
       duration: AppAnimations.standard,
       curve: AppAnimations.standardCurve,
-      child: Card(
-        margin: EdgeInsets.zero,
-        child: InkWell(
-          onTap: enabled ? onTap : null,
-          borderRadius: AppRadius.lgAll,
-          child: Padding(
-            padding: EdgeInsets.all(compact ? AppSpacing.sm : AppSpacing.md),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+      decoration: BoxDecoration(
+        color: enabled ? AppColors.surface : AppColors.disabledSurface,
+        borderRadius: AppRadius.lgAll,
+        boxShadow: AppShadows.soft,
+      ),
+      child: ClipRRect(
+        borderRadius: AppRadius.lgAll,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: enabled ? onTap : null,
+            borderRadius: AppRadius.lgAll,
+            child: Padding(
+              padding: EdgeInsets.all(compact ? AppSpacing.sm : AppSpacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                 _StepHeader(
                   step: step,
                   accent: accent,
@@ -81,7 +89,8 @@ class JourneyStepCard extends StatelessWidget {
           ),
         ),
       ),
-    );
+    ),
+  );
   }
 
   static AppStatusTone _toneFor(JourneyStepAvailability availability) {
@@ -96,6 +105,7 @@ class JourneyStepCard extends StatelessWidget {
 
   static Color _accentForStep(JourneyStep step) {
     return switch (step.id) {
+      JourneyStepId.initialAssessment => AppColors.moduleDashboard,
       JourneyStepId.questionnaires => AppColors.moduleQuestionnaires,
       JourneyStepId.mentalMap => AppColors.moduleMentalMap,
       JourneyStepId.checkIn => AppColors.moduleCheckIn,

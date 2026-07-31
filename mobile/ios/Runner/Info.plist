@@ -16,6 +16,10 @@
 	<string>6.0</string>
 	<key>CFBundleName</key>
 	<string>EsquemaCore</string>
+	<key>NSCameraUsageDescription</key>
+	<string>O EsquemaCore usa a câmera para você tirar uma foto de perfil.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>O EsquemaCore acessa suas fotos para você escolher uma foto de perfil.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

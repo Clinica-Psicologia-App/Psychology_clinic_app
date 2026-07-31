@@ -4,6 +4,7 @@ import '../utils/likert_labels.dart';
 /// Pergunta com resposta gravada (detalhe).
 class AnsweredQuestion {
   const AnsweredQuestion({
+    required this.answerId,
     required this.questionId,
     required this.code,
     required this.text,
@@ -12,9 +13,14 @@ class AnsweredQuestion {
     this.scaleMin,
     this.scaleMax,
     this.answerValue,
+    this.professionalValue,
+    this.professionalNote,
     this.contextLabel,
   });
 
+  /// Id da linha de resposta (questionnaire_answers.id) — chave dos ajustes
+  /// da régua (em instrumentos parentais a mesma pergunta repete por figura).
+  final String answerId;
   final String questionId;
   final String code;
   final String text;
@@ -23,6 +29,12 @@ class AnsweredQuestion {
   final int? scaleMin;
   final int? scaleMax;
   final double? answerValue;
+
+  /// Nota validada pelo psicólogo ao "passar a régua" (null = sem ajuste).
+  final double? professionalValue;
+
+  /// Observação do psicólogo sobre o item.
+  final String? professionalNote;
   final String? contextLabel;
 
   factory AnsweredQuestion.fromJson(Map<String, dynamic> json) {
@@ -38,6 +50,7 @@ class AnsweredQuestion {
     }
 
     return AnsweredQuestion(
+      answerId: json['id'] as String? ?? '',
       questionId: q['id'] as String? ?? json['question_id'] as String,
       code: q['code'] as String? ?? '-',
       text: q['text'] as String? ?? '',
@@ -48,6 +61,8 @@ class AnsweredQuestion {
       scaleMin: q['scale_min'] as int?,
       scaleMax: q['scale_max'] as int?,
       answerValue: _num(json['answer_value']),
+      professionalValue: _num(json['professional_value']),
+      professionalNote: json['professional_note'] as String?,
       contextLabel: contextLabel,
     );
   }
@@ -59,7 +74,21 @@ class AnsweredQuestion {
         scaleMax: scaleMax,
       );
 
+  String get professionalDisplayLabel => formatAnswerLabel(
+        answerType: answerType,
+        value: professionalValue,
+        scaleMin: scaleMin,
+        scaleMax: scaleMax,
+      );
+
   bool get hasAnswer => answerValue != null;
+
+  /// Item ajustado na régua (nota do psicólogo difere da do paciente).
+  bool get hasAdjustment =>
+      professionalValue != null && professionalValue != answerValue;
+
+  /// Valor que vale para o resultado validado.
+  double? get effectiveValue => professionalValue ?? answerValue;
 }
 
 double? _num(dynamic value) {

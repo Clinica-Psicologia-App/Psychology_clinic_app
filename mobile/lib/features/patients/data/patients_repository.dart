@@ -19,7 +19,7 @@ class PatientsRepository {
   final SupabaseClient _client;
   final EdgeApiClient _edgeApi;
 
-  static const _patientBaseSelect = '''
+  static const _patientDetailSelect = '''
 id,
 full_name,
 email,
@@ -36,6 +36,9 @@ religious_orientation,
 ethnic_group,
 sexual_orientation,
 has_children,
+intake_summary,
+current_life_context,
+therapy_demands,
 profile_id,
 responsible_psychologist_id,
 is_active,
@@ -45,18 +48,11 @@ responsible_psychologist:profiles!patients_responsible_psychologist_id_fkey(full
 access_profile:profiles!patients_profile_id_fkey(is_active)
 ''';
 
-  static const _patientDetailSelect = '''
-$_patientBaseSelect,
-intake_summary,
-current_life_context,
-therapy_demands
-''';
-
   Future<List<Patient>> listPatients() async {
     try {
       final rows = await _client
           .from('patients')
-          .select(_patientBaseSelect)
+          .select(_patientDetailSelect)
           .order('full_name');
 
       return (rows as List)
@@ -78,19 +74,6 @@ therapy_demands
       if (row == null) return null;
       return Patient.fromJson(Map<String, dynamic>.from(row));
     } catch (e) {
-      if (_isMissingIntakeColumnsError(e)) {
-        final row = await _client
-            .from('patients')
-            .select(_patientBaseSelect)
-            .eq('id', id)
-            .maybeSingle();
-
-        if (row == null) return null;
-        return Patient.fromJson(
-          Map<String, dynamic>.from(row),
-          supportsIntakeContext: false,
-        );
-      }
       throw mapToAppException(e);
     }
   }
@@ -168,63 +151,6 @@ therapy_demands
     }
   }
 
-  Future<Patient> updatePatientIntake({
-    required String patientId,
-    String? intakeSummary,
-    String? currentLifeContext,
-    String? therapyDemands,
-  }) async {
-    try {
-      final row = await _client
-          .from('patients')
-          .update({
-            'intake_summary': _nullableTrim(intakeSummary),
-            'current_life_context': _nullableTrim(currentLifeContext),
-            'therapy_demands': _nullableTrim(therapyDemands),
-          })
-          .eq('id', patientId)
-          .select(_patientDetailSelect)
-          .single();
-
-      return Patient.fromJson(Map<String, dynamic>.from(row));
-    } catch (e) {
-      if (_isMissingIntakeColumnsError(e)) {
-        throw AppException(
-          code: AppExceptionCodes.validation,
-          message: 'Este ambiente ainda não possui os campos de anamnese '
-              'do paciente. Aplique a migration '
-              '20250604193022_patient_intake_context.sql.',
-          cause: e,
-        );
-      }
-      throw mapToAppException(e);
-    }
-  }
-
-  String? _nullableTrim(String? value) {
-    final trimmed = value?.trim();
-    if (trimmed == null || trimmed.isEmpty) return null;
-    return trimmed;
-  }
-
-  bool _isMissingIntakeColumnsError(Object error) {
-    if (error is! PostgrestException) return false;
-    final code = error.code ?? '';
-    final message = error.message.toLowerCase();
-
-    if (code == '42703') {
-      return message.contains('intake_summary') ||
-          message.contains('current_life_context') ||
-          message.contains('therapy_demands');
-    }
-
-    return message.contains('column patients.intake_summary does not exist') ||
-        message.contains(
-          'column patients.current_life_context does not exist',
-        ) ||
-        message.contains('column patients.therapy_demands does not exist');
-  }
-
   Future<Patient> setPatientActiveStatus({
     required String patientId,
     required bool isActive,
@@ -268,7 +194,7 @@ therapy_demands
           .from('patients')
           .update(data)
           .eq('id', request.patientId)
-          .select(_patientBaseSelect)
+          .select(_patientDetailSelect)
           .single();
       return Patient.fromJson(Map<String, dynamic>.from(row));
     } catch (e) {

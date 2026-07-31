@@ -10,6 +10,8 @@ class CategoryResult {
     this.averageScore,
     this.classification,
     required this.snapshot,
+    this.professionalAverageScore,
+    this.professionalNote,
   });
 
   final String id;
@@ -19,6 +21,8 @@ class CategoryResult {
   final double? averageScore;
   final String? classification;
   final ResultSnapshot snapshot;
+  final double? professionalAverageScore;
+  final String? professionalNote;
 
   factory CategoryResult.fromJson(Map<String, dynamic> json) {
     final category = json['category'];
@@ -35,6 +39,8 @@ class CategoryResult {
       averageScore: _num(json['average_score']),
       classification: json['classification'] as String?,
       snapshot: ResultSnapshot.fromJson(json['snapshot']),
+      professionalAverageScore: _num(json['professional_average_score']),
+      professionalNote: json['professional_note'] as String?,
     );
   }
 

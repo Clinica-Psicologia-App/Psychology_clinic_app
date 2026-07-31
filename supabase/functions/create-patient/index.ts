@@ -2,10 +2,8 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import {
   assertEmailAvailableInClinic,
   assertPsychologistCanReceivePatient,
-  assertPsychologistInClinic,
   assertUuid,
   getCallerProfile,
-  requireStaff,
 } from "../_shared/auth.ts";
 import { AppError } from "../_shared/errors.ts";
 import {
@@ -56,7 +54,13 @@ serve(async (req) => {
     const userClient = createUserClient(authHeader);
     const serviceClient = createServiceClient();
     const caller = await getCallerProfile(userClient);
-    requireStaff(caller);
+    if (!["platform_admin", "admin", "psychologist"].includes(caller.role)) {
+      throw new AppError(
+        "FORBIDDEN",
+        "Only clinic staff can create patients",
+        403,
+      );
+    }
 
     const body = await parseJsonBody<CreatePatientBody>(req);
 
@@ -85,19 +89,58 @@ serve(async (req) => {
       );
     }
 
-    await assertPsychologistInClinic(
-      userClient,
-      psychologistId,
-      caller.clinic_id,
-    );
+    const { data: responsibleProfile, error: responsibleError } =
+      await serviceClient
+        .from("profiles")
+        .select("id, clinic_id, role, is_active")
+        .eq("id", psychologistId)
+        .maybeSingle();
+
+    if (responsibleError) {
+      throw new AppError(
+        "INTERNAL_ERROR",
+        "Failed to validate responsible psychologist",
+        500,
+        { hint: responsibleError.message },
+      );
+    }
+
+    if (
+      !responsibleProfile ||
+      responsibleProfile.role !== "psychologist" ||
+      !responsibleProfile.is_active ||
+      !responsibleProfile.clinic_id
+    ) {
+      throw new AppError(
+        "VALIDATION_ERROR",
+        "responsible_psychologist_id must be an active psychologist",
+        400,
+        { responsible_psychologist_id: psychologistId },
+      );
+    }
+
+    const targetClinicId = responsibleProfile.clinic_id as string;
+
+    if (
+      caller.role !== "platform_admin" &&
+      caller.clinic_id !== targetClinicId
+    ) {
+      throw new AppError(
+        "VALIDATION_ERROR",
+        "responsible_psychologist_id must belong to your clinic",
+        400,
+        { responsible_psychologist_id: psychologistId },
+      );
+    }
+
     await assertPsychologistCanReceivePatient(
       userClient,
       psychologistId,
-      caller.clinic_id,
+      targetClinicId,
     );
     await assertEmailAvailableInClinic(
       userClient,
-      caller.clinic_id,
+      targetClinicId,
       body.email,
     );
 
@@ -108,7 +151,7 @@ serve(async (req) => {
         email_confirm: true,
         user_metadata: {
           full_name: body.full_name.trim(),
-          clinic_id: caller.clinic_id,
+          clinic_id: targetClinicId,
           role: "patient",
           phone: body.phone ?? null,
         },
@@ -133,7 +176,7 @@ serve(async (req) => {
     const { data: patient, error: patientError } = await serviceClient
       .from("patients")
       .insert({
-        clinic_id: caller.clinic_id,
+        clinic_id: targetClinicId,
         profile_id: profileId,
         responsible_psychologist_id: psychologistId,
         full_name: body.full_name.trim(),
@@ -175,7 +218,7 @@ serve(async (req) => {
       caller_id: caller.id,
       patient_id: patient.id,
       profile_id: profileId,
-      clinic_id: caller.clinic_id,
+      clinic_id: targetClinicId,
     });
 
     return jsonResponse({

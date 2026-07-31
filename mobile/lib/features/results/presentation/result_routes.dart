@@ -1,4 +1,4 @@
-﻿import '../../profile/domain/profile_role.dart';
+import '../../profile/domain/profile_role.dart';
 
 abstract final class ResultRoutes {
   static String list({
@@ -11,7 +11,9 @@ abstract final class ResultRoutes {
       case ProfileRole.psychologist:
         return '/psychologist/patients/$patientId/results';
       case ProfileRole.patient:
-        throw StateError('Paciente não acessa resultados nesta etapa');
+        // O paciente vê apenas os próprios resultados liberados; a rota
+        // resolve o patientId internamente.
+        return '/patient/results';
     }
   }
 

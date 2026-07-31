@@ -398,13 +398,27 @@ class _DropdownField<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Pacientes antigos podem ter o valor gravado em português ou num formato
+    // que não existe mais entre as opções. O DropdownButtonFormField lança
+    // assertion quando o valor selecionado não está na lista, então o valor
+    // salvo é acrescentado como opção — assim ele continua visível e o
+    // psicólogo pode trocá-lo por um dos valores atuais.
+    final effectiveItems = [...items];
+    final hasValue =
+        value != null && effectiveItems.any((item) => item.value == value);
+    if (value != null && !hasValue) {
+      effectiveItems.add(
+        DropdownMenuItem<T>(value: value, child: Text('$value')),
+      );
+    }
+
     return DropdownButtonFormField<T>(
       initialValue: value,
       decoration: InputDecoration(
         labelText: label,
         border: const OutlineInputBorder(),
       ),
-      items: items,
+      items: effectiveItems,
       onChanged: onChanged,
     );
   }

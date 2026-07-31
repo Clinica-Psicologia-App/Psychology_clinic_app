@@ -19,11 +19,16 @@ class QuestionnaireAnswerPage extends ConsumerStatefulWidget {
     required this.session,
     required this.role,
     this.patientId,
+    this.previewMode = false,
   });
 
   final QuestionnaireSession session;
   final ProfileRole role;
   final String? patientId;
+
+  /// Pré-visualização do catálogo (platform admin): o fluxo é percorrido
+  /// normalmente, mas nada é enviado ao backend.
+  final bool previewMode;
 
   @override
   ConsumerState<QuestionnaireAnswerPage> createState() =>
@@ -40,6 +45,7 @@ class _QuestionnaireAnswerPageState
   bool _finishing = false;
 
   QuestionnaireSession get session => widget.session;
+  bool get _isPreview => widget.previewMode;
   bool get _hasPendingAnswers => _answers.isNotEmpty;
   bool get _isParentalFlow =>
       session.questionnaire.isParentalStyles && session.hasContexts;
@@ -86,6 +92,32 @@ class _QuestionnaireAnswerPageState
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  if (_isPreview) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.secondaryContainer,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.visibility_outlined, size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Pré-visualização: as respostas não serão salvas.',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
                   if (_isParentalFlow) ...[
                     _ParentalContextProgress(
                       contexts: session.contexts,
@@ -256,12 +288,14 @@ class _QuestionnaireAnswerPageState
     });
 
     try {
-      await ref.read(questionnairesRepositoryProvider).submitAnswer(
-            responseId: session.responseId,
-            questionId: question.id,
-            answerValue: value!,
-            responseContextId: _currentContext?.id,
-          );
+      if (!_isPreview) {
+        await ref.read(questionnairesRepositoryProvider).submitAnswer(
+              responseId: session.responseId,
+              questionId: question.id,
+              answerValue: value!,
+              responseContextId: _currentContext?.id,
+            );
+      }
 
       if (!mounted) return;
       setState(() {
@@ -315,6 +349,12 @@ class _QuestionnaireAnswerPageState
     setState(() => _finishing = true);
 
     try {
+      if (_isPreview) {
+        if (!mounted) return;
+        await _showPreviewFinishedDialog();
+        return;
+      }
+
       await ref.read(questionnairesRepositoryProvider).submitAnswer(
             responseId: session.responseId,
             questionId: question.id,
@@ -347,6 +387,27 @@ class _QuestionnaireAnswerPageState
     } finally {
       if (mounted) setState(() => _finishing = false);
     }
+  }
+
+  /// Encerramento da pré-visualização. Não navega para a tela de sucesso: o
+  /// preview roda fora do fluxo clínico e não gerou resultado algum.
+  Future<void> _showPreviewFinishedDialog() async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Pré-visualização concluída'),
+        content: const Text(
+          'Nenhuma resposta foi salva — este questionário foi apenas '
+          'visualizado para conferência do conteúdo.',
+        ),
+        actions: [
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Fechar'),
+          ),
+        ],
+      ),
+    );
   }
 
   String _answerKey(String questionId, String? contextId) {

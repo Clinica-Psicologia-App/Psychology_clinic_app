@@ -1,4 +1,14 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Necessária em builds de release para acessar o Supabase (login/dados). -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Foto de perfil: câmera para tirar a foto, galeria para escolher uma existente. -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32"/>
+    <!-- A câmera é opcional: o app funciona sem ela (só galeria). -->
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <application
         android:label="EsquemaCore"
         android:name="${applicationName}"

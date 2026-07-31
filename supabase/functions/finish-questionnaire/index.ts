@@ -16,19 +16,22 @@ import {
   loadResponseForUpdate,
   type ResponseContextRow,
 } from "../_shared/questionnaire.ts";
-import { buildScoringPayload } from "../_shared/scoring/scorer.ts";
+import {
+  buildLegacyCategoryAggregates,
+  loadAndComputeScoring,
+  type CategoryItem,
+} from "../_shared/scoring/compute.ts";
+import {
+  buildParentalContextSnapshot,
+  loadParentalTemplateCategories,
+  loadParentalTemplateCategoryItems,
+} from "../_shared/scoring/parental.ts";
 import {
   SNAPSHOT_VERSION,
   type AnswerMap,
-  type DomainMeta,
   type LegacyCategorySnapshot,
   type MergedResultSnapshot,
-  type QuestionnaireMeta,
-  type QuestionnaireVersionRow,
-  type SchemaMeta,
   type ScoringPayload,
-  type ScoringRuleRow,
-  type SeverityRangeRow,
 } from "../_shared/scoring/types.ts";
 import {
   createServiceClient,
@@ -38,12 +41,6 @@ import {
 
 type FinishQuestionnaireBody = {
   response_id: string;
-};
-
-type CategoryItem = {
-  category_id: string;
-  question_id: string;
-  weight: number;
 };
 
 type AnswerRow = {
@@ -131,6 +128,7 @@ serve(async (req) => {
       client,
       response.questionnaire_id,
       answerMap,
+      response.questionnaire_version_id,
     );
 
     const categoryAggregates = buildLegacyCategoryAggregates(
@@ -257,6 +255,7 @@ async function finishParentalQuestionnaire(input: {
   const canonicalQuestions = await loadCanonicalParentalQuestions(
     client,
     response.questionnaire_id,
+    response.questionnaire_version_id,
   );
   if (canonicalQuestions.length == 0) {
     throw new AppError(
@@ -429,47 +428,6 @@ async function finishParentalQuestionnaire(input: {
   };
 }
 
-function buildLegacyCategoryAggregates(
-  categories: Array<{ id: string; code: string; name: string }>,
-  categoryItems: CategoryItem[],
-  answerMap: AnswerMap,
-): Map<
-  string,
-  { total: number; weightSum: number; items: LegacyCategorySnapshot["items"] }
-> {
-  const categoryAggregates = new Map<
-    string,
-    { total: number; weightSum: number; items: LegacyCategorySnapshot["items"] }
-  >();
-
-  for (const cat of categories) {
-    categoryAggregates.set(cat.id, { total: 0, weightSum: 0, items: [] });
-  }
-
-  for (const item of categoryItems) {
-    const value = answerMap.get(item.question_id);
-    if (value == null) continue;
-
-    const agg = categoryAggregates.get(item.category_id) ?? {
-      total: 0,
-      weightSum: 0,
-      items: [],
-    };
-    const weighted = value * Number(item.weight);
-    agg.total += weighted;
-    agg.weightSum += Number(item.weight);
-    agg.items.push({
-      question_id: item.question_id,
-      answer_value: value,
-      weight: Number(item.weight),
-      weighted_score: weighted,
-    });
-    categoryAggregates.set(item.category_id, agg);
-  }
-
-  return categoryAggregates;
-}
-
 function mergeSnapshot(
   legacy: LegacyCategorySnapshot,
   scoring: ScoringPayload,
@@ -481,234 +439,4 @@ function mergeSnapshot(
     completed_at: completedAt,
     version: legacy.version,
   };
-}
-
-async function loadAndComputeScoring(
-  client: ReturnType<typeof createUserClient>,
-  questionnaireId: string,
-  answers: AnswerMap,
-): Promise<ScoringPayload | null> {
-  const { data: questionnaire, error: qError } = await client
-    .from("questionnaires")
-    .select("id, code, name")
-    .eq("id", questionnaireId)
-    .maybeSingle();
-
-  if (qError || !questionnaire) {
-    return null;
-  }
-
-  const { data: versionRow, error: vError } = await client
-    .from("questionnaire_versions")
-    .select(
-      "id, questionnaire_id, version, scoring_method, scale_min, scale_max, instructions",
-    )
-    .eq("questionnaire_id", questionnaireId)
-    .eq("status", "active")
-    .maybeSingle();
-
-  if (vError || !versionRow) {
-    return null;
-  }
-
-  const version = versionRow as QuestionnaireVersionRow;
-
-  const { data: rules, error: rulesError } = await client
-    .from("question_scoring_rules")
-    .select(
-      "id, question_id, schema_id, domain_id, weight, reverse_score, min_value, max_value, sort_order, metadata",
-    )
-    .eq("questionnaire_version_id", version.id)
-    .order("sort_order");
-
-  if (rulesError || !rules?.length) {
-    return null;
-  }
-
-  const scoringRules = rules as ScoringRuleRow[];
-  const schemaIds = [
-    ...new Set(
-      scoringRules.map((r) => r.schema_id).filter((id): id is string =>
-        id != null
-      ),
-    ),
-  ];
-  const domainIds = [
-    ...new Set(
-      scoringRules.map((r) => r.domain_id).filter((id): id is string =>
-        id != null
-      ),
-    ),
-  ];
-
-  let schemas: SchemaMeta[] = [];
-  if (schemaIds.length > 0) {
-    const { data, error } = await client
-      .from("schemas")
-      .select("id, domain_id, code, name")
-      .in("id", schemaIds);
-    if (error) {
-      throw new AppError("INTERNAL_ERROR", "Failed to load schemas", 500);
-    }
-    schemas = (data ?? []) as SchemaMeta[];
-    for (const s of schemas) {
-      if (!domainIds.includes(s.domain_id)) domainIds.push(s.domain_id);
-    }
-  }
-
-  let domains: DomainMeta[] = [];
-  if (domainIds.length > 0) {
-    const { data, error } = await client
-      .from("schema_domains")
-      .select("id, code, name")
-      .in("id", domainIds);
-    if (error) {
-      throw new AppError("INTERNAL_ERROR", "Failed to load schema domains", 500);
-    }
-    domains = (data ?? []) as DomainMeta[];
-  }
-
-  const { data: severityRanges, error: sevError } = await client
-    .from("severity_ranges")
-    .select(
-      "id, questionnaire_version_id, schema_id, domain_id, label, min_score, max_score, color_key, sort_order",
-    )
-    .eq("questionnaire_version_id", version.id);
-
-  if (sevError) {
-    throw new AppError("INTERNAL_ERROR", "Failed to load severity ranges", 500);
-  }
-
-  const questionnaireMeta: QuestionnaireMeta = {
-    id: questionnaire.id,
-    code: questionnaire.code,
-    name: questionnaire.name,
-  };
-
-  return buildScoringPayload({
-    questionnaire: questionnaireMeta,
-    version,
-    completedAt: new Date().toISOString(),
-    rules: scoringRules,
-    answers,
-    domains,
-    schemas,
-    severityRanges: (severityRanges ?? []) as SeverityRangeRow[],
-  });
-}
-
-type ParentalTemplateCategory = {
-  id: string;
-  code: string;
-  name: string;
-};
-
-async function loadParentalTemplateCategories(
-  client: ReturnType<typeof createUserClient>,
-  questionnaireId: string,
-): Promise<ParentalTemplateCategory[]> {
-  const { data, error } = await client
-    .from("question_categories")
-    .select("id, code, name")
-    .eq("questionnaire_id", questionnaireId)
-    .like("code", "MOTHER_%")
-    .order("name");
-
-  if (error) {
-    throw new AppError("INTERNAL_ERROR", "Failed to load parental categories", 500);
-  }
-
-  return (data ?? []) as ParentalTemplateCategory[];
-}
-
-async function loadParentalTemplateCategoryItems(
-  client: ReturnType<typeof createUserClient>,
-  questionIds: string[],
-): Promise<CategoryItem[]> {
-  if (questionIds.length === 0) return [];
-
-  const { data, error } = await client
-    .from("question_category_items")
-    .select("category_id, question_id, weight")
-    .in("question_id", questionIds);
-
-  if (error) {
-    throw new AppError(
-      "INTERNAL_ERROR",
-      "Failed to load parental category items",
-      500,
-    );
-  }
-
-  return (data ?? []) as CategoryItem[];
-}
-
-function buildParentalContextSnapshot(input: {
-  context: ResponseContextRow;
-  totalQuestions: number;
-  answerMap: AnswerMap;
-  categories: ParentalTemplateCategory[];
-  categoryItems: CategoryItem[];
-}) {
-  const aggregates = buildLegacyCategoryAggregates(
-    input.categories,
-    input.categoryItems,
-    input.answerMap,
-  );
-
-  const schemas = input.categories.map((category) => {
-    const agg = aggregates.get(category.id) ?? {
-      total: 0,
-      weightSum: 0,
-      items: [] as LegacyCategorySnapshot["items"],
-    };
-    const average = agg.weightSum > 0 ? agg.total / agg.weightSum : null;
-    return {
-      code: normalizeParentalCategoryCode(category.code, input.context.context_key),
-      name: normalizeParentalCategoryName(category.name, input.context.context_label),
-      raw_score: agg.total,
-      weighted_score: agg.total,
-      average_score: average,
-      answered_items: agg.items.length,
-      max_possible_score: agg.weightSum * 6,
-      severity: null,
-    };
-  });
-
-  const total = schemas.reduce(
-    (sum, item) => sum + Number(item.weighted_score ?? 0),
-    0,
-  );
-  const answeredItems = input.answerMap.length;
-  const averageScore = answeredItems > 0 ? total / answeredItems : null;
-
-  return {
-    id: input.context.id,
-    key: input.context.context_key,
-    label: input.context.context_label,
-    status: "completed",
-    completed_at: input.context.completed_at,
-    answer_count: answeredItems,
-    total_questions: input.totalQuestions,
-    completion_ratio: input.totalQuestions > 0
-      ? answeredItems / input.totalQuestions
-      : 0,
-    summary: {
-      raw_score: total,
-      weighted_score: total,
-      average_score: averageScore,
-      answered_items: answeredItems,
-      max_possible_score: input.totalQuestions * 6,
-    },
-    schemas,
-  };
-}
-
-function normalizeParentalCategoryCode(code: string, contextKey: string) {
-  const stripped = code.replace(/^MOTHER_/, "");
-  return `${contextKey.toUpperCase()}_${stripped}`;
-}
-
-function normalizeParentalCategoryName(name: string, contextLabel: string) {
-  return name.replace(/—\s*Mãe$/i, `— ${contextLabel}`);
 }

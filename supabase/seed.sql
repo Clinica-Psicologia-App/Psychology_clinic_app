@@ -77,7 +77,7 @@ VALUES
     jsonb_build_object(
       'full_name', 'Ricardo Mendes (admin demo)',
       'clinic_id', '11111111-1111-1111-1111-111111111101',
-      'role', 'admin',
+      'role', 'platform_admin',
       'phone', '+5511999990002'
     ),
     timezone('utc', now()),
@@ -240,14 +240,33 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
--- 8. Cinco perguntas
+-- 7b. Versão ativa (perguntas e respostas são fixadas por versão)
+INSERT INTO public.questionnaire_versions (
+  id, questionnaire_id, version, status, scoring_method,
+  scale_min, scale_max, instructions, published_at
+)
+VALUES (
+  '66666666-6666-6666-6666-666666666801',
+  '11111111-1111-1111-1111-111111111301',
+  'v1-demo',
+  'active',
+  'weighted_sum_demo',
+  1,
+  6,
+  'DEMO — Inventário fictício de 5 itens (escala 1 a 6). Responda pensando na última semana. Estes resultados não têm interpretação clínica validada.',
+  timezone('utc', now()) - interval '7 days'
+)
+ON CONFLICT (id) DO NOTHING;
+
+-- 8. Cinco perguntas (fixadas na versão v1-demo)
 INSERT INTO public.questions (
-  id, questionnaire_id, code, text, order_index, answer_type, scale_min, scale_max, is_active
+  id, questionnaire_id, questionnaire_version_id, code, text, order_index, answer_type, scale_min, scale_max, is_active
 )
 VALUES
   (
     '11111111-1111-1111-1111-111111111501',
     '11111111-1111-1111-1111-111111111301',
+    '66666666-6666-6666-6666-666666666801',
     'Q01',
     'Sinto que as pessoas importantes não estarão disponíveis quando preciso (fictício).',
     0,
@@ -259,6 +278,7 @@ VALUES
   (
     '11111111-1111-1111-1111-111111111502',
     '11111111-1111-1111-1111-111111111301',
+    '66666666-6666-6666-6666-666666666801',
     'Q02',
     'Tenho dificuldade em confiar nas pessoas próximas (fictício).',
     1,
@@ -270,6 +290,7 @@ VALUES
   (
     '11111111-1111-1111-1111-111111111503',
     '11111111-1111-1111-1111-111111111301',
+    '66666666-6666-6666-6666-666666666801',
     'Q03',
     'Sinto que não pertenço em grupos sociais (fictício).',
     2,
@@ -281,6 +302,7 @@ VALUES
   (
     '11111111-1111-1111-1111-111111111504',
     '11111111-1111-1111-1111-111111111301',
+    '66666666-6666-6666-6666-666666666801',
     'Q04',
     'Preciso de aprovação dos outros para me sentir bem (fictício).',
     3,
@@ -292,6 +314,7 @@ VALUES
   (
     '11111111-1111-1111-1111-111111111505',
     '11111111-1111-1111-1111-111111111301',
+    '66666666-6666-6666-6666-666666666801',
     'Q05',
     'Tenho medo de perder o controle das minhas emoções (fictício).',
     4,
@@ -312,12 +335,13 @@ VALUES
   ('11111111-1111-1111-1111-111111111605', '11111111-1111-1111-1111-111111111505', '11111111-1111-1111-1111-111111111401', 1)
 ON CONFLICT (id) DO NOTHING;
 
--- 10. Resposta de questionário concluída
+-- 10. Resposta de questionário concluída (fixada na versão v1-demo)
 INSERT INTO public.questionnaire_responses (
   id,
   clinic_id,
   patient_id,
   questionnaire_id,
+  questionnaire_version_id,
   status,
   started_at,
   completed_at
@@ -327,6 +351,7 @@ VALUES (
   '11111111-1111-1111-1111-111111111101',
   '11111111-1111-1111-1111-111111111201',
   '11111111-1111-1111-1111-111111111301',
+  '66666666-6666-6666-6666-666666666801',
   'completed',
   timezone('utc', now()) - interval '1 day',
   timezone('utc', now()) - interval '23 hours'

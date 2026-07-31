@@ -80,7 +80,12 @@ serve(async (req) => {
       );
     }
 
-    const targetClinicId = assertUuid(body.clinic_id ?? "", "clinic_id");
+    if (!body.clinic_id) {
+      throw new AppError("VALIDATION_ERROR", "clinic_id is required", 400, {
+        field: "clinic_id",
+      });
+    }
+    const targetClinicId = assertUuid(body.clinic_id, "clinic_id");
 
     const { data: clinic, error: clinicError } = await serviceClient
       .from("clinics")

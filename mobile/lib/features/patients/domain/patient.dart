@@ -27,7 +27,6 @@ class Patient {
     this.isActive = true,
     this.inactivatedAt,
     this.createdAt,
-    this.supportsIntakeContext = true,
   });
 
   final String id;
@@ -56,8 +55,6 @@ class Patient {
   final bool isActive;
   final DateTime? inactivatedAt;
   final DateTime? createdAt;
-  final bool supportsIntakeContext;
-
   String? get displayGender => _humanizeClinicalValue(gender, const {
         'female': 'Feminino',
         'feminino': 'Feminino',
@@ -106,10 +103,7 @@ class Patient {
 
   String? get displayEthnicGroup => _humanizeClinicalValue(ethnicGroup);
 
-  factory Patient.fromJson(
-    Map<String, dynamic> json, {
-    bool supportsIntakeContext = true,
-  }) {
+  factory Patient.fromJson(Map<String, dynamic> json) {
     final responsible = json['responsible_psychologist'];
     final accessProfile = json['access_profile'];
 
@@ -144,7 +138,6 @@ class Patient {
       isActive: json['is_active'] as bool? ?? true,
       inactivatedAt: _parseDateTime(json['inactivated_at']),
       createdAt: _parseDateTime(json['created_at']),
-      supportsIntakeContext: supportsIntakeContext,
     );
   }
 

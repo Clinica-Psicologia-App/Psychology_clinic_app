@@ -13,10 +13,17 @@ abstract final class RouteAccess {
     '/privacy',
   };
 
+  /// Rotas autenticadas comuns a todos os papéis (não têm prefixo de role).
+  static const sharedPaths = {
+    '/profile',
+  };
+
   static bool isPublic(String location) => publicPaths.contains(location);
 
+  static bool isShared(String location) => sharedPaths.contains(location);
+
   static bool isAllowed(String location, ProfileRole role) {
-    if (isPublic(location)) return true;
+    if (isPublic(location) || isShared(location)) return true;
 
     switch (role) {
       case ProfileRole.platformAdmin:

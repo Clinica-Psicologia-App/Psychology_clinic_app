@@ -3,6 +3,16 @@ import '../../profile/domain/profile_role.dart';
 abstract final class QuestionnaireRoutes {
   static const adminAccess = '/platform/questionnaire-access';
 
+  /// Catálogo de instrumentos (platform admin).
+  static const adminCatalog = '/platform/questionnaire-catalog';
+
+  /// Criação de um novo instrumento.
+  static const adminCatalogNew = '$adminCatalog/new';
+
+  /// Edição de um instrumento existente.
+  static String adminCatalogDetail(String questionnaireId) =>
+      '$adminCatalog/$questionnaireId';
+
   static String list({
     required ProfileRole role,
     String? patientId,

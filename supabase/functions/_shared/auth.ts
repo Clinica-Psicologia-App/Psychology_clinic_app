@@ -29,8 +29,8 @@ export async function getCallerProfile(client) {
   return data;
 }
 export function requireStaff(profile) {
-  if (profile.role !== "psychologist") {
-    throw new AppError("FORBIDDEN", "Only psychologists can perform this clinical action", 403);
+  if (profile.role !== "psychologist" && profile.role !== "platform_admin") {
+    throw new AppError("FORBIDDEN", "Only staff can perform this clinical action", 403);
   }
 }
 export async function assertPatientAccess(client, patientId) {

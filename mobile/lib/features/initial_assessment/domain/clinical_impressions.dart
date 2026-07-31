@@ -1,8 +1,7 @@
 import 'functioning_level.dart';
 
 /// Bloco 4 — Primeiras Impressões Clínicas (staff-only, o paciente nunca vê).
-/// Mapeia `patient_clinical_impressions` + as junções de checklist
-/// (esquemas, modos e necessidades emocionais) resolvidas como listas de ids.
+/// Mapeia `patient_clinical_impressions` + a junção de necessidades emocionais.
 class ClinicalImpressions {
   const ClinicalImpressions({
     this.observedTemperament,
@@ -14,9 +13,9 @@ class ClinicalImpressions {
     this.differentialDiagnosis,
     this.functioningLevel,
     this.therapeuticPriorities,
-    this.schemaHypothesisIds = const [],
-    this.modeHypothesisIds = const [],
-    this.emotionalNeedIds = const [],
+    this.schemaHypothesesText,
+    this.modeHypothesesText,
+    this.emotionalNeedsText,
   });
 
   // Impressão geral
@@ -36,17 +35,12 @@ class ClinicalImpressions {
   // Prioridades terapêuticas
   final String? therapeuticPriorities;
 
-  // Checklists (ids selecionados)
-  final List<String> schemaHypothesisIds;
-  final List<String> modeHypothesisIds;
-  final List<String> emotionalNeedIds;
+  // Campos de texto livre
+  final String? schemaHypothesesText;
+  final String? modeHypothesesText;
+  final String? emotionalNeedsText;
 
-  factory ClinicalImpressions.fromJson(
-    Map<String, dynamic> json, {
-    List<String> schemaHypothesisIds = const [],
-    List<String> modeHypothesisIds = const [],
-    List<String> emotionalNeedIds = const [],
-  }) {
+  factory ClinicalImpressions.fromJson(Map<String, dynamic> json) {
     return ClinicalImpressions(
       observedTemperament: json['observed_temperament'] as String?,
       therapeuticBond: json['therapeutic_bond'] as String?,
@@ -58,9 +52,9 @@ class ClinicalImpressions {
       functioningLevel:
           functioningLevelFromKey(json['functioning_level'] as String?),
       therapeuticPriorities: json['therapeutic_priorities'] as String?,
-      schemaHypothesisIds: schemaHypothesisIds,
-      modeHypothesisIds: modeHypothesisIds,
-      emotionalNeedIds: emotionalNeedIds,
+      schemaHypothesesText: json['schema_hypotheses_text'] as String?,
+      modeHypothesesText: json['mode_hypotheses_text'] as String?,
+      emotionalNeedsText: json['emotional_needs_text'] as String?,
     );
   }
 }

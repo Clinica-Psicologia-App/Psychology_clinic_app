@@ -8,12 +8,10 @@ import '../../../shared/widgets/async_state_body.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../profile/domain/profile_role.dart';
 import 'initial_assessment_routes.dart';
-import '../domain/assessment_catalog_item.dart';
 import '../domain/functioning_level.dart';
 import '../domain/initial_assessment.dart';
 import '../domain/life_area.dart';
 import '../providers/initial_assessment_providers.dart';
-import 'widgets/checklist_section.dart';
 
 /// Tela 1 do fluxo Conhecer na lente do terapeuta — leitura das respostas do
 /// paciente + campos clínicos (Bloco 1 privado, Bloco 2 clínico, comentários
@@ -58,9 +56,9 @@ class _InitialAssessmentTherapistPageState
   final _priorities = TextEditingController();
   FunctioningLevel? _level;
 
-  final Set<String> _schemas = {};
-  final Set<String> _modes = {};
-  final Set<String> _needs = {};
+  final _schemaHypothesesText = TextEditingController();
+  final _modeHypothesesText = TextEditingController();
+  final _emotionalNeedsText = TextEditingController();
 
   bool _initialized = false;
   bool _saving = false;
@@ -88,6 +86,9 @@ class _InitialAssessmentTherapistPageState
       _prevDx,
       _diffDx,
       _priorities,
+      _schemaHypothesesText,
+      _modeHypothesesText,
+      _emotionalNeedsText,
       ..._comments.values,
     ]) {
       c.dispose();
@@ -107,8 +108,8 @@ class _InitialAssessmentTherapistPageState
     _initialHypotheses.text = ci?.initialHypotheses ?? '';
 
     for (final area in kLifeAreasInOrder) {
-      _comments[area] =
-          TextEditingController(text: data.lifeAreaFor(area).clinicalComment ?? '');
+      _comments[area] = TextEditingController(
+          text: data.lifeAreaFor(area).clinicalComment ?? '');
     }
 
     final imp = data.clinicalImpressions;
@@ -121,9 +122,9 @@ class _InitialAssessmentTherapistPageState
     _diffDx.text = imp?.differentialDiagnosis ?? '';
     _priorities.text = imp?.therapeuticPriorities ?? '';
     _level = imp?.functioningLevel;
-    _schemas.addAll(imp?.schemaHypothesisIds ?? const []);
-    _modes.addAll(imp?.modeHypothesisIds ?? const []);
-    _needs.addAll(imp?.emotionalNeedIds ?? const []);
+    _schemaHypothesesText.text = imp?.schemaHypothesesText ?? '';
+    _modeHypothesesText.text = imp?.modeHypothesesText ?? '';
+    _emotionalNeedsText.text = imp?.emotionalNeedsText ?? '';
 
     _initialized = true;
   }
@@ -165,10 +166,10 @@ class _InitialAssessmentTherapistPageState
         differentialDiagnosis: _nullIfEmpty(_diffDx.text),
         functioningLevel: _level,
         therapeuticPriorities: _nullIfEmpty(_priorities.text),
+        schemaHypothesesText: _nullIfEmpty(_schemaHypothesesText.text),
+        modeHypothesesText: _nullIfEmpty(_modeHypothesesText.text),
+        emotionalNeedsText: _nullIfEmpty(_emotionalNeedsText.text),
       );
-      await repo.setSchemaHypotheses(pid, _schemas.toList());
-      await repo.setModeHypotheses(pid, _modes.toList());
-      await repo.setEmotionalNeeds(pid, _needs.toList());
 
       ref.invalidate(initialAssessmentProvider(_ctx));
       if (!mounted) return;
@@ -186,9 +187,6 @@ class _InitialAssessmentTherapistPageState
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(initialAssessmentProvider(_ctx));
-    final catalog = ref.watch(schemaModeCatalogProvider).valueOrNull;
-    final needs = ref.watch(emotionalNeedsCatalogProvider).valueOrNull ??
-        const <AssessmentCatalogItem>[];
 
     return AppScaffold(
       title: 'Conceitualização inicial',
@@ -234,27 +232,10 @@ class _InitialAssessmentTherapistPageState
                   _subheader(context, 'Nível atual de funcionamento'),
                   _functioningLevelSelector(context),
                   const SizedBox(height: 12),
-                  ChecklistSection(
-                    title: 'Hipóteses iniciais de esquemas',
-                    items: catalog?.schemas ?? const [],
-                    selectedIds: _schemas,
-                    onToggle: (id) => setState(() => _toggle(_schemas, id)),
-                  ),
-                  const SizedBox(height: 12),
-                  ChecklistSection(
-                    title: 'Hipóteses de modos',
-                    items: catalog?.modes ?? const [],
-                    selectedIds: _modes,
-                    onToggle: (id) => setState(() => _toggle(_modes, id)),
-                  ),
-                  const SizedBox(height: 12),
-                  ChecklistSection(
-                    title: 'Necessidades emocionais percebidas',
-                    items: needs,
-                    selectedIds: _needs,
-                    onToggle: (id) => setState(() => _toggle(_needs, id)),
-                  ),
-                  const SizedBox(height: 12),
+                  _field(_schemaHypothesesText, 'Hipóteses de esquemas'),
+                  _field(_modeHypothesesText, 'Hipóteses de modos'),
+                  _field(_emotionalNeedsText,
+                      'Necessidades emocionais percebidas'),
                   _subheader(context, 'Prioridades terapêuticas'),
                   _field(_priorities, 'Prioridades terapêuticas'),
                   const SizedBox(height: 12),
@@ -303,7 +284,8 @@ class _InitialAssessmentTherapistPageState
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.check),
-                  label: Text(_saving ? 'Salvando...' : 'Salvar conceitualização'),
+                  label:
+                      Text(_saving ? 'Salvando...' : 'Salvar conceitualização'),
                 ),
               ),
             ],
@@ -311,10 +293,6 @@ class _InitialAssessmentTherapistPageState
         },
       ),
     );
-  }
-
-  void _toggle(Set<String> set, String id) {
-    if (!set.remove(id)) set.add(id);
   }
 
   Widget _functioningGroup(
@@ -404,8 +382,7 @@ class _InitialAssessmentTherapistPageState
           ChoiceChip(
             label: Text(level.label),
             selected: _level == level,
-            onSelected: (sel) =>
-                setState(() => _level = sel ? level : null),
+            onSelected: (sel) => setState(() => _level = sel ? level : null),
           ),
       ],
     );

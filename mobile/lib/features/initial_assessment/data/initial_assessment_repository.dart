@@ -107,13 +107,6 @@ class InitialAssessmentRepository {
           .eq('patient_id', patientId)
           .maybeSingle();
 
-      final schemaIds = await _selectIds(
-          'patient_schema_hypotheses', 'schema_id', patientId);
-      final modeIds =
-          await _selectIds('patient_mode_hypotheses', 'mode_id', patientId);
-      final needIds = await _selectIds(
-          'patient_emotional_needs', 'emotional_need_id', patientId);
-
       return InitialAssessment(
         patientId: patientId,
         basics: basicsRow == null
@@ -131,9 +124,6 @@ class InitialAssessmentRepository {
             ? null
             : ClinicalImpressions.fromJson(
                 Map<String, dynamic>.from(impressionsRow),
-                schemaHypothesisIds: schemaIds,
-                modeHypothesisIds: modeIds,
-                emotionalNeedIds: needIds,
               ),
       );
     } catch (e) {
@@ -162,24 +152,17 @@ class InitialAssessmentRepository {
     ];
   }
 
-  Future<List<String>> _selectIds(
-    String table,
-    String column,
-    String patientId,
-  ) async {
-    final rows =
-        await _client.from(table).select(column).eq('patient_id', patientId);
-    return [for (final row in rows) row[column] as String];
-  }
-
   // ---------------------------------------------------------------------------
   // Catálogos (checklists do Bloco 4)
   // ---------------------------------------------------------------------------
 
   /// Esquemas (YSQ) e modos (YAMI) vivem na mesma tabela `schemas`; separamos
   /// pelo código do domínio.
-  Future<({List<AssessmentCatalogItem> schemas, List<AssessmentCatalogItem> modes})>
-      loadSchemaAndModeCatalog() async {
+  Future<
+      ({
+        List<AssessmentCatalogItem> schemas,
+        List<AssessmentCatalogItem> modes
+      })> loadSchemaAndModeCatalog() async {
     try {
       final rows = await _client
           .from('schemas')
@@ -440,6 +423,9 @@ class InitialAssessmentRepository {
     String? differentialDiagnosis,
     FunctioningLevel? functioningLevel,
     String? therapeuticPriorities,
+    String? schemaHypothesesText,
+    String? modeHypothesesText,
+    String? emotionalNeedsText,
   }) async {
     try {
       await _client.from('patient_clinical_impressions').upsert(
@@ -454,6 +440,9 @@ class InitialAssessmentRepository {
           'differential_diagnosis': differentialDiagnosis,
           'functioning_level': functioningLevel?.key,
           'therapeutic_priorities': therapeuticPriorities,
+          'schema_hypotheses_text': schemaHypothesesText,
+          'mode_hypotheses_text': modeHypothesesText,
+          'emotional_needs_text': emotionalNeedsText,
           'updated_by_profile_id': _currentProfileId,
         },
         onConflict: 'patient_id',

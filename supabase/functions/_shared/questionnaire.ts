@@ -37,12 +37,8 @@ export async function loadActiveQuestionnaire(
     throw new AppError("NOT_FOUND", "Questionnaire not found or inactive", 404);
   }
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
-  const isLocal = supabaseUrl.includes("127.0.0.1") ||
-    supabaseUrl.includes("localhost") ||
-    supabaseUrl.includes("kong:8000");
   const allowUnvalidated =
-    Deno.env.get("ALLOW_UNVALIDATED_INSTRUMENTS") === "true" || isLocal;
+    Deno.env.get("ALLOW_UNVALIDATED_INSTRUMENTS") === "true";
   if (data.clinical_status !== "approved" && !allowUnvalidated) {
     throw new AppError(
       "FORBIDDEN",
@@ -134,7 +130,9 @@ export async function loadResponseForUpdate(
   const id = assertUuid(responseId, "response_id");
   const { data, error } = await client
     .from("questionnaire_responses")
-    .select("id, clinic_id, patient_id, questionnaire_id, status, questionnaire:questionnaires(code)")
+    .select(
+      "id, clinic_id, patient_id, questionnaire_id, questionnaire_version_id, status, questionnaire:questionnaires(code)",
+    )
     .eq("id", id)
     .maybeSingle();
 
@@ -194,8 +192,9 @@ export async function loadResponseContexts(
 export async function loadCanonicalParentalQuestions(
   client: SupabaseClient,
   questionnaireId: string,
+  questionnaireVersionId?: string | null,
 ) {
-  const { data, error } = await client
+  let query = client
     .from("questions")
     .select(
       "id, code, text, order_index, answer_type, scale_min, scale_max",
@@ -204,6 +203,12 @@ export async function loadCanonicalParentalQuestions(
     .eq("is_active", true)
     .like("code", "M_%")
     .order("order_index", { ascending: true });
+
+  if (questionnaireVersionId) {
+    query = query.eq("questionnaire_version_id", questionnaireVersionId);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     throw new AppError(

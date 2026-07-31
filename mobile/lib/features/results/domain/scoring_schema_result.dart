@@ -13,6 +13,7 @@ class ScoringSchemaResult {
     this.answeredItems,
     this.maxPossibleScore,
     this.severity,
+    this.professionalAverageScore,
   });
 
   final String id;
@@ -24,6 +25,7 @@ class ScoringSchemaResult {
   final int? answeredItems;
   final double? maxPossibleScore;
   final ScoringSeverity? severity;
+  final double? professionalAverageScore;
 
   factory ScoringSchemaResult.fromJson(Map<String, dynamic> json) {
     final severityRaw = json['severity'];
@@ -38,6 +40,7 @@ class ScoringSchemaResult {
       maxPossibleScore: asDouble(json['max_possible_score']),
       severity:
           severityRaw != null ? ScoringSeverity.fromJson(severityRaw) : null,
+      professionalAverageScore: asDouble(json['professional_average_score']),
     );
   }
 

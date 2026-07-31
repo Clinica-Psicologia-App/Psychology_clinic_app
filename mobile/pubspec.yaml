@@ -19,6 +19,7 @@ dependencies:
   url_launcher: ^6.3.1
   path_provider: ^2.1.5
   open_filex: ^4.7.0
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:
@@ -30,6 +31,8 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: assets/branding/esquema_core_icon.png
+  adaptive_icon_background: assets/branding/esquema_core_icon_bg.png
+  adaptive_icon_foreground: assets/branding/esquema_core_icon_foreground.png
   remove_alpha_ios: true
 
 flutter:

@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
-import { assertUuid } from "../_shared/auth.ts";
+import { assertUuid, requireAuthUser } from "../_shared/auth.ts";
 import { AppError } from "../_shared/errors.ts";
 import {
   handleError,
@@ -34,7 +34,7 @@ serve(async (req) => {
     requirePost(req);
     const authHeader = getBearerToken(req);
     const client = createUserClient(authHeader);
-    await client.auth.getUser();
+    await requireAuthUser(client);
 
     const body = await parseJsonBody<SubmitAnswerBody>(req);
     const responseId = assertUuid(body.response_id, "response_id");

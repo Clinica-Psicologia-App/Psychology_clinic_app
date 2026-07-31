@@ -1,0 +1,43 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "flutter-web-prod",
+      "cwd": "mobile",
+      "runtimeExecutable": "flutter",
+      "runtimeArgs": [
+        "run",
+        "-d",
+        "web-server",
+        "--web-port",
+        "8080",
+        "--web-hostname",
+        "0.0.0.0",
+        "--dart-define-from-file=env.production.json"
+      ],
+      "port": 8080
+    },
+    {
+      "name": "flutter-web-local",
+      "cwd": "mobile",
+      "runtimeExecutable": "flutter",
+      "runtimeArgs": [
+        "run",
+        "-d",
+        "web-server",
+        "--web-port",
+        "8081",
+        "--web-hostname",
+        "0.0.0.0",
+        "--dart-define-from-file=env.local.json"
+      ],
+      "port": 8081
+    },
+    {
+      "name": "supabase-local",
+      "runtimeExecutable": "supabase",
+      "runtimeArgs": ["start"],
+      "port": 54321
+    }
+  ]
+}

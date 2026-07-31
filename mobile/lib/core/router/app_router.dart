@@ -38,6 +38,8 @@ import '../../features/patient_invitations/presentation/create_patient_invitatio
 import '../../features/patient_invitations/presentation/patient_invitation_routes.dart';
 import '../../features/patient_invitations/presentation/patient_invitations_page.dart';
 import '../../features/profile/domain/profile_role.dart';
+import '../../features/profile/presentation/profile_page.dart';
+import '../../features/profile/presentation/profile_routes.dart';
 import '../../features/questionnaires/presentation/questionnaire_route_helpers.dart';
 import '../../features/questionnaires/presentation/questionnaire_access_management_page.dart';
 import '../../features/questionnaires/domain/questionnaire_session.dart';
@@ -169,6 +171,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.privacy,
         builder: (_, __) =>
             const LegalDocumentPage(type: LegalDocumentType.privacy),
+      ),
+      // Perfil do usuário — mesma rota para os três papéis.
+      GoRoute(
+        path: ProfileRoutes.me,
+        builder: (_, __) => const ProfilePage(),
       ),
       GoRoute(
         path: PatientInvitationRoutes.accept,

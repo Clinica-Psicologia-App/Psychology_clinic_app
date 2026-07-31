@@ -19,12 +19,13 @@ import {
   loadCanonicalParentalQuestions,
   normalizeParentalContexts,
 } from "../_shared/questionnaire.ts";
-import { createUserClient, getBearerToken } from "../_shared/supabase.ts";
+import { createServiceClient, createUserClient, getBearerToken } from "../_shared/supabase.ts";
 
 type StartQuestionnaireBody = {
   patient_id: string;
   questionnaire_id: string;
   contexts?: Array<{ key?: string; label?: string }>;
+  assignment_id?: string;
 };
 
 const FN = "start-questionnaire";
@@ -45,6 +46,7 @@ serve(async (req) => {
       body.questionnaire_id,
       "questionnaire_id",
     );
+    const assignmentId = body.assignment_id ?? null;
 
     if (caller.role === "patient") {
       const { data: ownPatient } = await client
@@ -60,10 +62,54 @@ serve(async (req) => {
           403,
         );
       }
+
+      // Verify assignment belongs to this patient when provided
+      if (assignmentId) {
+        const { data: assignment } = await client
+          .from("patient_questionnaire_assignments")
+          .select("id, patient_id")
+          .eq("id", assignmentId)
+          .maybeSingle();
+
+        if (!assignment || assignment.patient_id !== ownPatient.id) {
+          throw new AppError(
+            "FORBIDDEN",
+            "Assignment not found or does not belong to this patient",
+            403,
+          );
+        }
+      }
     }
 
     await assertPatientAccess(client, patientId);
     const questionnaire = await loadActiveQuestionnaire(client, questionnaireId);
+
+    // Versão ativa é fixada na resposta: edições futuras do instrumento
+    // (novas versões) não afetam respostas já iniciadas/concluídas.
+    const { data: activeVersion, error: versionError } = await client
+      .from("questionnaire_versions")
+      .select("id, version")
+      .eq("questionnaire_id", questionnaireId)
+      .eq("status", "active")
+      .maybeSingle();
+
+    if (versionError) {
+      throw new AppError(
+        "INTERNAL_ERROR",
+        "Failed to resolve questionnaire version",
+        500,
+        { hint: versionError.message },
+      );
+    }
+    if (!activeVersion) {
+      throw new AppError(
+        "INVALID_STATE",
+        "Questionnaire has no active version",
+        409,
+        { questionnaire_id: questionnaireId },
+      );
+    }
+
     const isParental = isParentalStylesQuestionnaire(questionnaire.code);
     const normalizedContexts = isParental
       ? normalizeParentalContexts(body.contexts)
@@ -76,11 +122,12 @@ serve(async (req) => {
         clinic_id: caller.clinic_id,
         patient_id: patientId,
         questionnaire_id: questionnaireId,
+        questionnaire_version_id: activeVersion.id,
         status: "draft",
         started_at: now,
       })
       .select(
-        "id, clinic_id, patient_id, questionnaire_id, status, started_at, created_at",
+        "id, clinic_id, patient_id, questionnaire_id, questionnaire_version_id, status, started_at, created_at",
       )
       .single();
 
@@ -91,6 +138,32 @@ serve(async (req) => {
         500,
         { hint: responseError.message },
       );
+    }
+
+    // Link the response to the assignment if one was provided.
+    // Staff branch: verify the assignment belongs to the target patient before updating.
+    if (assignmentId) {
+      if (caller.role !== "patient") {
+        const { data: assignment } = await client
+          .from("patient_questionnaire_assignments")
+          .select("id, patient_id")
+          .eq("id", assignmentId)
+          .maybeSingle();
+
+        if (!assignment || assignment.patient_id !== patientId) {
+          throw new AppError(
+            "FORBIDDEN",
+            "Assignment not found or does not belong to this patient",
+            403,
+          );
+        }
+      }
+
+      const serviceClient = createServiceClient();
+      await serviceClient
+        .from("patient_questionnaire_assignments")
+        .update({ response_id: response.id })
+        .eq("id", assignmentId);
     }
 
     if (isParental && normalizedContexts.length > 0) {
@@ -117,8 +190,12 @@ serve(async (req) => {
     }
 
     const questions = isParental
-      ? await loadCanonicalParentalQuestions(client, questionnaireId)
-      : await loadStandardQuestions(client, questionnaireId);
+      ? await loadCanonicalParentalQuestions(
+          client,
+          questionnaireId,
+          activeVersion.id,
+        )
+      : await loadStandardQuestions(client, activeVersion.id);
 
     const contexts = isParental
       ? await client
@@ -162,14 +239,14 @@ serve(async (req) => {
 
 async function loadStandardQuestions(
   client: ReturnType<typeof createUserClient>,
-  questionnaireId: string,
+  questionnaireVersionId: string,
 ) {
   const { data, error } = await client
     .from("questions")
     .select(
       "id, code, text, order_index, answer_type, scale_min, scale_max",
     )
-    .eq("questionnaire_id", questionnaireId)
+    .eq("questionnaire_version_id", questionnaireVersionId)
     .eq("is_active", true)
     .order("order_index", { ascending: true });
 

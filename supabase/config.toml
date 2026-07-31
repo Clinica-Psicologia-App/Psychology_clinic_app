@@ -377,8 +377,10 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
 
-# [edge_runtime.secrets]
-# secret_key = "env(SECRET_VALUE)"
+[edge_runtime.secrets]
+# Permite iniciar questionários ainda em homologação no ambiente local.
+# Em staging/produção, remover ou manter como "false".
+ALLOW_UNVALIDATED_INSTRUMENTS = "true"
 
 [analytics]
 enabled = true

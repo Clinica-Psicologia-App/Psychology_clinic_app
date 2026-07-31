@@ -11,5 +11,7 @@ coverage/
 .vscode/
 *.lock
 
-# Env local (não commitar chaves de produção)
+# Env files (não commitar chaves)
 env.local.json
+env.android.json
+env.production.json

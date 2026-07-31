@@ -1,4 +1,4 @@
-﻿import '../../questionnaires/domain/question_answer_type.dart';
+import '../../questionnaires/domain/question_answer_type.dart';
 
 /// Rótulos legíveis para valores Likert (MVP - escala 1-6 do seed).
 String likertLabel(int value, {int? scaleMin, int? scaleMax}) {

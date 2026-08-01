@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_severity.dart';
 import '../../../../shared/widgets/esquema_core_logo.dart';
 import '../../../../shared/widgets/homologation_ui.dart';
 import '../../domain/mental_case_map.dart';
@@ -13,14 +14,10 @@ import '../../domain/mental_map_validation_summary.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 /// Converte a severityColorKey do backend para uma cor concreta de UI.
-Color _resolveSeverityDotColor(String? key, Color fallback) =>
-    switch (key?.toLowerCase()) {
-      'green' => Colors.green.shade500,
-      'yellow' || 'amber' => Colors.amber.shade600,
-      'orange' => Colors.orange.shade600,
-      'red' => Colors.red.shade600,
-      _ => fallback,
-    };
+Color _resolveSeverityDotColor(String? key, Color fallback) {
+  final severity = AppSeverity.fromColorKey(key);
+  return severity.hasSeverity ? severity.color : fallback;
+}
 
 class MentalMapDisclaimerBanner extends StatelessWidget {
   const MentalMapDisclaimerBanner({super.key});
@@ -743,7 +740,7 @@ class _MentalMapOrbitNode extends StatelessWidget {
             textAlign: TextAlign.center,
             style: theme.textTheme.labelSmall?.copyWith(
               color: textColor,
-              fontWeight: data.isFilled ? FontWeight.w800 : FontWeight.w600,
+              fontWeight: data.isFilled ? FontWeight.w700 : FontWeight.w600,
             ),
           ),
         ],
@@ -978,7 +975,7 @@ class _MentalMapHubCenter extends StatelessWidget {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -1110,7 +1107,7 @@ class MentalMapNodeDetailSheet extends StatelessWidget {
             Text(
               detail.title,
               style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w800,
+                fontWeight: FontWeight.w700,
               ),
             ),
             const SizedBox(height: 8),

@@ -1,4 +1,4 @@
-﻿import 'patient_timeline_event.dart';
+import 'patient_timeline_event.dart';
 
 class PatientTimelineEventInput {
   const PatientTimelineEventInput({
@@ -8,6 +8,17 @@ class PatientTimelineEventInput {
     this.periodLabel,
     this.category,
     this.emotionalImpact,
+    this.emotionalNeedKeys = const [],
+    this.emotionalNeedOther,
+    this.emotionsFelt,
+    this.selfMeaning,
+    this.othersMeaning,
+    this.worldMeaning,
+    this.copingKeys = const [],
+    this.copingOther,
+    this.presentInfluence,
+    this.presentAreaKeys = const [],
+    this.presentReaction,
     this.isSensitive = false,
   });
 
@@ -17,6 +28,17 @@ class PatientTimelineEventInput {
   final String? periodLabel;
   final String? category;
   final int? emotionalImpact;
+  final List<String> emotionalNeedKeys;
+  final String? emotionalNeedOther;
+  final String? emotionsFelt;
+  final String? selfMeaning;
+  final String? othersMeaning;
+  final String? worldMeaning;
+  final List<String> copingKeys;
+  final String? copingOther;
+  final int? presentInfluence;
+  final List<String> presentAreaKeys;
+  final String? presentReaction;
   final bool isSensitive;
 
   factory PatientTimelineEventInput.fromEvent(PatientTimelineEvent event) {
@@ -27,6 +49,17 @@ class PatientTimelineEventInput {
       periodLabel: event.periodLabel,
       category: event.category,
       emotionalImpact: event.emotionalImpact,
+      emotionalNeedKeys: event.emotionalNeedKeys,
+      emotionalNeedOther: event.emotionalNeedOther,
+      emotionsFelt: event.emotionsFelt,
+      selfMeaning: event.selfMeaning,
+      othersMeaning: event.othersMeaning,
+      worldMeaning: event.worldMeaning,
+      copingKeys: event.copingKeys,
+      copingOther: event.copingOther,
+      presentInfluence: event.presentInfluence,
+      presentAreaKeys: event.presentAreaKeys,
+      presentReaction: event.presentReaction,
       isSensitive: event.isSensitive,
     );
   }
@@ -40,6 +73,17 @@ class PatientTimelineEventInput {
         (emotionalImpact! < 0 || emotionalImpact! > 10)) {
       return 'Impacto emocional deve ser entre 0 e 10.';
     }
+    if (presentInfluence != null &&
+        (presentInfluence! < 0 || presentInfluence! > 10)) {
+      return 'Influência atual deve ser entre 0 e 10.';
+    }
+    if (emotionalNeedKeys.contains('other') &&
+        _nullableTrim(emotionalNeedOther) == null) {
+      return 'Descreva a outra necessidade emocional.';
+    }
+    if (copingKeys.contains('other') && _nullableTrim(copingOther) == null) {
+      return 'Descreva a outra forma de lidar.';
+    }
     return null;
   }
 
@@ -51,6 +95,17 @@ class PatientTimelineEventInput {
       'period_label': _nullableTrim(periodLabel),
       'category': _nullableTrim(category),
       if (emotionalImpact != null) 'emotional_impact': emotionalImpact,
+      'emotional_need_keys': _cleanList(emotionalNeedKeys),
+      'emotional_need_other': _nullableTrim(emotionalNeedOther),
+      'emotions_felt': _nullableTrim(emotionsFelt),
+      'self_meaning': _nullableTrim(selfMeaning),
+      'others_meaning': _nullableTrim(othersMeaning),
+      'world_meaning': _nullableTrim(worldMeaning),
+      'coping_keys': _cleanList(copingKeys),
+      'coping_other': _nullableTrim(copingOther),
+      'present_influence': presentInfluence,
+      'present_area_keys': _cleanList(presentAreaKeys),
+      'present_reaction': _nullableTrim(presentReaction),
       'is_sensitive': isSensitive,
     };
   }
@@ -63,6 +118,17 @@ class PatientTimelineEventInput {
       'period_label': _nullableTrim(periodLabel),
       'category': _nullableTrim(category),
       'emotional_impact': emotionalImpact,
+      'emotional_need_keys': _cleanList(emotionalNeedKeys),
+      'emotional_need_other': _nullableTrim(emotionalNeedOther),
+      'emotions_felt': _nullableTrim(emotionsFelt),
+      'self_meaning': _nullableTrim(selfMeaning),
+      'others_meaning': _nullableTrim(othersMeaning),
+      'world_meaning': _nullableTrim(worldMeaning),
+      'coping_keys': _cleanList(copingKeys),
+      'coping_other': _nullableTrim(copingOther),
+      'present_influence': presentInfluence,
+      'present_area_keys': _cleanList(presentAreaKeys),
+      'present_reaction': _nullableTrim(presentReaction),
       'is_sensitive': isSensitive,
     };
   }
@@ -71,6 +137,17 @@ class PatientTimelineEventInput {
     if (value == null) return null;
     final t = value.trim();
     return t.isEmpty ? null : t;
+  }
+
+  static List<String> _cleanList(List<String> values) {
+    return values
+        .map((value) => value.trim())
+        .where((value) {
+          return value.isNotEmpty;
+        })
+        .toSet()
+        .toList()
+      ..sort();
   }
 
   static String _formatDate(DateTime date) {

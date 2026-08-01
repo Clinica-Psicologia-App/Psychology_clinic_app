@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../profile/domain/profile_role.dart';
@@ -137,7 +139,6 @@ class _PatientProblemDetailBodyState
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final goal = ref
             .watch(patientProblemDetailProvider(widget.problem.id))
             .valueOrNull ??
@@ -149,35 +150,41 @@ class _PatientProblemDetailBodyState
         Expanded(
           child: MotionReveal(
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.md),
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        goal.title,
-                        style: theme.textTheme.headlineSmall,
-                      ),
-                    ),
+                AppPageHeader(
+                  title: goal.title,
+                  subtitle:
+                      'Registro do foco clínico acompanhado no processo terapêutico.',
+                  icon: Icons.psychology_alt_outlined,
+                  metadata: [
                     PatientProblemStatusChip(status: goal.status),
                   ],
                 ),
                 if (goal.intensity != null) ...[
-                  const SizedBox(height: 12),
+                  const SizedBox(height: AppSpacing.lg),
                   PatientProblemIntensityBadge(intensity: goal.intensity!),
                 ],
                 if (goal.category != null &&
                     goal.category!.trim().isNotEmpty) ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: AppSpacing.lg),
                   _InfoRow(label: 'Categoria', value: goal.category!),
                 ],
                 if (goal.description != null &&
                     goal.description!.trim().isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  Text(goal.description!),
+                  const SizedBox(height: AppSpacing.xl),
+                  AppInfoCard(
+                    title: 'Descrição',
+                    body: goal.description!,
+                    icon: Icons.notes_outlined,
+                  ),
                 ],
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSpacing.xl),
+                const AppSectionHeader(
+                  title: 'Dados do foco',
+                  subtitle: 'Datas e histórico de atualização.',
+                ),
+                const SizedBox(height: AppSpacing.sm),
                 if (goal.identifiedAt != null)
                   _InfoRow(
                     label: 'Identificado em',
@@ -199,7 +206,7 @@ class _PatientProblemDetailBodyState
         if (_busy) const LinearProgressIndicator(),
         const Divider(height: 1),
         Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -218,7 +225,7 @@ class _PatientProblemDetailBodyState
                   icon: const Icon(Icons.trending_up),
                   label: const Text('Marcar como melhorou'),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.xs),
               ],
               if (goal.status == PatientProblemStatus.active ||
                   goal.status == PatientProblemStatus.improved) ...[
@@ -236,7 +243,7 @@ class _PatientProblemDetailBodyState
                   icon: const Icon(Icons.check),
                   label: const Text('Marcar como resolvido'),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.xs),
               ],
               if (goal.status != PatientProblemStatus.archived)
                 OutlinedButton.icon(
@@ -253,7 +260,7 @@ class _PatientProblemDetailBodyState
                   icon: const Icon(Icons.archive_outlined),
                   label: const Text('Arquivar'),
                 ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.xs),
               TextButton.icon(
                 onPressed: _busy ? null : _openEdit,
                 icon: const Icon(Icons.edit_outlined),

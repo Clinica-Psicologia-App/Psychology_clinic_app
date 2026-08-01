@@ -2,7 +2,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../domain/daily_monitor.dart';
@@ -41,15 +43,28 @@ class PatientDailyMonitorsPage extends ConsumerWidget {
             await ref.read(myDailyMonitorsProvider.notifier).refresh();
           },
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              88,
+            ),
             children: [
-              Text(
-                'Registre como está se sentindo entre as sessões.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+              AppPageHeader(
+                title: 'Monitor diário',
+                subtitle:
+                    'Registre sinais, emoções e comportamentos entre as sessões para acompanhar padrões ao longo do tempo.',
+                icon: Icons.monitor_heart_outlined,
+                metadata: [
+                  Chip(label: Text('${items.length} registros')),
+                ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.xl),
+              const AppSectionHeader(
+                title: 'Seus registros',
+                subtitle: 'Abra um dia para consultar ou editar se for hoje.',
+              ),
+              const SizedBox(height: AppSpacing.sm),
               MotionStaggered(
                 children: [
                   for (final m in items)

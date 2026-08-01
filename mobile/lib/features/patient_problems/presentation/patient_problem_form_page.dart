@@ -5,8 +5,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/widgets/status_chip.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/patient_problem.dart';
 import '../domain/patient_problem_input.dart';
@@ -195,8 +198,41 @@ class _PatientProblemFormPageState
         key: _formKey,
         child: MotionReveal(
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.xxl,
+            ),
             children: [
+              AppPageHeader(
+                icon: Icons.report_problem_outlined,
+                title: widget.isEdit ? 'Editar problema' : 'Novo problema',
+                subtitle:
+                    'Registre demandas clínicas, intensidade e contexto para acompanhar evolução e prioridades do caso.',
+                metadata: [
+                  StatusChip(
+                    label: widget.isStaff ? 'Uso clínico' : 'Sua percepção',
+                    tone: AppStatusTone.info,
+                    icon: widget.isStaff
+                        ? Icons.health_and_safety_outlined
+                        : Icons.person_outline,
+                  ),
+                  if (widget.isEdit)
+                    StatusChip(
+                      label: _status.label,
+                      tone: _problemStatusTone(_status),
+                      icon: Icons.track_changes_outlined,
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              const AppSectionHeader(
+                title: 'Dados principais',
+                subtitle:
+                    'Nomeie a demanda e descreva o que ajuda a reconhecer o padrão.',
+              ),
+              const SizedBox(height: AppSpacing.sm),
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(
@@ -207,7 +243,7 @@ class _PatientProblemFormPageState
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? 'Informe o título.' : null,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _descriptionController,
                 decoration: const InputDecoration(
@@ -217,7 +253,13 @@ class _PatientProblemFormPageState
                 maxLines: 4,
                 textCapitalization: TextCapitalization.sentences,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
+              const AppSectionHeader(
+                title: 'Classificação',
+                subtitle:
+                    'Categoria e intensidade ajudam a priorizar o acompanhamento.',
+              ),
+              const SizedBox(height: AppSpacing.sm),
               TextFormField(
                 controller: _categoryController,
                 decoration: const InputDecoration(
@@ -226,7 +268,7 @@ class _PatientProblemFormPageState
                 ),
                 textCapitalization: TextCapitalization.sentences,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _intensityController,
                 decoration: const InputDecoration(
@@ -245,7 +287,13 @@ class _PatientProblemFormPageState
                 },
               ),
               if (widget.isStaff) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: AppSpacing.lg),
+                const AppSectionHeader(
+                  title: 'Acompanhamento',
+                  subtitle:
+                      'Use a data e o status para sinalizar evolução clínica ao longo do caso.',
+                ),
+                const SizedBox(height: AppSpacing.sm),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Data de identificação (opcional)'),
@@ -271,12 +319,12 @@ class _PatientProblemFormPageState
                   ),
               ],
               if (widget.isStaff && widget.isEdit) ...[
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 Text('Status', style: Theme.of(context).textTheme.titleSmall),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.sm),
                 Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
+                  spacing: AppSpacing.xs,
+                  runSpacing: AppSpacing.xs,
                   children: PatientProblemStatus.values.map((s) {
                     return ChoiceChip(
                       label: Text(s.label),
@@ -286,7 +334,7 @@ class _PatientProblemFormPageState
                   }).toList(),
                 ),
               ],
-              const SizedBox(height: 32),
+              const SizedBox(height: AppSpacing.xl),
               FilledButton(
                 onPressed: _saving ? null : _save,
                 child: _saving
@@ -305,4 +353,13 @@ class _PatientProblemFormPageState
       ),
     );
   }
+}
+
+AppStatusTone _problemStatusTone(PatientProblemStatus status) {
+  return switch (status) {
+    PatientProblemStatus.active => AppStatusTone.warning,
+    PatientProblemStatus.improved => AppStatusTone.inProgress,
+    PatientProblemStatus.resolved => AppStatusTone.completed,
+    PatientProblemStatus.archived => AppStatusTone.neutral,
+  };
 }

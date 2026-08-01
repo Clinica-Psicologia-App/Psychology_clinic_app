@@ -1,6 +1,8 @@
 ﻿import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_spacing.dart';
+import '../../../../shared/widgets/app_page_header.dart';
 import '../../domain/daily_monitor.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
@@ -146,24 +148,40 @@ class DailyMonitorDetailBody extends StatelessWidget {
     final date = monitor.createdAt.toLocal();
 
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.xxxl,
+      ),
       children: [
-        Text(
-          '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} '
-          'às ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}',
-          style: Theme.of(context).textTheme.titleMedium,
+        AppPageHeader(
+          title: 'Registro diário',
+          subtitle:
+              '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year} às ${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}',
+          icon: Icons.monitor_heart_outlined,
+          metadata: [
+            if (payload.intensity != null)
+              Chip(label: Text('Intensidade ${payload.intensity}/10')),
+            if (readOnly) const Chip(label: Text('Somente leitura')),
+          ],
         ),
         if (!readOnly && !monitor.isEditableToday)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: Text(
-              'Registro de dias anteriores não pode ser editado.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.error,
-                  ),
+          const Padding(
+            padding: EdgeInsets.only(top: AppSpacing.lg),
+            child: AppInfoCard(
+              title: 'Edição indisponível',
+              body: 'Registro de dias anteriores não pode ser editado.',
+              icon: Icons.lock_clock_outlined,
+              tone: AppInfoCardTone.warning,
             ),
           ),
-        const SizedBox(height: 16),
+        const SizedBox(height: AppSpacing.xl),
+        const AppSectionHeader(
+          title: 'Conteúdo do registro',
+          subtitle: 'Informações preenchidas no monitor diário.',
+        ),
+        const SizedBox(height: AppSpacing.sm),
         _Section(
           title: 'Humor / estado emocional',
           body: monitor.moodState,
@@ -191,14 +209,10 @@ class _Section extends StatelessWidget {
     if (body == null || body!.isEmpty) return const SizedBox.shrink();
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: Theme.of(context).textTheme.titleSmall),
-          const SizedBox(height: 4),
-          Text(body!),
-        ],
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: AppInfoCard(
+        title: title,
+        body: body!,
       ),
     );
   }

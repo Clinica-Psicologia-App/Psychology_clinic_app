@@ -1,8 +1,13 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'dart:async';
+
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_animations.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../../shared/widgets/gradient_progress_indicator.dart';
@@ -44,6 +49,22 @@ class _QuestionnaireAnswerPageState
   String? _fieldError;
   bool _saving = false;
   bool _finishing = false;
+  bool _justSaved = false;
+  Timer? _savedFeedbackTimer;
+
+  @override
+  void dispose() {
+    _savedFeedbackTimer?.cancel();
+    super.dispose();
+  }
+
+  void _showSavedFeedback() {
+    _savedFeedbackTimer?.cancel();
+    setState(() => _justSaved = true);
+    _savedFeedbackTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _justSaved = false);
+    });
+  }
 
   /// Direção da transição entre perguntas: 1 = avançando (entra da direita),
   /// -1 = voltando (entra da esquerda).
@@ -93,7 +114,12 @@ class _QuestionnaireAnswerPageState
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.sm,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -130,7 +156,7 @@ class _QuestionnaireAnswerPageState
                       totalQuestions: questions.length,
                       currentContextId: _currentContext?.id,
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: AppSpacing.sm),
                   ],
                   Row(
                     children: [
@@ -141,14 +167,14 @@ class _QuestionnaireAnswerPageState
                               'Pergunta ${_currentIndex + 1} de ${questions.length}',
                         ),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: AppSpacing.sm),
                       Text(
                         '${_currentIndex + 1}/${questions.length}',
                         style: Theme.of(context).textTheme.labelLarge,
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: AppSpacing.xs),
                   Text(
                     _isParentalFlow
                         ? 'Respondendo sobre: ${_currentContext?.label ?? 'Figura parental'}'
@@ -162,12 +188,14 @@ class _QuestionnaireAnswerPageState
             ),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(AppSpacing.md),
                 child: Center(
                   child: ConstrainedBox(
                     // Focus mode: uma pergunta por vez, largura de leitura
                     // confortável em vez de esticar em telas largas.
-                    constraints: const BoxConstraints(maxWidth: 560),
+                    constraints: const BoxConstraints(
+                      maxWidth: AppSpacing.formMaxWidth,
+                    ),
                     child: AnimatedSwitcher(
                       duration: AppAnimations.block,
                       switchInCurve: AppAnimations.enterCurve,
@@ -188,13 +216,16 @@ class _QuestionnaireAnswerPageState
                         ),
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Text(
-                            _isParentalFlow
+                          AppInfoCard(
+                            title: _isParentalFlow
+                                ? 'Pergunta sobre ${_currentContext?.label ?? 'figura parental'}'
+                                : 'Pergunta ${question.code}',
+                            body: _isParentalFlow
                                 ? normalizeParentalQuestionText(question.text)
                                 : question.text,
-                            style: Theme.of(context).textTheme.titleLarge,
+                            icon: Icons.help_outline,
                           ),
-                          const SizedBox(height: 24),
+                          const SizedBox(height: AppSpacing.xl),
                           QuestionInputWidget(
                             question: question,
                             value: _answers[_currentAnswerKey],
@@ -215,10 +246,10 @@ class _QuestionnaireAnswerPageState
             ),
             Padding(
               padding: EdgeInsets.fromLTRB(
-                16,
-                8,
-                16,
-                16 + MediaQuery.viewInsetsOf(context).bottom,
+                AppSpacing.md,
+                AppSpacing.xs,
+                AppSpacing.md,
+                AppSpacing.md + MediaQuery.viewInsetsOf(context).bottom,
               ),
               child: Row(
                 children: [
@@ -233,7 +264,38 @@ class _QuestionnaireAnswerPageState
                               }),
                       child: const Text('Anterior'),
                     ),
-                  const Spacer(),
+                  Expanded(
+                    child: Center(
+                      child: AnimatedOpacity(
+                        opacity: _justSaved ? 1 : 0,
+                        duration: AppAnimations.resolve(
+                          context,
+                          AppAnimations.fast,
+                        ),
+                        child: Semantics(
+                          liveRegion: true,
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.check_circle_outline,
+                                size: 16,
+                                color: AppColors.success,
+                              ),
+                              const SizedBox(width: AppSpacing.xxs),
+                              Text(
+                                'Resposta salva',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelMedium
+                                    ?.copyWith(color: AppColors.success),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
                   FilledButton(
                     onPressed: _saving || _finishing
                         ? null
@@ -323,6 +385,7 @@ class _QuestionnaireAnswerPageState
         }
         _fieldError = null;
       });
+      _showSavedFeedback();
     } catch (e) {
       if (mounted) showErrorBanner(context, e);
     } finally {

@@ -34,7 +34,7 @@ class AuthRepository {
   }) async {
     try {
       final response = await _client.auth.signInWithPassword(
-        email: email.trim(),
+        email: email.trim().toLowerCase(),
         password: password,
       );
 

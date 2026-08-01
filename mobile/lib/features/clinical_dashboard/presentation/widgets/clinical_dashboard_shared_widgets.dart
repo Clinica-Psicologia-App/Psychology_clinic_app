@@ -3,7 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_animations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
+import '../../../../core/theme/app_severity.dart';
 import '../../../../core/theme/app_spacing.dart';
+import '../../../../shared/widgets/severity_indicator.dart';
 import '../../domain/clinical_dashboard_score_row.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
@@ -209,11 +211,10 @@ class AnimatedClinicalScoreBar extends StatelessWidget {
             if (row.hasSeverity)
               Padding(
                 padding: const EdgeInsets.only(top: AppSpacing.xs),
-                child: Text(
-                  'Severidade: ${row.severityLabel}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
+                child: SeverityBadge.fromColorKey(
+                  row.severityColorKey,
+                  label: row.severityLabel,
+                  compact: true,
                 ),
               ),
           ],
@@ -223,19 +224,7 @@ class AnimatedClinicalScoreBar extends StatelessWidget {
   }
 
   Color _barColor(ThemeData theme, ClinicalDashboardScoreRow row) {
-    final key = row.severityColorKey?.toLowerCase();
-    switch (key) {
-      case 'green':
-        return Colors.green.shade600;
-      case 'yellow':
-      case 'amber':
-        return Colors.amber.shade700;
-      case 'orange':
-        return Colors.orange.shade700;
-      case 'red':
-        return theme.colorScheme.error;
-      default:
-        return AppColors.cyan;
-    }
+    final severity = AppSeverity.fromColorKey(row.severityColorKey);
+    return severity.hasSeverity ? severity.color : AppColors.cyan;
   }
 }

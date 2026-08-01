@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../patients/providers/patients_providers.dart';
@@ -53,29 +55,55 @@ class _AssignResourceToPatientPageState
           }
 
           return MotionReveal(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+            child: SafeArea(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.xxxl,
+                ),
                 children: [
-                  TherapyResourceTile(resource: resource, onTap: null),
-                  const SizedBox(height: 16),
                   patientAsync.when(
-                    data: (p) => Text(
-                      p != null
-                          ? 'Liberar para: ${p.fullName}'
-                          : 'Paciente não encontrado',
-                      style: Theme.of(context).textTheme.titleMedium,
+                    data: (p) => AppPageHeader(
+                      title: 'Liberar recurso',
+                      subtitle: p != null
+                          ? 'Confirme a liberação deste material para ${p.fullName}.'
+                          : 'Confirme a liberação deste material para o paciente.',
+                      icon: Icons.lock_open_outlined,
+                      metadata: [
+                        Chip(label: Text(resource.type.label)),
+                      ],
                     ),
                     loading: () => const LinearProgressIndicator(),
-                    error: (_, __) => const SizedBox.shrink(),
+                    error: (_, __) => AppPageHeader(
+                      title: 'Liberar recurso',
+                      subtitle:
+                          'Confirme a liberação deste material para o paciente.',
+                      icon: Icons.lock_open_outlined,
+                      metadata: [
+                        Chip(label: Text(resource.type.label)),
+                      ],
+                    ),
                   ),
+                  const SizedBox(height: AppSpacing.xl),
+                  const AppSectionHeader(
+                    title: 'Material selecionado',
+                    subtitle:
+                        'Revise o recurso antes de confirmar o acesso do paciente.',
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  TherapyResourceTile(resource: resource, onTap: null),
                   if (resource.description != null &&
                       resource.description!.trim().isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    Text(resource.description!),
+                    const SizedBox(height: AppSpacing.lg),
+                    AppInfoCard(
+                      title: 'Descrição',
+                      body: resource.description!,
+                      icon: Icons.notes_outlined,
+                    ),
                   ],
-                  const Spacer(),
+                  const SizedBox(height: AppSpacing.xl),
                   FilledButton.icon(
                     onPressed: _assigning ? null : _assign,
                     icon: _assigning

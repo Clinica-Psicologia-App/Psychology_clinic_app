@@ -4,8 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/widgets/status_chip.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/genogram_data.dart';
 import '../domain/genogram_relationship.dart';
@@ -225,22 +228,62 @@ class _GenogramRelationshipFormPageState
         child: Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.xxl,
+            ),
             children: [
+              AppPageHeader(
+                icon: Icons.link_outlined,
+                title: widget.isEdit ? 'Editar relação' : 'Nova relação',
+                subtitle:
+                    'Descreva a natureza da conexão entre duas pessoas do genograma.',
+                metadata: [
+                  StatusChip(
+                    label: _type.label,
+                    tone: AppStatusTone.info,
+                    icon: Icons.sync_alt_outlined,
+                  ),
+                  StatusChip(
+                    label: _isSensitive ? 'Sensível' : 'Visível',
+                    tone: _isSensitive
+                        ? AppStatusTone.warning
+                        : AppStatusTone.neutral,
+                    icon: _isSensitive
+                        ? Icons.lock_outline
+                        : Icons.visibility_outlined,
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              const AppSectionHeader(
+                title: 'Pessoas envolvidas',
+                subtitle:
+                    'Selecione as duas pessoas conectadas por esta relação.',
+              ),
+              const SizedBox(height: AppSpacing.sm),
               DropdownButtonFormField<String>(
                 initialValue: _personAId,
                 decoration: const InputDecoration(labelText: 'Pessoa A *'),
                 items: _personItems(data),
                 onChanged: (v) => setState(() => _personAId = v),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               DropdownButtonFormField<String>(
                 initialValue: _personBId,
                 decoration: const InputDecoration(labelText: 'Pessoa B *'),
                 items: _personItems(data, excludeId: _personAId),
                 onChanged: (v) => setState(() => _personBId = v),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
+              const AppSectionHeader(
+                title: 'Natureza da relação',
+                subtitle:
+                    'Escolha o tipo de vínculo e registre observações clínicas quando necessário.',
+              ),
+              const SizedBox(height: AppSpacing.sm),
               DropdownButtonFormField<GenogramRelationshipType>(
                 initialValue: _type,
                 decoration:
@@ -257,23 +300,30 @@ class _GenogramRelationshipFormPageState
                   if (v != null) setState(() => _type = v);
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _notesController,
                 decoration: const InputDecoration(
                   labelText: 'Observações',
+                  hintText: 'Descreva como essa relação costuma ser. Ex.: '
+                      'fonte de apoio, aceitação e segurança; fonte de '
+                      'crítica; fonte de rejeição; fonte de proteção '
+                      'excessiva; fonte de exigência excessiva.',
                   alignLabelWithHint: true,
                 ),
                 maxLines: 3,
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.xs),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Conteúdo sensível'),
+                subtitle: const Text(
+                  'Oculta detalhes na visualização principal e exibe aviso antes do acesso.',
+                ),
                 value: _isSensitive,
                 onChanged: (v) => setState(() => _isSensitive = v),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: AppSpacing.xl),
               FilledButton(
                 onPressed: _saving ? null : _save,
                 child: _saving

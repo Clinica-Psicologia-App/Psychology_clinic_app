@@ -4,6 +4,7 @@ import '../../core/theme/app_animations.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_typography.dart';
 
 /// KPI animado para dashboards clínicos (apresentação visual, sem alterar valores).
 class ClinicalKpiChip extends StatelessWidget {
@@ -43,14 +44,7 @@ class ClinicalKpiChip extends StatelessWidget {
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
           borderRadius: AppRadius.mdAll,
-          border: Border.all(color: accent.withValues(alpha: 0.2)),
-          boxShadow: [
-            BoxShadow(
-              color: accent.withValues(alpha: 0.08),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          border: Border.all(color: AppColors.border),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -69,10 +63,7 @@ class ClinicalKpiChip extends StatelessWidget {
                 builder: (context, animated, _) {
                   return Text(
                     '$animated',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.navy,
-                    ),
+                    style: theme.textTheme.metricValue,
                   );
                 },
               )
@@ -81,18 +72,12 @@ class ClinicalKpiChip extends StatelessWidget {
                 value,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.navy,
-                ),
+                style: theme.textTheme.metricValue,
               ),
             const SizedBox(height: AppSpacing.xxs),
             Text(
               label,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: AppColors.textSecondary,
-                height: 1.3,
-              ),
+              style: theme.textTheme.metricLabel,
             ),
           ],
         ),

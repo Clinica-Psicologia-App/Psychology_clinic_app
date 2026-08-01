@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
-import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_spacing.dart';
 import 'app_motion.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
@@ -40,20 +39,20 @@ class ClinicalModuleCard extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: enabled ? onTap : null,
+          borderRadius: AppRadius.lgAll,
           child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
+            padding: const EdgeInsets.all(AppSpacing.md),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 48,
-                  height: 48,
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
                     color: accent.withValues(alpha: 0.12),
                     borderRadius: AppRadius.mdAll,
-                    boxShadow: AppShadows.soft,
                   ),
-                  child: Icon(icon, color: accent, size: 24),
+                  child: Icon(icon, color: accent, size: 22),
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
@@ -66,6 +65,7 @@ class ClinicalModuleCard extends StatelessWidget {
                           color: enabled
                               ? AppColors.textPrimary
                               : AppColors.disabled,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                       const SizedBox(height: AppSpacing.xxs),
@@ -82,18 +82,10 @@ class ClinicalModuleCard extends StatelessWidget {
                   ),
                 ),
                 trailing ??
-                    Container(
-                      width: 34,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        color: accent.withValues(alpha: 0.08),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.arrow_forward_rounded,
-                        size: 18,
-                        color: enabled ? accent : AppColors.disabled,
-                      ),
+                    Icon(
+                      Icons.arrow_forward_rounded,
+                      size: 20,
+                      color: enabled ? accent : AppColors.disabled,
                     ),
               ],
             ),

@@ -4,7 +4,6 @@ import 'genogram_person.dart';
 class GenogramPersonInput {
   const GenogramPersonInput({
     required this.fullName,
-    this.nickname,
     this.relationshipToPatient,
     this.gender,
     this.birthYear,
@@ -15,7 +14,6 @@ class GenogramPersonInput {
   });
 
   final String fullName;
-  final String? nickname;
   final String? relationshipToPatient;
   final GenogramGender? gender;
   final int? birthYear;
@@ -27,7 +25,6 @@ class GenogramPersonInput {
   factory GenogramPersonInput.fromPerson(GenogramPerson person) {
     return GenogramPersonInput(
       fullName: person.fullName,
-      nickname: person.nickname,
       relationshipToPatient: person.relationshipToPatient,
       gender: person.gender,
       birthYear: person.birthYear,
@@ -64,7 +61,7 @@ class GenogramPersonInput {
   Map<String, dynamic> toInsertJson() {
     return {
       'full_name': fullName.trim(),
-      'nickname': _nullableTrim(nickname),
+      'nickname': null,
       'relationship_to_patient': _nullableTrim(relationshipToPatient),
       if (gender != null) 'gender': gender!.storageValue,
       if (birthYear != null) 'birth_year': birthYear,

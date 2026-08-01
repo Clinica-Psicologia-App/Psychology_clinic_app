@@ -47,10 +47,12 @@ import '../../features/questionnaires/presentation/questionnaire_answer_page.dar
 import '../../features/questionnaires/presentation/questionnaire_catalog_admin_page.dart';
 import '../../features/questionnaires/presentation/questionnaire_catalog_editor_page.dart';
 import '../../features/questionnaires/presentation/questionnaire_routes.dart';
+import '../../features/questionnaires/presentation/psychologist_questionnaires_page.dart';
 import '../../features/results/presentation/result_route_helpers.dart';
 import '../../features/therapy_resources/presentation/therapy_resource_route_helpers.dart';
 import '../../features/user_management/presentation/user_management_page.dart';
 import '../../features/user_management/presentation/user_management_routes.dart';
+import '../../shared/widgets/app_nav_shell.dart';
 import 'route_access.dart';
 
 abstract final class AppRoutes {
@@ -183,73 +185,116 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           token: state.uri.queryParameters['token'],
         ),
       ),
-      GoRoute(
-        path: AppRoutes.platformHome,
-        builder: (_, __) => const PlatformAdminHomePage(),
+      ShellRoute(
+        builder: (_, __, child) => AppNavShell(
+          destinations: _platformDestinations,
+          child: child,
+        ),
         routes: [
           GoRoute(
-            path: ClinicRoutes.platformList.replaceFirst('/platform/', ''),
-            builder: (_, __) => const ClinicsPage(),
-          ),
-          GoRoute(
-            path: UserManagementRoutes.platformList
-                .replaceFirst('/platform/', ''),
-            builder: (_, __) => const UserManagementPage(),
-          ),
-          GoRoute(
-            path:
-                QuestionnaireRoutes.adminAccess.replaceFirst('/platform/', ''),
-            builder: (_, __) => const QuestionnaireAccessManagementPage(),
-          ),
-          GoRoute(
-            path:
-                QuestionnaireRoutes.adminCatalog.replaceFirst('/platform/', ''),
-            builder: (_, __) => const QuestionnaireCatalogAdminPage(),
+            path: AppRoutes.platformHome,
+            builder: (_, __) => const PlatformAdminHomePage(),
             routes: [
               GoRoute(
-                path: 'new',
-                builder: (_, __) => const QuestionnaireCatalogEditorPage(),
+                path: ClinicRoutes.platformList.replaceFirst('/platform/', ''),
+                builder: (_, __) => const ClinicsPage(),
               ),
               GoRoute(
-                path: ':questionnaireId',
-                builder: (_, state) => QuestionnaireCatalogEditorPage(
-                  questionnaireId: state.pathParameters['questionnaireId']!,
-                ),
+                path: UserManagementRoutes.platformList
+                    .replaceFirst('/platform/', ''),
+                builder: (_, __) => const UserManagementPage(),
+              ),
+              GoRoute(
+                path: QuestionnaireRoutes.adminAccess
+                    .replaceFirst('/platform/', ''),
+                builder: (_, __) => const QuestionnaireAccessManagementPage(),
+              ),
+              GoRoute(
+                path: QuestionnaireRoutes.adminCatalog
+                    .replaceFirst('/platform/', ''),
+                builder: (_, __) => const QuestionnaireCatalogAdminPage(),
                 routes: [
                   GoRoute(
-                    path: 'preview',
-                    builder: (_, state) {
-                      final session = state.extra;
-                      if (session is! QuestionnaireSession) {
-                        return const Scaffold(
-                          body: Center(
-                            child: Text('Pré-visualização indisponível.'),
-                          ),
-                        );
-                      }
-                      return QuestionnaireAnswerPage(
-                        session: session,
-                        role: ProfileRole.platformAdmin,
-                        previewMode: true,
-                      );
-                    },
+                    path: 'new',
+                    builder: (_, __) => const QuestionnaireCatalogEditorPage(),
+                  ),
+                  GoRoute(
+                    path: ':questionnaireId',
+                    builder: (_, state) => QuestionnaireCatalogEditorPage(
+                      questionnaireId: state.pathParameters['questionnaireId']!,
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'preview',
+                        builder: (_, state) {
+                          final session = state.extra;
+                          if (session is! QuestionnaireSession) {
+                            return const Scaffold(
+                              body: Center(
+                                child: Text('Pré-visualização indisponível.'),
+                              ),
+                            );
+                          }
+                          return QuestionnaireAnswerPage(
+                            session: session,
+                            role: ProfileRole.platformAdmin,
+                            previewMode: true,
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),
+              GoRoute(
+                path: 'patients',
+                builder: (_, __) =>
+                    const PatientsPage(role: ProfileRole.platformAdmin),
+                routes: [
+                  GoRoute(
+                    path: ':patientId',
+                    builder: (_, state) => PatientDetailsPage(
+                      role: ProfileRole.platformAdmin,
+                      patientId: state.pathParameters['patientId']!,
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'edit',
+                        builder: (_, state) => EditPatientPage(
+                          role: ProfileRole.platformAdmin,
+                          patient: state.extra as Patient,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              GoRoute(
+                path: 'patient-overview',
+                builder: (_, __) => const PatientOverviewPage(),
+              ),
             ],
-          ),
-          GoRoute(
-            path: 'patient-overview',
-            builder: (_, __) => const PatientOverviewPage(),
           ),
         ],
       ),
-      GoRoute(
-        path: AppRoutes.psychologistHome,
-        builder: (_, __) => const PsychologistHomePage(),
+      ShellRoute(
+        builder: (_, __, child) => AppNavShell(
+          destinations: _psychologistDestinations,
+          child: child,
+        ),
         routes: [
-          ...patientInvitationRoutesFor(ProfileRole.psychologist),
-          ..._staffPatientRoutes(ProfileRole.psychologist),
+          GoRoute(
+            path: AppRoutes.psychologistHome,
+            builder: (_, __) => const PsychologistHomePage(),
+            routes: [
+              GoRoute(
+                path: 'questionnaires',
+                builder: (_, __) => const PsychologistQuestionnairesPage(),
+              ),
+              ...patientInvitationRoutesFor(ProfileRole.psychologist),
+              ..._staffPatientRoutes(ProfileRole.psychologist),
+            ],
+          ),
         ],
       ),
       GoRoute(
@@ -274,6 +319,62 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   ref.onDispose(router.dispose);
   return router;
 });
+
+const _psychologistDestinations = [
+  AppNavDestination(
+    label: 'Início',
+    icon: Icons.home_outlined,
+    selectedIcon: Icons.home,
+    route: AppRoutes.psychologistHome,
+    exactMatch: true,
+  ),
+  AppNavDestination(
+    label: 'Pacientes',
+    icon: Icons.people_outline,
+    selectedIcon: Icons.people,
+    route: '${AppRoutes.psychologistHome}/patients',
+  ),
+  AppNavDestination(
+    label: 'Convites',
+    icon: Icons.mark_email_unread_outlined,
+    selectedIcon: Icons.mark_email_unread,
+    route: '${AppRoutes.psychologistHome}/patient-invitations',
+  ),
+  AppNavDestination(
+    label: 'Instrumentos',
+    icon: Icons.assignment_outlined,
+    selectedIcon: Icons.assignment,
+    route: '${AppRoutes.psychologistHome}/questionnaires',
+  ),
+];
+
+const _platformDestinations = [
+  AppNavDestination(
+    label: 'Início',
+    icon: Icons.home_outlined,
+    selectedIcon: Icons.home,
+    route: AppRoutes.platformHome,
+    exactMatch: true,
+  ),
+  AppNavDestination(
+    label: 'Clínicas',
+    icon: Icons.apartment_outlined,
+    selectedIcon: Icons.apartment,
+    route: '${AppRoutes.platformHome}/clinics',
+  ),
+  AppNavDestination(
+    label: 'Usuários',
+    icon: Icons.badge_outlined,
+    selectedIcon: Icons.badge,
+    route: '${AppRoutes.platformHome}/users',
+  ),
+  AppNavDestination(
+    label: 'Pacientes',
+    icon: Icons.people_outline,
+    selectedIcon: Icons.people,
+    route: '${AppRoutes.platformHome}/patients',
+  ),
+];
 
 List<RouteBase> patientInvitationRoutesFor(ProfileRole role) {
   return [

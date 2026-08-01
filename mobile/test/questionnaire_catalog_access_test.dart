@@ -126,7 +126,7 @@ void main() {
   });
 
   testWidgets(
-      'admin sees questionnaire access management page with fallback warning',
+      'admin sees questionnaire management page with catalog and access tabs',
       (tester) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -153,6 +153,15 @@ void main() {
               ),
             ],
           ),
+          questionnaireAdminCatalogProvider.overrideWith(
+            (ref) async => [
+              _questionnaire(
+                'q-1',
+                'YSQ_FOUNDATION_V1',
+                licenseNotes: 'Pendente validação clínica/licenciamento.',
+              ),
+            ],
+          ),
           questionnaireAccessManagementProvider.overrideWith(
             (ref, professionalId) async => QuestionnaireAccessManagementData(
               supportsAccessControl: false,
@@ -176,15 +185,20 @@ void main() {
     );
 
     await tester.pumpAndSettle();
-    expect(find.text('Selecione um profissional'), findsOneWidget);
+    expect(find.text('Catálogo de questionários'), findsOneWidget);
+    expect(find.text('YSQ_FOUNDATION_V1'), findsWidgets);
+
+    await tester.tap(find.text('Permissões'));
+    await tester.pumpAndSettle();
+    expect(find.text('Selecione um psicólogo'), findsOneWidget);
 
     await tester.tap(find.byType(DropdownButtonFormField<String>));
     await tester.pumpAndSettle();
     await tester.tap(find.textContaining('Dra. Ana').last);
     await tester.pumpAndSettle();
 
-    expect(find.text('Controle de acesso indisponível'), findsOneWidget);
-    expect(find.text('YSQ_FOUNDATION_V1'), findsOneWidget);
+    expect(find.text('Permissões indisponíveis'), findsOneWidget);
+    expect(find.text('YSQ_FOUNDATION_V1'), findsWidgets);
   });
 }
 

@@ -10,6 +10,17 @@
     this.periodLabel,
     this.category,
     this.emotionalImpact,
+    this.emotionalNeedKeys = const [],
+    this.emotionalNeedOther,
+    this.emotionsFelt,
+    this.selfMeaning,
+    this.othersMeaning,
+    this.worldMeaning,
+    this.copingKeys = const [],
+    this.copingOther,
+    this.presentInfluence,
+    this.presentAreaKeys = const [],
+    this.presentReaction,
     required this.isSensitive,
     required this.createdAt,
     required this.updatedAt,
@@ -25,6 +36,17 @@
   final String? periodLabel;
   final String? category;
   final int? emotionalImpact;
+  final List<String> emotionalNeedKeys;
+  final String? emotionalNeedOther;
+  final String? emotionsFelt;
+  final String? selfMeaning;
+  final String? othersMeaning;
+  final String? worldMeaning;
+  final List<String> copingKeys;
+  final String? copingOther;
+  final int? presentInfluence;
+  final List<String> presentAreaKeys;
+  final String? presentReaction;
   final bool isSensitive;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -50,6 +72,9 @@
     if (emotionalImpact != null) {
       parts.add('Impacto $emotionalImpact/10');
     }
+    if (presentInfluence != null) {
+      parts.add('Influência atual $presentInfluence/10');
+    }
     if (parts.isEmpty) return null;
     return parts.join(' · ');
   }
@@ -66,6 +91,17 @@
       periodLabel: json['period_label'] as String?,
       category: json['category'] as String?,
       emotionalImpact: json['emotional_impact'] as int?,
+      emotionalNeedKeys: _parseStringList(json['emotional_need_keys']),
+      emotionalNeedOther: json['emotional_need_other'] as String?,
+      emotionsFelt: json['emotions_felt'] as String?,
+      selfMeaning: json['self_meaning'] as String?,
+      othersMeaning: json['others_meaning'] as String?,
+      worldMeaning: json['world_meaning'] as String?,
+      copingKeys: _parseStringList(json['coping_keys']),
+      copingOther: json['coping_other'] as String?,
+      presentInfluence: json['present_influence'] as int?,
+      presentAreaKeys: _parseStringList(json['present_area_keys']),
+      presentReaction: json['present_reaction'] as String?,
       isSensitive: json['is_sensitive'] as bool? ?? false,
       createdAt: DateTime.parse(json['created_at'] as String).toLocal(),
       updatedAt: DateTime.parse(json['updated_at'] as String).toLocal(),
@@ -82,5 +118,12 @@
       int.parse(parts[1]),
       int.parse(parts[2]),
     );
+  }
+
+  static List<String> _parseStringList(dynamic value) {
+    if (value is List) {
+      return value.map((item) => item.toString()).toList();
+    }
+    return const [];
   }
 }

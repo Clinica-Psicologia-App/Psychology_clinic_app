@@ -2,7 +2,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../patients/providers/patients_providers.dart';
@@ -40,29 +42,28 @@ class PatientDailyMonitorHistoryPage extends ConsumerWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          patientAsync.when(
-            data: (p) => p != null
-                ? Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                    child: Text(
-                      p.fullName,
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                  )
-                : const SizedBox.shrink(),
-            loading: () => const Padding(
-              padding: EdgeInsets.all(16),
-              child: LinearProgressIndicator(),
-            ),
-            error: (_, __) => const SizedBox.shrink(),
-          ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-            child: Text(
-              'Histórico de registros (somente leitura).',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              0,
+            ),
+            child: patientAsync.when(
+              data: (p) => AppPageHeader(
+                title: 'Monitor diário',
+                subtitle: p != null
+                    ? 'Histórico de registros de ${p.fullName} para leitura clínica entre sessões.'
+                    : 'Histórico de registros do paciente para leitura clínica entre sessões.',
+                icon: Icons.monitor_heart_outlined,
+              ),
+              loading: () => const LinearProgressIndicator(),
+              error: (_, __) => const AppPageHeader(
+                title: 'Monitor diário',
+                subtitle:
+                    'Histórico de registros do paciente para leitura clínica entre sessões.',
+                icon: Icons.monitor_heart_outlined,
+              ),
             ),
           ),
           Expanded(
@@ -78,10 +79,24 @@ class PatientDailyMonitorHistoryPage extends ConsumerWidget {
                   await ref.read(staffPatientMonitorsProvider(ctx).future);
                 },
                 child: ListView.builder(
-                  padding: const EdgeInsets.all(16),
-                  itemCount: items.length,
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.xl,
+                    AppSpacing.md,
+                    AppSpacing.xxxl,
+                  ),
+                  itemCount: items.length + 1,
                   itemBuilder: (context, index) {
-                    final m = items[index];
+                    if (index == 0) {
+                      return const Padding(
+                        padding: EdgeInsets.only(bottom: AppSpacing.sm),
+                        child: AppSectionHeader(
+                          title: 'Registros do paciente',
+                          subtitle: 'Visualização somente leitura.',
+                        ),
+                      );
+                    }
+                    final m = items[index - 1];
                     return MotionReveal(
                       delay: staggerDelay(index),
                       child: DailyMonitorListTile(

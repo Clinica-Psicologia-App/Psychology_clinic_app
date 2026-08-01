@@ -1,7 +1,8 @@
 import '../../profile/domain/profile_role.dart';
 
 abstract final class QuestionnaireRoutes {
-  static const adminAccess = '/platform/questionnaire-access';
+  static const adminAccess = '/platform/questionnaires';
+  static const psychologistCatalog = '/psychologist/questionnaires';
 
   /// Catálogo de instrumentos (platform admin).
   static const adminCatalog = '/platform/questionnaire-catalog';

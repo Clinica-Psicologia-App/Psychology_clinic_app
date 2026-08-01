@@ -95,4 +95,6 @@ enum QuestionnaireClinicalStatus {
         QuestionnaireClinicalStatus.approved => 'Homologado',
         QuestionnaireClinicalStatus.suspended => 'Suspenso',
       };
+
+  String get storageValue => name;
 }

@@ -2,9 +2,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
+import '../../../shared/widgets/status_chip.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/patient_timeline_event.dart';
 import '../providers/patient_timeline_providers.dart';
@@ -20,17 +23,6 @@ class PatientTimelinePage extends ConsumerWidget {
 
     return AppScaffold(
       title: 'Linha do tempo',
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final created =
-              await context.push<bool>(PatientTimelineRoutes.patientCreate);
-          if (created == true) {
-            ref.read(myPatientTimelineProvider.notifier).refresh();
-          }
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Novo evento'),
-      ),
       actions: [
         IconButton(
           tooltip: 'Atualizar',
@@ -51,6 +43,16 @@ class PatientTimelinePage extends ConsumerWidget {
           },
           child: _TimelineList(
             events: items,
+            title: 'Sua linha do tempo',
+            subtitle:
+                'Organize marcos por etapa da vida e registre como eles ainda aparecem no presente.',
+            onCreate: () async {
+              final created =
+                  await context.push<bool>(PatientTimelineRoutes.patientCreate);
+              if (created == true) {
+                ref.read(myPatientTimelineProvider.notifier).refresh();
+              }
+            },
             onTap: (event) async {
               await context.push(PatientTimelineRoutes.patientDetail(event.id));
               ref.read(myPatientTimelineProvider.notifier).refresh();
@@ -79,18 +81,6 @@ class StaffPatientTimelinePage extends ConsumerWidget {
 
     return AppScaffold(
       title: 'Linha do tempo',
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final created = await context.push<bool>(
-            PatientTimelineRoutes.staffCreate(role: role, patientId: patientId),
-          );
-          if (created == true) {
-            ref.invalidate(staffPatientTimelineProvider(ctx));
-          }
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Novo evento'),
-      ),
       actions: [
         IconButton(
           tooltip: 'Atualizar',
@@ -110,6 +100,20 @@ class StaffPatientTimelinePage extends ConsumerWidget {
           },
           child: _TimelineList(
             events: items,
+            title: 'Linha do tempo clínica',
+            subtitle:
+                'Visualize eventos-chave, etapas da vida e pontes com o presente.',
+            onCreate: () async {
+              final created = await context.push<bool>(
+                PatientTimelineRoutes.staffCreate(
+                  role: role,
+                  patientId: patientId,
+                ),
+              );
+              if (created == true) {
+                ref.invalidate(staffPatientTimelineProvider(ctx));
+              }
+            },
             onTap: (event) async {
               await context.push(
                 PatientTimelineRoutes.staffDetail(
@@ -130,26 +134,76 @@ class StaffPatientTimelinePage extends ConsumerWidget {
 class _TimelineList extends StatelessWidget {
   const _TimelineList({
     required this.events,
+    required this.title,
+    required this.subtitle,
+    required this.onCreate,
     required this.onTap,
   });
 
   final List<PatientTimelineEvent> events;
+  final String title;
+  final String subtitle;
+  final Future<void> Function() onCreate;
   final void Function(PatientTimelineEvent event) onTap;
 
   @override
   Widget build(BuildContext context) {
+    final sensitiveCount = events.where((event) => event.isSensitive).length;
+    final presentCount =
+        events.where((event) => event.presentInfluence != null).length;
+
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 88),
-      itemCount: events.length,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.xxl,
+      ),
+      itemCount: events.length + 1,
       itemBuilder: (context, index) {
-        final event = events[index];
+        if (index == 0) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+            child: AppPageHeader(
+              icon: Icons.timeline_outlined,
+              title: title,
+              subtitle: subtitle,
+              metadata: [
+                StatusChip(
+                  label: '${events.length} evento(s)',
+                  tone: AppStatusTone.info,
+                  icon: Icons.event_note_outlined,
+                ),
+                if (presentCount > 0)
+                  StatusChip(
+                    label: '$presentCount com influência atual',
+                    tone: AppStatusTone.warning,
+                    icon: Icons.insights_outlined,
+                  ),
+                if (sensitiveCount > 0)
+                  StatusChip(
+                    label: '$sensitiveCount sensível(is)',
+                    tone: AppStatusTone.error,
+                    icon: Icons.lock_outline,
+                  ),
+              ],
+              primaryAction: FilledButton.icon(
+                onPressed: onCreate,
+                icon: const Icon(Icons.add),
+                label: const Text('Novo evento'),
+              ),
+            ),
+          );
+        }
+        final eventIndex = index - 1;
+        final event = events[eventIndex];
         return MotionReveal(
-          delay: staggerDelay(index),
+          delay: staggerDelay(eventIndex),
           child: PatientTimelineEventTile(
             event: event,
             onTap: () => onTap(event),
-            isFirst: index == 0,
-            isLast: index == events.length - 1,
+            isFirst: eventIndex == 0,
+            isLast: eventIndex == events.length - 1,
           ),
         );
       },

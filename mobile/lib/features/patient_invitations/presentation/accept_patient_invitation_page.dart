@@ -12,10 +12,10 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../shared/utils/brazil_validators.dart';
 import '../../../shared/utils/input_formatters.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/brand_constellation.dart';
 import '../../../shared/widgets/esquema_core_logo.dart';
 import '../../../shared/widgets/form_section.dart';
-import '../../../shared/widgets/homologation_ui.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../domain/accept_patient_invitation_request.dart';
 import '../providers/patient_invitations_providers.dart';
@@ -214,12 +214,13 @@ class _AcceptPatientInvitationPageState
                           ),
                         ),
                         const SizedBox(height: AppSpacing.lg),
-                        const HomologationInfoBanner(
+                        const AppInfoCard(
                           title: 'Privacidade',
                           icon: Icons.lock_outline,
-                          message:
+                          body:
                               'Seus dados serão usados apenas para cadastro e '
                               'acompanhamento clínico na clínica que enviou o convite.',
+                          tone: AppInfoCardTone.info,
                         ),
                         const SizedBox(height: AppSpacing.lg),
                         if (ref.watch(acceptPatientInvitationProvider).hasError)
@@ -239,6 +240,8 @@ class _AcceptPatientInvitationPageState
                             children: [
                               FormSection(
                                 title: 'Dados pessoais',
+                                subtitle:
+                                    'Essas informações ajudam a clínica a identificar seu cadastro.',
                                 icon: Icons.person_outline,
                                 children: [
                                   TextFormField(
@@ -268,7 +271,7 @@ class _AcceptPatientInvitationPageState
                                   ),
                                   const SizedBox(height: AppSpacing.md),
                                   _SimpleDropdownField(
-                                    label: 'Genero',
+                                    label: 'Gênero',
                                     value: _selectedGender,
                                     options: _genderOptions,
                                     onChanged: (value) =>
@@ -278,6 +281,8 @@ class _AcceptPatientInvitationPageState
                               ),
                               FormSection(
                                 title: 'Contato',
+                                subtitle:
+                                    'Telefone e CPF são opcionais e podem ser atualizados depois.',
                                 icon: Icons.phone_outlined,
                                 children: [
                                   TextFormField(
@@ -301,6 +306,8 @@ class _AcceptPatientInvitationPageState
                               ),
                               FormSection(
                                 title: 'Informações sociodemográficas',
+                                subtitle:
+                                    'Preencha apenas o que fizer sentido para você neste momento.',
                                 icon: Icons.groups_outlined,
                                 children: [
                                   FormFieldGrid(

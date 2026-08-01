@@ -1,4 +1,4 @@
-﻿import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/questionnaires/supported_questionnaire_codes.dart';
 import '../../../core/errors/app_exception.dart';
@@ -13,8 +13,10 @@ import '../domain/questionnaire_access_management_data.dart';
 import '../domain/questionnaire_catalog_visibility.dart';
 import '../domain/questionnaire_professional_option.dart';
 import '../domain/questionnaire.dart';
+import '../domain/questionnaire_question.dart';
 import '../domain/questionnaire_response_context.dart';
 import '../domain/questionnaire_session.dart';
+import '../domain/question_answer_type.dart';
 
 class QuestionnairesRepository {
   QuestionnairesRepository({
@@ -82,6 +84,207 @@ class QuestionnairesRepository {
             ),
           )
           .toList();
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  Future<List<Questionnaire>> listQuestionnaireCatalogForAdmin() async {
+    try {
+      final rows = await _fetchQuestionnaireCatalogRows(
+        onlyActive: false,
+        withReferencePeriod: true,
+        withCatalogMetadata: true,
+      );
+      return rows
+          .map((row) => Questionnaire.fromJson(Map<String, dynamic>.from(row)))
+          .toList();
+    } on PostgrestException catch (e) {
+      if (_isMissingCatalogMetadataError(e) ||
+          _isMissingReferencePeriodColumn(e)) {
+        final rows = await _fetchQuestionnaireCatalogRows(
+          onlyActive: false,
+          withReferencePeriod: false,
+          withCatalogMetadata: false,
+        );
+        return rows
+            .map(
+              (row) => Questionnaire.fromJson(Map<String, dynamic>.from(row)),
+            )
+            .toList();
+      }
+      throw mapToAppException(e);
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  Future<void> createQuestionnaire({
+    required String code,
+    required String name,
+    String? description,
+    String? authorName,
+    String? instrumentVersion,
+    String? citation,
+    String? licenseNotes,
+    required QuestionnaireClinicalStatus clinicalStatus,
+    required bool isActive,
+  }) async {
+    try {
+      await _client.from('questionnaires').insert(
+            _questionnairePayload(
+              code: code,
+              name: name,
+              description: description,
+              authorName: authorName,
+              instrumentVersion: instrumentVersion,
+              citation: citation,
+              licenseNotes: licenseNotes,
+              clinicalStatus: clinicalStatus,
+              isActive: isActive,
+            ),
+          );
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  Future<void> updateQuestionnaire({
+    required String questionnaireId,
+    required String code,
+    required String name,
+    String? description,
+    String? authorName,
+    String? instrumentVersion,
+    String? citation,
+    String? licenseNotes,
+    required QuestionnaireClinicalStatus clinicalStatus,
+    required bool isActive,
+  }) async {
+    try {
+      await _client
+          .from('questionnaires')
+          .update(
+            _questionnairePayload(
+              code: code,
+              name: name,
+              description: description,
+              authorName: authorName,
+              instrumentVersion: instrumentVersion,
+              citation: citation,
+              licenseNotes: licenseNotes,
+              clinicalStatus: clinicalStatus,
+              isActive: isActive,
+            ),
+          )
+          .eq('id', questionnaireId);
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  Future<void> deleteQuestionnaire(String questionnaireId) async {
+    try {
+      final responseCount = await _countQuestionnaireResponses(questionnaireId);
+      if (responseCount > 0) {
+        throw AppException(
+          code: AppExceptionCodes.validation,
+          message: 'Este questionário já possui respostas clínicas. '
+              'Para preservar histórico e resultados, inative o questionário '
+              'em vez de excluir definitivamente.',
+        );
+      }
+
+      await _client.from('questionnaires').delete().eq('id', questionnaireId);
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  Future<int> _countQuestionnaireResponses(String questionnaireId) async {
+    final rows = await _client
+        .from('questionnaire_responses')
+        .select('id')
+        .eq('questionnaire_id', questionnaireId)
+        .limit(1);
+    return (rows as List).length;
+  }
+
+  Future<List<QuestionnaireQuestion>> listQuestionsForAdmin(
+    String questionnaireId,
+  ) async {
+    try {
+      final rows = await _client
+          .from('questions')
+          .select(
+            'id, code, text, order_index, answer_type, scale_min, scale_max',
+          )
+          .eq('questionnaire_id', questionnaireId)
+          .order('order_index');
+
+      return (rows as List)
+          .map(
+            (row) => QuestionnaireQuestion.fromJson(
+              Map<String, dynamic>.from(row),
+            ),
+          )
+          .toList();
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  Future<void> createQuestion({
+    required String questionnaireId,
+    required String code,
+    required String text,
+    required int orderIndex,
+    required QuestionAnswerType answerType,
+    int? scaleMin,
+    int? scaleMax,
+  }) async {
+    try {
+      await _client.from('questions').insert(
+            _questionPayload(
+              questionnaireId: questionnaireId,
+              code: code,
+              text: text,
+              orderIndex: orderIndex,
+              answerType: answerType,
+              scaleMin: scaleMin,
+              scaleMax: scaleMax,
+            ),
+          );
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  Future<void> updateQuestion({
+    required String questionId,
+    required String questionnaireId,
+    required String code,
+    required String text,
+    required int orderIndex,
+    required QuestionAnswerType answerType,
+    int? scaleMin,
+    int? scaleMax,
+  }) async {
+    try {
+      await _client
+          .from('questions')
+          .update(
+            _questionPayload(
+              questionnaireId: questionnaireId,
+              code: code,
+              text: text,
+              orderIndex: orderIndex,
+              answerType: answerType,
+              scaleMin: scaleMin,
+              scaleMax: scaleMax,
+            ),
+          )
+          .eq('id', questionId);
     } catch (e) {
       throw mapToAppException(e);
     }
@@ -157,20 +360,23 @@ class QuestionnairesRepository {
 
   Future<List<dynamic>> _fetchActiveQuestionnaireRowsWithFallback() async {
     try {
-      return await _fetchActiveQuestionnaireRows(
+      return await _fetchQuestionnaireCatalogRows(
+        onlyActive: true,
         withReferencePeriod: true,
         withCatalogMetadata: true,
       );
     } on PostgrestException catch (e) {
       if (_isMissingCatalogMetadataError(e)) {
         try {
-          return await _fetchActiveQuestionnaireRows(
+          return await _fetchQuestionnaireCatalogRows(
+            onlyActive: true,
             withReferencePeriod: true,
             withCatalogMetadata: false,
           );
         } on PostgrestException catch (inner) {
           if (_isMissingReferencePeriodColumn(inner)) {
-            return await _fetchActiveQuestionnaireRows(
+            return await _fetchQuestionnaireCatalogRows(
+              onlyActive: true,
               withReferencePeriod: false,
               withCatalogMetadata: false,
             );
@@ -180,7 +386,8 @@ class QuestionnairesRepository {
       }
 
       if (_isMissingReferencePeriodColumn(e)) {
-        return await _fetchActiveQuestionnaireRows(
+        return await _fetchQuestionnaireCatalogRows(
+          onlyActive: true,
           withReferencePeriod: false,
           withCatalogMetadata: false,
         );
@@ -189,7 +396,8 @@ class QuestionnairesRepository {
     }
   }
 
-  Future<List<dynamic>> _fetchActiveQuestionnaireRows({
+  Future<List<dynamic>> _fetchQuestionnaireCatalogRows({
+    required bool onlyActive,
     required bool withReferencePeriod,
     required bool withCatalogMetadata,
   }) async {
@@ -209,22 +417,73 @@ class QuestionnairesRepository {
     ];
 
     if (withReferencePeriod) {
-      return await _client
-          .from('questionnaires')
-          .select(
+      var query = _client.from('questionnaires').select(
             '${fields.join(', ')}, '
             'questionnaire_versions!inner(reference_period)',
-          )
-          .eq('is_active', true)
+          );
+      if (onlyActive) {
+        query = query.eq('is_active', true);
+      }
+      return await query
           .eq('questionnaire_versions.status', 'active')
           .order('name');
     }
 
-    return await _client
-        .from('questionnaires')
-        .select(fields.join(', '))
-        .eq('is_active', true)
-        .order('name');
+    var query = _client.from('questionnaires').select(fields.join(', '));
+    if (onlyActive) {
+      query = query.eq('is_active', true);
+    }
+    return await query.order('name');
+  }
+
+  Map<String, dynamic> _questionnairePayload({
+    required String code,
+    required String name,
+    String? description,
+    String? authorName,
+    String? instrumentVersion,
+    String? citation,
+    String? licenseNotes,
+    required QuestionnaireClinicalStatus clinicalStatus,
+    required bool isActive,
+  }) {
+    String? nullableText(String? value) {
+      final trimmed = value?.trim();
+      return trimmed == null || trimmed.isEmpty ? null : trimmed;
+    }
+
+    return {
+      'code': code.trim().toUpperCase(),
+      'name': name.trim(),
+      'description': nullableText(description),
+      'author_name': nullableText(authorName),
+      'instrument_version': nullableText(instrumentVersion),
+      'citation': nullableText(citation),
+      'license_notes': nullableText(licenseNotes),
+      'clinical_status': clinicalStatus.storageValue,
+      'is_active': isActive,
+    };
+  }
+
+  Map<String, dynamic> _questionPayload({
+    required String questionnaireId,
+    required String code,
+    required String text,
+    required int orderIndex,
+    required QuestionAnswerType answerType,
+    int? scaleMin,
+    int? scaleMax,
+  }) {
+    return {
+      'questionnaire_id': questionnaireId,
+      'code': code.trim(),
+      'text': text.trim(),
+      'order_index': orderIndex,
+      'answer_type': answerType.value,
+      'scale_min': scaleMin,
+      'scale_max': scaleMax,
+      'is_active': true,
+    };
   }
 
   bool _isMissingReferencePeriodColumn(PostgrestException e) {

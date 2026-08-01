@@ -15,3 +15,4 @@ coverage/
 env.local.json
 env.android.json
 env.production.json
+env.prod.json

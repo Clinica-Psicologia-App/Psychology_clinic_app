@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../profile/domain/profile_role.dart';
 import '../data/genogram_repository.dart';
 import '../domain/genogram_data.dart';
+import '../domain/genogram_family_patterns.dart';
 import '../domain/genogram_person.dart';
 import '../domain/genogram_relationship.dart';
 
@@ -55,6 +56,11 @@ final staffGenogramProvider =
     return ref.read(genogramRepositoryProvider).loadForPatient(ctx.patientId);
   },
 );
+
+final genogramFamilyPatternsProvider =
+    FutureProvider.family<GenogramFamilyPatterns, String>((ref, patientId) {
+  return ref.read(genogramRepositoryProvider).getFamilyPatterns(patientId);
+});
 
 final genogramPersonDetailProvider =
     FutureProvider.family<GenogramPerson?, String>((ref, id) {

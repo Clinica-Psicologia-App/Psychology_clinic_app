@@ -12,8 +12,10 @@ abstract final class AppColors {
   // Superfícies (light) — pastéis do Claymorphism
   static const Color background = Color(0xFFE9EEF9);
   static const Color surface = Color(0xFFFDFDFF);
+  static const Color surfaceElevated = Color(0xFFFCFEFF);
   static const Color surfaceMuted = Color(0xFFDDE5F4);
   static const Color surfaceTint = Color(0xFFEFF3FC);
+  static const Color surfaceWarm = Color(0xFFF8FAFC);
 
   // Tints de superfície por acento (fundos tonais suaves)
   static const Color surfaceTintTurquoise = Color(0xFFE6F7F6);
@@ -30,6 +32,7 @@ abstract final class AppColors {
   // Bordas — quase invisíveis no clay (profundidade vem das sombras)
   static const Color border = Color(0xFFE2E9F6);
   static const Color borderStrong = Color(0xFFCBD7EC);
+  static const Color focusRing = Color(0xFF0EA5A0);
 
   // Semânticas (não confundir com marca)
   static const Color success = Color(0xFF059669);

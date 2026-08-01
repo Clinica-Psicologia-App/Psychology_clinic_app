@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/genogram_data.dart';
@@ -11,7 +13,6 @@ import '../domain/genogram_person.dart';
 import '../providers/genogram_providers.dart';
 import 'genogram_routes.dart';
 import 'widgets/genogram_widgets.dart';
-import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class GenogramPersonDetailPage extends ConsumerWidget {
   const GenogramPersonDetailPage({
@@ -106,7 +107,6 @@ class _PersonDetailBody extends ConsumerWidget {
   }
 
   Widget _buildContent(BuildContext context, GenogramData data) {
-    final theme = Theme.of(context);
     final linked =
         data.relationships.where((r) => r.involvesPerson(person.id)).toList();
 
@@ -115,55 +115,63 @@ class _PersonDetailBody extends ConsumerWidget {
         children: [
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.xxxl,
+              ),
               children: [
                 if (person.isSensitive)
-                  ClayCard(
-                    color: theme.colorScheme.errorContainer
-                        .withValues(alpha: 0.35),
-                    child: const ListTile(
-                      leading: Icon(Icons.lock_outline),
-                      title: Text('Dados sensíveis'),
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: AppSpacing.md),
+                    child: AppInfoCard(
+                      title: 'Dados sensíveis',
+                      body:
+                          'As informações foram ocultadas na visualização principal.',
+                      icon: Icons.lock_outline,
+                      tone: AppInfoCardTone.error,
                     ),
                   ),
-                ClayCard(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          person.displayName,
-                          style: theme.textTheme.titleLarge,
-                        ),
-                        if (person.relationshipToPatient != null &&
-                            person.relationshipToPatient!.trim().isNotEmpty)
-                          _Row(
-                            'Relação',
-                            person.relationshipToPatient!.trim(),
-                          ),
-                        if (person.gender != null)
-                          _Row('Gênero', person.gender!.label),
-                        if (person.lifeSpanLabel != null)
-                          _Row('Período', person.lifeSpanLabel!),
-                        if (person.isDeceased) const _Row('Status', 'Falecido'),
-                        if (person.notes != null &&
-                            person.notes!.trim().isNotEmpty) ...[
-                          const SizedBox(height: 12),
-                          Text('Observações',
-                              style: theme.textTheme.labelLarge),
-                          const SizedBox(height: 4),
-                          Text(person.notes!.trim()),
-                        ],
-                      ],
-                    ),
-                  ),
+                AppPageHeader(
+                  title: person.displayName,
+                  subtitle:
+                      'Detalhes desta pessoa no genograma e relações registradas.',
+                  icon: person.isSensitive
+                      ? Icons.lock_outline
+                      : Icons.person_outline,
+                  metadata: [
+                    if (person.relationshipToPatient != null &&
+                        person.relationshipToPatient!.trim().isNotEmpty)
+                      Chip(label: Text(person.relationshipToPatient!.trim())),
+                    if (person.gender != null)
+                      Chip(label: Text(person.gender!.label)),
+                    if (person.lifeSpanLabel != null)
+                      Chip(label: Text(person.lifeSpanLabel!)),
+                    if (person.isDeceased) const Chip(label: Text('Falecido')),
+                  ],
                 ),
-                const SizedBox(height: 16),
-                Text('Relações vinculadas', style: theme.textTheme.titleMedium),
-                const SizedBox(height: 8),
+                if (person.notes != null &&
+                    person.notes!.trim().isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.xl),
+                  AppInfoCard(
+                    title: 'Observações',
+                    body: person.notes!.trim(),
+                    icon: Icons.notes_outlined,
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.xl),
+                const AppSectionHeader(
+                  title: 'Relações vinculadas',
+                  subtitle: 'Vínculos registrados com esta pessoa.',
+                ),
+                const SizedBox(height: AppSpacing.sm),
                 if (linked.isEmpty)
-                  const Text('Nenhuma relação com esta pessoa ainda.')
+                  const AppInfoCard(
+                    title: 'Nenhuma relação cadastrada',
+                    body: 'Ainda não há vínculo registrado com esta pessoa.',
+                    icon: Icons.account_tree_outlined,
+                  )
                 else
                   ...linked.map(
                     (r) => GenogramRelationshipTile(
@@ -176,7 +184,7 @@ class _PersonDetailBody extends ConsumerWidget {
             ),
           ),
           Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(AppSpacing.md),
             child: FilledButton.icon(
               onPressed: () async {
                 final updated = await context.push<bool>(
@@ -210,29 +218,5 @@ class _PersonDetailBody extends ConsumerWidget {
             ),
     );
     onChanged();
-  }
-}
-
-class _Row extends StatelessWidget {
-  const _Row(this.label, this.value);
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(top: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 120,
-            child: Text(label, style: Theme.of(context).textTheme.bodySmall),
-          ),
-          Expanded(child: Text(value)),
-        ],
-      ),
-    );
   }
 }

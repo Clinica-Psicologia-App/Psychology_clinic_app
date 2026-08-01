@@ -25,7 +25,7 @@ AppException mapToAppException(Object error) {
     return AppException(
       code: AppExceptionCodes.network,
       message:
-          'Sem conexão com o servidor. Verifique a internet e tente de novo.',
+          'Parece que você está sem internet. Verifique a conexão e tente de novo.',
       cause: error,
     );
   }
@@ -40,7 +40,7 @@ AppException mapToAppException(Object error) {
 
   return AppException(
     code: AppExceptionCodes.unknown,
-    message: 'Ocorreu um erro inesperado. Tente novamente.',
+    message: 'Algo não saiu como esperado. Pode tentar de novo?',
     cause: error,
   );
 }
@@ -190,7 +190,8 @@ AppException _mapFunctionException(FunctionException error) {
   if (status == 502 || status == 503 || status == 504) {
     return AppException(
       code: AppExceptionCodes.network,
-      message: 'Serviço temporariamente indisponível. Tente novamente.',
+      message:
+          'O serviço está instável neste momento. Tente de novo em instantes.',
       cause: error,
       details: {'httpStatus': status},
     );
@@ -257,16 +258,16 @@ String messageForApiCode(String code, String? apiMessage) {
           ? 'Este e-mail já está em uso na clínica.'
           : (apiMessage ?? 'Conflito ao salvar. Verifique os dados.');
     case 'INTERNAL_ERROR':
-      return 'Erro no servidor. Tente novamente em instantes.';
+      return 'Tivemos um problema no servidor. Tente de novo em instantes.';
     default:
-      return apiMessage ?? 'Ocorreu um erro. Tente novamente.';
+      return apiMessage ?? 'Algo deu errado. Pode tentar de novo?';
   }
 }
 
 String userMessageFor(AppException error) {
   if (error.code == AppExceptionCodes.unknown &&
       error.message.isNotEmpty &&
-      !error.message.startsWith('Ocorreu um erro inesperado')) {
+      !error.message.startsWith('Algo não saiu como esperado')) {
     return error.message;
   }
   return userMessageForCode(error.code, fallback: error.message);
@@ -275,26 +276,29 @@ String userMessageFor(AppException error) {
 String userMessageForCode(String code, {String? fallback}) {
   switch (code) {
     case AppExceptionCodes.sessionExpired:
-      return 'Sua sessão expirou. Faça login novamente.';
+      return 'Sua sessão expirou. Entre novamente para continuar.';
     case AppExceptionCodes.unauthorized:
-      return fallback ?? 'Não autorizado. Faça login novamente.';
+      return fallback ?? 'Sua sessão precisa ser renovada. Entre novamente.';
     case AppExceptionCodes.invalidCredentials:
-      return 'E-mail ou senha inválidos.';
+      return 'E-mail ou senha não conferem. Confira os dados e tente de novo.';
     case AppExceptionCodes.profileNotFound:
-      return 'Perfil não encontrado para este usuário.';
+      return 'Não encontramos um perfil para este usuário. Fale com a clínica responsável.';
     case AppExceptionCodes.forbidden:
       return fallback ??
-          'Você não tem permissão para esta ação (política de segurança).';
+          'Você não tem permissão para esta ação. Se precisar, fale com o administrador.';
     case AppExceptionCodes.notFound:
-      return fallback ?? 'Registro não encontrado.';
+      return fallback ??
+          'Não encontramos esse registro. Ele pode ter sido removido.';
     case AppExceptionCodes.validation:
-      return fallback ?? 'Dados inválidos. Revise o formulário.';
+      return fallback ??
+          'Alguns campos precisam de atenção. Revise o formulário, por favor.';
     case AppExceptionCodes.conflict:
-      return fallback ?? 'Conflito ao salvar. Verifique os dados.';
+      return fallback ??
+          'Esses dados conflitam com um registro existente. Verifique e tente de novo.';
     case AppExceptionCodes.network:
-      return 'Sem conexão com o servidor. Verifique a internet.';
+      return 'Parece que você está sem internet. Verifique a conexão e tente de novo.';
     case AppExceptionCodes.unknown:
-      return fallback ?? 'Ocorreu um erro inesperado. Tente novamente.';
+      return fallback ?? 'Algo não saiu como esperado. Pode tentar de novo?';
     default:
       return fallback ?? messageForApiCode(code, fallback);
   }
@@ -314,7 +318,7 @@ String _sanitizePostgrestMessage(String raw) {
     return userMessageForCode(AppExceptionCodes.forbidden);
   }
   if (raw.length > 120) {
-    return 'Não foi possível concluir a operação. Tente novamente.';
+    return 'Não conseguimos concluir a operação. Pode tentar de novo?';
   }
   return raw;
 }

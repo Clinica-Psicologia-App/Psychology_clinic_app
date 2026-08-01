@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../profile/domain/profile_role.dart';
@@ -135,7 +137,6 @@ class _TherapyGoalDetailBodyState
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final goal =
         ref.watch(therapyGoalDetailProvider(widget.goal.id)).valueOrNull ??
             widget.goal;
@@ -146,25 +147,32 @@ class _TherapyGoalDetailBodyState
         Expanded(
           child: MotionReveal(
             child: ListView(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(AppSpacing.md),
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        goal.title,
-                        style: theme.textTheme.headlineSmall,
-                      ),
-                    ),
+                AppPageHeader(
+                  title: goal.title,
+                  subtitle:
+                      'Acompanhe status, datas e próximos ajustes desse objetivo terapêutico.',
+                  icon: Icons.flag_outlined,
+                  metadata: [
                     TherapyGoalStatusChip(status: goal.status),
                   ],
                 ),
                 if (goal.description != null &&
                     goal.description!.trim().isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  Text(goal.description!),
+                  const SizedBox(height: AppSpacing.xl),
+                  AppInfoCard(
+                    title: 'Descrição',
+                    body: goal.description!,
+                    icon: Icons.notes_outlined,
+                  ),
                 ],
-                const SizedBox(height: 24),
+                const SizedBox(height: AppSpacing.xl),
+                const AppSectionHeader(
+                  title: 'Dados do objetivo',
+                  subtitle: 'Datas e histórico de atualização.',
+                ),
+                const SizedBox(height: AppSpacing.sm),
                 if (goal.targetDate != null)
                   _InfoRow(
                     label: 'Data alvo',
@@ -186,7 +194,7 @@ class _TherapyGoalDetailBodyState
         if (_busy) const LinearProgressIndicator(),
         const Divider(height: 1),
         Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -205,7 +213,7 @@ class _TherapyGoalDetailBodyState
                   icon: const Icon(Icons.check),
                   label: const Text('Marcar como concluído'),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: AppSpacing.xs),
               ],
               if (goal.status != TherapyGoalStatus.archived)
                 OutlinedButton.icon(
@@ -222,7 +230,7 @@ class _TherapyGoalDetailBodyState
                   icon: const Icon(Icons.archive_outlined),
                   label: const Text('Arquivar'),
                 ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.xs),
               TextButton.icon(
                 onPressed: _busy ? null : _openEdit,
                 icon: const Icon(Icons.edit_outlined),

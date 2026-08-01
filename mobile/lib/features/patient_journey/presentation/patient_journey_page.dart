@@ -1,16 +1,16 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../domain/journey_step.dart';
-import '../../../shared/widgets/homologation_ui.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
+import '../../../shared/widgets/status_chip.dart';
 import '../providers/patient_journey_providers.dart';
 import 'patient_journey_navigation.dart';
 import 'widgets/journey_trail.dart';
-import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class PatientJourneyPage extends ConsumerWidget {
   const PatientJourneyPage({super.key});
@@ -66,104 +66,20 @@ class _JourneyHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final greeting = patientName == null ? null : 'Olá, $patientName.';
 
-    return ClayCard(
-      color: theme.colorScheme.surfaceContainerLow,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const HomologationSectionHeader(
-              icon: Icons.route_outlined,
-              title: 'Sua trilha terapêutica',
-              subtitle:
-                  'Siga os passos na ordem sugerida. Toque em cada card para abrir o módulo.',
-            ),
-            if (patientName != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                'Olá, $patientName.',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-            const SizedBox(height: 16),
-            Text(
-              'Legenda de status',
-              style: theme.textTheme.labelLarge?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Wrap(
-              spacing: 8,
-              runSpacing: 4,
-              children: [
-                _LegendDot(
-                  label: 'Disponível',
-                  availabilityKey: 'available',
-                ),
-                _LegendDot(
-                  label: 'Em andamento',
-                  availabilityKey: 'inProgress',
-                ),
-                _LegendDot(
-                  label: 'Concluído',
-                  availabilityKey: 'completed',
-                ),
-                _LegendDot(
-                  label: 'Em desenvolvimento',
-                  availabilityKey: 'dev',
-                ),
-                _LegendDot(
-                  label: 'Bloqueado',
-                  availabilityKey: 'blocked',
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _LegendDot extends StatelessWidget {
-  const _LegendDot({
-    required this.label,
-    required this.availabilityKey,
-  });
-
-  final String label;
-  final String availabilityKey;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final dotColor = switch (availabilityKey) {
-      'completed' => colors.tertiary,
-      'inProgress' => colors.secondary,
-      'dev' => colors.outline,
-      'blocked' => colors.error,
-      _ => colors.primary,
-    };
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(
-            color: dotColor,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 4),
-        Text(label, style: Theme.of(context).textTheme.labelSmall),
+    return AppPageHeader(
+      icon: Icons.route_outlined,
+      title: 'Sua trilha terapêutica',
+      subtitle:
+          '${greeting == null ? '' : '$greeting '}Siga os passos no seu ritmo e toque em cada etapa para continuar.',
+      metadata: const [
+        StatusChip(label: 'Disponível', tone: AppStatusTone.available),
+        StatusChip(label: 'Em andamento', tone: AppStatusTone.inProgress),
+        StatusChip(label: 'Concluído', tone: AppStatusTone.completed),
+        StatusChip(
+            label: 'Em desenvolvimento', tone: AppStatusTone.development),
+        StatusChip(label: 'Bloqueado', tone: AppStatusTone.blocked),
       ],
     );
   }

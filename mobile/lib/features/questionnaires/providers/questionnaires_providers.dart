@@ -7,6 +7,7 @@ import '../domain/questionnaire_access_management_data.dart';
 import '../domain/questionnaire_patient_status.dart';
 import '../domain/questionnaire_professional_option.dart';
 import '../domain/questionnaire.dart';
+import '../domain/questionnaire_question.dart';
 import '../domain/questionnaire_response_context.dart';
 import '../domain/questionnaire_session.dart';
 
@@ -38,6 +39,29 @@ final questionnairesListProvider =
 final questionnaireStaffOptionsProvider =
     FutureProvider<List<QuestionnaireProfessionalOption>>((ref) {
   return ref.read(questionnairesRepositoryProvider).listStaffOptions();
+});
+
+final questionnaireAdminCatalogProvider =
+    FutureProvider<List<Questionnaire>>((ref) {
+  return ref
+      .read(questionnairesRepositoryProvider)
+      .listQuestionnaireCatalogForAdmin();
+});
+
+final psychologistQuestionnairesProvider =
+    FutureProvider<List<Questionnaire>>((ref) {
+  return ref.read(questionnairesRepositoryProvider).listVisibleQuestionnaires(
+        role: ProfileRole.psychologist,
+        patientId: '',
+      );
+});
+
+final questionnaireAdminQuestionsProvider =
+    FutureProvider.family<List<QuestionnaireQuestion>, String>(
+        (ref, questionnaireId) {
+  return ref
+      .read(questionnairesRepositoryProvider)
+      .listQuestionsForAdmin(questionnaireId);
 });
 
 final questionnaireAccessManagementProvider =

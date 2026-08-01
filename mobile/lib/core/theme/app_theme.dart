@@ -61,7 +61,7 @@ abstract final class AppTheme {
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        backgroundColor: AppColors.surface,
+        backgroundColor: AppColors.background,
         foregroundColor: AppColors.navy,
         surfaceTintColor: Colors.transparent,
         titleTextStyle: textTheme.titleLarge?.copyWith(
@@ -75,6 +75,7 @@ abstract final class AppTheme {
       // elevação Material fica em 0 aqui para não competir com ela.
       cardTheme: CardThemeData(
         elevation: 0,
+        shadowColor: AppColors.navy.withValues(alpha: 0.08),
         color: AppColors.surface,
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
@@ -92,7 +93,7 @@ abstract final class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.surface,
+        fillColor: AppColors.surfaceElevated,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
           vertical: AppSpacing.sm + 2,
@@ -107,7 +108,7 @@ abstract final class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: AppRadius.mdAll,
-          borderSide: const BorderSide(color: AppColors.turquoise, width: 2),
+          borderSide: const BorderSide(color: AppColors.focusRing, width: 1.6),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: AppRadius.mdAll,
@@ -157,20 +158,51 @@ abstract final class AppTheme {
         ),
       ),
       floatingActionButtonTheme: const FloatingActionButtonThemeData(
-        backgroundColor: AppColors.turquoise,
-        foregroundColor: AppColors.textOnTurquoise,
+        backgroundColor: AppColors.navy,
+        foregroundColor: AppColors.textOnBrand,
         elevation: 2,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.all(Radius.circular(AppRadius.lg)),
         ),
       ),
       chipTheme: ChipThemeData(
-        backgroundColor: AppColors.surfaceMuted,
+        backgroundColor: AppColors.surfaceElevated,
         selectedColor: const Color(0xFFB2F0EB),
         labelStyle: textTheme.labelSmall,
         side: const BorderSide(color: AppColors.border),
         shape: RoundedRectangleBorder(borderRadius: AppRadius.smAll),
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+      ),
+      searchBarTheme: SearchBarThemeData(
+        elevation: const WidgetStatePropertyAll(0),
+        backgroundColor: const WidgetStatePropertyAll(AppColors.surface),
+        surfaceTintColor: const WidgetStatePropertyAll(Colors.transparent),
+        overlayColor: WidgetStatePropertyAll(
+          AppColors.turquoise.withValues(alpha: 0.05),
+        ),
+        side: const WidgetStatePropertyAll(
+          BorderSide(color: AppColors.border),
+        ),
+        shape: WidgetStatePropertyAll(
+          RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
+        ),
+        padding: const WidgetStatePropertyAll(
+          EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        ),
+        textStyle: WidgetStatePropertyAll(textTheme.bodyMedium),
+        hintStyle: WidgetStatePropertyAll(
+          textTheme.bodyMedium?.copyWith(color: AppColors.textMuted),
+        ),
+      ),
+      tabBarTheme: TabBarThemeData(
+        dividerColor: AppColors.border,
+        indicatorColor: AppColors.navy,
+        labelColor: AppColors.navy,
+        unselectedLabelColor: AppColors.textMuted,
+        labelStyle: textTheme.labelLarge?.copyWith(
+          fontWeight: FontWeight.w700,
+        ),
+        unselectedLabelStyle: textTheme.labelLarge,
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: AppColors.surface,
@@ -289,14 +321,24 @@ class _AppPageTransitionsBuilder extends PageTransitionsBuilder {
       curve: AppAnimations.enterCurve,
       reverseCurve: AppAnimations.exitCurve,
     );
+    final secondaryCurved = CurvedAnimation(
+      parent: secondaryAnimation,
+      curve: AppAnimations.standardCurve,
+    );
+
+    // Fade-through: a tela que entra surge com fade + leve scale; a tela
+    // que fica embaixo recua discretamente quando outra é empilhada.
     return FadeTransition(
-      opacity: Tween<double>(begin: 0, end: 1).animate(curved),
-      child: SlideTransition(
-        position: Tween<Offset>(
-          begin: const Offset(0.025, 0.018),
-          end: Offset.zero,
-        ).animate(curved),
-        child: child,
+      opacity: curved,
+      child: ScaleTransition(
+        scale: Tween<double>(begin: 0.985, end: 1).animate(curved),
+        child: FadeTransition(
+          opacity: Tween<double>(begin: 1, end: 0.6).animate(secondaryCurved),
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 1, end: 0.99).animate(secondaryCurved),
+            child: child,
+          ),
+        ),
       ),
     );
   }

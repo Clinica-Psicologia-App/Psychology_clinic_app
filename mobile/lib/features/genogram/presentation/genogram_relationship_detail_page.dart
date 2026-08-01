@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/genogram_relationship_type.dart';
 import '../providers/genogram_providers.dart';
 import 'genogram_routes.dart';
-import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class GenogramRelationshipDetailPage extends ConsumerWidget {
   const GenogramRelationshipDetailPage({
@@ -60,7 +61,6 @@ class GenogramRelationshipDetailPage extends ConsumerWidget {
             error: (_, __) =>
                 const Center(child: Text('Erro ao carregar nomes.')),
             data: (data) {
-              final theme = Theme.of(context);
               final aName = data.personNameById(relationship.personAId);
               final bName = data.personNameById(relationship.personBId);
 
@@ -69,52 +69,61 @@ class GenogramRelationshipDetailPage extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: ListView(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.md,
+                          AppSpacing.md,
+                          AppSpacing.md,
+                          AppSpacing.xxxl,
+                        ),
                         children: [
                           if (relationship.isSensitive)
-                            ClayCard(
-                              color: theme.colorScheme.errorContainer
-                                  .withValues(alpha: 0.35),
-                              child: const ListTile(
-                                leading: Icon(Icons.lock_outline),
-                                title: Text('Conteúdo sensível'),
+                            const Padding(
+                              padding: EdgeInsets.only(bottom: AppSpacing.md),
+                              child: AppInfoCard(
+                                title: 'Conteúdo sensível',
+                                body:
+                                    'As informações foram ocultadas na visualização principal.',
+                                icon: Icons.lock_outline,
+                                tone: AppInfoCardTone.error,
                               ),
                             ),
-                          ClayCard(
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    relationship.relationshipType.label,
-                                    style: theme.textTheme.titleLarge,
-                                  ),
-                                  const SizedBox(height: 12),
-                                  Text('Pessoa A: $aName'),
-                                  const SizedBox(height: 4),
-                                  Text('Pessoa B: $bName'),
-                                  if (relationship.notes != null &&
-                                      relationship.notes!
-                                          .trim()
-                                          .isNotEmpty) ...[
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      'Observações',
-                                      style: theme.textTheme.labelLarge,
-                                    ),
-                                    const SizedBox(height: 4),
-                                    Text(relationship.notes!.trim()),
-                                  ],
-                                ],
-                              ),
+                          AppPageHeader(
+                            title: relationship.relationshipType.label,
+                            subtitle: 'Natureza da relação registrada.',
+                            icon: relationship.isSensitive
+                                ? Icons.lock_outline
+                                : Icons.account_tree_outlined,
+                            metadata: [
+                              Chip(label: Text(aName)),
+                              Chip(label: Text(bName)),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.xl),
+                          AppInfoCard(
+                            title: 'Pessoas envolvidas',
+                            icon: Icons.group_outlined,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _InfoLine(label: 'Pessoa A', value: aName),
+                                _InfoLine(label: 'Pessoa B', value: bName),
+                              ],
                             ),
                           ),
+                          if (relationship.notes != null &&
+                              relationship.notes!.trim().isNotEmpty) ...[
+                            const SizedBox(height: AppSpacing.xl),
+                            AppInfoCard(
+                              title: 'Observações',
+                              body: relationship.notes!.trim(),
+                              icon: Icons.notes_outlined,
+                            ),
+                          ],
                         ],
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.all(AppSpacing.md),
                       child: FilledButton.icon(
                         onPressed: () async {
                           final updated = await context.push<bool>(
@@ -158,6 +167,33 @@ class GenogramRelationshipDetailPage extends ConsumerWidget {
             },
           );
         },
+      ),
+    );
+  }
+}
+
+class _InfoLine extends StatelessWidget {
+  const _InfoLine({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 92,
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ),
+          Expanded(child: Text(value)),
+        ],
       ),
     );
   }

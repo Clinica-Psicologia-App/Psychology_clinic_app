@@ -4,8 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/widgets/status_chip.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/therapy_resource.dart';
 import '../domain/therapy_resource_input.dart';
@@ -161,8 +164,42 @@ class _TherapyResourceFormPageState
         key: _formKey,
         child: MotionReveal(
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.xxl,
+            ),
             children: [
+              AppPageHeader(
+                icon: _type.icon,
+                title: widget.isEdit ? 'Editar material' : 'Novo material',
+                subtitle:
+                    'Cadastre recursos terapêuticos para orientar exercícios, leituras, vídeos ou links de apoio ao paciente.',
+                metadata: [
+                  StatusChip(
+                    label: _type.label,
+                    tone: AppStatusTone.info,
+                    icon: _type.icon,
+                  ),
+                  StatusChip(
+                    label: _isActive ? 'Ativo' : 'Oculto',
+                    tone: _isActive
+                        ? AppStatusTone.completed
+                        : AppStatusTone.neutral,
+                    icon: _isActive
+                        ? Icons.visibility_outlined
+                        : Icons.visibility_off_outlined,
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              const AppSectionHeader(
+                title: 'Identificação',
+                subtitle:
+                    'Defina o nome e o tipo do material para facilitar busca e liberação.',
+              ),
+              const SizedBox(height: AppSpacing.sm),
               TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(
@@ -173,7 +210,7 @@ class _TherapyResourceFormPageState
                 validator: (v) =>
                     v == null || v.trim().isEmpty ? 'Informe o título.' : null,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               DropdownButtonFormField<TherapyResourceType>(
                 initialValue: _type,
                 decoration: const InputDecoration(
@@ -199,7 +236,13 @@ class _TherapyResourceFormPageState
                         if (value != null) setState(() => _type = value);
                       },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
+              const AppSectionHeader(
+                title: 'Orientação de uso',
+                subtitle:
+                    'Explique quando o paciente deve acessar o material e inclua um link quando houver.',
+              ),
+              const SizedBox(height: AppSpacing.sm),
               TextFormField(
                 controller: _descriptionController,
                 decoration: const InputDecoration(
@@ -210,7 +253,7 @@ class _TherapyResourceFormPageState
                 maxLines: 5,
                 textCapitalization: TextCapitalization.sentences,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _urlController,
                 decoration: const InputDecoration(
@@ -231,7 +274,13 @@ class _TherapyResourceFormPageState
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
+              const AppSectionHeader(
+                title: 'Disponibilidade',
+                subtitle:
+                    'Materiais ocultos permanecem cadastrados, mas não aparecem para novas liberações.',
+              ),
+              const SizedBox(height: AppSpacing.sm),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
                 title: const Text('Material ativo'),
@@ -245,7 +294,7 @@ class _TherapyResourceFormPageState
                     ? null
                     : (value) => setState(() => _isActive = value),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: AppSpacing.xl),
               FilledButton.icon(
                 onPressed: saving ? null : _save,
                 icon: saving

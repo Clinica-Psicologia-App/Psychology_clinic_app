@@ -4,8 +4,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/widgets/status_chip.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../domain/daily_monitor.dart';
 import '../domain/daily_monitor_input.dart';
@@ -195,15 +198,43 @@ class _CreateDailyMonitorPageState
         key: _formKey,
         child: MotionReveal(
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.xxl,
+            ),
             children: [
-              Text(
-                'Data do registro: hoje (${_todayLabel()})',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+              AppPageHeader(
+                icon: Icons.edit_note_outlined,
+                title:
+                    widget.isEdit ? 'Editar monitor diário' : 'Monitor diário',
+                subtitle:
+                    'Registre emoções, gatilhos e respostas do dia para observar padrões ao longo da terapia.',
+                metadata: [
+                  StatusChip(
+                    label: 'Hoje: ${_todayLabel()}',
+                    tone: AppStatusTone.info,
+                    icon: Icons.today_outlined,
+                  ),
+                  StatusChip(
+                    label: _intensity == null
+                        ? 'Sem intensidade'
+                        : 'Intensidade $_intensity',
+                    tone: _intensity == null
+                        ? AppStatusTone.neutral
+                        : AppStatusTone.warning,
+                    icon: Icons.speed_outlined,
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
+              const AppSectionHeader(
+                title: 'Estado emocional',
+                subtitle:
+                    'Descreva brevemente como você se percebeu emocionalmente hoje.',
+              ),
+              const SizedBox(height: AppSpacing.sm),
               TextFormField(
                 controller: _moodController,
                 decoration: const InputDecoration(
@@ -214,7 +245,7 @@ class _CreateDailyMonitorPageState
                 maxLines: 2,
                 textCapitalization: TextCapitalization.sentences,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               Text(
                 'Intensidade (1 a 10)',
                 style: Theme.of(context).textTheme.titleSmall,
@@ -234,7 +265,13 @@ class _CreateDailyMonitorPageState
                   child: const Text('Limpar intensidade'),
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.lg),
+              const AppSectionHeader(
+                title: 'Gatilhos e respostas',
+                subtitle:
+                    'Registre o que ativou a emoção e como você respondeu na prática.',
+              ),
+              const SizedBox(height: AppSpacing.sm),
               TextFormField(
                 controller: _triggersController,
                 decoration: const InputDecoration(
@@ -245,7 +282,7 @@ class _CreateDailyMonitorPageState
                 maxLines: 3,
                 textCapitalization: TextCapitalization.sentences,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _behaviorsController,
                 decoration: const InputDecoration(
@@ -256,7 +293,13 @@ class _CreateDailyMonitorPageState
                 maxLines: 3,
                 textCapitalization: TextCapitalization.sentences,
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.lg),
+              const AppSectionHeader(
+                title: 'Contexto adicional',
+                subtitle:
+                    'Inclua sono, acontecimentos importantes ou qualquer nota útil sobre o dia.',
+              ),
+              const SizedBox(height: AppSpacing.sm),
               TextFormField(
                 controller: _observationsController,
                 decoration: const InputDecoration(
@@ -267,7 +310,7 @@ class _CreateDailyMonitorPageState
                 maxLines: 3,
                 textCapitalization: TextCapitalization.sentences,
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.xl),
               FilledButton.icon(
                 onPressed: _saving ? null : _save,
                 icon: _saving

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../core/legal/legal_documents.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
+import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/responsive_content.dart';
 
 enum LegalDocumentType { terms, privacy }
@@ -25,30 +27,38 @@ class LegalDocumentPage extends StatelessWidget {
     final text =
         isTerms ? LegalDocuments.termsText : LegalDocuments.privacyText;
 
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
+    return AppScaffold(
+      title: title,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppSpacing.xl),
+          padding: const EdgeInsets.all(AppSpacing.md),
           child: ResponsiveContent(
             maxWidth: 760,
             child: MotionReveal(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title,
-                      style: Theme.of(context).textTheme.headlineMedium),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    'Versão $version',
-                    style: Theme.of(context).textTheme.bodySmall,
+                  AppPageHeader(
+                    title: title,
+                    subtitle:
+                        'Documento legal vigente para uso da plataforma EsquemaCore.',
+                    icon: isTerms
+                        ? Icons.description_outlined
+                        : Icons.privacy_tip_outlined,
+                    metadata: [
+                      Chip(label: Text('Versão $version')),
+                    ],
                   ),
                   const SizedBox(height: AppSpacing.xl),
-                  Text(
-                    text,
-                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                          height: 1.55,
-                        ),
+                  AppInfoCard(
+                    title: 'Conteúdo',
+                    icon: Icons.article_outlined,
+                    child: Text(
+                      text,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                            height: 1.55,
+                          ),
+                    ),
                   ),
                 ],
               ),

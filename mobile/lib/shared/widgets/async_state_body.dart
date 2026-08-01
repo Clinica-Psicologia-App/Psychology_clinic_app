@@ -3,8 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/errors/app_exception.dart';
 import '../../core/errors/error_mapper.dart';
+import '../../core/theme/app_animations.dart';
 import '../../core/theme/app_spacing.dart';
-import 'homologation_ui.dart';
+import 'app_empty_state.dart';
 import 'loading_skeleton.dart';
 import 'app_motion.dart';
 
@@ -15,9 +16,9 @@ class AsyncStateBody<T> extends StatelessWidget {
     required this.asyncValue,
     required this.onRetry,
     required this.dataBuilder,
-    this.emptyMessage = 'Nenhum item encontrado.',
+    this.emptyMessage = 'Ainda não há nada por aqui.',
     this.emptyIcon = Icons.inbox_outlined,
-    this.useSkeleton = false,
+    this.useSkeleton = true,
   });
 
   final AsyncValue<T> asyncValue;
@@ -29,22 +30,46 @@ class AsyncStateBody<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return asyncValue.when(
-      loading: () => useSkeleton
-          ? const LoadingSkeletonList()
-          : const Center(child: CircularProgressIndicator()),
-      error: (error, _) => ErrorStatePanel(
-        message: error is AppException
-            ? userMessageFor(error)
-            : 'Não foi possível carregar os dados.',
-        onRetry: onRetry,
+    final (stateKey, body) = asyncValue.when(
+      loading: () => (
+        'loading',
+        useSkeleton
+            ? const LoadingSkeletonList()
+            : const Center(child: CircularProgressIndicator()),
+      ),
+      error: (error, _) => (
+        'error',
+        ErrorStatePanel(
+          message: error is AppException
+              ? userMessageFor(error)
+              : 'Não conseguimos carregar agora. Pode tentar de novo?',
+          onRetry: onRetry,
+        ),
       ),
       data: (data) {
         if (data is List && data.isEmpty) {
-          return EmptyStatePanel(message: emptyMessage, icon: emptyIcon);
+          return (
+            'empty',
+            EmptyStatePanel(message: emptyMessage, icon: emptyIcon),
+          );
         }
-        return MotionReveal(child: dataBuilder(data));
+        return ('data', MotionReveal(child: dataBuilder(data)));
       },
+    );
+
+    // Skeleton dá fade-out enquanto o conteúdo entra, em vez de troca seca.
+    return AnimatedSwitcher(
+      duration: AppAnimations.resolve(context, AppAnimations.standard),
+      switchInCurve: AppAnimations.enterCurve,
+      switchOutCurve: AppAnimations.exitCurve,
+      layoutBuilder: (currentChild, previousChildren) => Stack(
+        alignment: Alignment.topCenter,
+        children: [
+          ...previousChildren,
+          if (currentChild != null) currentChild,
+        ],
+      ),
+      child: KeyedSubtree(key: ValueKey(stateKey), child: body),
     );
   }
 }
@@ -56,12 +81,14 @@ class EmptyStatePanel extends StatelessWidget {
     required this.icon,
     this.title = 'Nada por aqui ainda',
     this.hint,
+    this.action,
   });
 
   final String message;
   final IconData icon;
   final String title;
   final String? hint;
+  final Widget? action;
 
   @override
   Widget build(BuildContext context) {
@@ -69,11 +96,12 @@ class EmptyStatePanel extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xxl),
         child: MotionReveal(
-          child: HomologationEmptyPanel(
+          child: AppEmptyState(
             icon: icon,
             title: title,
             message: message,
             hint: hint,
+            action: action,
           ),
         ),
       ),

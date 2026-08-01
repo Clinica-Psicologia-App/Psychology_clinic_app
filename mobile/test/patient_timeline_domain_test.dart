@@ -19,6 +19,16 @@ void main() {
       'period_label': 'Infância',
       'category': 'Educação',
       'emotional_impact': 8,
+      'emotional_need_keys': ['connection_acceptance', 'other'],
+      'emotional_need_other': 'Segurança',
+      'emotions_felt': 'Medo e tristeza',
+      'self_meaning': 'Não sou importante',
+      'others_meaning': 'Não posso confiar',
+      'world_meaning': 'O mundo é inseguro',
+      'coping_keys': ['avoidance'],
+      'present_influence': 7,
+      'present_area_keys': ['relationships', 'self_esteem'],
+      'present_reaction': 'Evito conversas difíceis',
       'is_sensitive': true,
       'created_at': '2026-05-01T12:00:00Z',
       'updated_at': '2026-05-01T12:00:00Z',
@@ -27,6 +37,10 @@ void main() {
     expect(event.title, 'Mudança de escola');
     expect(event.eventDate?.year, 2010);
     expect(event.emotionalImpact, 8);
+    expect(event.emotionalNeedKeys, contains('connection_acceptance'));
+    expect(event.emotionalNeedOther, 'Segurança');
+    expect(event.presentInfluence, 7);
+    expect(event.presentAreaKeys, contains('self_esteem'));
     expect(event.isSensitive, isTrue);
     expect(event.dateLabel, contains('2010'));
   });
@@ -43,6 +57,34 @@ void main() {
       const PatientTimelineEventInput(
         title: 'Teste',
         emotionalImpact: 5,
+      ).validate(),
+      isNull,
+    );
+  });
+
+  test('PatientTimelineEventInput validates other clinical fields', () {
+    expect(
+      const PatientTimelineEventInput(
+        title: 'Teste',
+        emotionalNeedKeys: ['other'],
+      ).validate(),
+      contains('outra necessidade'),
+    );
+    expect(
+      const PatientTimelineEventInput(
+        title: 'Teste',
+        copingKeys: ['other'],
+      ).validate(),
+      contains('outra forma'),
+    );
+    expect(
+      const PatientTimelineEventInput(
+        title: 'Teste',
+        presentInfluence: 10,
+        emotionalNeedKeys: ['other'],
+        emotionalNeedOther: 'Pertencimento',
+        copingKeys: ['other'],
+        copingOther: 'Procurei acolhimento',
       ).validate(),
       isNull,
     );

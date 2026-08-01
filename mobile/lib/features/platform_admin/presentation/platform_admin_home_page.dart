@@ -3,11 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
-import '../../../shared/widgets/brand_hero_card.dart';
+import '../../../shared/widgets/clinical_module_card.dart';
+import '../../../shared/widgets/esquema_core_logo.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../clinics/presentation/clinic_routes.dart';
@@ -45,64 +46,49 @@ class PlatformAdminHomePage extends ConsumerWidget {
       ],
       body: ResponsiveContent(
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.lg,
-            AppSpacing.md,
-            AppSpacing.xxl,
-          ),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           children: [
-            MotionReveal(
-              child: BrandHeroCard(
-                name: profile?.fullName ?? 'Painel administrativo',
-                subtitle: 'Gestão central da plataforma EsquemaCore.',
-                dense: true,
-                chips: const [
-                  BrandHeroChip(
-                    icon: Icons.admin_panel_settings_outlined,
-                    label: 'Administrador da plataforma',
-                  ),
-                ],
+            const Padding(
+              padding: EdgeInsets.only(bottom: AppSpacing.xl),
+              child: EsquemaCoreLogo.horizontal(
+                size: 44,
+                showName: true,
+                showTagline: true,
               ),
             ),
-            const SizedBox(height: AppSpacing.xl),
-            const _SectionHeader(
-              title: 'Operação principal',
-              subtitle: 'Acompanhe cadastros, permissões e estrutura.',
+            const AppPageHeader(
+              icon: Icons.admin_panel_settings_outlined,
+              title: 'Gestão global',
+              subtitle:
+                  'Administre operação, equipe e instrumentos clínicos com separação clara entre atendimento e estrutura da plataforma.',
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.xl),
+            const AppSectionHeader(
+              title: 'Atendimento',
+              subtitle: 'Fluxos ligados diretamente ao cuidado dos pacientes.',
+            ),
+            const SizedBox(height: AppSpacing.sm),
             ResponsiveGrid(
               mediumColumns: 2,
               expandedColumns: 2,
-              spacing: AppSpacing.sm,
               children: [
                 MotionReveal(
                   delay: staggerDelay(0),
-                  child: _AdminModuleTile(
-                    icon: Icons.people_alt_outlined,
+                  child: ClinicalModuleCard(
+                    icon: Icons.people_outline,
                     title: 'Pacientes',
-                    subtitle: 'Distribuição por psicólogo e capacidade.',
+                    subtitle: 'Visualizar, inativar e reativar pacientes.',
                     accentColor: AppColors.turquoise,
-                    onTap: () => context.push('/platform/patient-overview'),
+                    onTap: () => context.push('/platform/patients'),
                   ),
                 ),
                 MotionReveal(
                   delay: staggerDelay(1),
-                  child: _AdminModuleTile(
-                    icon: Icons.apartment_rounded,
-                    title: 'Clínicas',
-                    subtitle: 'Gerenciar clínicas, individuais e volumes.',
+                  child: ClinicalModuleCard(
+                    icon: Icons.psychology_alt_outlined,
+                    title: 'Psicólogos',
+                    subtitle: 'Gerenciar profissionais, CRP, clínica e vagas.',
                     accentColor: AppColors.blue,
-                    onTap: () => context.push(ClinicRoutes.platformList),
-                  ),
-                ),
-                MotionReveal(
-                  delay: staggerDelay(2),
-                  child: _AdminModuleTile(
-                    icon: Icons.manage_accounts_outlined,
-                    title: 'Usuários',
-                    subtitle: 'Administradores, psicólogos e status.',
-                    accentColor: AppColors.purple,
                     onTap: () =>
                         context.push(UserManagementRoutes.platformList),
                   ),
@@ -110,19 +96,40 @@ class PlatformAdminHomePage extends ConsumerWidget {
               ],
             ),
             const SizedBox(height: AppSpacing.xl),
-            const _SectionHeader(
-              title: 'Governança clínica',
-              subtitle: 'Controle os instrumentos liberados na plataforma.',
+            const AppSectionHeader(
+              title: 'Estrutura da plataforma',
+              subtitle:
+                  'Configurações globais, acessos administrativos e instrumentos.',
             ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.sm),
             ResponsiveGrid(
               mediumColumns: 2,
               expandedColumns: 2,
-              spacing: AppSpacing.sm,
               children: [
                 MotionReveal(
+                  delay: staggerDelay(2),
+                  child: ClinicalModuleCard(
+                    icon: Icons.apartment_outlined,
+                    title: 'Clínicas',
+                    subtitle: 'Ver clínicas, individuais, status e volumes.',
+                    accentColor: AppColors.blue,
+                    onTap: () => context.push(ClinicRoutes.platformList),
+                  ),
+                ),
+                MotionReveal(
                   delay: staggerDelay(3),
-                  child: _AdminModuleTile(
+                  child: ClinicalModuleCard(
+                    icon: Icons.admin_panel_settings_outlined,
+                    title: 'Administradores',
+                    subtitle: 'Gerenciar acessos administrativos globais.',
+                    accentColor: AppColors.purple,
+                    onTap: () =>
+                        context.push(UserManagementRoutes.platformList),
+                  ),
+                ),
+                MotionReveal(
+                  delay: staggerDelay(4),
+                  child: ClinicalModuleCard(
                     icon: Icons.library_books_outlined,
                     title: 'Catálogo de questionários',
                     subtitle: 'Criar, revisar, publicar e arquivar.',
@@ -131,9 +138,9 @@ class PlatformAdminHomePage extends ConsumerWidget {
                   ),
                 ),
                 MotionReveal(
-                  delay: staggerDelay(4),
-                  child: _AdminModuleTile(
-                    icon: Icons.assignment_ind_outlined,
+                  delay: staggerDelay(5),
+                  child: ClinicalModuleCard(
+                    icon: Icons.fact_check_outlined,
                     title: 'Acesso a questionários',
                     subtitle: 'Liberar instrumentos por psicólogo.',
                     accentColor: AppColors.cyan,
@@ -143,155 +150,6 @@ class PlatformAdminHomePage extends ConsumerWidget {
               ],
             ),
           ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({
-    required this.title,
-    required this.subtitle,
-  });
-
-  final String title;
-  final String subtitle;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: textTheme.titleMedium?.copyWith(
-            color: AppColors.navy,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        const SizedBox(height: 3),
-        Text(
-          subtitle,
-          style: textTheme.bodySmall?.copyWith(
-            color: AppColors.textSecondary,
-            height: 1.25,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _AdminModuleTile extends StatelessWidget {
-  const _AdminModuleTile({
-    required this.icon,
-    required this.title,
-    required this.subtitle,
-    required this.accentColor,
-    required this.onTap,
-  });
-
-  final IconData icon;
-  final String title;
-  final String subtitle;
-  final Color accentColor;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    final radius = BorderRadius.circular(AppRadius.xl);
-
-    return MotionSurface(
-      onTap: onTap,
-      borderRadius: radius,
-      hoverScale: 1.003,
-      pressedScale: 0.996,
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: radius,
-          child: Ink(
-            decoration: BoxDecoration(
-              color: AppColors.surface,
-              borderRadius: radius,
-              border:
-                  Border.all(color: AppColors.border.withValues(alpha: 0.9)),
-            ),
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.md,
-              vertical: AppSpacing.md,
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: accentColor,
-                    borderRadius: AppRadius.lgAll,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.white.withValues(alpha: 0.45),
-                        blurRadius: 4,
-                        offset: const Offset(-2, -2),
-                      ),
-                      BoxShadow(
-                        color: accentColor.withValues(alpha: 0.38),
-                        blurRadius: 10,
-                        offset: const Offset(3, 5),
-                      ),
-                    ],
-                  ),
-                  child: Icon(icon, color: Colors.white, size: 22),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        title,
-                        style: textTheme.titleSmall?.copyWith(
-                          color: AppColors.navy,
-                          fontWeight: FontWeight.w700,
-                          height: 1.15,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        subtitle,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: textTheme.bodySmall?.copyWith(
-                          color: AppColors.textMuted,
-                          height: 1.28,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Container(
-                  width: 30,
-                  height: 30,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: accentColor.withValues(alpha: 0.10),
-                  ),
-                  child: Icon(
-                    Icons.arrow_forward_rounded,
-                    color: accentColor,
-                    size: 16,
-                  ),
-                ),
-              ],
-            ),
-          ),
         ),
       ),
     );

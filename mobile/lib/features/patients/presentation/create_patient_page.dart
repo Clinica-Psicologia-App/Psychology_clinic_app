@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/utils/brazil_validators.dart';
 import '../../../shared/utils/input_formatters.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/form_section.dart';
 import '../../../shared/widgets/error_banner.dart';
+import '../../../shared/widgets/status_chip.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../profile/domain/user_profile.dart';
@@ -137,6 +140,25 @@ class _CreatePatientPageState extends ConsumerState<CreatePatientPage> {
             children: [
               MotionStaggered(
                 children: [
+                  const AppPageHeader(
+                    icon: Icons.person_add_alt_1_outlined,
+                    title: 'Novo paciente',
+                    subtitle:
+                        'Cadastre dados pessoais, acesso inicial e vínculo com o psicólogo responsável.',
+                    metadata: [
+                      StatusChip(
+                        label: 'Cadastro completo',
+                        tone: AppStatusTone.info,
+                        icon: Icons.assignment_ind_outlined,
+                      ),
+                      StatusChip(
+                        label: 'Senha inicial',
+                        tone: AppStatusTone.neutral,
+                        icon: Icons.lock_outline,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
                   FormSection(
                     title: 'Dados pessoais',
                     subtitle: 'Campos com * são obrigatórios.',

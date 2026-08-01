@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/config/env_config.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../patients/providers/patients_providers.dart';
@@ -68,81 +70,70 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
               ? ref.watch(patientDetailProvider(patientId))
               : null;
 
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (widget.role != ProfileRole.patient &&
-                  staffPatientHeader != null)
-                staffPatientHeader.when(
-                  data: (p) => p != null
-                      ? Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                          child: Text(
-                            p.fullName,
-                            style: Theme.of(context).textTheme.titleMedium,
-                          ),
-                        )
-                      : const SizedBox.shrink(),
-                  loading: () => const Padding(
-                    padding: EdgeInsets.all(16),
-                    child: LinearProgressIndicator(),
-                  ),
-                  error: (_, __) => const SizedBox.shrink(),
+          return AsyncStateBody<List<Questionnaire>>(
+            asyncValue: listAsync,
+            onRetry: () =>
+                ref.invalidate(questionnairesListProvider(_listContext)),
+            emptyMessage: 'Nenhum questionário disponível no momento.',
+            emptyIcon: Icons.assignment_outlined,
+            dataBuilder: (items) => RefreshIndicator(
+              onRefresh: () async {
+                ref.invalidate(questionnairesListProvider(_listContext));
+                ref.invalidate(questionnairePatientStatusProvider(patientId));
+                await ref.read(
+                  questionnairesListProvider(_listContext).future,
+                );
+              },
+              child: ListView.builder(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                  AppSpacing.xxxl,
                 ),
-              if (widget.role == ProfileRole.patient)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                  child: Text(
-                    'Selecione um instrumento para responder.',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                  ),
-                ),
-              Expanded(
-                child: AsyncStateBody<List<Questionnaire>>(
-                  asyncValue: listAsync,
-                  onRetry: () =>
-                      ref.invalidate(questionnairesListProvider(_listContext)),
-                  emptyMessage: 'Nenhum questionário disponível no momento.',
-                  emptyIcon: Icons.assignment_outlined,
-                  dataBuilder: (items) => RefreshIndicator(
-                    onRefresh: () async {
-                      ref.invalidate(questionnairesListProvider(_listContext));
-                      ref.invalidate(
-                          questionnairePatientStatusProvider(patientId));
-                      await ref.read(
-                        questionnairesListProvider(_listContext).future,
-                      );
-                    },
-                    child: ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: items.length,
-                      itemBuilder: (context, index) {
-                        final q = items[index];
-                        final canApply = q.canStart(
-                          allowUnvalidated:
-                              EnvConfig.allowsUnvalidatedInstruments,
-                        );
-                        return MotionReveal(
-                          delay: staggerDelay(index),
-                          child: QuestionnaireListTile(
-                            questionnaire: q,
-                            enabled: canApply,
-                            showStaffDetails:
-                                widget.role != ProfileRole.patient,
-                            patientStatus: statusMap[q.id],
-                            onTap: canApply
-                                ? () => _onQuestionnaireTap(q, patientId)
-                                : null,
-                          ),
-                        );
-                      },
+                itemCount: items.length + 2,
+                itemBuilder: (context, index) {
+                  if (index == 0) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.xl),
+                      child: _QuestionnairesHeader(
+                        role: widget.role,
+                        staffPatientHeader: staffPatientHeader,
+                        availableCount: items.length,
+                      ),
+                    );
+                  }
+
+                  if (index == 1) {
+                    return const Padding(
+                      padding: EdgeInsets.only(bottom: AppSpacing.sm),
+                      child: AppSectionHeader(
+                        title: 'Instrumentos disponíveis',
+                        subtitle:
+                            'Abra um questionário para revisar orientações e iniciar a resposta.',
+                      ),
+                    );
+                  }
+
+                  final q = items[index - 2];
+                  final canApply = q.canStart(
+                    allowUnvalidated: EnvConfig.allowsUnvalidatedInstruments,
+                  );
+                  return MotionReveal(
+                    delay: staggerDelay(index - 2),
+                    child: QuestionnaireListTile(
+                      questionnaire: q,
+                      enabled: canApply,
+                      showStaffDetails: widget.role != ProfileRole.patient,
+                      patientStatus: statusMap[q.id],
+                      onTap: canApply
+                          ? () => _onQuestionnaireTap(q, patientId)
+                          : null,
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
-            ],
+            ),
           );
         },
       ),
@@ -165,5 +156,67 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
     if (mounted) {
       ref.invalidate(questionnairePatientStatusProvider(patientId));
     }
+  }
+}
+
+class _QuestionnairesHeader extends StatelessWidget {
+  const _QuestionnairesHeader({
+    required this.role,
+    required this.staffPatientHeader,
+    required this.availableCount,
+  });
+
+  final ProfileRole role;
+  final AsyncValue<dynamic>? staffPatientHeader;
+  final int availableCount;
+
+  @override
+  Widget build(BuildContext context) {
+    if (role == ProfileRole.patient) {
+      return AppPageHeader(
+        title: 'Questionários',
+        subtitle:
+            'Instrumentos liberados pelo profissional para apoiar a avaliação e o acompanhamento clínico.',
+        icon: Icons.assignment_outlined,
+        metadata: [
+          Chip(label: Text('$availableCount disponíveis')),
+        ],
+      );
+    }
+
+    if (staffPatientHeader == null) {
+      return AppPageHeader(
+        title: 'Questionários do paciente',
+        subtitle:
+            'Acompanhe instrumentos disponíveis, status de resposta e detalhes de aplicação.',
+        icon: Icons.assignment_outlined,
+        metadata: [
+          Chip(label: Text('$availableCount instrumentos')),
+        ],
+      );
+    }
+
+    return staffPatientHeader!.when(
+      data: (patient) => AppPageHeader(
+        title: 'Questionários do paciente',
+        subtitle: patient != null
+            ? 'Instrumentos disponíveis para ${patient.fullName}.'
+            : 'Instrumentos disponíveis para este paciente.',
+        icon: Icons.assignment_outlined,
+        metadata: [
+          Chip(label: Text('$availableCount instrumentos')),
+        ],
+      ),
+      loading: () => const LinearProgressIndicator(),
+      error: (_, __) => AppPageHeader(
+        title: 'Questionários do paciente',
+        subtitle:
+            'Acompanhe instrumentos disponíveis, status de resposta e detalhes de aplicação.',
+        icon: Icons.assignment_outlined,
+        metadata: [
+          Chip(label: Text('$availableCount instrumentos')),
+        ],
+      ),
+    );
   }
 }

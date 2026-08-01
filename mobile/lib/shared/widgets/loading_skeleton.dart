@@ -39,11 +39,19 @@ class LoadingSkeletonList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
+    // Column em vez de ListView: funciona tanto em contexto com altura
+    // limitada quanto ilimitada (ex.: dentro de outro scrollable).
+    return Padding(
       padding: const EdgeInsets.all(AppSpacing.md),
-      itemCount: itemCount,
-      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
-      itemBuilder: (_, __) => const LoadingSkeleton.card(),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < itemCount; i++) ...[
+            if (i > 0) const SizedBox(height: AppSpacing.sm),
+            const LoadingSkeleton.card(),
+          ],
+        ],
+      ),
     );
   }
 }

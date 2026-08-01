@@ -2,7 +2,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../domain/patient_resource_access.dart';
@@ -37,15 +39,28 @@ class PatientResourcesPage extends ConsumerWidget {
             await ref.read(myReleasedResourcesProvider.notifier).refresh();
           },
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.xxxl,
+            ),
             children: [
-              Text(
-                'Materiais compartilhados pelo seu psicólogo.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+              AppPageHeader(
+                title: 'Meus recursos',
+                subtitle:
+                    'Materiais compartilhados pelo seu psicólogo para apoiar sua prática entre as sessões.',
+                icon: Icons.menu_book_outlined,
+                metadata: [
+                  Chip(label: Text('${items.length} liberados')),
+                ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.xl),
+              const AppSectionHeader(
+                title: 'Disponíveis para você',
+                subtitle: 'Abra um recurso para consultar orientação e link.',
+              ),
+              const SizedBox(height: AppSpacing.sm),
               MotionStaggered(
                 children: [
                   for (final access in items)

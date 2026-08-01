@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/errors/app_exception.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/widgets/status_chip.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/patient.dart';
 import '../domain/psychologist_option.dart';
@@ -111,16 +114,47 @@ class _EditPatientPageState extends ConsumerState<EditPatientPage> {
     final loc = MaterialLocalizations.of(context);
 
     return AppScaffold(
-      title: 'Editar paciente',
+      title: widget.patient.fullName,
       body: MotionReveal(
         child: Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.xxl,
+            ),
             children: [
+              AppPageHeader(
+                icon: Icons.person_outline,
+                title: 'Editar paciente',
+                subtitle:
+                    'Atualize dados pessoais, contexto de origem, diversidade e responsabilidade clínica.',
+                metadata: [
+                  StatusChip(
+                    label: widget.patient.fullName,
+                    tone: AppStatusTone.info,
+                    icon: Icons.badge_outlined,
+                  ),
+                  if (widget.patient.isActive)
+                    const StatusChip(
+                      label: 'Ativo',
+                      tone: AppStatusTone.completed,
+                      icon: Icons.check_circle_outline,
+                    )
+                  else
+                    const StatusChip(
+                      label: 'Inativo',
+                      tone: AppStatusTone.warning,
+                      icon: Icons.pause_circle_outline,
+                    ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
               if (updateState.hasError)
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.only(bottom: AppSpacing.md),
                   child: MaterialBanner(
                     content: Text(
                       updateState.error is AppException

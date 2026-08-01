@@ -7,7 +7,7 @@ import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_gradients.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
-import '../../../shared/widgets/auth_brand_badge.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../providers/auth_providers.dart';
@@ -49,36 +49,19 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Center(
-                        child: AuthBrandBadge(
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 220),
+                        child: AppPageHeader(
+                          key: ValueKey(_sent),
+                          title: _sent
+                              ? 'Verifique seu e-mail'
+                              : 'Recuperar senha',
+                          subtitle: _sent
+                              ? 'Se o endereço estiver cadastrado, enviaremos um link para criar uma nova senha.'
+                              : 'Informe seu e-mail para receber o link de recuperação.',
                           icon: _sent
                               ? Icons.mark_email_read_outlined
                               : Icons.lock_reset,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.lg),
-                      AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 220),
-                        child: Column(
-                          key: ValueKey(_sent),
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Text(
-                              _sent
-                                  ? 'Verifique seu e-mail'
-                                  : 'Esqueceu sua senha?',
-                              textAlign: TextAlign.center,
-                              style: Theme.of(context).textTheme.headlineSmall,
-                            ),
-                            const SizedBox(height: AppSpacing.sm),
-                            Text(
-                              _sent
-                                  ? 'Se o endereço estiver cadastrado, '
-                                      'enviaremos um link para criar uma nova senha.'
-                                  : 'Informe seu e-mail para receber o link de recuperação.',
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
                         ),
                       ),
                       const SizedBox(height: AppSpacing.xl),
@@ -99,11 +82,28 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage> {
                           },
                         ),
                         const SizedBox(height: AppSpacing.lg),
-                        FilledButton(
+                        FilledButton.icon(
                           onPressed: _submitting ? null : _submit,
-                          child: Text(
+                          icon: _submitting
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(Icons.mark_email_read_outlined),
+                          label: Text(
                             _submitting ? 'Enviando...' : 'Enviar recuperação',
                           ),
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        const AppInfoCard(
+                          title: 'Segurança',
+                          body:
+                              'Por segurança, avisaremos da mesma forma mesmo que o e-mail não esteja cadastrado.',
+                          icon: Icons.shield_outlined,
+                          tone: AppInfoCardTone.info,
                         ),
                       ],
                       const SizedBox(height: AppSpacing.sm),

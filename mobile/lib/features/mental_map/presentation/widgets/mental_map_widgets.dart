@@ -472,10 +472,18 @@ class _HubConnectionsPainter extends CustomPainter {
     for (final target in targets) {
       final direction = target.center - hubCenter;
       final distance = direction.distance;
-      if (distance <= hubRadius + target.radius) continue;
+      // Só pula em caso degenerado (nodo praticamente sobre o centro do
+      // hub) — nunca por estarem "próximos": alguns nodos deste layout
+      // ficam a menos de hubRadius+targetRadius de distância, e ainda
+      // assim precisam de uma linha (curta) até a borda do círculo.
+      if (distance < 1) continue;
       final unit = direction / distance;
       final start = hubCenter + unit * hubRadius;
-      final end = target.center - unit * target.radius;
+      // Garante que o fim da linha nunca fique mais perto do centro do
+      // que o início — quando o nodo está muito próximo, a linha encolhe
+      // até um ponto, mas nunca "volta" para dentro do círculo do hub.
+      final endDistance = (distance - target.radius).clamp(hubRadius, distance);
+      final end = hubCenter + unit * endDistance;
 
       // Curva suave em vez de linha reta — mesma organicidade da
       // constelação da marca. O ponto de controle é deslocado

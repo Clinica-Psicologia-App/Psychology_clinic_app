@@ -7,6 +7,7 @@ import '../../../core/theme/app_animations.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_gradients.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/brand_constellation.dart';
 import '../../../shared/widgets/esquema_core_logo.dart';
 import '../providers/auth_providers.dart';
 
@@ -21,6 +22,10 @@ class _SplashPageState extends ConsumerState<SplashPage>
     with TickerProviderStateMixin {
   late final AnimationController _intro;
   late final AnimationController _breathe;
+
+  /// Deriva rotacional quase imperceptível da constelação orbital do mark —
+  /// uma volta completa a cada 48s, sem reverter.
+  late final AnimationController _drift;
 
   late final Animation<double> _markScale;
   late final Animation<double> _markFade;
@@ -39,6 +44,10 @@ class _SplashPageState extends ConsumerState<SplashPage>
       vsync: this,
       duration: const Duration(milliseconds: 2600),
     )..repeat(reverse: true);
+    _drift = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 48000),
+    )..repeat();
 
     _markScale = Tween<double>(begin: 0.82, end: 1).animate(
       CurvedAnimation(
@@ -80,6 +89,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
   void dispose() {
     _intro.dispose();
     _breathe.dispose();
+    _drift.dispose();
     super.dispose();
   }
 
@@ -93,42 +103,82 @@ class _SplashPageState extends ConsumerState<SplashPage>
         decoration:
             const BoxDecoration(gradient: AppGradients.splashBackground),
         child: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.xxl),
-              child: authState.when(
-                loading: () => _SplashContent(
-                  intro: _intro,
-                  breathe: _breathe,
-                  markScale: _markScale,
-                  markFade: _markFade,
-                  glow: _glow,
-                  taglineFade: _taglineFade,
-                  taglineSlide: _taglineSlide,
-                  animate: animate,
-                ),
-                data: (_) => _SplashContent(
-                  intro: _intro,
-                  breathe: _breathe,
-                  markScale: _markScale,
-                  markFade: _markFade,
-                  glow: _glow,
-                  taglineFade: _taglineFade,
-                  taglineSlide: _taglineSlide,
-                  animate: animate,
-                ),
-                error: (e, _) => _ErrorContent(
-                  message: e is AppException
-                      ? userMessageFor(e)
-                      : 'Não foi possível restaurar a sessão.',
-                  onRetry: _bootstrap,
+          child: Stack(
+            children: [
+              if (animate) ..._buildAmbientConstellations(),
+              Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.xxl),
+                  child: authState.when(
+                    loading: () => _SplashContent(
+                      intro: _intro,
+                      breathe: _breathe,
+                      drift: _drift,
+                      markScale: _markScale,
+                      markFade: _markFade,
+                      glow: _glow,
+                      taglineFade: _taglineFade,
+                      taglineSlide: _taglineSlide,
+                      animate: animate,
+                    ),
+                    data: (_) => _SplashContent(
+                      intro: _intro,
+                      breathe: _breathe,
+                      drift: _drift,
+                      markScale: _markScale,
+                      markFade: _markFade,
+                      glow: _glow,
+                      taglineFade: _taglineFade,
+                      taglineSlide: _taglineSlide,
+                      animate: animate,
+                    ),
+                    error: (e, _) => _ErrorContent(
+                      message: e is AppException
+                          ? userMessageFor(e)
+                          : 'Não foi possível restaurar a sessão.',
+                      onRetry: _bootstrap,
+                    ),
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
         ),
       ),
     );
+  }
+
+  /// Constelações discretas nos cantos, reveladas junto da entrada — presença
+  /// ambiental que ecoa a marca sem competir com o conteúdo central.
+  List<Widget> _buildAmbientConstellations() {
+    return [
+      Positioned(
+        top: -30,
+        left: -20,
+        child: FadeTransition(
+          opacity: _taglineFade,
+          child: BrandConstellation(
+            size: const Size(160, 160),
+            color: AppColors.cyan,
+            opacity: 0.10,
+            preset: BrandConstellationPreset.scatter,
+          ),
+        ),
+      ),
+      Positioned(
+        bottom: -40,
+        right: -24,
+        child: FadeTransition(
+          opacity: _taglineFade,
+          child: BrandConstellation(
+            size: const Size(180, 180),
+            color: AppColors.purple,
+            opacity: 0.10,
+            preset: BrandConstellationPreset.path,
+          ),
+        ),
+      ),
+    ];
   }
 }
 
@@ -136,6 +186,7 @@ class _SplashContent extends StatelessWidget {
   const _SplashContent({
     required this.intro,
     required this.breathe,
+    required this.drift,
     required this.markScale,
     required this.markFade,
     required this.glow,
@@ -146,6 +197,7 @@ class _SplashContent extends StatelessWidget {
 
   final Animation<double> intro;
   final Animation<double> breathe;
+  final Animation<double> drift;
   final Animation<double> markScale;
   final Animation<double> markFade;
   final Animation<double> glow;
@@ -184,7 +236,7 @@ class _SplashContent extends StatelessWidget {
     }
 
     return AnimatedBuilder(
-      animation: Listenable.merge([intro, breathe]),
+      animation: Listenable.merge([intro, breathe, drift]),
       builder: (context, _) {
         return Column(
           mainAxisSize: MainAxisSize.min,
@@ -196,6 +248,7 @@ class _SplashContent extends StatelessWidget {
                 child: _BrandMark(
                   glow: glow.value,
                   breathe: breathe.value,
+                  drift: drift.value,
                 ),
               ),
             ),
@@ -238,13 +291,20 @@ class _SplashContent extends StatelessWidget {
 
 /// Marca com halos concêntricos animados (glow de entrada + respiração).
 class _BrandMark extends StatelessWidget {
-  const _BrandMark({required this.glow, required this.breathe});
+  const _BrandMark({
+    required this.glow,
+    required this.breathe,
+    this.drift = 0,
+  });
 
   /// 0..1 — intensidade do halo de entrada.
   final double glow;
 
   /// 0..1 — ciclo de respiração contínua.
   final double breathe;
+
+  /// 0..1 — ciclo de deriva rotacional (0 = estático).
+  final double drift;
 
   @override
   Widget build(BuildContext context) {
@@ -258,6 +318,16 @@ class _BrandMark extends StatelessWidget {
         children: [
           _Halo(size: 168, opacity: glow * 0.10 * (0.7 + breathe * 0.3)),
           _Halo(size: 132, opacity: glow * 0.16),
+          Transform.rotate(
+            angle: drift * 2 * 3.14159265,
+            child: BrandConstellation(
+              size: const Size(150, 150),
+              color: AppColors.turquoise,
+              opacity: 0.16,
+              progress: glow,
+              preset: BrandConstellationPreset.orbit,
+            ),
+          ),
           Transform.scale(
             scale: pulse,
             child: const EsquemaCoreLogo(size: 96),

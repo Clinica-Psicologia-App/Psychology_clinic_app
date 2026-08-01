@@ -669,22 +669,15 @@ class _ProfileHeader extends ConsumerWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // UserAvatar, e não um círculo com a inicial desenhado aqui: ele já
+          // resolve foto, avatar geométrico e iniciais, então a saudação
+          // reflete a identidade escolhida em vez de ignorá-la.
           Container(
-            width: 56,
-            height: 56,
-            alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.turquoise.withValues(alpha: 0.14),
               boxShadow: AppShadows.clay(AppColors.turquoise),
             ),
-            child: Text(
-              profile.fullName.trim().characters.first.toUpperCase(),
-              style: theme.textTheme.titleLarge?.copyWith(
-                color: AppColors.turquoise,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
+            child: UserAvatar(profile: profile, size: 56),
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(

@@ -10,8 +10,11 @@ import 'package:terapia_esquema/features/patient_invitations/domain/patient_invi
 import 'package:terapia_esquema/features/patient_invitations/providers/patient_invitations_providers.dart';
 import 'package:terapia_esquema/features/patients/domain/patient.dart';
 import 'package:terapia_esquema/features/patients/providers/patients_providers.dart';
+import 'package:terapia_esquema/features/profile/domain/avatar_config.dart';
+import 'package:terapia_esquema/features/profile/domain/avatar_type.dart';
 import 'package:terapia_esquema/features/profile/domain/profile_role.dart';
 import 'package:terapia_esquema/features/profile/domain/user_profile.dart';
+import 'package:terapia_esquema/features/profile/presentation/widgets/avatar_artwork.dart';
 import 'package:terapia_esquema/features/questionnaires/domain/questionnaire.dart';
 import 'package:terapia_esquema/features/questionnaires/providers/questionnaires_providers.dart';
 
@@ -57,9 +60,21 @@ void main() {
     // O cartão institucional antigo expunha o e-mail sem necessidade.
     expect(find.textContaining('psicologo@example.com'), findsNothing);
   });
+
+  // O cabeçalho já desenhou um círculo com a inicial na mão, e por isso
+  // ignorava a foto e o avatar geométrico que o usuário tinha escolhido.
+  testWidgets('cabeçalho exibe o avatar escolhido, não a inicial',
+      (tester) async {
+    await _pumpHome(tester, avatarConfig: const AvatarConfig());
+
+    expect(find.byType(AvatarArtwork), findsWidgets);
+  });
 }
 
-Future<void> _pumpHome(WidgetTester tester) async {
+Future<void> _pumpHome(
+  WidgetTester tester, {
+  AvatarConfig? avatarConfig,
+}) async {
   tester.view.physicalSize = const Size(1080, 2400);
   tester.view.devicePixelRatio = 3.0;
   addTearDown(tester.view.reset);
@@ -69,13 +84,17 @@ Future<void> _pumpHome(WidgetTester tester) async {
       overrides: [
         authControllerProvider.overrideWith(
           (ref) => _FakeAuthController(
-            const UserProfile(
+            UserProfile(
               id: 'psi-1',
               clinicId: 'clinic-1',
               role: ProfileRole.psychologist,
               fullName: 'Bruno Psicólogo',
               email: 'psicologo@example.com',
               isActive: true,
+              avatarType: avatarConfig == null
+                  ? AvatarType.initials
+                  : AvatarType.custom,
+              avatarConfig: avatarConfig,
             ),
           ),
         ),

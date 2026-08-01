@@ -37,7 +37,8 @@ class ClayCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final borderRadius = shape?.borderRadius as BorderRadius? ?? AppRadius.lgAll;
+    final borderRadius =
+        shape?.borderRadius as BorderRadius? ?? AppRadius.lgAll;
     final side = shape?.side;
     final hasBorder = side != null && side != BorderSide.none;
 
@@ -50,7 +51,14 @@ class ClayCard extends StatelessWidget {
         border: hasBorder ? Border.fromBorderSide(side) : null,
         boxShadow: AppShadows.clay(accentColor),
       ),
-      child: child,
+      // O Container pinta um fundo próprio, e isso esconderia o splash de
+      // toque de widgets Material colocados dentro (ListTile avisa sobre isso
+      // no console). Um Material transparente devolve a superfície de tinta
+      // sem alterar a cor nem a sombra do card.
+      child: Material(
+        type: MaterialType.transparency,
+        child: child,
+      ),
     );
   }
 }

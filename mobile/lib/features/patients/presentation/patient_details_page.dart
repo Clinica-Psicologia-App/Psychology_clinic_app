@@ -15,6 +15,7 @@ import '../providers/patients_providers.dart';
 import 'patient_routes.dart';
 import 'widgets/future_modules_section.dart';
 import 'widgets/patient_avatar.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class PatientDetailsPage extends ConsumerWidget {
   const PatientDetailsPage({
@@ -186,7 +187,7 @@ class _PatientDetailsBody extends StatelessWidget {
           if (role != ProfileRole.platformAdmin &&
               patient.isActive &&
               patient.accessStatus == PatientAccessStatus.noAppAccess) ...[
-            Card(
+            ClayCard(
               child: ListTile(
                 leading: const Icon(Icons.mark_email_unread_outlined),
                 title: const Text('Convidar paciente'),
@@ -209,7 +210,7 @@ class _PatientDetailsBody extends StatelessWidget {
             const SizedBox(height: 16),
           ],
           if (role != ProfileRole.platformAdmin) ...[
-            Card(
+            ClayCard(
               child: ListTile(
                 leading: const Icon(Icons.picture_as_pdf_outlined),
                 title: const Text('Gerar relatório'),
@@ -275,7 +276,7 @@ class _PatientProfileCard extends StatelessWidget {
     final theme = Theme.of(context);
     final age = _calcAge(patient.birthDate);
 
-    return Card(
+    return ClayCard(
       clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -504,7 +505,7 @@ class _InfoGroupCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
+    return ClayCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -687,7 +688,7 @@ class _PatientLifecycleCardState extends ConsumerState<_PatientLifecycleCard> {
     final isActive = patient.isActive;
     final colors = Theme.of(context).colorScheme;
 
-    return Card(
+    return ClayCard(
       color: isActive ? null : colors.errorContainer.withValues(alpha: 0.35),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -826,7 +827,7 @@ class _PatientDeleteCardState extends ConsumerState<_PatientDeleteCard> {
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
-    return Card(
+    return ClayCard(
       color: colors.errorContainer.withValues(alpha: 0.3),
       child: Padding(
         padding: const EdgeInsets.all(16),

@@ -9,6 +9,7 @@ import '../../../shared/widgets/responsive_content.dart';
 import '../domain/questionnaire_catalog_admin.dart';
 import '../providers/questionnaire_catalog_admin_providers.dart';
 import 'questionnaire_routes.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class QuestionnaireCatalogAdminPage extends ConsumerWidget {
   const QuestionnaireCatalogAdminPage({super.key});
@@ -81,7 +82,7 @@ class _QuestionnaireCard extends StatelessWidget {
       'validation' => 'Em validação',
       _ => 'Rascunho',
     };
-    return Card(
+    return ClayCard(
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),

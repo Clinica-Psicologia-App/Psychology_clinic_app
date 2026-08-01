@@ -7,6 +7,7 @@ import '../../domain/scoring_schema_result.dart';
 import '../../domain/scoring_severity.dart';
 import '../../domain/scoring_snapshot.dart';
 import '../../domain/scoring_summary.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class ScoringStructuredDisclaimerBanner extends StatelessWidget {
   const ScoringStructuredDisclaimerBanner({
@@ -19,7 +20,7 @@ class ScoringStructuredDisclaimerBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    return Card(
+    return ClayCard(
       color: colorScheme.tertiaryContainer.withValues(alpha: 0.55),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -202,7 +203,7 @@ class _SummaryCard extends StatelessWidget {
             'Máx. possível', summary.maxPossibleScore!.toStringAsFixed(0)),
     ];
     if (items.isEmpty) return const SizedBox.shrink();
-    return Card(
+    return ClayCard(
       child: Padding(
         padding: const EdgeInsets.all(12),
         child: Column(
@@ -298,7 +299,7 @@ class _SchemaCard extends StatelessWidget {
     final progress = displayScore != null ? _progress(displayScore) : null;
     final hasAdjust = effectiveScore != null;
 
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 8),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
@@ -487,7 +488,7 @@ class _DomainCard extends StatelessWidget {
     final strip = _severityColor(domain.severity, context);
     final progress = _progress();
 
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 8),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(12),
@@ -612,7 +613,7 @@ class _ScoringItemCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final schemaLabel = item.schemaName ?? item.schemaCode;
     final domainLabel = item.domainName ?? item.domainCode;
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 6),
       child: Padding(
         padding: const EdgeInsets.all(12),

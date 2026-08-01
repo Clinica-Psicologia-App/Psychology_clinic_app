@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_animations.dart';
 import '../../domain/questionnaire_question.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 /// Limite acima do qual a escala usa slider em vez de botões segmentados.
 const _segmentedThreshold = 7;
@@ -25,7 +26,7 @@ class QuestionInputWidget extends StatelessWidget {
     final theme = Theme.of(context);
 
     if (!question.answerType.supportsNumericSubmission) {
-      return Card(
+      return ClayCard(
         color: theme.colorScheme.errorContainer,
         child: Padding(
           padding: const EdgeInsets.all(16),

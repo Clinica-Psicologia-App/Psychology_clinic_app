@@ -6,6 +6,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../shared/widgets/app_motion.dart';
 import '../../../../shared/widgets/status_chip.dart';
 import '../../domain/patient.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class PatientListTile extends StatelessWidget {
   const PatientListTile({
@@ -32,7 +33,7 @@ class PatientListTile extends StatelessWidget {
       child: MotionSurface(
         onTap: onTap,
         borderRadius: AppRadius.lgAll,
-        child: Card(
+        child: ClayCard(
           child: InkWell(
             onTap: onTap,
             borderRadius: AppRadius.lgAll,

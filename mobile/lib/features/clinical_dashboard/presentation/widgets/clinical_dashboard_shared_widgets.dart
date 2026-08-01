@@ -5,6 +5,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../domain/clinical_dashboard_score_row.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 /// Seção expansível do dashboard clínico com animação suave.
 class ExpandableDashboardSection extends StatefulWidget {
@@ -39,7 +40,7 @@ class _ExpandableDashboardSectionState
     final theme = Theme.of(context);
     final duration = AppAnimations.resolve(context, AppAnimations.section);
 
-    return Card(
+    return ClayCard(
       margin: widget.margin,
       clipBehavior: Clip.antiAlias,
       child: Column(

@@ -70,15 +70,14 @@ abstract final class AppTheme {
         ),
         systemOverlayStyle: SystemUiOverlayStyle.dark,
       ),
+      // Rede de segurança para qualquer ClayCard() remanescente — o padrão do
+      // app é o claymorphism de ClayCard (sombra dupla, sem borda), então a
+      // elevação Material fica em 0 aqui para não competir com ela.
       cardTheme: CardThemeData(
-        elevation: 1,
-        shadowColor: AppColors.navy.withValues(alpha: 0.08),
+        elevation: 0,
         color: AppColors.surface,
         surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(
-          borderRadius: AppRadius.lgAll,
-          side: const BorderSide(color: AppColors.border, width: 1),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
         margin: EdgeInsets.zero,
         clipBehavior: Clip.antiAlias,
       ),

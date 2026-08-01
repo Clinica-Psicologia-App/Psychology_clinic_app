@@ -8,6 +8,7 @@ import '../../profile/domain/profile_role.dart';
 import '../domain/genogram_relationship_type.dart';
 import '../providers/genogram_providers.dart';
 import 'genogram_routes.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class GenogramRelationshipDetailPage extends ConsumerWidget {
   const GenogramRelationshipDetailPage({
@@ -71,7 +72,7 @@ class GenogramRelationshipDetailPage extends ConsumerWidget {
                         padding: const EdgeInsets.all(16),
                         children: [
                           if (relationship.isSensitive)
-                            Card(
+                            ClayCard(
                               color: theme.colorScheme.errorContainer
                                   .withValues(alpha: 0.35),
                               child: const ListTile(
@@ -79,7 +80,7 @@ class GenogramRelationshipDetailPage extends ConsumerWidget {
                                 title: Text('Conteúdo sensível'),
                               ),
                             ),
-                          Card(
+                          ClayCard(
                             child: Padding(
                               padding: const EdgeInsets.all(16),
                               child: Column(

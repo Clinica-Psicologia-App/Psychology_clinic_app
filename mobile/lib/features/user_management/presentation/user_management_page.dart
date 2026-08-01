@@ -19,6 +19,7 @@ import '../../profile/domain/profile_role.dart';
 import '../domain/clinic_user.dart';
 import '../domain/create_clinic_user_request.dart';
 import '../providers/user_management_providers.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class UserManagementPage extends ConsumerWidget {
   const UserManagementPage({super.key});
@@ -842,7 +843,7 @@ class _EmptyUsersCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return ClayCard(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xl),
         child: Column(

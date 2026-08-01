@@ -13,6 +13,7 @@ import '../../auth/providers/auth_providers.dart';
 import '../domain/profile_role.dart';
 import '../providers/profile_providers.dart';
 import 'widgets/user_avatar.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 /// Tela "Meu perfil" — dados do usuário autenticado, foto e acessos.
 /// Compartilhada pelos três papéis (admin, psicólogo e paciente).
@@ -222,7 +223,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
             ],
           ),
           const SizedBox(height: 12),
-          Card(
+          ClayCard(
             child: ListTile(
               leading: const Icon(Icons.lock_outline),
               title: const Text('Alterar senha'),
@@ -513,7 +514,7 @@ class _HeaderCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
+    return ClayCard(
       clipBehavior: Clip.antiAlias,
       child: Container(
         width: double.infinity,
@@ -660,7 +661,7 @@ class _SectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return ClayCard(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
         child: Column(

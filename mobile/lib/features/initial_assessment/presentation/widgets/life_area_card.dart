@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/life_area.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 /// Cartão de uma área de vida (Bloco 3). Coleta satisfação (1–10), um
 /// sofrimento opcional (0–10) e a resposta à pergunta guiada.
@@ -37,7 +38,7 @@ class LifeAreaCard extends StatelessWidget {
     final theme = Theme.of(context);
     final color = _scoreColor(score);
 
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
         padding: const EdgeInsets.all(16),

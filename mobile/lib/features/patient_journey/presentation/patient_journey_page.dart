@@ -10,6 +10,7 @@ import '../../../shared/widgets/app_motion.dart';
 import '../providers/patient_journey_providers.dart';
 import 'patient_journey_navigation.dart';
 import 'widgets/journey_trail.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class PatientJourneyPage extends ConsumerWidget {
   const PatientJourneyPage({super.key});
@@ -67,8 +68,7 @@ class _JourneyHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
-      elevation: 0,
+    return ClayCard(
       color: theme.colorScheme.surfaceContainerLow,
       child: Padding(
         padding: const EdgeInsets.all(16),

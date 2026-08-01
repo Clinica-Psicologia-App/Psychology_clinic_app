@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/therapy_goal.dart';
 import '../../domain/therapy_goal_status.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class TherapyGoalStatusChip extends StatelessWidget {
   const TherapyGoalStatusChip({super.key, required this.status});
@@ -61,7 +62,7 @@ class TherapyGoalListTile extends StatelessWidget {
       );
     }
 
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),

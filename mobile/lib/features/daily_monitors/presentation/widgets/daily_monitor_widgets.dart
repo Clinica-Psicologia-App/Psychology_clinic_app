@@ -2,6 +2,7 @@
 
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/daily_monitor.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class DailyMonitorListTile extends StatelessWidget {
   const DailyMonitorListTile({
@@ -23,7 +24,7 @@ class DailyMonitorListTile extends StatelessWidget {
 
     final intensity = monitor.emotionPayload.intensity;
 
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),

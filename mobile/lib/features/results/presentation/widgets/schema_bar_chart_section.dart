@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../domain/schema_activation.dart';
 import '../../domain/scoring_schema_result.dart';
 import '../../domain/scoring_snapshot.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 /// Horizontal bar chart showing all schema scores.
 /// ● = auto-activated (score ≥ 4.0), ◎ = psi-activated.
@@ -32,7 +33,7 @@ class SchemaBarChartSection extends StatelessWidget {
     final scaleMax = (scoring.scaleMax ?? 6).toDouble();
     final psiCodes = {for (final a in activations) a.schemaCode};
 
-    return Card(
+    return ClayCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

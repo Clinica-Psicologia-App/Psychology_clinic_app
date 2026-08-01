@@ -6,6 +6,7 @@ import '../../domain/schema_activation.dart';
 import '../../domain/scoring_schema_result.dart';
 import '../../domain/scoring_snapshot.dart';
 import '../../providers/results_providers.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 /// Two-column card showing activated (● auto / ◎ psi) and inactive schemas.
 /// For staff: inactive schemas are tappable to activate.
@@ -52,7 +53,7 @@ class SchemaAtivadosCard extends ConsumerWidget {
       (a, b) => (b.averageScore ?? 0).compareTo(a.averageScore ?? 0),
     );
 
-    return Card(
+    return ClayCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

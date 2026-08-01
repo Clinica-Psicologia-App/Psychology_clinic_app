@@ -22,6 +22,7 @@ import '../providers/results_providers.dart';
 import 'widgets/schema_ativados_card.dart';
 import 'widgets/schema_bar_chart_section.dart';
 import 'widgets/scoring_demo_section.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 const _supportsClinicalReview = true;
 
@@ -180,7 +181,7 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
         padding: const EdgeInsets.all(16),
         children: [
           const _SectionTitle('Resposta'),
-          Card(
+          ClayCard(
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(
@@ -232,7 +233,7 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
           if (_supportsClinicalReview &&
               widget.role != ProfileRole.patient) ...[
             const SizedBox(height: 16),
-            Card(
+            ClayCard(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
                 side: BorderSide(
@@ -406,7 +407,7 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
           ],
           if (_supportsClinicalReview && detail.requiresTherapistReview) ...[
             const SizedBox(height: 16),
-            const Card(
+            const ClayCard(
               child: ListTile(
                 leading: Icon(Icons.verified_user_outlined),
                 title: Text('Revisão clínica pendente'),
@@ -468,7 +469,7 @@ class _DetailBodyState extends ConsumerState<_DetailBody> {
                   : 'Resultados por categoria',
             ),
             if (!detail.hasResults)
-              Card(
+              ClayCard(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Text(
@@ -974,7 +975,7 @@ class _CategoryResultCard extends StatelessWidget {
     final displaySnap = snap.hasContent ? snap : ResultSnapshot.fromJson(null);
     final effectiveScore = _effectiveScore;
 
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1149,7 +1150,7 @@ class _ParentalContextCard extends StatelessWidget {
     final avg = context.summary.averageScore;
     final avgColor = _parentalSeverityColor(avg, scaleMin, scaleMax, ctx);
 
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

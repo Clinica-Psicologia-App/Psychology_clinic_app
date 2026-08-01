@@ -12,6 +12,7 @@ import '../domain/questionnaire_question.dart';
 import '../domain/questionnaire_session.dart';
 import '../providers/questionnaire_catalog_admin_providers.dart';
 import 'questionnaire_routes.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class QuestionnaireCatalogEditorPage extends ConsumerStatefulWidget {
   const QuestionnaireCatalogEditorPage({super.key, this.questionnaireId});
@@ -87,7 +88,7 @@ class _QuestionnaireCatalogEditorPageState
         if (!editable)
           _ImmutableNotice(
               status: detail!.questionnaire['clinical_status'] as String?),
-        Card(
+        ClayCard(
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Form(
@@ -220,14 +221,14 @@ class _QuestionnaireCatalogEditorPageState
           ]),
           const SizedBox(height: AppSpacing.sm),
           if (detail.questions.isEmpty)
-            const Card(
+            const ClayCard(
                 child: Padding(
                     padding: EdgeInsets.all(AppSpacing.xl),
                     child: Center(
                         child: Text(
                             'Adicione ao menos uma pergunta para publicar.'))))
           else
-            ...detail.questions.map((question) => Card(
+            ...detail.questions.map((question) => ClayCard(
                   child: ListTile(
                     leading:
                         CircleAvatar(child: Text('${question.orderIndex + 1}')),
@@ -257,7 +258,7 @@ class _QuestionnaireCatalogEditorPageState
     final approved = detail.questionnaire['clinical_status'] == 'approved';
     final editingNewVersion = editable && detail.isPublished;
 
-    return Card(
+    return ClayCard(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child:

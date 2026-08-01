@@ -11,6 +11,7 @@ import '../domain/genogram_person.dart';
 import '../providers/genogram_providers.dart';
 import 'genogram_routes.dart';
 import 'widgets/genogram_widgets.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class GenogramPersonDetailPage extends ConsumerWidget {
   const GenogramPersonDetailPage({
@@ -117,7 +118,7 @@ class _PersonDetailBody extends ConsumerWidget {
               padding: const EdgeInsets.all(16),
               children: [
                 if (person.isSensitive)
-                  Card(
+                  ClayCard(
                     color: theme.colorScheme.errorContainer
                         .withValues(alpha: 0.35),
                     child: const ListTile(
@@ -125,7 +126,7 @@ class _PersonDetailBody extends ConsumerWidget {
                       title: Text('Dados sensíveis'),
                     ),
                   ),
-                Card(
+                ClayCard(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(

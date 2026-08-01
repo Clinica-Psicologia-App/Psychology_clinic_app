@@ -14,6 +14,7 @@ import '../domain/life_area_assessment.dart';
 import '../domain/patient_basics.dart';
 import '../providers/initial_assessment_providers.dart';
 import 'widgets/life_area_card.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 /// Tela 1 do fluxo Conhecer na lente do paciente — Blocos 2 e 3.
 /// (O Bloco 1 vive na tabela `patients` e será integrado separadamente; o
@@ -287,7 +288,7 @@ class _InitialAssessmentPatientPageState
                           setState(() => _sufferings[area] = v),
                     ),
                   const SizedBox(height: 12),
-                  Card(
+                  ClayCard(
                     child: ListTile(
                       leading: const Icon(Icons.history_edu_outlined),
                       title: const Text('Minha História'),
@@ -298,7 +299,7 @@ class _InitialAssessmentPatientPageState
                           context.push(InitialAssessmentRoutes.patientHistory),
                     ),
                   ),
-                  Card(
+                  ClayCard(
                     child: ListTile(
                       leading: const Icon(Icons.family_restroom_outlined),
                       title: const Text('Minha Família'),

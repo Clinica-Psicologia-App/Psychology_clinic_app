@@ -6,6 +6,7 @@ import '../../../shared/widgets/app_scaffold.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../results/presentation/result_routes.dart';
 import '../providers/clinical_dashboard_providers.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class ClinicalDashboardComparePage extends ConsumerWidget {
   const ClinicalDashboardComparePage({
@@ -61,7 +62,7 @@ class ClinicalDashboardComparePage extends ConsumerWidget {
             padding: const EdgeInsets.all(16),
             children: [
               if (entries.isEmpty)
-                Card(
+                ClayCard(
                   child: Padding(
                     padding: const EdgeInsets.all(20),
                     child: Text(
@@ -74,7 +75,7 @@ class ClinicalDashboardComparePage extends ConsumerWidget {
                   ),
                 )
               else ...[
-                Card(
+                ClayCard(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                     child: Column(
@@ -116,7 +117,7 @@ class ClinicalDashboardComparePage extends ConsumerWidget {
                       : 'Data desconhecida';
                   final isMostRecent = index == 0;
 
-                  return Card(
+                  return ClayCard(
                     margin: const EdgeInsets.only(bottom: 8),
                     child: ListTile(
                       leading: CircleAvatar(

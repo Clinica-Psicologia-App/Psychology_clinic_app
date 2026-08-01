@@ -9,6 +9,7 @@ import '../../profile/domain/profile_role.dart';
 import '../domain/questionnaire_access_item.dart';
 import '../domain/questionnaire_professional_option.dart';
 import '../providers/questionnaires_providers.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class QuestionnaireAccessManagementPage extends ConsumerStatefulWidget {
   const QuestionnaireAccessManagementPage({super.key});
@@ -71,7 +72,7 @@ class _QuestionnaireAccessManagementPageState
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     if (!data.supportsAccessControl)
-                      Card(
+                      ClayCard(
                         color: Theme.of(context)
                             .colorScheme
                             .surfaceContainerHighest,
@@ -167,7 +168,7 @@ class _SelectionHint extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return ClayCard(
       child: ListTile(
         leading: const Icon(Icons.person_search_outlined),
         title: const Text('Selecione um profissional'),
@@ -196,7 +197,7 @@ class _AccessTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final questionnaire = item.questionnaire;
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 12),
       child: SwitchListTile(
         value: item.isEnabled,

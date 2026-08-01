@@ -2,6 +2,7 @@
 
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/patient_check_in.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class PatientCheckInListTile extends StatelessWidget {
   const PatientCheckInListTile({
@@ -25,7 +26,7 @@ class PatientCheckInListTile extends StatelessWidget {
     );
     const accent = AppColors.turquoise;
 
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 12),
       color: highlightToday ? AppColors.surfaceTintTurquoise : null,
       shape: RoundedRectangleBorder(

@@ -11,6 +11,7 @@ import '../../../shared/widgets/homologation_ui.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/clinical_report_include_options.dart';
 import '../providers/clinical_report_providers.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class ClinicalReportOptionsPage extends ConsumerStatefulWidget {
   const ClinicalReportOptionsPage({
@@ -122,7 +123,7 @@ class _ClinicalReportOptionsPageState
                     'Escolha quais módulos entram no relatório deste paciente',
               ),
               const SizedBox(height: 12),
-              Card(
+              ClayCard(
                 child: Column(
                   children: [
                     _SectionSwitch(

@@ -4,6 +4,7 @@ import '../../domain/patient_resource_access.dart';
 import '../../domain/resource_access_status.dart';
 import '../../domain/therapy_resource.dart';
 import '../../domain/therapy_resource_recommendation.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class ResourceStatusChip extends StatelessWidget {
   const ResourceStatusChip({super.key, required this.status});
@@ -57,7 +58,7 @@ class TherapyResourceTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: Icon(resource.type.icon),
@@ -116,7 +117,7 @@ class TherapyRecommendationTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final resource = recommendation.resource;
 
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 8),
       child: ListTile(
         leading: Icon(resource.type.icon),

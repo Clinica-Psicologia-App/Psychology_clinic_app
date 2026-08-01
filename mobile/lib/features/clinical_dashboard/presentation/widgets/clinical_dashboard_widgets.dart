@@ -14,6 +14,7 @@ import '../../domain/clinical_dashboard_score_row.dart';
 import '../../domain/clinical_instrument_dashboard.dart';
 import '../../domain/clinical_parental_dashboard.dart';
 import '../clinical_dashboard_routes.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class ClinicalDashboardDisclaimerBanner extends StatelessWidget {
   const ClinicalDashboardDisclaimerBanner({super.key});
@@ -64,7 +65,7 @@ class _InstrumentDashboardCardState extends State<InstrumentDashboardCard> {
     final panel = widget.panel;
     final scoresShown = _showAllScores ? panel.allScores : panel.topScores;
 
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -244,7 +245,7 @@ class ClinicalDashboardEmptyInstrumentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: const EdgeInsets.all(20),
@@ -271,7 +272,7 @@ class ClinicalDashboardHistoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
+    return ClayCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -311,7 +312,7 @@ class ClinicalDashboardFutureSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -351,7 +352,7 @@ class ClinicalCaseSummaryCard extends StatelessWidget {
             '${summary.latestCheckIn!.summaryLine}'
         : 'Nenhum check-in registrado';
 
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -438,7 +439,7 @@ class ClinicalCaseScoresCard extends StatelessWidget {
         ? 6.0
         : rows.map((row) => row.score).reduce((a, b) => a > b ? a : b);
 
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -485,7 +486,7 @@ class ClinicalCaseProblemsGoalsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -567,7 +568,7 @@ class ClinicalCaseEventsCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -717,7 +718,7 @@ class ClinicalExecutiveHeader extends StatelessWidget {
         ? summary.latestCheckIn!.summaryLine
         : 'Sem check-in';
 
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -857,7 +858,7 @@ class _PriorityMiniCard extends StatelessWidget {
         ? 6.0
         : rows.map((row) => row.score).reduce((a, b) => a > b ? a : b);
 
-    return Card(
+    return ClayCard(
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
@@ -931,7 +932,7 @@ class ClinicalRecentSignalsCard extends StatelessWidget {
     final hasProblems = summary.highlightedProblems.isNotEmpty;
     final isEmpty = !hasCheckIn && !hasEvents && !hasProblems;
 
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -1023,7 +1024,7 @@ class ClinicalDashboardCalloutsSection extends StatelessWidget {
 
     final theme = Theme.of(context);
 
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 16),
       color: theme.colorScheme.secondaryContainer.withValues(alpha: 0.35),
       child: Padding(
@@ -1112,7 +1113,7 @@ class _ParentalStylesDashboardSectionState
             .map((row) => row.score)
             .reduce((a, b) => a > b ? a : b);
 
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: const EdgeInsets.all(16),

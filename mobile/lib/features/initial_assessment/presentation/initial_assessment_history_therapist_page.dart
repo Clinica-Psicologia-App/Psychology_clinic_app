@@ -12,6 +12,7 @@ import '../domain/timeline_belief.dart';
 import '../domain/timeline_entry.dart';
 import '../providers/patient_history_providers.dart';
 import 'widgets/timeline_event_editor.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 /// Tela 2 do fluxo Conhecer na lente do terapeuta — a Linha do Tempo com os
 /// eventos do paciente (leitura) e um comentário clínico por evento.
@@ -186,7 +187,7 @@ class _InitialAssessmentHistoryTherapistPageState
       if (entry.ageAtEvent != null) '${entry.ageAtEvent} anos',
       if (entry.emotionalImpact != null) 'Impacto ${entry.emotionalImpact}/10',
     ];
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 10),
       child: Padding(
         padding: const EdgeInsets.all(14),

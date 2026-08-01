@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/patient_timeline_event.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class PatientTimelineEventTile extends StatelessWidget {
   const PatientTimelineEventTile({
@@ -50,7 +51,7 @@ class PatientTimelineEventTile extends StatelessWidget {
                 top: isFirst ? 0 : 4,
                 bottom: isLast ? 0 : 12,
               ),
-              child: Card(
+              child: ClayCard(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
                   side: BorderSide(color: accent.withValues(alpha: 0.18)),
@@ -240,14 +241,14 @@ class TimelineEventDetailBody extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       children: [
         if (event.isSensitive)
-          Card(
+          ClayCard(
             color: theme.colorScheme.errorContainer.withValues(alpha: 0.35),
             child: const ListTile(
               leading: Icon(Icons.lock_outline),
               title: Text('Evento marcado como sensível'),
             ),
           ),
-        Card(
+        ClayCard(
           child: Padding(
             padding: const EdgeInsets.all(16),
             child: Column(

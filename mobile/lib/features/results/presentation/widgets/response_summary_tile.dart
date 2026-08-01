@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/patient_response_summary.dart';
 import '../../domain/questionnaire_response_status.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class ResponseSummaryTile extends StatelessWidget {
   const ResponseSummaryTile({
@@ -23,7 +24,7 @@ class ResponseSummaryTile extends StatelessWidget {
         : null;
     final accent = _statusColor(summary.status);
 
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),

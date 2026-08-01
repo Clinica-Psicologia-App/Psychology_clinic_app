@@ -8,6 +8,7 @@ import '../../profile/domain/profile_role.dart';
 import '../providers/patient_check_ins_providers.dart';
 import 'patient_check_in_routes.dart';
 import 'widgets/patient_check_in_widgets.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class PatientCheckInDetailPage extends ConsumerWidget {
   const PatientCheckInDetailPage({
@@ -70,7 +71,7 @@ class PatientCheckInDetailPage extends ConsumerWidget {
                     padding: const EdgeInsets.all(16),
                     children: [
                       if (checkIn.isToday)
-                        Card(
+                        ClayCard(
                           color: theme.colorScheme.primaryContainer
                               .withValues(alpha: 0.4),
                           child: const ListTile(

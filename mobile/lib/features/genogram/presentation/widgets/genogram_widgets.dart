@@ -4,13 +4,14 @@ import '../../../../core/theme/app_colors.dart';
 import '../../domain/genogram_data.dart';
 import '../../domain/genogram_person.dart';
 import '../../domain/genogram_relationship.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class GenogramGraphicNotice extends StatelessWidget {
   const GenogramGraphicNotice({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return ClayCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -42,7 +43,7 @@ class GenogramSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return ClayCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
@@ -143,7 +144,7 @@ class GenogramPersonTile extends StatelessWidget {
     final theme = Theme.of(context);
     final sensitive = person.isSensitive;
 
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 8),
       color: sensitive
           ? theme.colorScheme.errorContainer.withValues(alpha: 0.25)
@@ -196,7 +197,7 @@ class GenogramRelationshipTile extends StatelessWidget {
     final aName = data.personNameById(relationship.personAId);
     final bName = data.personNameById(relationship.personBId);
 
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 8),
       color: sensitive
           ? theme.colorScheme.errorContainer.withValues(alpha: 0.25)

@@ -15,6 +15,7 @@ import '../domain/create_patient_request.dart';
 import '../domain/psychologist_option.dart';
 import '../providers/patients_providers.dart';
 import 'patient_routes.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class CreatePatientPage extends ConsumerStatefulWidget {
   const CreatePatientPage({super.key, required this.role});
@@ -421,8 +422,7 @@ class _CreatePatientPageState extends ConsumerState<CreatePatientPage> {
                           ),
                         )
                       else if (profile != null)
-                        Card(
-                          elevation: 0,
+                        ClayCard(
                           color: Theme.of(context)
                               .colorScheme
                               .surfaceContainerHighest,

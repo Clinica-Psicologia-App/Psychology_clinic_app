@@ -11,6 +11,7 @@ import '../domain/genogram_person_entry.dart';
 import '../domain/patient_family.dart';
 import '../providers/patient_family_providers.dart';
 import 'widgets/genogram_person_editor.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 /// Tela 3 do fluxo Conhecer na lente do paciente — "Minha Família": pessoas do
 /// genograma + clima familiar + padrões transgeracionais.
@@ -157,7 +158,7 @@ class _PersonCard extends StatelessWidget {
         'Presença ${person.emotionalPresence}/10',
     ];
 
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 10),
       child: InkWell(
         onTap: () => showGenogramPersonEditor(

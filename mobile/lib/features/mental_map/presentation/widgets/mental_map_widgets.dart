@@ -10,6 +10,7 @@ import '../mental_map_node_state.dart';
 import '../../domain/mental_map_case_summary.dart';
 import '../../domain/mental_map_node_detail.dart';
 import '../../domain/mental_map_validation_summary.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 /// Converte a severityColorKey do backend para uma cor concreta de UI.
 Color _resolveSeverityDotColor(String? key, Color fallback) =>
@@ -57,7 +58,7 @@ class MentalMapSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -317,7 +318,7 @@ class MentalMapVisualHub extends StatelessWidget {
         ),
     ];
 
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: const EdgeInsets.all(16),

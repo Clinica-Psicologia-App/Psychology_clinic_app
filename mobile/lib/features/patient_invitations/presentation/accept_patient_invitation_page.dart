@@ -19,6 +19,7 @@ import '../../../shared/widgets/homologation_ui.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../domain/accept_patient_invitation_request.dart';
 import '../providers/patient_invitations_providers.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class AcceptPatientInvitationPage extends ConsumerStatefulWidget {
   const AcceptPatientInvitationPage({
@@ -629,7 +630,7 @@ class _InvitationErrorPanel extends StatelessWidget {
 
     final (icon, title) = _resolvePresentation(message);
 
-    return Card(
+    return ClayCard(
       color:
           Theme.of(context).colorScheme.errorContainer.withValues(alpha: 0.45),
       child: Padding(

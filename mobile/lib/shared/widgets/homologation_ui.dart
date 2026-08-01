@@ -5,6 +5,7 @@ import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_spacing.dart';
 import 'brand_constellation.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 /// Banner informativo para telas em validação clínica (homologação).
 class HomologationInfoBanner extends StatelessWidget {
@@ -23,8 +24,7 @@ class HomologationInfoBanner extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
-      elevation: 0,
+    return ClayCard(
       color: AppColors.infoContainer,
       shape: RoundedRectangleBorder(
         borderRadius: AppRadius.lgAll,

@@ -5,6 +5,7 @@ import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_spacing.dart';
 import 'app_motion.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 /// Card padronizado para atalhos de módulos clínicos.
 class ClinicalModuleCard extends StatelessWidget {
@@ -35,7 +36,7 @@ class ClinicalModuleCard extends StatelessWidget {
     return MotionSurface(
       onTap: enabled ? onTap : null,
       borderRadius: AppRadius.lgAll,
-      child: Card(
+      child: ClayCard(
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: enabled ? onTap : null,

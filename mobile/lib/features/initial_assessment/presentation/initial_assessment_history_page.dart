@@ -11,6 +11,7 @@ import '../domain/timeline_belief.dart';
 import '../domain/timeline_entry.dart';
 import '../providers/patient_history_providers.dart';
 import 'widgets/timeline_event_editor.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 /// Tela 2 do fluxo Conhecer na lente do paciente — "Minha História",
 /// agrupada pelos capítulos da vida.
@@ -147,7 +148,7 @@ class _EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 10),
       child: InkWell(
         onTap: () => showTimelineEventEditor(

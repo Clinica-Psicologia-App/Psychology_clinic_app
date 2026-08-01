@@ -11,6 +11,7 @@ import '../../domain/mental_map_goal_summary.dart';
 import '../../domain/mental_map_problem_summary.dart';
 import '../../domain/mental_map_therapy_plan.dart';
 import '../mental_map_navigation_targets.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 enum MentalMapFormulationTab { nucleus, history, plan }
 
@@ -40,7 +41,7 @@ class _MentalMapFormulationTabsState extends State<MentalMapFormulationTabs> {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: const EdgeInsets.all(16),

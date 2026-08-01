@@ -5,6 +5,7 @@ import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/personality_reference_content.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class StaffPersonalityReferencePage extends StatelessWidget {
   const StaffPersonalityReferencePage({
@@ -27,7 +28,7 @@ class StaffPersonalityReferencePage extends StatelessWidget {
             children: [
               // Header com identidade do módulo: tint roxo + ícone em box
               // gradiente, no mesmo padrão dos demais módulos clínicos.
-              Card(
+              ClayCard(
                 color: AppColors.surfaceTintPurple,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -97,7 +98,7 @@ class StaffPersonalityReferencePage extends StatelessWidget {
                 _FactorCard(factor: factor),
                 const SizedBox(height: 16),
               ],
-              Card(
+              ClayCard(
                 color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -122,7 +123,7 @@ class _FactorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return ClayCard(
       clipBehavior: Clip.antiAlias,
       child: IntrinsicHeight(
         child: Row(

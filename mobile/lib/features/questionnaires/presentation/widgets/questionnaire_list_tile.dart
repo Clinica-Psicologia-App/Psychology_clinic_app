@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../domain/questionnaire.dart';
 import '../../domain/questionnaire_patient_status.dart';
 import '../../domain/reference_period.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class QuestionnaireListTile extends StatelessWidget {
   const QuestionnaireListTile({
@@ -65,7 +66,7 @@ class QuestionnaireListTile extends StatelessWidget {
         ),
     ];
 
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         enabled: enabled,

@@ -12,6 +12,7 @@ import '../domain/patient_response_summary.dart';
 import '../providers/results_providers.dart';
 import 'result_routes.dart';
 import 'widgets/response_summary_tile.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class PatientResultsPage extends ConsumerWidget {
   const PatientResultsPage({
@@ -57,7 +58,7 @@ class PatientResultsPage extends ConsumerWidget {
           if (isPatient)
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: Card(
+              child: ClayCard(
                 child: ListTile(
                   leading: const Icon(Icons.analytics_outlined),
                   title: const Text('Dashboard clínico'),

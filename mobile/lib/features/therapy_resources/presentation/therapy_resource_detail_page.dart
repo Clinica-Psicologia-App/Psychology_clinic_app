@@ -12,6 +12,7 @@ import '../providers/therapy_resources_providers.dart';
 import 'therapy_resource_routes.dart';
 import 'utils/open_resource_url.dart';
 import 'widgets/therapy_resource_widgets.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class TherapyResourceDetailPage extends ConsumerStatefulWidget {
   const TherapyResourceDetailPage({
@@ -271,7 +272,7 @@ class _DetailBody extends StatelessWidget {
           const SizedBox(height: 16),
           if (resource.description != null &&
               resource.description!.trim().isNotEmpty)
-            Card(
+            ClayCard(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(resource.description!),

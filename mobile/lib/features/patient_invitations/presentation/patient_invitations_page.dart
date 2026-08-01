@@ -12,6 +12,7 @@ import '../domain/patient_invitation.dart';
 import '../domain/patient_invitation_status.dart';
 import '../providers/patient_invitations_providers.dart';
 import 'patient_invitation_routes.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class PatientInvitationsPage extends ConsumerStatefulWidget {
   const PatientInvitationsPage({
@@ -123,7 +124,7 @@ class _RecentInvitationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return ClayCard(
       color: Theme.of(context).colorScheme.surfaceContainerHighest,
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -180,7 +181,7 @@ class _InvitationTile extends StatelessWidget {
       PatientInvitationStatus.revoked => colors.outline,
     };
 
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
         leading: CircleAvatar(

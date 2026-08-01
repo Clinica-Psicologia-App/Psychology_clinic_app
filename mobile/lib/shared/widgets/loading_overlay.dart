@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class LoadingOverlay extends StatelessWidget {
   const LoadingOverlay({super.key, required this.message});
@@ -10,7 +11,7 @@ class LoadingOverlay extends StatelessWidget {
     return ColoredBox(
       color: Colors.black26,
       child: Center(
-        child: Card(
+        child: ClayCard(
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(

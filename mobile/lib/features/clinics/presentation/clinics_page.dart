@@ -12,6 +12,7 @@ import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../domain/clinic_summary.dart';
 import '../providers/clinics_providers.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class ClinicsPage extends ConsumerWidget {
   const ClinicsPage({super.key});
@@ -311,7 +312,7 @@ class _ClinicCard extends StatelessWidget {
 
     return MotionSurface(
       borderRadius: AppRadius.lgAll,
-      child: Card(
+      child: ClayCard(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Row(
@@ -686,7 +687,7 @@ class _EmptyClinicsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Card(
+    return const ClayCard(
       child: Padding(
         padding: EdgeInsets.all(AppSpacing.xl),
         child: Center(child: Text('Nenhuma clínica encontrada.')),

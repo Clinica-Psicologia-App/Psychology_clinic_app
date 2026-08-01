@@ -15,6 +15,7 @@ import '../domain/questionnaire_response_context.dart';
 import '../domain/reference_period.dart';
 import '../providers/questionnaires_providers.dart';
 import 'questionnaire_routes.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 const _roleEntries = [
   ('mae', 'Mãe'),
@@ -89,7 +90,7 @@ class _QuestionnaireIntroPageState
     final enabled = _caregiverEnabled[index];
     final selectedRole = _caregiverRole[index];
 
-    return Card(
+    return ClayCard(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -231,7 +232,7 @@ class _QuestionnaireIntroPageState
                     ],
                     if (canStart && orientation != null) ...[
                       const SizedBox(height: 24),
-                      Card(
+                      ClayCard(
                         child: Padding(
                           padding: const EdgeInsets.all(16),
                           child: Row(
@@ -257,7 +258,7 @@ class _QuestionnaireIntroPageState
                         widget.questionnaire.patientSpecificGuidance !=
                             null) ...[
                       const SizedBox(height: 16),
-                      Card(
+                      ClayCard(
                         color: theme.colorScheme.primaryContainer,
                         child: Padding(
                           padding: const EdgeInsets.all(16),

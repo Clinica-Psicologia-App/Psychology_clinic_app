@@ -8,6 +8,7 @@ import '../../../shared/widgets/brand_constellation.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/finish_questionnaire_result.dart';
 import 'questionnaire_routes.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class QuestionnaireSuccessPage extends StatefulWidget {
   const QuestionnaireSuccessPage({
@@ -119,7 +120,7 @@ class _QuestionnaireSuccessPageState extends State<QuestionnaireSuccessPage>
             const SizedBox(height: 24),
             MotionReveal(
               delay: const Duration(milliseconds: 340),
-              child: Card(
+              child: ClayCard(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
                   child: Row(

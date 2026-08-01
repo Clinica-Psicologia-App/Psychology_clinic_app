@@ -10,6 +10,7 @@ import '../domain/genogram_person_entry.dart';
 import '../domain/patient_family.dart';
 import '../providers/patient_family_providers.dart';
 import 'widgets/genogram_person_editor.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 /// Tela 3 do fluxo Conhecer na lente do terapeuta — painéis clínicos do
 /// genograma (figuras de apego, vínculos, necessidades, clima e padrões) com
@@ -148,7 +149,7 @@ class _InitialAssessmentFamilyTherapistPageState
     final caregivers = family.caregivers;
     if (caregivers.isEmpty) return const SizedBox.shrink();
     final theme = Theme.of(context);
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 12),
       color: AppColors.surfaceTintTurquoise,
       child: Padding(
@@ -180,7 +181,7 @@ class _InitialAssessmentFamilyTherapistPageState
 
   Widget _personCard(BuildContext context, GenogramPersonEntry p) {
     final theme = Theme.of(context);
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 10),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -278,7 +279,7 @@ class _InitialAssessmentFamilyTherapistPageState
     final patterns = family.context.transgenerationalPatterns;
     if (climate.isEmpty && patterns.isEmpty) return const SizedBox.shrink();
 
-    return Card(
+    return ClayCard(
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(

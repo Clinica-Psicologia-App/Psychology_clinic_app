@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/patient_problem.dart';
 import '../../domain/patient_problem_status.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class PatientProblemStatusChip extends StatelessWidget {
   const PatientProblemStatusChip({super.key, required this.status});
@@ -83,7 +84,7 @@ class PatientProblemListTile extends StatelessWidget {
       subtitleParts.add(problem.description!.trim());
     }
 
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),

@@ -9,6 +9,7 @@ import '../../profile/domain/profile_role.dart';
 import '../providers/therapy_resources_providers.dart';
 import 'therapy_resource_routes.dart';
 import 'widgets/therapy_resource_widgets.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class TherapyResourcesPage extends ConsumerWidget {
   const TherapyResourcesPage({
@@ -95,7 +96,7 @@ class TherapyResourcesPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 recommendationsAsync.when(
-                  loading: () => const Card(
+                  loading: () => const ClayCard(
                     child: Padding(
                       padding: EdgeInsets.all(16),
                       child: LinearProgressIndicator(),
@@ -104,7 +105,7 @@ class TherapyResourcesPage extends ConsumerWidget {
                   error: (_, __) => const SizedBox.shrink(),
                   data: (recommendations) {
                     if (recommendations.isEmpty) {
-                      return const Card(
+                      return const ClayCard(
                         child: Padding(
                           padding: EdgeInsets.all(16),
                           child: Text(
@@ -150,7 +151,7 @@ class TherapyResourcesPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 if (activeAssigned.isEmpty)
-                  const Card(
+                  const ClayCard(
                     child: Padding(
                       padding: EdgeInsets.all(16),
                       child: Text('Nenhum recurso liberado ainda.'),
@@ -200,7 +201,7 @@ class TherapyResourcesPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 if (bundle.library.isEmpty)
-                  const Card(
+                  const ClayCard(
                     child: Padding(
                       padding: EdgeInsets.all(16),
                       child: Text('Nenhum recurso cadastrado na clínica.'),

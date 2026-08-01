@@ -12,6 +12,7 @@ import '../domain/functioning_level.dart';
 import '../domain/initial_assessment.dart';
 import '../domain/life_area.dart';
 import '../providers/initial_assessment_providers.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 /// Tela 1 do fluxo Conhecer na lente do terapeuta — leitura das respostas do
 /// paciente + campos clínicos (Bloco 1 privado, Bloco 2 clínico, comentários
@@ -239,7 +240,7 @@ class _InitialAssessmentTherapistPageState
                   _subheader(context, 'Prioridades terapêuticas'),
                   _field(_priorities, 'Prioridades terapêuticas'),
                   const SizedBox(height: 12),
-                  Card(
+                  ClayCard(
                     child: ListTile(
                       leading: const Icon(Icons.timeline_outlined),
                       title: const Text('Linha do Tempo'),
@@ -254,7 +255,7 @@ class _InitialAssessmentTherapistPageState
                       ),
                     ),
                   ),
-                  Card(
+                  ClayCard(
                     child: ListTile(
                       leading: const Icon(Icons.family_restroom_outlined),
                       title: const Text('Genograma emocional'),
@@ -301,7 +302,7 @@ class _InitialAssessmentTherapistPageState
     FunctioningGroup group,
   ) {
     final areas = kLifeAreasInOrder.where((a) => a.group == group).toList();
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
         padding: const EdgeInsets.all(14),
@@ -448,7 +449,7 @@ class _PatientIntakeCard extends StatelessWidget {
 
     if (rows.isEmpty) return const SizedBox.shrink();
 
-    return Card(
+    return ClayCard(
       margin: const EdgeInsets.only(bottom: 12),
       color: AppColors.surfaceTintBlue,
       child: Padding(

@@ -1,4 +1,5 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart'
+    show defaultTargetPlatform, kIsWeb, TargetPlatform;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -80,6 +81,32 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
       ..addListener(_checkDirty);
     _phone = TextEditingController(text: widget.profile.phone ?? '')
       ..addListener(_checkDirty);
+    _recoverLostPhoto();
+  }
+
+  /// Recupera uma foto escolhida em uma sessão que morreu no meio do caminho.
+  ///
+  /// No Android o sistema pode destruir a Activity enquanto o seletor de fotos
+  /// está aberto (é o caso comum sob pressão de memória). Quando isso acontece,
+  /// o `await pickImage(...)` nunca completa — quem esperava por ele deixou de
+  /// existir —, então a foto escolhida se perde sem erro algum: nenhum upload,
+  /// nenhuma mensagem, nada. O `image_picker` guarda esse resultado e exige que
+  /// o app venha buscá-lo explicitamente na volta.
+  ///
+  /// Só existe no Android; nas demais plataformas o método não se aplica.
+  Future<void> _recoverLostPhoto() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) return;
+
+    try {
+      final lost = await ImagePicker().retrieveLostData();
+      if (lost.isEmpty || lost.file == null || !mounted) return;
+
+      await _uploadPickedFile(lost.file!);
+    } catch (e) {
+      // Recuperação é oportunista: se falhar, a tela segue utilizável e o
+      // usuário pode escolher a foto de novo.
+      if (mounted) showErrorBanner(context, e);
+    }
   }
 
   @override
@@ -415,7 +442,17 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
       );
       if (picked == null || !mounted) return;
 
-      setState(() => _busyAvatar = true);
+      await _uploadPickedFile(picked);
+    } catch (e) {
+      if (mounted) showErrorBanner(context, e);
+    }
+  }
+
+  /// Envia o arquivo escolhido, venha ele do seletor agora ou de uma sessão
+  /// anterior recuperada por [_recoverLostPhoto].
+  Future<void> _uploadPickedFile(XFile picked) async {
+    setState(() => _busyAvatar = true);
+    try {
       final bytes = await picked.readAsBytes();
 
       await ref.read(editProfileProvider.notifier).changePhoto(

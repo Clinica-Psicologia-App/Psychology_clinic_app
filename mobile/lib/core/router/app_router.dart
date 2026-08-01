@@ -40,6 +40,7 @@ import '../../features/patient_invitations/presentation/create_patient_invitatio
 import '../../features/patient_invitations/presentation/patient_invitation_routes.dart';
 import '../../features/patient_invitations/presentation/patient_invitations_page.dart';
 import '../../features/profile/domain/profile_role.dart';
+import '../../features/profile/presentation/avatar_editor_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
 import '../../features/profile/presentation/profile_routes.dart';
 import '../../features/questionnaires/presentation/questionnaire_route_helpers.dart';
@@ -180,6 +181,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: ProfileRoutes.me,
         builder: (_, __) => const ProfilePage(),
+      ),
+      GoRoute(
+        path: ProfileRoutes.avatarEditor,
+        builder: (_, __) => const AvatarEditorPage(),
       ),
       GoRoute(
         path: PatientInvitationRoutes.accept,

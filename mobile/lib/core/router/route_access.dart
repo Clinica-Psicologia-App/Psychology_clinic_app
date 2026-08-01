@@ -16,6 +16,7 @@ abstract final class RouteAccess {
   /// Rotas autenticadas comuns a todos os papéis (não têm prefixo de role).
   static const sharedPaths = {
     '/profile',
+    '/profile/avatar',
   };
 
   static bool isPublic(String location) => publicPaths.contains(location);

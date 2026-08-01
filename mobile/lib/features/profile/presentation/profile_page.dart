@@ -13,6 +13,7 @@ import '../../../shared/widgets/error_banner.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../domain/profile_role.dart';
 import '../providers/profile_providers.dart';
+import 'profile_routes.dart';
 import 'widgets/user_avatar.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
@@ -339,6 +340,8 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
     final p = widget.profile;
     final hasPhoto = (p.photoUrl ?? '').isNotEmpty;
     final showingPhoto = p.effectiveAvatarType == AvatarType.photo;
+    final hasAvatar = p.avatarConfig != null;
+    final showingAvatar = p.effectiveAvatarType == AvatarType.custom;
     // A câmera não está disponível no navegador; o seletor de arquivos do
     // image_picker cobre os dois casos na web.
     final cameraAvailable = !kIsWeb;
@@ -361,13 +364,27 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                 title: const Text('Tirar uma foto'),
                 onTap: () => Navigator.of(ctx).pop('camera'),
               ),
+            // O avatar geométrico não some ao trocar para foto (e vice-versa):
+            // ambos ficam guardados, então a alternância não obriga a refazer
+            // nada. Só aparece o que faz sentido no estado atual.
+            ListTile(
+              leading: const Icon(Icons.face_retouching_natural_outlined),
+              title: Text(hasAvatar ? 'Editar meu avatar' : 'Criar meu avatar'),
+              onTap: () => Navigator.of(ctx).pop('avatar_editor'),
+            ),
+            if (hasAvatar && !showingAvatar)
+              ListTile(
+                leading: const Icon(Icons.emoji_emotions_outlined),
+                title: const Text('Usar avatar salvo'),
+                onTap: () => Navigator.of(ctx).pop('use_avatar'),
+              ),
             if (hasPhoto && !showingPhoto)
               ListTile(
                 leading: const Icon(Icons.image_outlined),
                 title: const Text('Usar foto salva'),
                 onTap: () => Navigator.of(ctx).pop('use_photo'),
               ),
-            if (showingPhoto)
+            if (showingPhoto || showingAvatar)
               ListTile(
                 leading: const Icon(Icons.abc_outlined),
                 title: const Text('Usar minhas iniciais'),
@@ -394,6 +411,15 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
     switch (action) {
       case 'remove':
         await _removePhoto();
+      case 'avatar_editor':
+        await context.push(ProfileRoutes.avatarEditor);
+      case 'use_avatar':
+        await _runAvatarAction(
+          () => ref
+              .read(editProfileProvider.notifier)
+              .selectAvatarType(AvatarType.custom),
+          'Avatar reativado.',
+        );
       case 'initials':
         await _runAvatarAction(
           () => ref.read(editProfileProvider.notifier).useInitials(),

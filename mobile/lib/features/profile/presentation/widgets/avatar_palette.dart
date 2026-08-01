@@ -1,0 +1,156 @@
+import 'package:flutter/material.dart';
+
+import '../../../../core/theme/app_colors.dart';
+import '../../domain/avatar_config.dart';
+
+/// Tradução das opções do avatar em cores concretas.
+///
+/// O domínio guarda apenas nomes ([AvatarPaletteColor.turquoise], …) para
+/// permanecer Dart puro e para que um avatar salvo hoje continue legível se a
+/// paleta do Design System mudar de tom amanhã. A ponte entre nome e cor vive
+/// aqui, na apresentação, e é o único lugar que conhece valores hex.
+abstract final class AvatarPalette {
+  /// Cor de acento escolhida pelo usuário (roupa e fundo).
+  static Color of(AvatarPaletteColor color) {
+    return switch (color) {
+      AvatarPaletteColor.turquoise => AppColors.turquoise,
+      AvatarPaletteColor.cyan => AppColors.cyan,
+      AvatarPaletteColor.blue => AppColors.blue,
+      AvatarPaletteColor.purple => AppColors.purple,
+      AvatarPaletteColor.navy => AppColors.navy,
+      AvatarPaletteColor.rose => const Color(0xFFE05A79),
+      AvatarPaletteColor.amber => const Color(0xFFE0912B),
+      AvatarPaletteColor.slate => const Color(0xFF64748B),
+    };
+  }
+
+  static String label(AvatarPaletteColor color) {
+    return switch (color) {
+      AvatarPaletteColor.turquoise => 'Turquesa',
+      AvatarPaletteColor.cyan => 'Ciano',
+      AvatarPaletteColor.blue => 'Azul',
+      AvatarPaletteColor.purple => 'Roxo',
+      AvatarPaletteColor.navy => 'Marinho',
+      AvatarPaletteColor.rose => 'Rosa',
+      AvatarPaletteColor.amber => 'Âmbar',
+      AvatarPaletteColor.slate => 'Cinza',
+    };
+  }
+
+  /// Tons de pele. A escala é ampla de propósito: a spec pede opções
+  /// inclusivas, e nenhuma característica é restringida por papel ou gênero.
+  static Color skin(AvatarSkinTone tone) {
+    return switch (tone) {
+      AvatarSkinTone.porcelain => const Color(0xFFF7DFD0),
+      AvatarSkinTone.light => const Color(0xFFEFC9AC),
+      AvatarSkinTone.medium => const Color(0xFFD9A576),
+      AvatarSkinTone.tan => const Color(0xFFB77E4F),
+      AvatarSkinTone.brown => const Color(0xFF8A5533),
+      AvatarSkinTone.deep => const Color(0xFF5C3620),
+    };
+  }
+
+  static String skinLabel(AvatarSkinTone tone) {
+    return switch (tone) {
+      AvatarSkinTone.porcelain => 'Porcelana',
+      AvatarSkinTone.light => 'Clara',
+      AvatarSkinTone.medium => 'Média',
+      AvatarSkinTone.tan => 'Morena',
+      AvatarSkinTone.brown => 'Castanha',
+      AvatarSkinTone.deep => 'Escura',
+    };
+  }
+
+  static Color hair(AvatarHairColor color) {
+    return switch (color) {
+      AvatarHairColor.black => const Color(0xFF1B1B1F),
+      AvatarHairColor.darkBrown => const Color(0xFF3B2417),
+      AvatarHairColor.brown => const Color(0xFF6A4227),
+      AvatarHairColor.lightBrown => const Color(0xFF98653C),
+      AvatarHairColor.blonde => const Color(0xFFD9AE63),
+      AvatarHairColor.auburn => const Color(0xFF8C3A24),
+      AvatarHairColor.gray => const Color(0xFF9AA0A6),
+      AvatarHairColor.white => const Color(0xFFE8E8E8),
+    };
+  }
+
+  static String hairLabel(AvatarHairColor color) {
+    return switch (color) {
+      AvatarHairColor.black => 'Preto',
+      AvatarHairColor.darkBrown => 'Castanho escuro',
+      AvatarHairColor.brown => 'Castanho',
+      AvatarHairColor.lightBrown => 'Castanho claro',
+      AvatarHairColor.blonde => 'Loiro',
+      AvatarHairColor.auburn => 'Ruivo',
+      AvatarHairColor.gray => 'Grisalho',
+      AvatarHairColor.white => 'Branco',
+    };
+  }
+
+  // ── Rótulos das demais opções ──────────────────────────────────────────────
+
+  static String hairStyleLabel(AvatarHairStyle style) {
+    return switch (style) {
+      AvatarHairStyle.none => 'Sem cabelo',
+      AvatarHairStyle.buzz => 'Raspado',
+      AvatarHairStyle.short => 'Curto',
+      AvatarHairStyle.shortCurly => 'Curto cacheado',
+      AvatarHairStyle.medium => 'Médio',
+      AvatarHairStyle.long => 'Longo',
+      AvatarHairStyle.longCurly => 'Longo cacheado',
+      AvatarHairStyle.bun => 'Coque',
+      AvatarHairStyle.ponytail => 'Rabo de cavalo',
+      AvatarHairStyle.afro => 'Black power',
+    };
+  }
+
+  static String eyeLabel(AvatarEyeStyle style) {
+    return switch (style) {
+      AvatarEyeStyle.round => 'Redondos',
+      AvatarEyeStyle.almond => 'Amendoados',
+      AvatarEyeStyle.narrow => 'Estreitos',
+      AvatarEyeStyle.wide => 'Grandes',
+      AvatarEyeStyle.happy => 'Sorridentes',
+    };
+  }
+
+  static String eyebrowLabel(AvatarEyebrowStyle style) {
+    return switch (style) {
+      AvatarEyebrowStyle.straight => 'Retas',
+      AvatarEyebrowStyle.arched => 'Arqueadas',
+      AvatarEyebrowStyle.thick => 'Grossas',
+      AvatarEyebrowStyle.thin => 'Finas',
+      AvatarEyebrowStyle.raised => 'Erguidas',
+    };
+  }
+
+  static String facialHairLabel(AvatarFacialHair style) {
+    return switch (style) {
+      AvatarFacialHair.none => 'Sem barba',
+      AvatarFacialHair.stubble => 'Por fazer',
+      AvatarFacialHair.mustache => 'Bigode',
+      AvatarFacialHair.goatee => 'Cavanhaque',
+      AvatarFacialHair.shortBeard => 'Barba curta',
+      AvatarFacialHair.fullBeard => 'Barba cheia',
+    };
+  }
+
+  static String glassesLabel(AvatarGlasses style) {
+    return switch (style) {
+      AvatarGlasses.none => 'Sem óculos',
+      AvatarGlasses.rounded => 'Redondos',
+      AvatarGlasses.square => 'Quadrados',
+      AvatarGlasses.halfRim => 'Meia armação',
+    };
+  }
+
+  static String outfitLabel(AvatarOutfit outfit) {
+    return switch (outfit) {
+      AvatarOutfit.crewneck => 'Camiseta',
+      AvatarOutfit.collared => 'Camisa social',
+      AvatarOutfit.vNeck => 'Gola V',
+      AvatarOutfit.blazer => 'Blazer',
+      AvatarOutfit.hoodie => 'Moletom',
+    };
+  }
+}

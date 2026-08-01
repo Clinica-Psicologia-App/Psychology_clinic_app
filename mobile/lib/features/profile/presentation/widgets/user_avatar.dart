@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../domain/avatar_type.dart';
 import '../../domain/profile_role.dart';
 import '../../domain/user_profile.dart';
+import 'avatar_artwork.dart';
 
 /// Avatar do usuário autenticado.
 ///
@@ -58,6 +59,15 @@ class UserAvatar extends StatelessWidget {
   }
 
   Widget _content() {
+    // O avatar geométrico é desenhado no cliente a partir de `avatarConfig`:
+    // não há arquivo no Storage, nem rede envolvida, então também não há
+    // estado de carregamento nem de erro para tratar aqui.
+    if (profile.effectiveAvatarType == AvatarType.custom) {
+      final config = profile.avatarConfig;
+      if (config != null) return AvatarArtwork(config: config, size: size);
+      return _initials();
+    }
+
     if (profile.effectiveAvatarType == AvatarType.photo) {
       return Image.network(
         profile.photoUrl!,

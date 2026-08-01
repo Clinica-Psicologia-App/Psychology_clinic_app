@@ -2,7 +2,9 @@
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
+import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_spacing.dart';
+import 'brand_constellation.dart';
 
 /// Banner informativo para telas em validação clínica (homologação).
 class HomologationInfoBanner extends StatelessWidget {
@@ -90,14 +92,32 @@ class HomologationEmptyPanel extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: AppColors.surfaceMuted,
-              borderRadius: AppRadius.lgAll,
+          // Card elevado com constelação orbital ao redor do ícone —
+          // ecoa a linguagem de mapa em qualquer estado vazio do app.
+          SizedBox(
+            width: 84,
+            height: 84,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Container(
+                  width: 84,
+                  height: 84,
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    shape: BoxShape.circle,
+                    boxShadow: AppShadows.card,
+                  ),
+                ),
+                BrandConstellation(
+                  size: const Size(84, 84),
+                  color: AppColors.turquoise,
+                  opacity: 0.4,
+                  preset: BrandConstellationPreset.orbit,
+                ),
+                Icon(icon, size: 30, color: AppColors.turquoise),
+              ],
             ),
-            child: Icon(icon, size: 32, color: AppColors.textMuted),
           ),
           const SizedBox(height: AppSpacing.md),
           Text(

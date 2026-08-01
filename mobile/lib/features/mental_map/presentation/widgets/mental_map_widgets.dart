@@ -479,22 +479,30 @@ class _HubConnectionsPainter extends CustomPainter {
       final start = hubCenter + unit * hubRadius;
       final end = target.center - unit * target.radius;
 
-      final paint = Paint()
-        ..color = target.isFilled
-            ? target.color.withValues(alpha: 0.18)
-            : AppColors.navy.withValues(alpha: 0.08)
-        ..strokeWidth = target.isFilled ? 1.4 : 1.0
-        ..style = PaintingStyle.stroke;
-      canvas.drawLine(start, end, paint);
+      // Curva suave em vez de linha reta — mesma organicidade da
+      // constelação da marca. O ponto de controle é deslocado
+      // perpendicularmente à linha direta.
+      final normal = Offset(-unit.dy, unit.dx);
+      final mid = Offset.lerp(start, end, 0.5)!;
+      final control = mid + normal * (distance * 0.07);
 
-      if (target.isFilled) {
-        final mid = Offset.lerp(start, end, 0.5)!;
-        canvas.drawCircle(
-          mid,
-          2.2,
-          Paint()..color = target.color.withValues(alpha: 0.45),
-        );
-      }
+      final color = target.isFilled ? target.color : AppColors.turquoise;
+      final alpha = target.isFilled ? 0.45 : 0.24;
+
+      final linePaint = Paint()
+        ..color = color.withValues(alpha: alpha)
+        ..strokeWidth = target.isFilled ? 1.8 : 1.2
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round;
+
+      final path = Path()
+        ..moveTo(start.dx, start.dy)
+        ..quadraticBezierTo(control.dx, control.dy, end.dx, end.dy);
+      canvas.drawPath(path, linePaint);
+
+      final dotPaint = Paint()..color = color.withValues(alpha: alpha + 0.2);
+      canvas.drawCircle(start, 2.2, dotPaint);
+      canvas.drawCircle(control, 2.4, dotPaint);
     }
   }
 

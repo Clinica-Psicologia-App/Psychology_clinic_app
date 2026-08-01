@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../profile/domain/profile_role.dart';
@@ -24,21 +25,68 @@ class StaffPersonalityReferencePage extends StatelessWidget {
         children: [
           MotionStaggered(
             children: [
+              // Header com identidade do módulo: tint roxo + ícone em box
+              // gradiente, no mesmo padrão dos demais módulos clínicos.
               Card(
+                color: AppColors.surfaceTintPurple,
                 child: Padding(
                   padding: const EdgeInsets.all(16),
-                  child: Column(
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Matriz clínica de fatores e facetas',
-                        style: Theme.of(context).textTheme.titleLarge,
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(14),
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              AppColors.purple,
+                              AppColors.purple.withValues(alpha: 0.78),
+                            ],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: AppColors.purple.withValues(alpha: 0.30),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: const Icon(
+                          Icons.psychology_alt_outlined,
+                          color: Colors.white,
+                          size: 24,
+                        ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Este conteúdo funciona como apoio de leitura clínica para a equipe. '
-                        'Não é um questionário respondido pelo paciente nesta versão do app.',
-                        style: Theme.of(context).textTheme.bodyMedium,
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Matriz clínica de fatores e facetas',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .titleLarge
+                                  ?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.navy,
+                                  ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              'Este conteúdo funciona como apoio de leitura clínica para a equipe. '
+                              'Não é um questionário respondido pelo paciente nesta versão do app.',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(color: AppColors.textSecondary),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -75,27 +123,41 @@ class _FactorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      clipBehavior: Clip.antiAlias,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              factor.name,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+            // Barra de acento — identifica o fator na varredura visual.
+            Container(width: 5, color: AppColors.purple),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      factor.name,
+                      style:
+                          Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.navy,
+                              ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      factor.description,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 16),
+                    for (final facet in factor.facets) ...[
+                      _FacetTile(facet: facet),
+                      const SizedBox(height: 12),
+                    ],
+                  ],
+                ),
+              ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              factor.description,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-            for (final facet in factor.facets) ...[
-              _FacetTile(facet: facet),
-              const SizedBox(height: 12),
-            ],
           ],
         ),
       ),

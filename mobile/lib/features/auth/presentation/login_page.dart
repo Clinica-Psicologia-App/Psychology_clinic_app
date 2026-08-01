@@ -34,6 +34,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
 
   /// Formação das constelações na entrada (0 → 1, uma vez).
   late final AnimationController _formIn;
+  bool _formInStarted = false;
 
   @override
   void initState() {
@@ -46,11 +47,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
       vsync: this,
       duration: const Duration(milliseconds: 1100),
     );
-    if (AppAnimations.shouldAnimate(context)) {
-      _formIn.forward();
-    } else {
-      _formIn.value = 1;
-    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final msg = ref.read(authRedirectMessageProvider);
@@ -61,6 +57,18 @@ class _LoginPageState extends ConsumerState<LoginPage>
         ref.read(authControllerProvider.notifier).clearRedirectMessage();
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_formInStarted) return;
+    _formInStarted = true;
+    if (AppAnimations.shouldAnimate(context)) {
+      _formIn.forward();
+    } else {
+      _formIn.value = 1;
+    }
   }
 
   @override

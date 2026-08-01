@@ -379,6 +379,21 @@ class MentalMapRadialHub extends StatelessWidget {
           for (final node in nodes) node.id: node,
         };
 
+        // Posições compartilhadas entre o painter de conexões e os
+        // Positioned dos nodos — a mesma fonte alimenta os dois.
+        final slotPositions = <String, Rect>{
+          'schemas': Rect.fromLTWH(centerNodeX, topY, nodeWidth, nodeHeight),
+          'modes': Rect.fromLTWH(rightX, upperY, nodeWidth, nodeHeight),
+          'problems': Rect.fromLTWH(rightX, lowerY, nodeWidth, nodeHeight),
+          'goals':
+              Rect.fromLTWH(centerNodeX, bottomY, nodeWidth, nodeHeight),
+          'attachment': Rect.fromLTWH(leftX, upperY, nodeWidth, nodeHeight),
+          'coping': Rect.fromLTWH(
+              leftX, hubHeight * 0.36, nodeWidth, nodeHeight),
+          'parental': Rect.fromLTWH(leftX, lowerY, nodeWidth, nodeHeight),
+          'history': Rect.fromLTWH(leftX, bottomY, nodeWidth, nodeHeight),
+        };
+
         return SizedBox(
           key: const ValueKey('mental-map-radial-layout'),
           width: width,
@@ -386,6 +401,24 @@ class MentalMapRadialHub extends StatelessWidget {
           child: Stack(
             clipBehavior: Clip.none,
             children: [
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: CustomPaint(
+                    painter: _HubConnectionsPainter(
+                      hubCenter: Offset(
+                        centerX + centerSize / 2,
+                        centerY + centerSize / 2,
+                      ),
+                      hubRadius: centerSize / 2,
+                      targets: [
+                        for (final entry in slotPositions.entries)
+                          if (nodeMap[entry.key] case final node?)
+                            _hubTarget(entry.value, node),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
               Positioned(
                 left: centerX,
                 top: centerY,
@@ -393,76 +426,108 @@ class MentalMapRadialHub extends StatelessWidget {
                 height: centerSize,
                 child: _MentalMapHubCenter(center: center),
               ),
-              if (nodeMap['schemas'] case final node?)
-                Positioned(
-                  left: centerNodeX,
-                  top: topY,
-                  width: nodeWidth,
-                  height: nodeHeight,
-                  child: _MentalMapOrbitNode(data: node, large: true),
-                ),
-              if (nodeMap['modes'] case final node?)
-                Positioned(
-                  left: rightX,
-                  top: upperY,
-                  width: nodeWidth,
-                  height: nodeHeight,
-                  child: _MentalMapOrbitNode(data: node, large: true),
-                ),
-              if (nodeMap['problems'] case final node?)
-                Positioned(
-                  left: rightX,
-                  top: lowerY,
-                  width: nodeWidth,
-                  height: nodeHeight,
-                  child: _MentalMapOrbitNode(data: node, large: true),
-                ),
-              if (nodeMap['goals'] case final node?)
-                Positioned(
-                  left: centerNodeX,
-                  top: bottomY,
-                  width: nodeWidth,
-                  height: nodeHeight,
-                  child: _MentalMapOrbitNode(data: node, large: true),
-                ),
-              if (nodeMap['attachment'] case final node?)
-                Positioned(
-                  left: leftX,
-                  top: upperY,
-                  width: nodeWidth,
-                  height: nodeHeight,
-                  child: _MentalMapOrbitNode(data: node, large: true),
-                ),
-              if (nodeMap['coping'] case final node?)
-                Positioned(
-                  left: leftX,
-                  top: hubHeight * 0.36,
-                  width: nodeWidth,
-                  height: nodeHeight,
-                  child: _MentalMapOrbitNode(data: node, large: true),
-                ),
-              if (nodeMap['parental'] case final node?)
-                Positioned(
-                  left: leftX,
-                  top: lowerY,
-                  width: nodeWidth,
-                  height: nodeHeight,
-                  child: _MentalMapOrbitNode(data: node, large: true),
-                ),
-              if (nodeMap['history'] case final node?)
-                Positioned(
-                  left: leftX,
-                  top: bottomY,
-                  width: nodeWidth,
-                  height: nodeHeight,
-                  child: _MentalMapOrbitNode(data: node, large: true),
-                ),
+              for (final entry in slotPositions.entries)
+                if (nodeMap[entry.key] case final node?)
+                  Positioned(
+                    left: entry.value.left,
+                    top: entry.value.top,
+                    width: entry.value.width,
+                    height: entry.value.height,
+                    child: _MentalMapOrbitNode(data: node, large: true),
+                  ),
             ],
           ),
         );
       },
     );
   }
+}
+
+/// Anchor do nodo para o painter de conexões: o círculo do nodo fica
+/// centralizado horizontalmente e um pouco acima do centro vertical da sua
+/// caixa (a Column reserva espaço abaixo para o rótulo).
+_HubConnectionTarget _hubTarget(Rect box, MentalMapHubNodeData node) {
+  return _HubConnectionTarget(
+    center: Offset(box.center.dx, box.top + box.height * 0.42),
+    radius: 32,
+    isFilled: node.isFilled,
+    color: node.severityColor ?? node.accentColor,
+  );
+}
+
+/// Desenha as linhas do núcleo até cada nodo, parando na borda do círculo —
+/// nunca atravessando o ícone ou o rótulo. Nodos preenchidos ganham conexão
+/// mais presente com um micro-nodo no ponto médio; vazios ficam tênues.
+class _HubConnectionsPainter extends CustomPainter {
+  const _HubConnectionsPainter({
+    required this.hubCenter,
+    required this.hubRadius,
+    required this.targets,
+  });
+
+  final Offset hubCenter;
+  final double hubRadius;
+  final List<_HubConnectionTarget> targets;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    for (final target in targets) {
+      final direction = target.center - hubCenter;
+      final distance = direction.distance;
+      if (distance <= hubRadius + target.radius) continue;
+      final unit = direction / distance;
+      final start = hubCenter + unit * hubRadius;
+      final end = target.center - unit * target.radius;
+
+      final paint = Paint()
+        ..color = target.isFilled
+            ? target.color.withValues(alpha: 0.18)
+            : AppColors.navy.withValues(alpha: 0.08)
+        ..strokeWidth = target.isFilled ? 1.4 : 1.0
+        ..style = PaintingStyle.stroke;
+      canvas.drawLine(start, end, paint);
+
+      if (target.isFilled) {
+        final mid = Offset.lerp(start, end, 0.5)!;
+        canvas.drawCircle(
+          mid,
+          2.2,
+          Paint()..color = target.color.withValues(alpha: 0.45),
+        );
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_HubConnectionsPainter oldDelegate) =>
+      oldDelegate.hubCenter != hubCenter ||
+      oldDelegate.hubRadius != hubRadius ||
+      oldDelegate.targets != targets;
+}
+
+class _HubConnectionTarget {
+  const _HubConnectionTarget({
+    required this.center,
+    required this.radius,
+    required this.isFilled,
+    required this.color,
+  });
+
+  final Offset center;
+  final double radius;
+  final bool isFilled;
+  final Color color;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _HubConnectionTarget &&
+      other.center == center &&
+      other.radius == radius &&
+      other.isFilled == isFilled &&
+      other.color == color;
+
+  @override
+  int get hashCode => Object.hash(center, radius, isFilled, color);
 }
 
 class _MentalMapMobileOrbit extends StatefulWidget {
@@ -511,12 +576,29 @@ class _MentalMapMobileOrbitState extends State<_MentalMapMobileOrbit>
       (id: 'coping', align: const Alignment(-0.95, -0.48), size: 56),
     ];
 
+    // Mesma fonte de posições para o painter de conexões e os nodos: box
+    // 300x300, nodo 82x94, centro derivado do Alignment (sem o jitter da
+    // flutuação ambiente — a conexão fica estável, só o nodo balança).
+    const boxSize = 300.0;
+    const nodeSize = Size(82, 94);
+    final slotRects = <String, Rect>{
+      for (final slot in slots)
+        slot.id: Rect.fromCenter(
+          center: Offset(
+            boxSize / 2 + slot.align.x * (boxSize - nodeSize.width) / 2,
+            boxSize / 2 + slot.align.y * (boxSize - nodeSize.height) / 2,
+          ),
+          width: nodeSize.width,
+          height: nodeSize.height,
+        ),
+    };
+
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
         return SizedBox(
           key: const ValueKey('mental-map-connected-list'),
-          height: 300,
+          height: boxSize,
           child: Stack(
             alignment: Alignment.center,
             children: [
@@ -538,6 +620,21 @@ class _MentalMapMobileOrbitState extends State<_MentalMapMobileOrbit>
                   ),
                 ),
                 child: const SizedBox(width: 190, height: 190),
+              ),
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: CustomPaint(
+                    painter: _HubConnectionsPainter(
+                      hubCenter: const Offset(boxSize / 2, boxSize / 2),
+                      hubRadius: 78,
+                      targets: [
+                        for (final entry in slotRects.entries)
+                          if (nodeMap[entry.key] case final node?)
+                            _hubTarget(entry.value, node),
+                      ],
+                    ),
+                  ),
+                ),
               ),
               SizedBox(
                 width: 156,

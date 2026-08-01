@@ -12,6 +12,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../shared/utils/brazil_validators.dart';
 import '../../../shared/utils/input_formatters.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/brand_constellation.dart';
 import '../../../shared/widgets/esquema_core_logo.dart';
 import '../../../shared/widgets/form_section.dart';
 import '../../../shared/widgets/homologation_ui.dart';
@@ -139,45 +140,73 @@ class _AcceptPatientInvitationPageState
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        DecoratedBox(
-                          decoration: const BoxDecoration(
-                            gradient: AppGradients.brand,
-                            borderRadius: BorderRadius.all(Radius.circular(20)),
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(AppSpacing.xl),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                        ClipRRect(
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(20)),
+                          child: DecoratedBox(
+                            decoration: const BoxDecoration(
+                              gradient: AppGradients.brand,
+                            ),
+                            child: Stack(
                               children: [
-                                const EsquemaCoreLogo.monochrome(
-                                  size: 56,
-                                  showTagline: true,
-                                  taglineColor: AppColors.textOnBrand,
+                                // Constelação no hero — mesma consistência
+                                // visual do login.
+                                Positioned(
+                                  top: -30,
+                                  right: -20,
+                                  child: BrandConstellation(
+                                    size: const Size(160, 160),
+                                    opacity: 0.16,
+                                    preset: BrandConstellationPreset.scatter,
+                                  ),
                                 ),
-                                const SizedBox(height: AppSpacing.md),
-                                Text(
-                                  'Primeiro acesso',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .headlineSmall
-                                      ?.copyWith(
-                                        color: AppColors.textOnBrand,
-                                        fontWeight: FontWeight.w700,
-                                      ),
+                                Positioned(
+                                  bottom: -30,
+                                  left: -20,
+                                  child: BrandConstellation(
+                                    size: const Size(150, 150),
+                                    opacity: 0.16,
+                                    preset: BrandConstellationPreset.path,
+                                  ),
                                 ),
-                                const SizedBox(height: AppSpacing.xs),
-                                Text(
-                                  'Você foi convidado(a) a acessar a plataforma '
-                                  'clínica. Complete seus dados e crie uma senha '
-                                  'para entrar.',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(
-                                        color: AppColors.textOnBrand
-                                            .withValues(alpha: 0.92),
-                                        height: 1.45,
+                                Padding(
+                                  padding: const EdgeInsets.all(AppSpacing.xl),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const EsquemaCoreLogo.monochrome(
+                                        size: 56,
+                                        showTagline: true,
+                                        taglineColor: AppColors.textOnBrand,
                                       ),
+                                      const SizedBox(height: AppSpacing.md),
+                                      Text(
+                                        'Primeiro acesso',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .headlineSmall
+                                            ?.copyWith(
+                                              color: AppColors.textOnBrand,
+                                              fontWeight: FontWeight.w700,
+                                            ),
+                                      ),
+                                      const SizedBox(height: AppSpacing.xs),
+                                      Text(
+                                        'Você foi convidado(a) a acessar a plataforma '
+                                        'clínica. Complete seus dados e crie uma senha '
+                                        'para entrar.',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium
+                                            ?.copyWith(
+                                              color: AppColors.textOnBrand
+                                                  .withValues(alpha: 0.92),
+                                              height: 1.45,
+                                            ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ],
                             ),

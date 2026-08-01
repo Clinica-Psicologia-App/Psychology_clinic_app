@@ -233,12 +233,21 @@ avatar_type, avatar_path, avatar_url, avatar_config, avatar_updated_at
     try {
       final userId = _requireUserId;
 
+      // Só volta para as iniciais quem estava exibindo a foto. Antes isso era
+      // incondicional, então remover a foto derrubava também o avatar
+      // geométrico de quem o tinha ativo — uma coisa não tem relação com a
+      // outra, e o avatar nem sequer vive no Storage.
+      await _client
+          .from('profiles')
+          .update({'avatar_type': AvatarType.initials.key})
+          .eq('id', userId)
+          .eq('avatar_type', AvatarType.photo.key);
+
       final row = await _client
           .from('profiles')
           .update({
             'avatar_path': null,
             'avatar_url': null,
-            'avatar_type': AvatarType.initials.key,
           })
           .eq('id', userId)
           .select(_profileSelect)

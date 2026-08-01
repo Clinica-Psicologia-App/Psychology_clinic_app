@@ -44,6 +44,14 @@ class UserProfile {
   /// O que realmente dá para desenhar agora. Uma foto sem URL ou um avatar
   /// personalizado sem configuração caem em [AvatarType.initials] — assim a UI
   /// nunca fica com espaço vazio ou ícone de imagem quebrada.
+  ///
+  /// `initials` é respeitado mesmo quando existe foto guardada. Já houve aqui
+  /// uma coerção para `photo` nesse caso, pensada para registros legados sem
+  /// `avatar_type`; ela tornava a opção "usar minhas iniciais" inócua para
+  /// quem já tinha subido uma foto. O legado é resolvido no banco, não em
+  /// tempo de execução: a migration 20260731120000 converte quem tinha
+  /// `avatar_url` para `avatar_type = 'photo'`, e a coluna é NOT NULL com
+  /// default `initials`.
   AvatarType get effectiveAvatarType {
     switch (avatarType) {
       case AvatarType.photo:
@@ -51,8 +59,7 @@ class UserProfile {
       case AvatarType.custom:
         return avatarConfig != null ? AvatarType.custom : AvatarType.initials;
       case AvatarType.initials:
-        // Registros antigos podem ter foto sem avatar_type definido.
-        return _hasPhoto ? AvatarType.photo : AvatarType.initials;
+        return AvatarType.initials;
     }
   }
 

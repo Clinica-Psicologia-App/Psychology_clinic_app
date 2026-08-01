@@ -226,9 +226,41 @@ void main() {
       expect(profile.photoUrl, contains('user-1/profile/photo.png'));
     });
 
-    test('registro antigo com foto e sem avatar_type é tratado como foto', () {
+    // Este caso já afirmou o contrário — que foto guardada vencia o tipo
+    // `initials`, para cobrir registros legados sem avatar_type. Isso tornava
+    // "usar minhas iniciais" inócua para quem tinha foto. O legado passou a
+    // ser resolvido no banco (a migration converte avatar_url em
+    // avatar_type = 'photo'), então aqui a escolha do usuário é soberana.
+    test('initials é respeitado mesmo havendo foto guardada', () {
       final profile = UserProfile.fromJson(
-        profileRow(avatarUrl: 'https://legado.exemplo.com/foto.jpg'),
+        profileRow(
+          avatarType: 'initials',
+          avatarUrl: 'https://legado.exemplo.com/foto.jpg',
+        ),
+      );
+      expect(profile.effectiveAvatarType, AvatarType.initials);
+    });
+
+    test('a foto continua guardada para ser reativada depois', () {
+      final profile = UserProfile.fromJson(
+        profileRow(
+          avatarType: 'initials',
+          avatarUrl: 'https://legado.exemplo.com/foto.jpg',
+        ),
+      );
+      expect(profile.photoUrl, isNotNull);
+      expect(
+        profile.copyWith(avatarType: AvatarType.photo).effectiveAvatarType,
+        AvatarType.photo,
+      );
+    });
+
+    test('registro legado migrado para photo continua exibindo a foto', () {
+      final profile = UserProfile.fromJson(
+        profileRow(
+          avatarType: 'photo',
+          avatarUrl: 'https://legado.exemplo.com/foto.jpg',
+        ),
       );
       expect(profile.effectiveAvatarType, AvatarType.photo);
     });

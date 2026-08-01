@@ -132,11 +132,17 @@ class AppSectionHeader extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.action,
+    this.accentColor,
   });
 
   final String title;
   final String? subtitle;
   final Widget? action;
+
+  /// Cor da família de módulos da seção. Quando informada, um ponto dessa cor
+  /// precede o título, para que grupos distintos se separem na rolagem sem
+  /// depender só do espaçamento.
+  final Color? accentColor;
 
   @override
   Widget build(BuildContext context) {
@@ -149,12 +155,29 @@ class AppSectionHeader extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                title,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: AppColors.navy,
-                  fontWeight: FontWeight.w700,
-                ),
+              Row(
+                children: [
+                  if (accentColor != null) ...[
+                    Container(
+                      width: 8,
+                      height: 8,
+                      decoration: BoxDecoration(
+                        color: accentColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.xs),
+                  ],
+                  Flexible(
+                    child: Text(
+                      title,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: AppColors.navy,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               if (subtitle != null && subtitle!.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.xxs),

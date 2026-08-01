@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
+import '../../../core/theme/app_animations.dart';
 import '../../../core/theme/app_breakpoints.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
@@ -12,7 +13,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
-import '../../../shared/widgets/clinical_kpi_chip.dart';
+import '../../../shared/widgets/clay_card.dart';
 import '../../../shared/widgets/clinical_module_card.dart';
 import '../../../shared/widgets/esquema_core_logo.dart';
 import '../../../shared/widgets/responsive_content.dart';
@@ -21,6 +22,7 @@ import '../../clinic_entitlements/providers/clinic_entitlements_providers.dart';
 import '../../patient_check_ins/presentation/patient_check_in_routes.dart';
 import '../../patient_check_ins/providers/patient_check_ins_providers.dart';
 import '../../patient_journey/presentation/patient_journey_routes.dart';
+import '../../patient_invitations/domain/patient_invitation.dart';
 import '../../patient_invitations/providers/patient_invitations_providers.dart';
 import '../../patient_invitations/presentation/patient_invitation_routes.dart';
 import '../../patients/providers/patients_providers.dart';
@@ -98,7 +100,6 @@ class RoleHomeShell extends ConsumerWidget {
           }
           return _HomeBody(
             profile: user,
-            subtitle: subtitle,
             role: role,
             entitlementsAsync: ref.watch(currentClinicEntitlementsProvider),
           );
@@ -111,13 +112,11 @@ class RoleHomeShell extends ConsumerWidget {
 class _HomeBody extends StatelessWidget {
   const _HomeBody({
     required this.profile,
-    required this.subtitle,
     required this.role,
     required this.entitlementsAsync,
   });
 
   final UserProfile profile;
-  final String subtitle;
   final ProfileRole role;
   final AsyncValue<ClinicFeatureEntitlements> entitlementsAsync;
 
@@ -141,7 +140,7 @@ class _HomeBody extends StatelessWidget {
           MotionReveal(
             child: role == ProfileRole.patient
                 ? _PatientGreetingHeader(profile: profile)
-                : _ProfileHeader(profile: profile, subtitle: subtitle),
+                : _ProfileHeader(profile: profile),
           ),
           const SizedBox(height: AppSpacing.xl),
           if (role == ProfileRole.psychologist) const _PsychologistWorkspace(),
@@ -197,33 +196,42 @@ class _PsychologistWorkspace extends ConsumerWidget {
       children: [
         const AppSectionHeader(
           title: 'Central de trabalho',
-          subtitle:
-              'Acompanhe pacientes, convites, instrumentos e fluxos clínicos.',
+          subtitle: 'Toque em um número para abrir a tela correspondente.',
         ),
         const SizedBox(height: AppSpacing.sm),
         MotionReveal(
           delay: const Duration(milliseconds: 80),
-          child: Wrap(
-            spacing: AppSpacing.sm,
-            runSpacing: AppSpacing.sm,
-            children: [
-              ClinicalKpiChip(
+          child: _WorkspaceSummary(
+            metrics: [
+              _WorkspaceMetric(
                 icon: Icons.people_outline,
-                label: 'Pacientes ativos',
-                value: activePatients.toString(),
-                accentColor: _WorkspaceAccents.management,
+                label: 'Pacientes',
+                value: activePatients,
+                accent: _WorkspaceAccents.management,
+                onTap: () => context.push(
+                  PatientRoutes.list(ProfileRole.psychologist),
+                ),
               ),
-              ClinicalKpiChip(
+              _WorkspaceMetric(
                 icon: Icons.mark_email_unread_outlined,
-                label: 'Convites pendentes',
-                value: pendingInvitations.toString(),
-                accentColor: _WorkspaceAccents.management,
+                label: 'Convites',
+                value: pendingInvitations,
+                // Convite parado é a única métrica aqui que pede ação: por
+                // isso ganha cor de alerta enquanto houver algum na fila.
+                accent: pendingInvitations > 0
+                    ? AppColors.warning
+                    : _WorkspaceAccents.management,
+                onTap: () => context.push(
+                  PatientInvitationRoutes.list(ProfileRole.psychologist),
+                ),
               ),
-              ClinicalKpiChip(
+              _WorkspaceMetric(
                 icon: Icons.assignment_outlined,
-                label: 'Questionários liberados',
-                value: questionnaires.length.toString(),
-                accentColor: _WorkspaceAccents.assessment,
+                label: 'Questionários',
+                value: questionnaires.length,
+                accent: _WorkspaceAccents.assessment,
+                onTap: () =>
+                    context.push(QuestionnaireRoutes.psychologistCatalog),
               ),
             ],
           ),
@@ -232,6 +240,7 @@ class _PsychologistWorkspace extends ConsumerWidget {
         const AppSectionHeader(
           title: 'Carteira de pacientes',
           subtitle: 'Cadastro, convites e plano de cuidado.',
+          accentColor: _WorkspaceAccents.management,
         ),
         const SizedBox(height: AppSpacing.sm),
         MotionReveal(
@@ -274,6 +283,7 @@ class _PsychologistWorkspace extends ConsumerWidget {
         const AppSectionHeader(
           title: 'Avaliação e instrumentos',
           subtitle: 'Questionários, liberações e resultados.',
+          accentColor: _WorkspaceAccents.assessment,
         ),
         const SizedBox(height: AppSpacing.sm),
         MotionReveal(
@@ -298,6 +308,7 @@ class _PsychologistWorkspace extends ConsumerWidget {
                 accentColor: _WorkspaceAccents.assessment,
                 onTap: () => context.push(
                   PatientRoutes.list(ProfileRole.psychologist),
+                  extra: PatientSelectionIntent.questionnaires,
                 ),
               ),
               ClinicalModuleCard(
@@ -307,6 +318,7 @@ class _PsychologistWorkspace extends ConsumerWidget {
                 accentColor: _WorkspaceAccents.assessment,
                 onTap: () => context.push(
                   PatientRoutes.list(ProfileRole.psychologist),
+                  extra: PatientSelectionIntent.results,
                 ),
               ),
             ],
@@ -316,6 +328,7 @@ class _PsychologistWorkspace extends ConsumerWidget {
         const AppSectionHeader(
           title: 'Raciocínio clínico',
           subtitle: 'Formulação de caso e materiais terapêuticos.',
+          accentColor: _WorkspaceAccents.clinical,
         ),
         const SizedBox(height: AppSpacing.sm),
         MotionReveal(
@@ -331,6 +344,7 @@ class _PsychologistWorkspace extends ConsumerWidget {
                 accentColor: _WorkspaceAccents.clinical,
                 onTap: () => context.push(
                   PatientRoutes.list(ProfileRole.psychologist),
+                  extra: PatientSelectionIntent.formulation,
                 ),
               ),
               ClinicalModuleCard(
@@ -340,6 +354,7 @@ class _PsychologistWorkspace extends ConsumerWidget {
                 accentColor: _WorkspaceAccents.clinical,
                 onTap: () => context.push(
                   PatientRoutes.list(ProfileRole.psychologist),
+                  extra: PatientSelectionIntent.therapyResources,
                 ),
               ),
             ],
@@ -504,62 +519,222 @@ class _PatientNextStep extends ConsumerWidget {
   }
 }
 
-class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({
-    required this.profile,
-    required this.subtitle,
+/// Uma métrica do resumo da home do profissional.
+class _WorkspaceMetric {
+  const _WorkspaceMetric({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.accent,
+    required this.onTap,
   });
 
-  final UserProfile profile;
-  final String subtitle;
+  final IconData icon;
+  final String label;
+  final int value;
+  final Color accent;
+  final VoidCallback onTap;
+}
+
+/// Resumo da carteira em um painel único de colunas iguais.
+///
+/// Antes eram três cartões soltos num `Wrap`: no celular cabiam dois na
+/// primeira linha e o terceiro ficava órfão embaixo, com um vazio ao lado.
+/// Como painel único, as três colunas dividem a largura por igual em
+/// qualquer tela e os números se comparam lado a lado.
+class _WorkspaceSummary extends StatelessWidget {
+  const _WorkspaceSummary({required this.metrics});
+
+  final List<_WorkspaceMetric> metrics;
 
   @override
   Widget build(BuildContext context) {
+    return ClayCard(
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.xlAll),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+        // Altura fixa nas divisórias em vez de `CrossAxisAlignment.stretch`:
+        // dentro de um ListView a altura do Row é ilimitada, e esticar filhos
+        // nesse contexto quebra o layout da tela inteira.
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            for (var i = 0; i < metrics.length; i++) ...[
+              if (i > 0)
+                Container(
+                  width: 1,
+                  height: 56,
+                  color: AppColors.border,
+                ),
+              Expanded(child: _WorkspaceMetricCell(metric: metrics[i])),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _WorkspaceMetricCell extends StatelessWidget {
+  const _WorkspaceMetricCell({required this.metric});
+
+  final _WorkspaceMetric metric;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final duration = AppAnimations.resolve(
+      context,
+      const Duration(milliseconds: 320),
+    );
+
+    return Semantics(
+      button: true,
+      label: '${metric.label}: ${metric.value}',
+      child: InkWell(
+        onTap: metric.onTap,
+        borderRadius: AppRadius.mdAll,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xs,
+            vertical: AppSpacing.sm,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(metric.icon, size: 20, color: metric.accent),
+              const SizedBox(height: AppSpacing.xs),
+              TweenAnimationBuilder<int>(
+                duration: duration,
+                curve: AppAnimations.standardCurve,
+                tween: IntTween(begin: 0, end: metric.value),
+                builder: (context, animated, _) {
+                  return Text(
+                    '$animated',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      color: AppColors.navy,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: AppSpacing.xxs),
+              Text(
+                metric.label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Cabeçalho da home do profissional: saudação pelo primeiro nome e uma
+/// linha de contexto vinda dos dados reais da carteira.
+///
+/// Substitui o antigo cartão institucional (nome completo + papel + e-mail),
+/// que repetia o subtítulo da AppBar e gastava a área mais nobre da tela com
+/// informação que o profissional já sabe sobre si mesmo.
+class _ProfileHeader extends ConsumerWidget {
+  const _ProfileHeader({required this.profile});
+
+  final UserProfile profile;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final firstName = profile.fullName.trim().split(RegExp(r'\s+')).first;
+    final greeting = _PatientGreetingHeader.greetingForHour(
+      DateTime.now().hour,
+    );
+
+    final patients = ref.watch(patientsListProvider).valueOrNull;
+    final invitations = ref.watch(patientInvitationsListProvider).valueOrNull;
+
     return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: AppRadius.xlAll,
         boxShadow: AppShadows.clay(),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        child: Row(
-          children: [
-            CircleAvatar(
-              radius: 30,
-              backgroundColor: AppColors.turquoise.withValues(alpha: 0.15),
-              child: Text(
-                profile.fullName[0].toUpperCase(),
-                style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      color: AppColors.navy,
-                      fontWeight: FontWeight.w700,
-                    ),
+      padding: const EdgeInsets.all(AppSpacing.xl),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.turquoise.withValues(alpha: 0.14),
+              boxShadow: AppShadows.clay(AppColors.turquoise),
+            ),
+            child: Text(
+              profile.fullName.trim().characters.first.toUpperCase(),
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: AppColors.turquoise,
+                fontWeight: FontWeight.w700,
               ),
             ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    profile.fullName,
-                    style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$greeting, $firstName',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    color: AppColors.navy,
+                    fontWeight: FontWeight.w600,
                   ),
-                  const SizedBox(height: AppSpacing.xxs),
-                  Text(
-                    subtitle,
-                    style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  _contextLine(patients?.length, invitations),
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
                   ),
-                  Text(
-                    '${profile.role.label} · ${profile.email}',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
+  }
+
+  /// Uma frase sobre o estado real da carteira. Enquanto os dados carregam,
+  /// mostra uma linha neutra em vez de números piscando de 0 para o total.
+  static String _contextLine(
+    int? patientCount,
+    List<PatientInvitation>? invitations,
+  ) {
+    if (patientCount == null || invitations == null) {
+      return 'Seu espaço de trabalho clínico.';
+    }
+    final pending = invitations.where((i) => i.isPending).length;
+    if (pending > 0) {
+      final label = pending == 1
+          ? '1 convite aguardando aceite'
+          : '$pending convites aguardando aceite';
+      return '$label. Bom trabalho por aqui.';
+    }
+    if (patientCount == 0) {
+      return 'Comece cadastrando ou convidando seu primeiro paciente.';
+    }
+    final label = patientCount == 1
+        ? '1 paciente na sua carteira'
+        : '$patientCount pacientes na sua carteira';
+    return '$label. Tudo em dia por aqui.';
   }
 }

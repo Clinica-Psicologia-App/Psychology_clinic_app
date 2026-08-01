@@ -33,6 +33,8 @@ import '../../features/patients/presentation/create_patient_page.dart';
 import '../../features/patients/domain/patient.dart';
 import '../../features/patients/presentation/edit_patient_page.dart';
 import '../../features/patients/presentation/patient_details_page.dart';
+import '../../features/patients/presentation/patient_picker_page.dart';
+import '../../features/patients/presentation/patient_routes.dart';
 import '../../features/patients/presentation/patients_page.dart';
 import '../../features/patient_invitations/presentation/create_patient_invitation_page.dart';
 import '../../features/patient_invitations/presentation/patient_invitation_routes.dart';
@@ -398,7 +400,14 @@ List<RouteBase> _staffPatientRoutes(ProfileRole role) {
   return [
     GoRoute(
       path: 'patients',
-      builder: (_, __) => PatientsPage(role: role),
+      builder: (_, state) {
+        final intent = state.extra;
+        if (intent is PatientSelectionIntent &&
+            intent != PatientSelectionIntent.none) {
+          return PatientPickerPage(role: role, intent: intent);
+        }
+        return PatientsPage(role: role);
+      },
       routes: [
         GoRoute(
           path: 'new',

@@ -2,6 +2,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_animations.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../../shared/widgets/gradient_progress_indicator.dart';
@@ -43,6 +44,10 @@ class _QuestionnaireAnswerPageState
   String? _fieldError;
   bool _saving = false;
   bool _finishing = false;
+
+  /// Direção da transição entre perguntas: 1 = avançando (entra da direita),
+  /// -1 = voltando (entra da esquerda).
+  int _direction = 1;
 
   QuestionnaireSession get session => widget.session;
   bool get _isPreview => widget.previewMode;
@@ -158,43 +163,52 @@ class _QuestionnaireAnswerPageState
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 220),
-                  switchInCurve: Curves.easeOutCubic,
-                  switchOutCurve: Curves.easeInCubic,
-                  transitionBuilder: (child, animation) => FadeTransition(
-                    opacity: animation,
-                    child: SlideTransition(
-                      position: Tween<Offset>(
-                        begin: const Offset(0.03, 0),
-                        end: Offset.zero,
-                      ).animate(animation),
-                      child: child,
+                child: Center(
+                  child: ConstrainedBox(
+                    // Focus mode: uma pergunta por vez, largura de leitura
+                    // confortável em vez de esticar em telas largas.
+                    constraints: const BoxConstraints(maxWidth: 560),
+                    child: AnimatedSwitcher(
+                      duration: AppAnimations.block,
+                      switchInCurve: AppAnimations.enterCurve,
+                      switchOutCurve: AppAnimations.exitCurve,
+                      transitionBuilder: (child, animation) => FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: Tween<Offset>(
+                            begin: Offset(0.05 * _direction, 0),
+                            end: Offset.zero,
+                          ).animate(animation),
+                          child: child,
+                        ),
+                      ),
+                      child: Column(
+                        key: ValueKey(
+                          '${_currentIndex}_${_currentContext?.id}',
+                        ),
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Text(
+                            _isParentalFlow
+                                ? normalizeParentalQuestionText(question.text)
+                                : question.text,
+                            style: Theme.of(context).textTheme.titleLarge,
+                          ),
+                          const SizedBox(height: 24),
+                          QuestionInputWidget(
+                            question: question,
+                            value: _answers[_currentAnswerKey],
+                            errorText: _fieldError,
+                            onChanged: (v) {
+                              setState(() {
+                                _answers[_currentAnswerKey] = v;
+                                _fieldError = null;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  child: Column(
-                    key: ValueKey('${_currentIndex}_${_currentContext?.id}'),
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Text(
-                        _isParentalFlow
-                            ? normalizeParentalQuestionText(question.text)
-                            : question.text,
-                        style: Theme.of(context).textTheme.titleMedium,
-                      ),
-                      const SizedBox(height: 24),
-                      QuestionInputWidget(
-                        question: question,
-                        value: _answers[_currentAnswerKey],
-                        errorText: _fieldError,
-                        onChanged: (v) {
-                          setState(() {
-                            _answers[_currentAnswerKey] = v;
-                            _fieldError = null;
-                          });
-                        },
-                      ),
-                    ],
                   ),
                 ),
               ),
@@ -213,6 +227,7 @@ class _QuestionnaireAnswerPageState
                       onPressed: _saving || _finishing
                           ? null
                           : () => setState(() {
+                                _direction = -1;
                                 _currentIndex--;
                                 _fieldError = null;
                               }),
@@ -299,6 +314,7 @@ class _QuestionnaireAnswerPageState
 
       if (!mounted) return;
       setState(() {
+        _direction = 1;
         if (_currentIndex == session.questions.length - 1 && _isParentalFlow) {
           _currentContextIndex++;
           _currentIndex = 0;

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_animations.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/widgets/brand_constellation.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/finish_questionnaire_result.dart';
 import 'questionnaire_routes.dart';
@@ -218,6 +219,15 @@ class _SuccessBadge extends StatelessWidget {
                   shape: BoxShape.circle,
                   color: primary.withValues(alpha: 0.14 * ring.value),
                 ),
+              ),
+              // Nodos se conectando junto com a expansão do anel — a
+              // celebração ecoa a linguagem de mapa da marca.
+              BrandConstellation(
+                size: const Size(140, 140),
+                color: primary,
+                opacity: 0.30,
+                progress: ring.value,
+                preset: BrandConstellationPreset.orbit,
               ),
               Transform.scale(
                 scale: badgeScale.value,

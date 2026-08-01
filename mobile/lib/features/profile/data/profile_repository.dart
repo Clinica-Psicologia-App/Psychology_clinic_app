@@ -137,13 +137,19 @@ avatar_type, avatar_path, avatar_url, avatar_config, avatar_updated_at
             ),
           );
 
-      // `avatar_updated_at` é carimbado por trigger; o cache busting da URL sai
-      // dele, então não há parâmetro de versão montado aqui.
+      // O carimbo vai explícito, e não pela trigger: ao trocar de foto pela
+      // segunda vez, `avatar_type` e `avatar_path` chegam com os mesmos
+      // valores que já estavam na linha (o path é fixo e o upload é upsert),
+      // então a trigger — que só dispara quando algum valor muda — não vê
+      // diferença alguma. Sem carimbo novo a URL fica idêntica e o usuário
+      // continua vendo a foto antiga vinda do cache. Só o app sabe que os
+      // bytes mudaram, então é o app que precisa marcar a versão.
       final row = await _client
           .from('profiles')
           .update({
             'avatar_type': AvatarType.photo.key,
             'avatar_path': path,
+            'avatar_updated_at': DateTime.now().toUtc().toIso8601String(),
           })
           .eq('id', userId)
           .select(_profileSelect)

@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/patient_check_in.dart';
 
 class PatientCheckInListTile extends StatelessWidget {
@@ -22,36 +23,89 @@ class PatientCheckInListTile extends StatelessWidget {
     final time = loc.formatTimeOfDay(
       TimeOfDay.fromDateTime(checkIn.checkedInAt.toLocal()),
     );
+    const accent = AppColors.turquoise;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      color: highlightToday
-          ? theme.colorScheme.primaryContainer.withValues(alpha: 0.35)
-          : null,
-      child: ListTile(
-        leading: Icon(
-          highlightToday ? Icons.today : Icons.fact_check_outlined,
-          color: theme.colorScheme.primary,
-        ),
-        title: Text(highlightToday ? 'Check-in de hoje' : date),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('$time · ${checkIn.summaryLine}'),
-            if (checkIn.notes != null && checkIn.notes!.trim().isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  checkIn.notes!.trim(),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+      color: highlightToday ? AppColors.surfaceTintTurquoise : null,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: accent.withValues(alpha: 0.16)),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [accent, accent.withValues(alpha: 0.78)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: accent.withValues(alpha: 0.32),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  highlightToday ? Icons.today : Icons.fact_check_outlined,
+                  color: Colors.white,
+                  size: 21,
                 ),
               ),
-          ],
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      highlightToday ? 'Check-in de hoje' : date,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: AppColors.navy,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '$time · ${checkIn.summaryLine}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                    if (checkIn.notes != null &&
+                        checkIn.notes!.trim().isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Text(
+                          checkIn.notes!.trim(),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.chevron_right,
+                color: AppColors.textMuted,
+                size: 20,
+              ),
+            ],
+          ),
         ),
-        isThreeLine: true,
-        trailing: const Icon(Icons.chevron_right),
-        onTap: onTap,
       ),
     );
   }

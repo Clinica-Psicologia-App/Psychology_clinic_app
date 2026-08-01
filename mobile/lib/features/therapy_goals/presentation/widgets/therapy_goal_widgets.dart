@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/therapy_goal.dart';
 import '../../domain/therapy_goal_status.dart';
 
@@ -10,21 +11,26 @@ class TherapyGoalStatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final style = _style(theme.colorScheme, status);
-
+    final color = _statusColor(status);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: style.background,
-        borderRadius: BorderRadius.circular(8),
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
       ),
-      child: Text(
-        status.label,
-        style: theme.textTheme.labelSmall?.copyWith(
-          color: style.foreground,
-          fontWeight: FontWeight.w600,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(_iconForStatus(status), size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            status.label,
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+        ],
       ),
     );
   }
@@ -43,6 +49,7 @@ class TherapyGoalListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    const accent = AppColors.turquoise;
     final subtitleParts = <String>[];
     if (goal.description != null && goal.description!.trim().isNotEmpty) {
       subtitleParts.add(goal.description!.trim());
@@ -56,32 +63,90 @@ class TherapyGoalListTile extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        leading: Icon(
-          _iconForStatus(goal.status),
-          color: theme.colorScheme.primary,
-        ),
-        title: Text(goal.title),
-        subtitle: subtitleParts.isEmpty
-            ? null
-            : Text(
-                subtitleParts.join('\n'),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TherapyGoalStatusChip(status: goal.status),
-            const SizedBox(width: 4),
-            const Icon(Icons.chevron_right),
-          ],
-        ),
-        isThreeLine: subtitleParts.length > 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: accent.withValues(alpha: 0.16)),
+      ),
+      child: InkWell(
         onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [accent, accent.withValues(alpha: 0.78)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: accent.withValues(alpha: 0.32),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  _iconForStatus(goal.status),
+                  color: Colors.white,
+                  size: 21,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      goal.title,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: AppColors.navy,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    if (subtitleParts.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        subtitleParts.join(' · '),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 8),
+                    TherapyGoalStatusChip(status: goal.status),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(
+                Icons.chevron_right,
+                color: AppColors.textMuted,
+                size: 20,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
+}
+
+Color _statusColor(TherapyGoalStatus status) {
+  return switch (status) {
+    TherapyGoalStatus.active => AppColors.turquoise,
+    TherapyGoalStatus.completed => AppColors.success,
+    TherapyGoalStatus.archived => AppColors.textMuted,
+  };
 }
 
 IconData _iconForStatus(TherapyGoalStatus status) {
@@ -89,25 +154,5 @@ IconData _iconForStatus(TherapyGoalStatus status) {
     TherapyGoalStatus.active => Icons.flag_outlined,
     TherapyGoalStatus.completed => Icons.check_circle_outline,
     TherapyGoalStatus.archived => Icons.inventory_2_outlined,
-  };
-}
-
-({Color background, Color foreground}) _style(
-  ColorScheme colors,
-  TherapyGoalStatus status,
-) {
-  return switch (status) {
-    TherapyGoalStatus.active => (
-        background: colors.primaryContainer,
-        foreground: colors.onPrimaryContainer,
-      ),
-    TherapyGoalStatus.completed => (
-        background: colors.tertiaryContainer,
-        foreground: colors.onTertiaryContainer,
-      ),
-    TherapyGoalStatus.archived => (
-        background: colors.surfaceContainerHighest,
-        foreground: colors.onSurfaceVariant,
-      ),
   };
 }

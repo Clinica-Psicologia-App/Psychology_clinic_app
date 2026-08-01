@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/genogram_data.dart';
 import '../../domain/genogram_person.dart';
 import '../../domain/genogram_relationship.dart';
@@ -78,16 +79,47 @@ class _Stat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    const accent = AppColors.moduleGenogram;
     return Expanded(
       child: Row(
         children: [
-          Icon(icon, color: theme.colorScheme.primary),
-          const SizedBox(width: 8),
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [accent, accent.withValues(alpha: 0.78)],
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: accent.withValues(alpha: 0.30),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Icon(icon, color: Colors.white, size: 20),
+          ),
+          const SizedBox(width: 10),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(label, style: theme.textTheme.labelMedium),
-              Text(value, style: theme.textTheme.titleLarge),
+              Text(
+                label,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: AppColors.textMuted,
+                ),
+              ),
+              Text(
+                value,
+                style: theme.textTheme.titleLarge?.copyWith(
+                  color: AppColors.navy,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ],
           ),
         ],

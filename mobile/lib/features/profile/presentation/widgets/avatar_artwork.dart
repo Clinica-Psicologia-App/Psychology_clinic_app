@@ -32,21 +32,21 @@ class AvatarPainter extends CustomPainter {
 
   // Âncoras do rosto. Tudo se posiciona a partir daqui, então ajustar o
   // tamanho da cabeça reposiciona olhos, orelhas, cabelo e barba juntos.
-  static const Offset _headCenter = Offset(50, 41);
-  static const double _headRy = 25;
-  static const double _eyeY = 42;
-  static const double _eyeDx = 7.8;
-  static const double _mouthY = 55;
+  static const Offset _headCenter = Offset(50, 37);
+  static const double _headRy = 24.5;
+  static const double _eyeY = 39;
+  static const double _eyeDx = 7.2;
+  static const double _mouthY = 51.5;
 
   /// Onde o cabelo termina e a testa começa. Sem essa âncora o cabelo era
   /// desenhado como "metade superior da cabeça", e essa metade termina
   /// exatamente na linha dos olhos — o rosto ficava sem testa.
-  static const double _hairlineY = 34;
+  static const double _hairlineY = 29;
 
   double get _headRx => switch (config.faceShape) {
-        AvatarFaceShape.oval => 18.5,
-        AvatarFaceShape.round => 20.5,
-        AvatarFaceShape.square => 19.5,
+        AvatarFaceShape.oval => 17.2,
+        AvatarFaceShape.round => 19.0,
+        AvatarFaceShape.square => 18.2,
       };
 
   /// Contorno do rosto. O formato "anguloso" usa um retângulo bem arredondado
@@ -123,14 +123,14 @@ class AvatarPainter extends CustomPainter {
     // separa um retrato "chapado" de um com alguma profundidade.
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        const Rect.fromLTWH(43.5, 56, 13, 22),
-        const Radius.circular(6),
+        const Rect.fromLTWH(44, 52, 12, 22),
+        const Radius.circular(5),
       ),
       Paint()..color = skin,
     );
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        const Rect.fromLTWH(43.5, 56, 13, 8),
+        const Rect.fromLTWH(44, 52, 12, 7),
         const Radius.circular(4),
       ),
       Paint()..color = Color.lerp(skin, const Color(0xFF6B3F2A), 0.22)!,
@@ -138,12 +138,12 @@ class AvatarPainter extends CustomPainter {
 
     final outfit = AvatarPalette.of(config.outfitColor);
     final shoulders = Path()
-      ..moveTo(12, _canvas)
-      ..lineTo(12, 90)
-      ..quadraticBezierTo(14, 74, 34, 71)
-      ..lineTo(66, 71)
-      ..quadraticBezierTo(86, 74, 88, 90)
-      ..lineTo(88, _canvas)
+      ..moveTo(6, _canvas)
+      ..lineTo(6, 92)
+      ..quadraticBezierTo(9, 71, 35, 67)
+      ..lineTo(65, 67)
+      ..quadraticBezierTo(91, 71, 94, 92)
+      ..lineTo(94, _canvas)
       ..close();
     canvas.drawPath(shoulders, Paint()..color = outfit);
 
@@ -158,7 +158,7 @@ class AvatarPainter extends CustomPainter {
             Colors.black.withValues(alpha: 0.10),
             Colors.transparent,
           ],
-        ).createShader(const Rect.fromLTWH(12, 71, 76, 18)),
+        ).createShader(const Rect.fromLTWH(6, 67, 88, 16)),
     );
 
     _paintCollar(canvas, outfit, skin);
@@ -171,7 +171,7 @@ class AvatarPainter extends CustomPainter {
     switch (config.outfit) {
       case AvatarOutfit.crewneck:
         canvas.drawArc(
-          const Rect.fromLTWH(41, 66, 18, 11),
+          const Rect.fromLTWH(41, 62, 18, 11),
           0,
           math.pi,
           true,
@@ -181,9 +181,9 @@ class AvatarPainter extends CustomPainter {
       case AvatarOutfit.vNeck:
         canvas.drawPath(
           Path()
-            ..moveTo(42.5, 70)
-            ..lineTo(50, 81)
-            ..lineTo(57.5, 70)
+            ..moveTo(42.5, 66)
+            ..lineTo(50, 78)
+            ..lineTo(57.5, 66)
             ..close(),
           Paint()..color = skin,
         );
@@ -192,30 +192,30 @@ class AvatarPainter extends CustomPainter {
         // Camisa clara aparecendo, com as pontas da gola por cima.
         canvas.drawPath(
           Path()
-            ..moveTo(42, 70)
-            ..lineTo(50, 82)
-            ..lineTo(58, 70)
+            ..moveTo(42, 66)
+            ..lineTo(50, 79)
+            ..lineTo(58, 66)
             ..close(),
           light,
         );
         canvas.drawPath(
           Path()
-            ..moveTo(41.5, 69.5)
-            ..lineTo(50, 82)
-            ..lineTo(46, 69.5)
+            ..moveTo(41.5, 65.5)
+            ..lineTo(50, 79)
+            ..lineTo(46, 65.5)
             ..close(),
           light,
         );
         canvas.drawPath(
           Path()
-            ..moveTo(58.5, 69.5)
-            ..lineTo(50, 82)
-            ..lineTo(54, 69.5)
+            ..moveTo(58.5, 65.5)
+            ..lineTo(50, 79)
+            ..lineTo(54, 65.5)
             ..close(),
           light,
         );
         canvas.drawLine(
-          const Offset(50, 82),
+          const Offset(50, 79),
           const Offset(50, 100),
           Paint()
             ..color = Color.lerp(outfit, Colors.black, 0.14)!
@@ -226,32 +226,32 @@ class AvatarPainter extends CustomPainter {
         // Camisa por baixo, lapelas por cima.
         canvas.drawPath(
           Path()
-            ..moveTo(43, 70)
+            ..moveTo(43, 66)
             ..lineTo(50, 100)
-            ..lineTo(57, 70)
+            ..lineTo(57, 66)
             ..close(),
           light,
         );
         canvas.drawPath(
           Path()
-            ..moveTo(39, 70)
-            ..lineTo(50, 88)
-            ..lineTo(45, 70)
+            ..moveTo(38, 66)
+            ..lineTo(50, 86)
+            ..lineTo(44.5, 66)
             ..close(),
           dark,
         );
         canvas.drawPath(
           Path()
-            ..moveTo(61, 70)
-            ..lineTo(50, 88)
-            ..lineTo(55, 70)
+            ..moveTo(62, 66)
+            ..lineTo(50, 86)
+            ..lineTo(55.5, 66)
             ..close(),
           dark,
         );
 
       case AvatarOutfit.hoodie:
         canvas.drawArc(
-          const Rect.fromLTWH(37, 64, 26, 16),
+          const Rect.fromLTWH(37, 60, 26, 16),
           0,
           math.pi,
           true,
@@ -261,8 +261,8 @@ class AvatarPainter extends CustomPainter {
           ..color = light.color
           ..strokeWidth = 1.5
           ..strokeCap = StrokeCap.round;
-        canvas.drawLine(const Offset(46, 77), const Offset(45, 90), cord);
-        canvas.drawLine(const Offset(54, 77), const Offset(55, 90), cord);
+        canvas.drawLine(const Offset(46, 73), const Offset(45, 88), cord);
+        canvas.drawLine(const Offset(54, 73), const Offset(55, 88), cord);
     }
   }
 
@@ -503,8 +503,8 @@ class AvatarPainter extends CustomPainter {
         _paintBeard(
           canvas,
           Paint()..color = hair.withValues(alpha: 0.30),
-          sideY: 48,
-          dipY: 58,
+          sideY: 44,
+          dipY: 54,
         );
 
       case AvatarFacialHair.mustache:
@@ -515,10 +515,10 @@ class AvatarPainter extends CustomPainter {
         canvas.clipPath(_facePath);
         canvas.drawPath(
           Path()
-            ..moveTo(46, 60)
-            ..quadraticBezierTo(50, 58.6, 54, 60)
-            ..quadraticBezierTo(53, 67, 50, 68)
-            ..quadraticBezierTo(47, 67, 46, 60)
+            ..moveTo(46.5, 55)
+            ..quadraticBezierTo(50, 53.8, 53.5, 55)
+            ..quadraticBezierTo(52.6, 61, 50, 62)
+            ..quadraticBezierTo(47.4, 61, 46.5, 55)
             ..close(),
           paint,
         );
@@ -526,14 +526,14 @@ class AvatarPainter extends CustomPainter {
         _paintMustache(canvas, paint);
 
       case AvatarFacialHair.shortBeard:
-        _paintBeard(canvas, paint, sideY: 47, dipY: 58);
+        _paintBeard(canvas, paint, sideY: 43.5, dipY: 54);
         _paintMustache(canvas, paint);
         _paintMouth(canvas);
 
       case AvatarFacialHair.fullBeard:
         // Costeletas abaixo da linha dos olhos: mais acima a barba invade a
         // têmpora e o rosto vira uma máscara.
-        _paintBeard(canvas, paint, sideY: 46, dipY: 57);
+        _paintBeard(canvas, paint, sideY: 42, dipY: 53);
         _paintMustache(canvas, paint);
         _paintMouth(canvas);
     }
@@ -573,11 +573,11 @@ class AvatarPainter extends CustomPainter {
   void _paintMustache(Canvas canvas, Paint paint) {
     canvas.drawPath(
       Path()
-        ..moveTo(44.6, 53.4)
-        ..quadraticBezierTo(47.2, 50.8, 50, 52.4)
-        ..quadraticBezierTo(52.8, 50.8, 55.4, 53.4)
-        ..quadraticBezierTo(52.8, 55.2, 50, 54.2)
-        ..quadraticBezierTo(47.2, 55.2, 44.6, 53.4)
+        ..moveTo(45.0, 49.9)
+        ..quadraticBezierTo(47.4, 47.3, 50, 48.9)
+        ..quadraticBezierTo(52.6, 47.3, 55.0, 49.9)
+        ..quadraticBezierTo(52.6, 51.7, 50, 50.7)
+        ..quadraticBezierTo(47.4, 51.7, 45.0, 49.9)
         ..close(),
       paint,
     );
@@ -585,73 +585,99 @@ class AvatarPainter extends CustomPainter {
 
   // ── Cabelo ────────────────────────────────────────────────────────────────
 
-  /// Volume que passa por trás da cabeça e dos ombros.
+  /// Massa de cabelo que passa por trás da cabeça e dos ombros.
+  ///
+  /// Nas referências o cabelo tem silhueta própria: desce pelas laterais e
+  /// emoldura o rosto, em vez de ser uma calota apoiada no topo do crânio. É
+  /// essa moldura lateral que dá volume — por isso ela é desenhada aqui, atrás
+  /// da cabeça, e não na camada da frente, que repintaria as feições.
   void _paintHairBack(Canvas canvas, Color hair) {
-    final paint = Paint()..color = Color.lerp(hair, Colors.black, 0.12)!;
+    final paint = Paint()..color = Color.lerp(hair, Colors.black, 0.10)!;
+    final deep = Paint()..color = Color.lerp(hair, Colors.black, 0.22)!;
 
     switch (config.hairStyle) {
       case AvatarHairStyle.long:
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(
-            const Rect.fromLTWH(27, 20, 46, 56),
-            const Radius.circular(22),
-          ),
+        canvas.drawPath(
+          Path()
+            ..moveTo(28, 30)
+            ..quadraticBezierTo(28, 12, 50, 12)
+            ..quadraticBezierTo(72, 12, 72, 30)
+            ..lineTo(74, 66)
+            ..quadraticBezierTo(74, 72, 68, 72)
+            ..lineTo(64, 46)
+            ..lineTo(36, 46)
+            ..lineTo(32, 72)
+            ..quadraticBezierTo(26, 72, 26, 66)
+            ..close(),
           paint,
         );
 
       case AvatarHairStyle.longCurly:
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(
-            const Rect.fromLTWH(24, 18, 52, 58),
-            const Radius.circular(26),
-          ),
+        canvas.drawPath(
+          Path()
+            ..moveTo(26, 32)
+            ..quadraticBezierTo(26, 10, 50, 10)
+            ..quadraticBezierTo(74, 10, 74, 32)
+            ..lineTo(76, 62)
+            ..quadraticBezierTo(70, 74, 60, 70)
+            ..lineTo(40, 70)
+            ..quadraticBezierTo(30, 74, 24, 62)
+            ..close(),
           paint,
         );
-        for (var i = 0; i < 5; i++) {
-          canvas.drawCircle(Offset(26 + i * 12.0, 72), 6.5, paint);
+        for (var i = 0; i < 7; i++) {
+          final t = i / 6;
+          canvas.drawCircle(
+            Offset(24 + t * 52, 62 + math.sin(t * 3) * 5),
+            7,
+            paint,
+          );
         }
 
-      case AvatarHairStyle.ponytail:
-        canvas.drawCircle(const Offset(72, 40), 7, paint);
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(
-            const Rect.fromLTWH(67, 40, 10, 22),
-            const Radius.circular(5),
-          ),
+      case AvatarHairStyle.medium:
+        canvas.drawPath(
+          Path()
+            ..moveTo(29, 30)
+            ..quadraticBezierTo(29, 11, 50, 11)
+            ..quadraticBezierTo(71, 11, 71, 30)
+            ..lineTo(72, 54)
+            ..quadraticBezierTo(70, 60, 64, 58)
+            ..lineTo(36, 58)
+            ..quadraticBezierTo(30, 60, 28, 54)
+            ..close(),
           paint,
+        );
+
+      case AvatarHairStyle.ponytail:
+        canvas.drawCircle(const Offset(71, 34), 6.5, deep);
+        canvas.drawPath(
+          Path()
+            ..moveTo(70, 34)
+            ..quadraticBezierTo(80, 44, 76, 58)
+            ..quadraticBezierTo(72, 52, 66, 42)
+            ..close(),
+          deep,
         );
 
       case AvatarHairStyle.bun:
-        canvas.drawCircle(const Offset(50, 14), 8, paint);
+        canvas.drawCircle(const Offset(50, 11), 8.5, deep);
 
       case AvatarHairStyle.afro:
-        canvas.drawCircle(const Offset(50, 34), 28, paint);
-
-      case AvatarHairStyle.medium:
-        // O volume lateral vem por trás; à frente fica só a calota. Desenhar
-        // essa massa na frente exigiria repintar o rosto por cima dela — e o
-        // rosto já foi desenhado com olhos e boca a essa altura.
-        canvas.drawRRect(
-          RRect.fromRectAndRadius(
-            const Rect.fromLTWH(27, 20, 46, 42),
-            const Radius.circular(19),
-          ),
-          paint,
-        );
+        canvas.drawCircle(const Offset(50, 30), 27, paint);
 
       default:
         return;
     }
   }
 
-  /// Franja e topo, desenhados sobre o rosto — sempre acima da linha dos
-  /// olhos, para não apagar feições já pintadas.
+  /// Topo, franja e laterais desenhados sobre o rosto — sempre acima da linha
+  /// dos olhos, para não apagar feições já pintadas.
   void _paintHairFront(Canvas canvas, Color hair) {
     if (config.hairStyle == AvatarHairStyle.none) return;
 
     final paint = Paint()..color = hair;
-    final shine = Paint()..color = Colors.white.withValues(alpha: 0.10);
 
+    /// Calota que vai do topo do crânio até a linha do cabelo.
     void cap({double spread = 1.0, double drop = 0.0}) {
       final bottom = _hairlineY + drop;
       final top = _headCenter.dy - _headRy - 1.5;
@@ -668,6 +694,27 @@ class AvatarPainter extends CustomPainter {
       );
     }
 
+    /// Costeletas descendo pelas laterais até a altura da orelha, cobrindo a
+    /// têmpora. Sem elas o cabelo parece um chapéu apoiado na cabeça.
+    void sideburns({double to = 44}) {
+      for (final side in const [-1, 1]) {
+        final x = _headCenter.dx + side * _headRx;
+        canvas.drawPath(
+          Path()
+            ..moveTo(x - side * 1.5, _hairlineY - 4)
+            ..quadraticBezierTo(x + side * 1.5, (_hairlineY + to) / 2, x, to)
+            ..quadraticBezierTo(
+              x - side * 3.5,
+              (_hairlineY + to) / 2,
+              x - side * 4,
+              _hairlineY - 2,
+            )
+            ..close(),
+          paint,
+        );
+      }
+    }
+
     switch (config.hairStyle) {
       case AvatarHairStyle.none:
         return;
@@ -677,36 +724,39 @@ class AvatarPainter extends CustomPainter {
         canvas.clipPath(_facePath);
         canvas.drawArc(
           Rect.fromCenter(
-            center: Offset(_headCenter.dx, _hairlineY),
+            center: Offset(_headCenter.dx, _hairlineY + 2),
             width: _headRx * 2,
-            height: (_hairlineY - (_headCenter.dy - _headRy)) * 2,
+            height: (_hairlineY + 2 - (_headCenter.dy - _headRy)) * 2,
           ),
           math.pi,
           math.pi,
           true,
-          Paint()..color = hair.withValues(alpha: 0.78),
+          Paint()..color = hair.withValues(alpha: 0.80),
         );
         canvas.restore();
 
       case AvatarHairStyle.short:
         cap();
+        sideburns(to: 42);
+        // Repartido de lado: uma mecha atravessa a testa em diagonal.
         canvas.drawPath(
           Path()
-            ..moveTo(_headCenter.dx - _headRx - 1, 35)
-            ..quadraticBezierTo(38, 22, 60, 26)
-            ..quadraticBezierTo(50, 29, 44, 36)
+            ..moveTo(_headCenter.dx - _headRx - 1, 32)
+            ..quadraticBezierTo(40, 17, 62, 22)
+            ..quadraticBezierTo(52, 25, 45, 33)
             ..close(),
           paint,
         );
 
       case AvatarHairStyle.shortCurly:
         cap();
-        for (var i = 0; i < 7; i++) {
-          final angle = math.pi + (i / 6) * math.pi;
+        sideburns(to: 41);
+        for (var i = 0; i < 8; i++) {
+          final angle = math.pi + (i / 7) * math.pi;
           canvas.drawCircle(
             Offset(
               _headCenter.dx + math.cos(angle) * (_headRx + 0.5),
-              _hairlineY + math.sin(angle) * (_hairlineY - 16),
+              _hairlineY + math.sin(angle) * (_hairlineY - 12),
             ),
             5,
             paint,
@@ -714,38 +764,52 @@ class AvatarPainter extends CustomPainter {
         }
 
       case AvatarHairStyle.medium:
-        cap(spread: 1.06);
+        cap(spread: 1.04);
+        sideburns(to: 46);
+        canvas.drawPath(
+          Path()
+            ..moveTo(31, 30)
+            ..quadraticBezierTo(38, 15, 50, 15)
+            ..quadraticBezierTo(62, 15, 69, 30)
+            ..quadraticBezierTo(60, 22, 50, 22)
+            ..quadraticBezierTo(40, 22, 31, 30)
+            ..close(),
+          paint,
+        );
 
       case AvatarHairStyle.long:
       case AvatarHairStyle.longCurly:
         cap(spread: 1.04);
+        sideburns(to: 48);
         canvas.drawPath(
           Path()
-            ..moveTo(30, 36)
-            ..quadraticBezierTo(36, 18, 50, 18)
-            ..quadraticBezierTo(64, 18, 70, 36)
-            ..quadraticBezierTo(63, 26, 50, 26)
-            ..quadraticBezierTo(37, 26, 30, 36)
+            ..moveTo(30, 31)
+            ..quadraticBezierTo(35, 13, 50, 13)
+            ..quadraticBezierTo(65, 13, 70, 31)
+            ..quadraticBezierTo(62, 20, 50, 20)
+            ..quadraticBezierTo(38, 20, 30, 31)
             ..close(),
           paint,
         );
 
       case AvatarHairStyle.bun:
       case AvatarHairStyle.ponytail:
-        cap();
+        // Cabelo puxado para trás: calota lisa, sem franja na testa.
+        cap(spread: 1.02, drop: -2);
+        sideburns(to: 38);
 
       case AvatarHairStyle.afro:
         cap(spread: 0.98, drop: -3);
     }
 
-    // Brilho discreto no topo — o mesmo truque das ilustrações de referência.
+    // Brilho discreto no topo — o mesmo recurso das ilustrações de referência.
     canvas.drawOval(
       Rect.fromCenter(
-        center: Offset(_headCenter.dx - 6, _headCenter.dy - _headRy + 4),
-        width: 13,
-        height: 5,
+        center: Offset(_headCenter.dx - 5.5, _headCenter.dy - _headRy + 6),
+        width: 12,
+        height: 4.5,
       ),
-      shine,
+      Paint()..color = Colors.white.withValues(alpha: 0.12),
     );
   }
 
@@ -835,7 +899,7 @@ class AvatarPainter extends CustomPainter {
 
       case AvatarAccessory.necklace:
         canvas.drawArc(
-          const Rect.fromLTWH(42, 70, 16, 12),
+          const Rect.fromLTWH(42, 66, 16, 12),
           0.15,
           math.pi - 0.3,
           false,
@@ -844,7 +908,7 @@ class AvatarPainter extends CustomPainter {
             ..style = PaintingStyle.stroke
             ..strokeWidth = 1.1,
         );
-        canvas.drawCircle(const Offset(50, 81), 1.6, gold);
+        canvas.drawCircle(const Offset(50, 77), 1.6, gold);
     }
   }
 

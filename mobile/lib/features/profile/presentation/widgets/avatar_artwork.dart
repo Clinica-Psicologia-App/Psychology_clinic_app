@@ -89,6 +89,7 @@ class AvatarPainter extends CustomPainter {
     _paintEyes(canvas);
     _paintNose(canvas, skin);
     _paintMouth(canvas);
+    _paintFacialMark(canvas, skin);
     _paintFacialHair(canvas, hair);
     _paintHairFront(canvas, hair);
     _paintGlasses(canvas);
@@ -249,6 +250,127 @@ class AvatarPainter extends CustomPainter {
           dark,
         );
 
+      case AvatarOutfit.turtleneck:
+        // Gola alta subindo pelo pescoço até quase o queixo.
+        canvas.drawRRect(
+          RRect.fromRectAndRadius(
+            const Rect.fromLTWH(41, 54, 18, 16),
+            const Radius.circular(7),
+          ),
+          Paint()..color = Color.lerp(outfit, Colors.black, 0.10)!,
+        );
+        canvas.drawArc(
+          const Rect.fromLTWH(41, 50, 18, 9),
+          0,
+          math.pi,
+          true,
+          dark,
+        );
+
+      case AvatarOutfit.cardigan:
+        // Aberto na frente, com peça clara por baixo e botões.
+        canvas.drawPath(
+          Path()
+            ..moveTo(43, 66)
+            ..lineTo(50, 100)
+            ..lineTo(57, 66)
+            ..close(),
+          light,
+        );
+        canvas.drawPath(
+          Path()
+            ..moveTo(40, 66)
+            ..lineTo(46, 100)
+            ..lineTo(38, 100)
+            ..close(),
+          dark,
+        );
+        canvas.drawPath(
+          Path()
+            ..moveTo(60, 66)
+            ..lineTo(54, 100)
+            ..lineTo(62, 100)
+            ..close(),
+          dark,
+        );
+        for (var i = 0; i < 3; i++) {
+          canvas.drawCircle(
+            Offset(50, 78 + i * 8.0),
+            1.3,
+            Paint()..color = Color.lerp(outfit, Colors.white, 0.55)!,
+          );
+        }
+
+      case AvatarOutfit.labCoat:
+        // Jaleco branco sobre peça na cor escolhida — a leitura mais direta
+        // de "profissional de saúde" no conjunto.
+        final coat = Paint()..color = const Color(0xFFF6F7F9);
+        canvas.drawPath(
+          Path()
+            ..moveTo(41, 66)
+            ..lineTo(50, 100)
+            ..lineTo(59, 66)
+            ..close(),
+          Paint()..color = outfit,
+        );
+        canvas.drawPath(
+          Path()
+            ..moveTo(38, 66)
+            ..lineTo(50, 90)
+            ..lineTo(48, 100)
+            ..lineTo(28, 100)
+            ..quadraticBezierTo(30, 74, 38, 66)
+            ..close(),
+          coat,
+        );
+        canvas.drawPath(
+          Path()
+            ..moveTo(62, 66)
+            ..lineTo(50, 90)
+            ..lineTo(52, 100)
+            ..lineTo(72, 100)
+            ..quadraticBezierTo(70, 74, 62, 66)
+            ..close(),
+          coat,
+        );
+        // Costura da lapela.
+        final costura = Paint()
+          ..color = const Color(0xFFD8DDE4)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 0.9;
+        canvas.drawLine(const Offset(38, 66), const Offset(50, 90), costura);
+        canvas.drawLine(const Offset(62, 66), const Offset(50, 90), costura);
+
+      case AvatarOutfit.scrubs:
+        // Decote em V com viés mais escuro e bolso no peito.
+        canvas.drawPath(
+          Path()
+            ..moveTo(42, 66)
+            ..lineTo(50, 82)
+            ..lineTo(58, 66)
+            ..close(),
+          Paint()..color = skin,
+        );
+        final vies = Paint()
+          ..color = Color.lerp(outfit, Colors.black, 0.28)!
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2.2
+          ..strokeJoin = StrokeJoin.round;
+        canvas.drawPath(
+          Path()
+            ..moveTo(41, 65)
+            ..lineTo(50, 83)
+            ..lineTo(59, 65),
+          vies,
+        );
+        canvas.drawRect(
+          const Rect.fromLTWH(62, 84, 10, 9),
+          Paint()
+            ..color = Color.lerp(outfit, Colors.black, 0.18)!
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.1,
+        );
+
       case AvatarOutfit.hoodie:
         canvas.drawArc(
           const Rect.fromLTWH(37, 60, 26, 16),
@@ -387,6 +509,58 @@ class AvatarPainter extends CustomPainter {
           Paint()..color = Colors.white,
         );
         canvas.restore();
+    }
+  }
+
+  /// Sardas, pinta e marcas de expressão. Ficam num eixo próprio, e não junto
+  /// dos acessórios, porque não são excludentes com brinco ou colar.
+  void _paintFacialMark(Canvas canvas, Color skin) {
+    if (config.facialMark == AvatarFacialMark.none) return;
+
+    final ink = Color.lerp(skin, const Color(0xFF7A4A2E), 0.55)!;
+
+    switch (config.facialMark) {
+      case AvatarFacialMark.none:
+        return;
+
+      case AvatarFacialMark.freckles:
+        final dot = Paint()..color = ink.withValues(alpha: 0.55);
+        const pontos = <Offset>[
+          Offset(41.5, 45.5),
+          Offset(44.5, 47),
+          Offset(38.5, 47.5),
+          Offset(58.5, 45.5),
+          Offset(55.5, 47),
+          Offset(61.5, 47.5),
+          Offset(46.5, 44.5),
+          Offset(53.5, 44.5),
+        ];
+        for (final ponto in pontos) {
+          canvas.drawCircle(ponto, 0.85, dot);
+        }
+
+      case AvatarFacialMark.beautyMark:
+        canvas.drawCircle(
+          const Offset(57.5, 50),
+          1.1,
+          Paint()..color = ink.withValues(alpha: 0.8),
+        );
+
+      case AvatarFacialMark.laughLines:
+        final linha = Paint()
+          ..color = ink.withValues(alpha: 0.32)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 0.9
+          ..strokeCap = StrokeCap.round;
+        for (final side in const [-1, 1]) {
+          final x = 50 + side * 7.5;
+          canvas.drawPath(
+            Path()
+              ..moveTo(x, 46)
+              ..quadraticBezierTo(x + side * 1.6, 50, x - side * 0.4, 54),
+            linha,
+          );
+        }
     }
   }
 
@@ -1021,6 +1195,33 @@ class AvatarPainter extends CustomPainter {
         for (final r in [left, right]) {
           canvas.drawOval(r, lens);
           canvas.drawArc(r, math.pi, math.pi, false, frame);
+        }
+
+      case AvatarGlasses.catEye:
+        // Canto externo levantado.
+        for (final side in const [-1, 1]) {
+          final r = side < 0 ? left : right;
+          final p = Path()
+            ..moveTo(r.left, r.center.dy + 1)
+            ..quadraticBezierTo(r.left, r.bottom, r.center.dx, r.bottom)
+            ..quadraticBezierTo(r.right, r.bottom, r.right, r.center.dy)
+            ..lineTo(r.right + side * 2.2, r.top - 1.4)
+            ..quadraticBezierTo(r.center.dx, r.top, r.left, r.center.dy + 1)
+            ..close();
+          canvas.drawPath(p, lens);
+          canvas.drawPath(p, frame);
+        }
+
+      case AvatarGlasses.aviator:
+        for (final r in [left, right]) {
+          final p = Path()
+            ..moveTo(r.left, r.top + 1)
+            ..lineTo(r.right, r.top + 1)
+            ..quadraticBezierTo(r.right, r.bottom, r.center.dx, r.bottom)
+            ..quadraticBezierTo(r.left, r.bottom, r.left, r.top + 1)
+            ..close();
+          canvas.drawPath(p, lens);
+          canvas.drawPath(p, frame);
         }
     }
 

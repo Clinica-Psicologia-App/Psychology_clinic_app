@@ -128,6 +128,22 @@ void main() {
         ),
       ));
     }
+    for (final mark in AvatarFacialMark.values) {
+      samples.add((
+        mark.key,
+        AvatarConfig(
+          facialMark: mark,
+          skinTone: AvatarSkinTone.light,
+          backgroundColor: AvatarPaletteColor.slate,
+        ),
+      ));
+    }
+    for (final skin in AvatarSkinTone.values) {
+      samples.add((
+        skin.key,
+        AvatarConfig(skinTone: skin, backgroundColor: AvatarPaletteColor.cyan),
+      ));
+    }
     for (final eye in AvatarEyeStyle.values) {
       samples.add((
         eye.key,

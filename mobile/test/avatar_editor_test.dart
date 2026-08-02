@@ -81,6 +81,40 @@ void main() {
       }
     });
 
+    test('cobre marcas faciais, roupas e óculos novos', () {
+      for (final mark in AvatarFacialMark.values) {
+        for (final outfit in AvatarOutfit.values) {
+          for (final glasses in AvatarGlasses.values) {
+            expect(
+              () => _paintOnce(
+                AvatarPainter(AvatarConfig(
+                  facialMark: mark,
+                  outfit: outfit,
+                  glasses: glasses,
+                )),
+              ),
+              returnsNormally,
+              reason: 'falhou em $mark / $outfit / $glasses',
+            );
+          }
+        }
+      }
+    });
+
+    test('cobre todos os tons de pele e estilos de cabelo', () {
+      for (final skin in AvatarSkinTone.values) {
+        for (final hair in AvatarHairStyle.values) {
+          expect(
+            () => _paintOnce(
+              AvatarPainter(AvatarConfig(skinTone: skin, hairStyle: hair)),
+            ),
+            returnsNormally,
+            reason: 'falhou em $skin / $hair',
+          );
+        }
+      }
+    });
+
     test('formato do rosto altera o desenho', () {
       const oval = AvatarConfig(faceShape: AvatarFaceShape.oval);
       const square = AvatarConfig(faceShape: AvatarFaceShape.square);

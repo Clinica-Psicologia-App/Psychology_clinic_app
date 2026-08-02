@@ -61,10 +61,12 @@ abstract final class AvatarPalette {
     return switch (tone) {
       AvatarSkinTone.porcelain => const Color(0xFFF7DFD0),
       AvatarSkinTone.light => const Color(0xFFEFC9AC),
+      AvatarSkinTone.olive => const Color(0xFFE0B891),
       AvatarSkinTone.medium => const Color(0xFFD9A576),
       AvatarSkinTone.tan => const Color(0xFFB77E4F),
       AvatarSkinTone.brown => const Color(0xFF8A5533),
       AvatarSkinTone.deep => const Color(0xFF5C3620),
+      AvatarSkinTone.espresso => const Color(0xFF3E2416),
     };
   }
 
@@ -72,10 +74,12 @@ abstract final class AvatarPalette {
     return switch (tone) {
       AvatarSkinTone.porcelain => 'Porcelana',
       AvatarSkinTone.light => 'Clara',
+      AvatarSkinTone.olive => 'Oliva',
       AvatarSkinTone.medium => 'Média',
       AvatarSkinTone.tan => 'Morena',
       AvatarSkinTone.brown => 'Castanha',
       AvatarSkinTone.deep => 'Escura',
+      AvatarSkinTone.espresso => 'Bem escura',
     };
   }
 
@@ -165,6 +169,8 @@ abstract final class AvatarPalette {
       AvatarGlasses.none => 'Sem óculos',
       AvatarGlasses.rounded => 'Redondos',
       AvatarGlasses.square => 'Quadrados',
+      AvatarGlasses.catEye => 'Gatinho',
+      AvatarGlasses.aviator => 'Aviador',
       AvatarGlasses.halfRim => 'Meia armação',
     };
   }
@@ -203,12 +209,25 @@ abstract final class AvatarPalette {
     };
   }
 
+  static String facialMarkLabel(AvatarFacialMark mark) {
+    return switch (mark) {
+      AvatarFacialMark.none => 'Nenhuma',
+      AvatarFacialMark.freckles => 'Sardas',
+      AvatarFacialMark.beautyMark => 'Pinta',
+      AvatarFacialMark.laughLines => 'Marcas de expressão',
+    };
+  }
+
   static String outfitLabel(AvatarOutfit outfit) {
     return switch (outfit) {
       AvatarOutfit.crewneck => 'Camiseta',
       AvatarOutfit.collared => 'Camisa social',
       AvatarOutfit.vNeck => 'Gola V',
+      AvatarOutfit.turtleneck => 'Gola alta',
+      AvatarOutfit.cardigan => 'Cardigã',
       AvatarOutfit.blazer => 'Blazer',
+      AvatarOutfit.labCoat => 'Jaleco',
+      AvatarOutfit.scrubs => 'Scrub',
       AvatarOutfit.hoodie => 'Moletom',
     };
   }

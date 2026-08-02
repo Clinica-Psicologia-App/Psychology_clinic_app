@@ -174,7 +174,7 @@ class _Preview extends StatelessWidget {
           shape: BoxShape.circle,
           boxShadow: AppShadows.clay(),
         ),
-        child: AvatarArtwork(config: config, size: 132),
+        child: AvatarArtwork(config: config, size: 116),
       ),
     );
   }
@@ -193,6 +193,7 @@ enum _EditorCategory {
   mouth('Boca'),
   facialHair('Barba'),
   glasses('Óculos'),
+  facialMark('Marcas'),
   accessory('Acessórios'),
   outfit('Roupa'),
   outfitColor('Cor da roupa'),
@@ -252,10 +253,10 @@ class _OptionGrid extends StatelessWidget {
     return GridView.builder(
       padding: const EdgeInsets.all(AppSpacing.md),
       gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-        maxCrossAxisExtent: 104,
-        mainAxisSpacing: AppSpacing.sm,
-        crossAxisSpacing: AppSpacing.sm,
-        childAspectRatio: 0.78,
+        maxCrossAxisExtent: 96,
+        mainAxisSpacing: AppSpacing.xs,
+        crossAxisSpacing: AppSpacing.xs,
+        childAspectRatio: 0.92,
       ),
       itemCount: options.length,
       itemBuilder: (context, index) {
@@ -308,6 +309,13 @@ List<_Option> _optionsFor(_EditorCategory category, AvatarConfig config) {
           _Option(
             label: AvatarPalette.mouthLabel(v),
             config: config.copyWith(mouthStyle: v),
+          ),
+      ],
+    _EditorCategory.facialMark => [
+        for (final v in AvatarFacialMark.values)
+          _Option(
+            label: AvatarPalette.facialMarkLabel(v),
+            config: config.copyWith(facialMark: v),
           ),
       ],
     _EditorCategory.accessory => [
@@ -426,8 +434,8 @@ class _OptionTile extends StatelessWidget {
               // de um ícone genérico: a escolha é feita vendo o efeito real.
               if (option.swatch != null)
                 Container(
-                  width: 52,
-                  height: 52,
+                  width: 64,
+                  height: 64,
                   decoration: BoxDecoration(
                     color: option.swatch,
                     shape: BoxShape.circle,
@@ -435,7 +443,7 @@ class _OptionTile extends StatelessWidget {
                   ),
                 )
               else
-                AvatarArtwork(config: option.config, size: 52),
+                AvatarArtwork(config: option.config, size: 64),
               const SizedBox(height: AppSpacing.xxs),
               Flexible(
                 child: Text(

@@ -21,10 +21,12 @@ const int kAvatarConfigMaxJsonLength = 2048;
 enum AvatarSkinTone {
   porcelain('porcelain'),
   light('light'),
+  olive('olive'),
   medium('medium'),
   tan('tan'),
   brown('brown'),
-  deep('deep');
+  deep('deep'),
+  espresso('espresso');
 
   const AvatarSkinTone(this.key);
   final String key;
@@ -118,6 +120,19 @@ enum AvatarMouth {
       _lookup(values, key, (e) => e.key, softSmile);
 }
 
+enum AvatarFacialMark {
+  none('none'),
+  freckles('freckles'),
+  beautyMark('beauty_mark'),
+  laughLines('laugh_lines');
+
+  const AvatarFacialMark(this.key);
+  final String key;
+
+  static AvatarFacialMark fromKey(String? key) =>
+      _lookup(values, key, (e) => e.key, none);
+}
+
 enum AvatarAccessory {
   none('none'),
   studs('studs'),
@@ -180,6 +195,8 @@ enum AvatarGlasses {
   none('none'),
   rounded('rounded'),
   square('square'),
+  catEye('cat_eye'),
+  aviator('aviator'),
   halfRim('half_rim');
 
   const AvatarGlasses(this.key);
@@ -193,7 +210,11 @@ enum AvatarOutfit {
   crewneck('crewneck'),
   collared('collared'),
   vNeck('v_neck'),
+  turtleneck('turtleneck'),
+  cardigan('cardigan'),
   blazer('blazer'),
+  labCoat('lab_coat'),
+  scrubs('scrubs'),
   hoodie('hoodie');
 
   const AvatarOutfit(this.key);
@@ -247,6 +268,7 @@ class AvatarConfig {
     this.noseStyle = AvatarNose.soft,
     this.mouthStyle = AvatarMouth.softSmile,
     this.accessory = AvatarAccessory.none,
+    this.facialMark = AvatarFacialMark.none,
     this.hairStyle = AvatarHairStyle.short,
     this.hairColor = AvatarHairColor.darkBrown,
     this.eyeStyle = AvatarEyeStyle.almond,
@@ -264,6 +286,7 @@ class AvatarConfig {
   final AvatarNose noseStyle;
   final AvatarMouth mouthStyle;
   final AvatarAccessory accessory;
+  final AvatarFacialMark facialMark;
   final AvatarHairStyle hairStyle;
   final AvatarHairColor hairColor;
   final AvatarEyeStyle eyeStyle;
@@ -296,6 +319,7 @@ class AvatarConfig {
       noseStyle: AvatarNose.fromKey(str('noseStyle')),
       mouthStyle: AvatarMouth.fromKey(str('mouthStyle')),
       accessory: AvatarAccessory.fromKey(str('accessory')),
+      facialMark: AvatarFacialMark.fromKey(str('facialMark')),
       hairStyle: AvatarHairStyle.fromKey(str('hairStyle')),
       hairColor: AvatarHairColor.fromKey(str('hairColor')),
       eyeStyle: AvatarEyeStyle.fromKey(str('eyeStyle')),
@@ -323,6 +347,7 @@ class AvatarConfig {
         'noseStyle': noseStyle.key,
         'mouthStyle': mouthStyle.key,
         'accessory': accessory.key,
+        'facialMark': facialMark.key,
         'hairStyle': hairStyle.key,
         'hairColor': hairColor.key,
         'eyeStyle': eyeStyle.key,
@@ -340,6 +365,7 @@ class AvatarConfig {
     AvatarNose? noseStyle,
     AvatarMouth? mouthStyle,
     AvatarAccessory? accessory,
+    AvatarFacialMark? facialMark,
     AvatarHairStyle? hairStyle,
     AvatarHairColor? hairColor,
     AvatarEyeStyle? eyeStyle,
@@ -356,6 +382,7 @@ class AvatarConfig {
       noseStyle: noseStyle ?? this.noseStyle,
       mouthStyle: mouthStyle ?? this.mouthStyle,
       accessory: accessory ?? this.accessory,
+      facialMark: facialMark ?? this.facialMark,
       hairStyle: hairStyle ?? this.hairStyle,
       hairColor: hairColor ?? this.hairColor,
       eyeStyle: eyeStyle ?? this.eyeStyle,
@@ -389,6 +416,7 @@ class AvatarConfig {
       noseStyle: pick(AvatarNose.values),
       mouthStyle: pick(AvatarMouth.values),
       accessory: pick(AvatarAccessory.values),
+      facialMark: pick(AvatarFacialMark.values),
       hairStyle: pick(AvatarHairStyle.values),
       hairColor: pick(AvatarHairColor.values),
       eyeStyle: pick(AvatarEyeStyle.values),
@@ -410,6 +438,7 @@ class AvatarConfig {
         other.noseStyle == noseStyle &&
         other.mouthStyle == mouthStyle &&
         other.accessory == accessory &&
+        other.facialMark == facialMark &&
         other.hairStyle == hairStyle &&
         other.hairColor == hairColor &&
         other.eyeStyle == eyeStyle &&
@@ -428,6 +457,7 @@ class AvatarConfig {
         noseStyle,
         mouthStyle,
         accessory,
+        facialMark,
         hairStyle,
         hairColor,
         eyeStyle,

@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -399,21 +400,17 @@ class MentalMapRadialHub extends StatelessWidget {
             clipBehavior: Clip.none,
             children: [
               Positioned.fill(
-                child: IgnorePointer(
-                  child: CustomPaint(
-                    painter: _HubConnectionsPainter(
-                      hubCenter: Offset(
-                        centerX + centerSize / 2,
-                        centerY + centerSize / 2,
-                      ),
-                      hubRadius: centerSize / 2,
-                      targets: [
-                        for (final entry in slotPositions.entries)
-                          if (nodeMap[entry.key] case final node?)
-                            _hubTarget(entry.value, node),
-                      ],
-                    ),
+                child: _HubConnections(
+                  hubCenter: Offset(
+                    centerX + centerSize / 2,
+                    centerY + centerSize / 2,
                   ),
+                  hubRadius: centerSize / 2,
+                  targets: [
+                    for (final entry in slotPositions.entries)
+                      if (nodeMap[entry.key] case final node?)
+                        _hubTarget(entry.value, node),
+                  ],
                 ),
               ),
               Positioned(
@@ -440,15 +437,46 @@ class MentalMapRadialHub extends StatelessWidget {
   }
 }
 
+/// Distância que o fluxo percorre a cada ciclo do controller. Todos os
+/// espaçamentos de [flowSpacingFor] dividem este valor — condição para o
+/// laço não dar salto quando o controller volta de 1 para 0.
+const double _flowCycleDistance = 60;
+
+/// Espaçamento entre as partículas da fibra. A velocidade é a mesma em
+/// todas as conexões; o que muda é a distância entre as partículas, então a
+/// densidade do fluxo lê como quantidade de registros sem precisar de número.
+///
+/// Todo valor devolvido aqui precisa dividir [flowCycleDistance] — é o que
+/// impede o laço de dar um salto quando o controller volta de 1 para 0.
+@visibleForTesting
+double flowSpacingFor(int itemCount) {
+  if (itemCount >= 3) return 12;
+  if (itemCount == 2) return 15;
+  if (itemCount == 1) return 20;
+  return 30;
+}
+
+/// Exposto para o teste conferir a divisibilidade citada acima.
+@visibleForTesting
+const double flowCycleDistance = _flowCycleDistance;
+
 /// Anchor do nodo para o painter de conexões: o círculo do nodo fica
 /// centralizado horizontalmente e um pouco acima do centro vertical da sua
 /// caixa (a Column reserva espaço abaixo para o rótulo).
-_HubConnectionTarget _hubTarget(Rect box, MentalMapHubNodeData node) {
+_HubConnectionTarget _hubTarget(
+  Rect box,
+  MentalMapHubNodeData node, {
+  Offset? center,
+  double radius = 32,
+}) {
   return _HubConnectionTarget(
-    center: Offset(box.center.dx, box.top + box.height * 0.42),
-    radius: 32,
+    center: center ?? Offset(box.center.dx, box.top + box.height * 0.42),
+    radius: radius,
     isFilled: node.isFilled,
     color: node.severityColor ?? node.accentColor,
+    // Só quem tem registro conduz fluxo: área vazia fica com a fibra
+    // tênue e parada, e o contraste vira a informação.
+    flowSpacing: node.isFilled ? flowSpacingFor(node.items.length) : null,
   );
 }
 
@@ -460,11 +488,15 @@ class _HubConnectionsPainter extends CustomPainter {
     required this.hubCenter,
     required this.hubRadius,
     required this.targets,
+    this.flowPhase = 0,
   });
 
   final Offset hubCenter;
   final double hubRadius;
   final List<_HubConnectionTarget> targets;
+
+  /// Avanço do fluxo, de 0 a 1 por ciclo do controller.
+  final double flowPhase;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -507,7 +539,44 @@ class _HubConnectionsPainter extends CustomPainter {
 
       final dotPaint = Paint()..color = color.withValues(alpha: alpha + 0.2);
       canvas.drawCircle(start, 2.2, dotPaint);
-      canvas.drawCircle(control, 2.4, dotPaint);
+
+      if (target.flowSpacing case final spacing?) {
+        _paintFlow(canvas, path, spacing, color);
+      } else {
+        // Sem fluxo, o micro-nodo do meio dá alguma presença à fibra
+        // apagada. Com fluxo ele só competiria com as partículas.
+        canvas.drawCircle(control, 2.4, dotPaint);
+      }
+    }
+  }
+
+  /// Distribui partículas ao longo da fibra e as desloca em direção ao
+  /// núcleo. As posições são `i * spacing - phase`: quando `phase` completa
+  /// um `spacing`, o conjunto coincide com o do início, então o laço fecha
+  /// sem salto visível.
+  void _paintFlow(Canvas canvas, Path path, double spacing, Color color) {
+    final metrics = path.computeMetrics().toList();
+    if (metrics.isEmpty) return;
+    final metric = metrics.first;
+    final length = metric.length;
+    // Fibra curta demais não mostra fluxo — vira um borrão piscando.
+    if (length < 12) return;
+
+    final phase = (flowPhase * _flowCycleDistance) % spacing;
+    final dot = Paint()..style = PaintingStyle.fill;
+
+    for (var i = 0;; i++) {
+      final distance = i * spacing - phase;
+      if (distance > length) break;
+      if (distance < 0) continue;
+      final tangent = metric.getTangentForOffset(distance);
+      if (tangent == null) continue;
+      // Sem o esmaecimento nas pontas a partícula aparece e some de
+      // estalo, o que denuncia o truque.
+      final edge = math.min(distance, length - distance);
+      final fade = (edge / 8).clamp(0.0, 1.0);
+      dot.color = color.withValues(alpha: 0.9 * fade);
+      canvas.drawCircle(tangent.position, 1.9, dot);
     }
   }
 
@@ -515,7 +584,8 @@ class _HubConnectionsPainter extends CustomPainter {
   bool shouldRepaint(_HubConnectionsPainter oldDelegate) =>
       oldDelegate.hubCenter != hubCenter ||
       oldDelegate.hubRadius != hubRadius ||
-      oldDelegate.targets != targets;
+      oldDelegate.flowPhase != flowPhase ||
+      !listEquals(oldDelegate.targets, targets);
 }
 
 class _HubConnectionTarget {
@@ -524,6 +594,7 @@ class _HubConnectionTarget {
     required this.radius,
     required this.isFilled,
     required this.color,
+    this.flowSpacing,
   });
 
   final Offset center;
@@ -531,16 +602,94 @@ class _HubConnectionTarget {
   final bool isFilled;
   final Color color;
 
+  /// Distância entre as partículas do fluxo. `null` = fibra sem fluxo.
+  final double? flowSpacing;
+
   @override
   bool operator ==(Object other) =>
       other is _HubConnectionTarget &&
       other.center == center &&
       other.radius == radius &&
       other.isFilled == isFilled &&
-      other.color == color;
+      other.color == color &&
+      other.flowSpacing == flowSpacing;
 
   @override
-  int get hashCode => Object.hash(center, radius, isFilled, color);
+  int get hashCode => Object.hash(center, radius, isFilled, color, flowSpacing);
+}
+
+/// Envolve o painter das conexões com o controller do fluxo. Existe como
+/// widget próprio porque os dois layouts (mobile e largo) precisam da mesma
+/// animação, e o layout largo é stateless.
+class _HubConnections extends StatefulWidget {
+  const _HubConnections({
+    required this.hubCenter,
+    required this.hubRadius,
+    required this.targets,
+  });
+
+  final Offset hubCenter;
+  final double hubRadius;
+  final List<_HubConnectionTarget> targets;
+
+  @override
+  State<_HubConnections> createState() => _HubConnectionsState();
+}
+
+class _HubConnectionsState extends State<_HubConnections>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _flow;
+
+  @override
+  void initState() {
+    super.initState();
+    _flow = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Com "reduzir movimento" o fluxo congela, mas as partículas continuam
+    // desenhadas: a densidade segue informando a quantidade de registros,
+    // que é o dado — só o movimento é supérfluo.
+    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    if (reduceMotion) {
+      _flow
+        ..stop()
+        ..value = 0;
+    } else if (!_flow.isAnimating) {
+      _flow.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _flow.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: RepaintBoundary(
+        child: AnimatedBuilder(
+          animation: _flow,
+          builder: (context, _) => CustomPaint(
+            size: Size.infinite,
+            painter: _HubConnectionsPainter(
+              hubCenter: widget.hubCenter,
+              hubRadius: widget.hubRadius,
+              targets: widget.targets,
+              flowPhase: _flow.value,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class _MentalMapMobileOrbit extends StatefulWidget {
@@ -566,7 +715,23 @@ class _MentalMapMobileOrbitState extends State<_MentalMapMobileOrbit>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 3600),
-    )..repeat(reverse: true);
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // A flutuação ambiente dos nodos também obedece a "reduzir movimento".
+    // Ela é puramente decorativa — diferente do fluxo, onde as partículas
+    // seguem desenhadas porque a densidade é o dado.
+    final reduceMotion = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    if (reduceMotion) {
+      _controller
+        ..stop()
+        ..value = 0;
+    } else if (!_controller.isAnimating) {
+      _controller.repeat(reverse: true);
+    }
   }
 
   @override
@@ -577,104 +742,161 @@ class _MentalMapMobileOrbitState extends State<_MentalMapMobileOrbit>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final nodeMap = <String, MentalMapHubNodeData>{
       for (final node in widget.nodes) node.id: node,
     };
-    final slots = <({String id, Alignment align, double size})>[
-      (id: 'schemas', align: const Alignment(0, -1), size: 64),
-      (id: 'modes', align: const Alignment(0.95, -0.48), size: 56),
-      (id: 'problems', align: const Alignment(0.92, 0.46), size: 56),
-      (id: 'attachment', align: const Alignment(0, 1), size: 64),
-      (id: 'goals', align: const Alignment(-0.92, 0.46), size: 56),
-      (id: 'coping', align: const Alignment(-0.95, -0.48), size: 56),
+
+    // Layout polar: todos os nodos à mesma distância do núcleo. O Alignment
+    // que havia antes deixava os de cima e os de baixo a distâncias
+    // diferentes (o rótulo sob o círculo desloca a âncora para cima), e as
+    // fibras acabavam com 0 a 8px — sem percurso para o fluxo correr.
+    const slots = <({String id, double angleDeg})>[
+      (id: 'schemas', angleDeg: -90),
+      (id: 'modes', angleDeg: -30),
+      (id: 'problems', angleDeg: 30),
+      (id: 'attachment', angleDeg: 90),
+      (id: 'goals', angleDeg: 150),
+      (id: 'coping', angleDeg: 210),
     ];
 
-    // Mesma fonte de posições para o painter de conexões e os nodos: box
-    // 300x300, nodo 82x94, centro derivado do Alignment (sem o jitter da
-    // flutuação ambiente — a conexão fica estável, só o nodo balança).
-    const boxSize = 300.0;
-    const nodeSize = Size(82, 94);
-    final slotRects = <String, Rect>{
-      for (final slot in slots)
-        slot.id: Rect.fromCenter(
-          center: Offset(
-            boxSize / 2 + slot.align.x * (boxSize - nodeSize.width) / 2,
-            boxSize / 2 + slot.align.y * (boxSize - nodeSize.height) / 2,
-          ),
-          width: nodeSize.width,
-          height: nodeSize.height,
-        ),
-    };
+    const boxHeight = 300.0;
+    const nodeWidth = 84.0;
+    const nodeHeight = 72.0;
+    const nodeDiameter = 44.0;
+    const hubDiameter = 88.0;
+    // Onde o círculo cai dentro da caixa do nodo: a Column centraliza
+    // [círculo, espaço, rótulo], então o círculo fica acima do meio.
+    const circleAnchor =
+        (nodeHeight - (nodeDiameter + 6 + 15)) / 2 + nodeDiameter / 2;
 
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, _) {
-        return SizedBox(
-          key: const ValueKey('mental-map-connected-list'),
-          height: boxSize,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppColors.navy.withValues(alpha: 0.08),
-                    width: 2,
-                  ),
+    final activeCount = widget.nodes.where((node) => node.isFilled).length;
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final width = constraints.maxWidth;
+        final hubCenter = Offset(width / 2, boxHeight / 2);
+        // Raio limitado pelo que cabe embaixo (rótulo do nodo inferior) e
+        // pelas laterais (nodos a ±30° da horizontal).
+        final radius = math.min(
+          103.0,
+          math.min(
+            boxHeight / 2 - (nodeHeight - circleAnchor),
+            (width / 2 - nodeWidth / 2) / math.cos(30 * math.pi / 180),
+          ),
+        );
+
+        final circleCenters = <String, Offset>{
+          for (final slot in slots)
+            slot.id: hubCenter +
+                Offset(
+                  radius * math.cos(slot.angleDeg * math.pi / 180),
+                  radius * math.sin(slot.angleDeg * math.pi / 180),
                 ),
-                child: const SizedBox(width: 260, height: 260),
-              ),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppColors.navy.withValues(alpha: 0.06),
+        };
+
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SizedBox(
+              key: const ValueKey('mental-map-connected-list'),
+              height: boxHeight,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Positioned.fill(
+                    child: Center(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.navy.withValues(alpha: 0.06),
+                          ),
+                        ),
+                        child: SizedBox.square(dimension: radius * 2),
+                      ),
+                    ),
                   ),
-                ),
-                child: const SizedBox(width: 190, height: 190),
-              ),
-              Positioned.fill(
-                child: IgnorePointer(
-                  child: CustomPaint(
-                    painter: _HubConnectionsPainter(
-                      hubCenter: const Offset(boxSize / 2, boxSize / 2),
-                      hubRadius: 78,
+                  Positioned.fill(
+                    child: _HubConnections(
+                      hubCenter: hubCenter,
+                      hubRadius: hubDiameter / 2,
                       targets: [
-                        for (final entry in slotRects.entries)
-                          if (nodeMap[entry.key] case final node?)
-                            _hubTarget(entry.value, node),
+                        for (final slot in slots)
+                          if (nodeMap[slot.id] case final node?)
+                            _hubTarget(
+                              Rect.zero,
+                              node,
+                              center: circleCenters[slot.id],
+                              radius: nodeDiameter / 2 + 2,
+                            ),
                       ],
                     ),
                   ),
-                ),
-              ),
-              SizedBox(
-                width: 156,
-                height: 156,
-                child: _MentalMapHubCenter(center: widget.center),
-              ),
-              for (var i = 0; i < slots.length; i++)
-                if (nodeMap[slots[i].id] case final node?)
-                  Align(
-                    alignment: slots[i].align,
-                    child: Transform.translate(
-                      offset: Offset(
-                        0,
-                        math.sin((_controller.value * math.pi) + i) * 5,
-                      ),
-                      child: SizedBox(
-                        width: 82,
-                        height: 94,
-                        child: _MentalMapOrbitNode(
-                          data: node,
-                          diameter: slots[i].size,
-                        ),
-                      ),
+                  Positioned(
+                    left: hubCenter.dx - hubDiameter / 2,
+                    top: hubCenter.dy - hubDiameter / 2,
+                    width: hubDiameter,
+                    height: hubDiameter,
+                    child: _MentalMapHubCenter(
+                      center: widget.center,
+                      compactSummary: activeCount == 1
+                          ? '1 área ativa'
+                          : '$activeCount áreas ativas',
                     ),
                   ),
-            ],
-          ),
+                  for (var i = 0; i < slots.length; i++)
+                    if (nodeMap[slots[i].id] case final node?)
+                      () {
+                        // O rótulo vai para o lado oposto ao núcleo. Só o
+                        // nodo do topo precisa disso: nele a fibra desce
+                        // reta e passaria exatamente por cima do texto.
+                        final labelAbove =
+                            math.sin(slots[i].angleDeg * math.pi / 180) < -0.7;
+                        final anchor = labelAbove
+                            ? nodeHeight - circleAnchor
+                            : circleAnchor;
+                        return Positioned(
+                          left: circleCenters[slots[i].id]!.dx - nodeWidth / 2,
+                          top: circleCenters[slots[i].id]!.dy - anchor,
+                          width: nodeWidth,
+                          height: nodeHeight,
+                          child: AnimatedBuilder(
+                            animation: _controller,
+                            builder: (context, child) => Transform.translate(
+                              offset: Offset(
+                                0,
+                                math.sin((_controller.value * math.pi) + i) * 4,
+                              ),
+                              child: child,
+                            ),
+                            child: _MentalMapOrbitNode(
+                              data: node,
+                              diameter: nodeDiameter,
+                              labelAbove: labelAbove,
+                            ),
+                          ),
+                        );
+                      }(),
+                ],
+              ),
+            ),
+            const SizedBox(height: 10),
+            // O núcleo encolheu para abrir percurso para o fluxo, então
+            // estas três leituras saíram de dentro dele para cá — mudaram
+            // de lugar, não foram removidas.
+            Text(
+              [
+                widget.center.activeProblemsLabel,
+                widget.center.activeGoalsLabel,
+                widget.center.lastCheckInLabel,
+              ].join(' · '),
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
         );
       },
     );
@@ -699,11 +921,17 @@ class _MentalMapOrbitNode extends StatelessWidget {
     required this.data,
     this.diameter = 56,
     this.large = false,
+    this.labelAbove = false,
   });
 
   final MentalMapHubNodeData data;
   final double diameter;
   final bool large;
+
+  /// Coloca o rótulo acima do círculo. No nodo do topo a fibra desce reta
+  /// do círculo até o núcleo e passaria por baixo do texto — o rótulo tem
+  /// de ficar do lado oposto ao centro.
+  final bool labelAbove;
 
   @override
   Widget build(BuildContext context) {
@@ -717,56 +945,58 @@ class _MentalMapOrbitNode extends StatelessWidget {
     final textColor =
         data.isFilled ? data.accentColor : theme.colorScheme.onSurfaceVariant;
 
+    final circle = AnimatedContainer(
+      duration: const Duration(milliseconds: 220),
+      width: diameter,
+      height: diameter,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: data.isFilled
+            ? effectiveRingColor.withValues(alpha: 0.14)
+            : Colors.transparent,
+        border: Border.all(
+          color: effectiveRingColor,
+          width: data.isFilled ? 2 : 1.5,
+        ),
+        boxShadow: data.isFilled
+            ? [
+                BoxShadow(
+                  color: effectiveRingColor.withValues(alpha: 0.22),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+              ]
+            : const [],
+      ),
+      child: Transform.translate(
+        offset: _opticalNudgeFor(data.icon),
+        child: Icon(
+          data.icon,
+          color: data.isFilled ? data.accentColor : effectiveRingColor,
+          size: large ? 26 : 22,
+        ),
+      ),
+    );
+
+    final label = Text(
+      data.title,
+      maxLines: 1,
+      overflow: TextOverflow.ellipsis,
+      textAlign: TextAlign.center,
+      style: theme.textTheme.labelSmall?.copyWith(
+        color: textColor,
+        fontWeight: data.isFilled ? FontWeight.w700 : FontWeight.w600,
+      ),
+    );
+
     return InkWell(
       onTap: data.onTap,
       borderRadius: BorderRadius.circular(22),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 220),
-            width: diameter,
-            height: diameter,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: data.isFilled
-                  ? effectiveRingColor.withValues(alpha: 0.14)
-                  : Colors.transparent,
-              border: Border.all(
-                color: effectiveRingColor,
-                width: data.isFilled ? 2 : 1.5,
-              ),
-              boxShadow: data.isFilled
-                  ? [
-                      BoxShadow(
-                        color: effectiveRingColor.withValues(alpha: 0.22),
-                        blurRadius: 18,
-                        offset: const Offset(0, 6),
-                      ),
-                    ]
-                  : const [],
-            ),
-            child: Transform.translate(
-              offset: _opticalNudgeFor(data.icon),
-              child: Icon(
-                data.icon,
-                color: data.isFilled ? data.accentColor : effectiveRingColor,
-                size: large ? 26 : 22,
-              ),
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            data.title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: textColor,
-              fontWeight: data.isFilled ? FontWeight.w700 : FontWeight.w600,
-            ),
-          ),
-        ],
+        children: labelAbove
+            ? [label, const SizedBox(height: 6), circle]
+            : [circle, const SizedBox(height: 6), label],
       ),
     );
   }
@@ -953,9 +1183,15 @@ class MentalMapHubNode extends StatelessWidget {
 class _MentalMapHubCenter extends StatelessWidget {
   const _MentalMapHubCenter({
     required this.center,
+    this.compactSummary,
   });
 
   final MentalCaseMapCenter center;
+
+  /// Quando presente, o núcleo entra em modo compacto: só o nome e este
+  /// resumo. Usado no layout mobile, onde o círculo encolheu para abrir
+  /// percurso de fibra — as três leituras longas vão para fora do círculo.
+  final String? compactSummary;
 
   @override
   Widget build(BuildContext context) {
@@ -985,52 +1221,74 @@ class _MentalMapHubCenter extends StatelessWidget {
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(12),
+          padding: EdgeInsets.all(compactSummary == null ? 12 : 8),
           child: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const EsquemaCoreLogo.icon(size: 28),
-                const SizedBox(height: 6),
-                Text(
-                  center.patientName,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
+                if (compactSummary case final summary?) ...[
+                  Text(
+                    center.patientName,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  center.activeProblemsLabel,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
+                  const SizedBox(height: 2),
+                  Text(
+                    summary,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  center.activeGoalsLabel,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                ] else ...[
+                  const EsquemaCoreLogo.icon(size: 28),
+                  const SizedBox(height: 6),
+                  Text(
+                    center.patientName,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  center.lastCheckInLabel,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
+                  const SizedBox(height: 4),
+                  Text(
+                    center.activeProblemsLabel,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 2),
+                  Text(
+                    center.activeGoalsLabel,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    center.lastCheckInLabel,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

@@ -16,6 +16,7 @@ import 'package:terapia_esquema/features/mental_map/presentation/mental_map_node
 import 'package:terapia_esquema/features/mental_map/presentation/widgets/mental_map_widgets.dart';
 
 // Mesmos ícones reais usados em patient_mental_map_page.dart#_buildHubNodes.
+// A contagem de `items` é o que define a densidade do fluxo de cada fibra.
 final _nodes = [
   const MentalMapHubNodeData(
     id: 'schemas',
@@ -70,7 +71,7 @@ final _nodes = [
     icon: Icons.flag_outlined,
     accentColor: AppColors.turquoise,
     isFilled: false,
-    visualState: MentalMapNodeVisualState.filled,
+    visualState: MentalMapNodeVisualState.pending,
   ),
   const MentalMapHubNodeData(
     id: 'coping',
@@ -81,13 +82,13 @@ final _nodes = [
     icon: Icons.shield_outlined,
     accentColor: AppColors.blue,
     isFilled: false,
-    visualState: MentalMapNodeVisualState.filled,
+    visualState: MentalMapNodeVisualState.pending,
   ),
 ];
 
 const _center = MentalCaseMapCenter(
   patientName: 'Roberto',
-  activeProblemsLabel: 'Sem problemas ativos',
+  activeProblemsLabel: 'Sem problemas',
   activeGoalsLabel: 'Sem objetivos ativos',
   lastCheckInLabel: 'Sem check-in',
 );
@@ -95,10 +96,8 @@ const _center = MentalCaseMapCenter(
 void main() {
   setUpAll(() async {
     // Sem isto, o ambiente de teste substitui qualquer glifo por um
-    // quadrado genérico (visível nos outros renders desta sessão) — e um
-    // quadrado é simétrico, então NUNCA mostraria o desalinhamento óptico
-    // que só existe no glifo real da fonte Material Icons. Carregando a
-    // fonte de verdade, o render passa a refletir o problema relatado.
+    // quadrado genérico — e um quadrado é simétrico, então nunca mostraria
+    // o desalinhamento óptico que só existe no glifo real da fonte.
     final fontBytes = File(
       r'C:\Users\bruno\flutter\bin\cache\artifacts\material_fonts\materialicons-regular.otf',
     ).readAsBytesSync();
@@ -106,8 +105,7 @@ void main() {
   });
 
   testWidgets('captura o hub do mapa mental', (tester) async {
-    // Largura < 600 força o branch mobile (_MentalMapMobileOrbit), que é
-    // exatamente o layout do print original.
+    // Largura < 600 força o branch mobile (_MentalMapMobileOrbit).
     tester.view.physicalSize = const Size(1080, 1600);
     tester.view.devicePixelRatio = 3.0;
     addTearDown(tester.view.reset);
@@ -115,7 +113,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: Scaffold(
-          backgroundColor: Color(0xFFE9EEF9),
+          backgroundColor: const Color(0xFFE9EEF9),
           body: Center(
             child: SizedBox(
               width: 360,
@@ -137,20 +135,22 @@ void main() {
         ),
       ),
     );
-    // A flutuação orbital nunca "assenta" (repete indefinidamente) — pump
-    // fixo em vez de pumpAndSettle, que ficaria esperando para sempre.
-    await tester.pump(const Duration(milliseconds: 100));
+
+    // O fluxo repete indefinidamente, então pumpAndSettle travaria. Avança
+    // um pouco para as partículas saírem da posição inicial e mostrarem a
+    // diferença de densidade entre as fibras.
+    await tester.pump(const Duration(milliseconds: 420));
 
     final boundary = tester.renderObject<RenderRepaintBoundary>(
       find.byKey(const Key('capture')),
     );
     final image = await boundary.toImage(pixelRatio: 2.0);
     final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
-    final out = File('build/mental_map_hub.png')
+    File('build/mental_map_hub.png')
       ..parent.createSync(recursive: true)
       ..writeAsBytesSync(bytes!.buffer.asUint8List());
 
     // ignore: avoid_print
-    print('Gerado em ${out.absolute.path}');
+    print('Gerado em build/mental_map_hub.png');
   });
 }

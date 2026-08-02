@@ -19,6 +19,8 @@ import '../../../shared/widgets/esquema_core_logo.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../../clinic_entitlements/domain/clinic_feature_entitlement.dart';
 import '../../clinic_entitlements/providers/clinic_entitlements_providers.dart';
+import '../../daily_monitors/presentation/daily_monitor_routes.dart';
+import '../../mental_map/presentation/mental_map_routes.dart';
 import '../../patient_check_ins/presentation/patient_check_in_routes.dart';
 import '../../patient_check_ins/providers/patient_check_ins_providers.dart';
 import '../../patient_journey/presentation/patient_journey_routes.dart';
@@ -34,6 +36,11 @@ import '../../profile/presentation/widgets/user_avatar.dart';
 import '../../questionnaires/domain/questionnaire_patient_status.dart';
 import '../../questionnaires/presentation/questionnaire_routes.dart';
 import '../../questionnaires/providers/questionnaires_providers.dart';
+import '../../results/providers/results_providers.dart';
+import '../../therapy_goals/domain/therapy_goal_status.dart';
+import '../../therapy_goals/presentation/therapy_goal_routes.dart';
+import '../../therapy_goals/providers/therapy_goals_providers.dart';
+import '../../therapy_resources/presentation/therapy_resource_routes.dart';
 import '../providers/auth_providers.dart';
 
 /// Acentos por finalidade no workspace (máximo três famílias de cor).
@@ -151,12 +158,60 @@ class _HomeBody extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xl),
             const AppSectionHeader(
+              title: 'Seu progresso',
+              subtitle: 'Toque em um número para ver os detalhes.',
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            const MotionReveal(
+              delay: Duration(milliseconds: 100),
+              child: _PatientProgressSummary(),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            const AppSectionHeader(
+              title: 'Explorar',
+              subtitle: 'Acesso rápido às áreas do seu acompanhamento.',
+              accentColor: _WorkspaceAccents.clinical,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            MotionReveal(
+              delay: const Duration(milliseconds: 140),
+              child: ResponsiveGrid(
+                mediumColumns: 2,
+                expandedColumns: 3,
+                children: [
+                  ClinicalModuleCard(
+                    icon: Icons.hub_outlined,
+                    title: 'Mapa mental',
+                    subtitle: 'Síntese integrada da sua formulação clínica.',
+                    accentColor: _WorkspaceAccents.clinical,
+                    onTap: () => context.push(MentalMapRoutes.patientList),
+                  ),
+                  ClinicalModuleCard(
+                    icon: Icons.menu_book_outlined,
+                    title: 'Biblioteca terapêutica',
+                    subtitle: 'Psicoeducação e recursos liberados para você.',
+                    accentColor: _WorkspaceAccents.clinical,
+                    onTap: () =>
+                        context.push(TherapyResourceRoutes.patientList),
+                  ),
+                  ClinicalModuleCard(
+                    icon: Icons.monitor_heart_outlined,
+                    title: 'Monitor diário',
+                    subtitle: 'Humor, rotina e percepção do dia a dia.',
+                    accentColor: _WorkspaceAccents.management,
+                    onTap: () => context.push(DailyMonitorRoutes.patientList),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            const AppSectionHeader(
               title: 'Sua continuidade',
               subtitle: 'Veja o próximo passo do seu acompanhamento.',
             ),
             const SizedBox(height: AppSpacing.sm),
             MotionReveal(
-              delay: const Duration(milliseconds: 120),
+              delay: const Duration(milliseconds: 180),
               child: ClinicalModuleCard(
                 icon: Icons.route_outlined,
                 title: 'Meu plano terapêutico',
@@ -388,25 +443,44 @@ class _PatientGreetingHeader extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: AppRadius.xlAll,
-        border: Border.all(color: AppColors.border),
+        boxShadow: AppShadows.clay(),
       ),
       padding: const EdgeInsets.all(AppSpacing.xl),
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            '$greeting, $firstName',
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                  color: AppColors.navy,
-                  fontWeight: FontWeight.w600,
-                ),
+          // O paciente pode ter criado uma foto ou um avatar próprio (editor
+          // de avatar) e a saudação não mostrava nada disso — nem o cartão
+          // institucional do profissional deixava de exibir a identidade
+          // escolhida. Mesmo tratamento aqui.
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: AppShadows.clay(AppColors.blue),
+            ),
+            child: UserAvatar(profile: profile, size: 56),
           ),
-          const SizedBox(height: AppSpacing.xxs),
-          Text(
-            'Que bom te ver por aqui. Este é o seu espaço de cuidado.',
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: AppColors.textSecondary,
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '$greeting, $firstName',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        color: AppColors.navy,
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  'Que bom te ver por aqui. Este é o seu espaço de cuidado.',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -515,6 +589,75 @@ class _PatientNextStep extends ConsumerWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Resumo do progresso do paciente: metas ativas, check-ins da semana e
+/// resultados liberados. Mesmo painel usado na home do profissional — os
+/// números são reais (nada de dado fictício) e cada um leva à tela
+/// correspondente.
+class _PatientProgressSummary extends ConsumerWidget {
+  const _PatientProgressSummary();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    const listContext = QuestionnaireListContext(role: ProfileRole.patient);
+    final patientId =
+        ref.watch(questionnairePatientIdProvider(listContext)).valueOrNull;
+
+    final goals = ref.watch(myTherapyGoalsProvider).valueOrNull;
+    final checkIns = ref.watch(myPatientCheckInsProvider).valueOrNull;
+    final results = patientId == null
+        ? null
+        : ref
+            .watch(
+              patientResultsListProvider(
+                PatientResultsContext(
+                  role: ProfileRole.patient,
+                  patientId: patientId,
+                ),
+              ),
+            )
+            .valueOrNull;
+
+    // Mesmo padrão do _PatientNextStep: enquanto os dados carregam, não
+    // mostra nada em vez de piscar zeros antes do valor real.
+    if (goals == null || checkIns == null || results == null) {
+      return const SizedBox.shrink();
+    }
+
+    final activeGoals =
+        goals.where((g) => g.status == TherapyGoalStatus.active).length;
+    final weekAgo = DateTime.now().subtract(const Duration(days: 7));
+    final recentCheckIns =
+        checkIns.where((c) => c.checkedInAt.isAfter(weekAgo)).length;
+
+    return _WorkspaceSummary(
+      metrics: [
+        _WorkspaceMetric(
+          icon: Icons.flag_outlined,
+          label: 'Metas ativas',
+          value: activeGoals,
+          accent: AppColors.purple,
+          onTap: () => context.push(TherapyGoalRoutes.patientList),
+        ),
+        _WorkspaceMetric(
+          icon: Icons.fact_check_outlined,
+          label: 'Check-ins na semana',
+          value: recentCheckIns,
+          accent: AppColors.turquoise,
+          onTap: () => context.push(PatientCheckInRoutes.patientList),
+        ),
+        _WorkspaceMetric(
+          icon: Icons.analytics_outlined,
+          label: 'Resultados',
+          value: results.length,
+          accent: AppColors.blue,
+          // Mesma rota usada pela trilha para o passo "Meus resultados".
+          onTap: () => context.push('/patient/results'),
+        ),
+      ],
     );
   }
 }

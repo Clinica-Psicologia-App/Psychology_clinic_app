@@ -12,6 +12,7 @@ import '../mental_map_node_state.dart';
 import '../../domain/mental_map_case_summary.dart';
 import '../../domain/mental_map_node_detail.dart';
 import '../../domain/mental_map_validation_summary.dart';
+import 'mental_map_art_icon.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 /// Converte a severityColorKey do backend para uma cor concreta de UI.
@@ -904,15 +905,23 @@ class _MentalMapMobileOrbitState extends State<_MentalMapMobileOrbit>
 }
 
 // Alguns glifos do Material Icons não são desenhados centralizados dentro do
-// próprio em-square (a "tinta" do ícone pende para um lado) — Flutter centraliza
-// a caixa do ícone corretamente, mas o desenho em si fica torto dentro dela.
-// Confirmado visualmente comparando o mesmo layout com e sem a fonte real
-// carregada: sem fonte (glifo placeholder quadrado) tudo fica perfeito; com a
-// fonte real, flag_outlined e shield_outlined aparecem deslocados. Pequenos
-// ajustes manuais compensam esse desvio só para os glifos afetados.
-Offset _opticalNudgeFor(IconData icon) {
-  if (icon == Icons.flag_outlined) return const Offset(0.8, -0.5);
-  if (icon == Icons.shield_outlined) return const Offset(0.3, 0.5);
+// próprio em-square (a "tinta" pende para um lado). O Flutter centraliza a
+// caixa do ícone corretamente, então o desvio vem só do desenho da fonte.
+//
+// Os valores vêm de medição por pixel — test/tools/render_icon_options.dart
+// desenha cada glifo isolado e grande sobre fundo transparente, e o script
+// compara o centro da tinta (canal alfa) com o centro da caixa. Ficam como
+// fração do tamanho do ícone para valerem em qualquer tamanho.
+//
+// Entre os ícones em uso, só flag_outlined está de fato torto: a tinta cai
+// 2/96 avos para a direita e para baixo. shield_outlined está perfeitamente
+// centralizado — a versão anterior desta função o deslocava à toa, porque a
+// medição de então lia também os pixels do anel do nodo junto com o glifo.
+Offset _opticalNudgeFor(IconData icon, double size) {
+  const flagDrift = 2 / 96;
+  if (icon == Icons.flag_outlined) {
+    return Offset(-flagDrift * size, -flagDrift * size);
+  }
   return Offset.zero;
 }
 
@@ -945,6 +954,23 @@ class _MentalMapOrbitNode extends StatelessWidget {
     final textColor =
         data.isFilled ? data.accentColor : theme.colorScheme.onSurfaceVariant;
 
+    final iconSize = large ? 26.0 : 22.0;
+
+    // Nodo com registro ganha o ícone multicolor desenhado; vazio continua
+    // com o glifo Material esmaecido, mantendo intacta a leitura de
+    // "adormecido" que o fluxo apagado já reforça.
+    final art = data.isFilled ? MentalMapArt.forNodeId(data.id) : null;
+    final Widget iconChild = art != null
+        ? MentalMapArtIcon(art: art, size: iconSize)
+        : Transform.translate(
+            offset: _opticalNudgeFor(data.icon, iconSize),
+            child: Icon(
+              data.icon,
+              color: data.isFilled ? data.accentColor : effectiveRingColor,
+              size: iconSize,
+            ),
+          );
+
     final circle = AnimatedContainer(
       duration: const Duration(milliseconds: 220),
       width: diameter,
@@ -968,14 +994,7 @@ class _MentalMapOrbitNode extends StatelessWidget {
               ]
             : const [],
       ),
-      child: Transform.translate(
-        offset: _opticalNudgeFor(data.icon),
-        child: Icon(
-          data.icon,
-          color: data.isFilled ? data.accentColor : effectiveRingColor,
-          size: large ? 26 : 22,
-        ),
-      ),
+      child: Center(child: iconChild),
     );
 
     final label = Text(

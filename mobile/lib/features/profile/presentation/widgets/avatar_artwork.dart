@@ -369,8 +369,8 @@ class AvatarPainter extends CustomPainter {
         );
       case AvatarMouth.neutral:
         canvas.drawLine(
-          Offset(46.8, _mouthY + 0.8),
-          Offset(53.2, _mouthY + 0.8),
+          const Offset(46.8, _mouthY + 0.8),
+          const Offset(53.2, _mouthY + 0.8),
           lip,
         );
       case AvatarMouth.grin:
@@ -383,7 +383,7 @@ class AvatarPainter extends CustomPainter {
         canvas.save();
         canvas.clipPath(mouth);
         canvas.drawRect(
-          Rect.fromLTWH(44, _mouthY - 1, 12, 2.2),
+          const Rect.fromLTWH(44, _mouthY - 1, 12, 2.2),
           Paint()..color = Colors.white,
         );
         canvas.restore();

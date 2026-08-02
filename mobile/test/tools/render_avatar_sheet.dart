@@ -157,9 +157,9 @@ void main() {
       canvas.translate(dx + 10, dy + 6);
       // Recorte circular, como o avatar aparece no app.
       canvas.clipPath(
-        Path()..addOval(Rect.fromLTWH(0, 0, _cell - 20, _cell - 20)),
+        Path()..addOval(const Rect.fromLTWH(0, 0, _cell - 20, _cell - 20)),
       );
-      AvatarPainter(config).paint(canvas, Size.square(_cell - 20));
+      AvatarPainter(config).paint(canvas, const Size.square(_cell - 20));
       canvas.restore();
 
       // Sem rótulo: o ambiente de teste não carrega fontes, e o texto sairia

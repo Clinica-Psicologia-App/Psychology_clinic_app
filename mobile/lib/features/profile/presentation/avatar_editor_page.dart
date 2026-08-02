@@ -256,7 +256,7 @@ class _OptionGrid extends StatelessWidget {
         maxCrossAxisExtent: 96,
         mainAxisSpacing: AppSpacing.xs,
         crossAxisSpacing: AppSpacing.xs,
-        childAspectRatio: 0.92,
+        childAspectRatio: 0.80,
       ),
       itemCount: options.length,
       itemBuilder: (context, index) {
@@ -427,36 +427,41 @@ class _OptionTile extends StatelessWidget {
             ),
             boxShadow: AppShadows.clay(selected ? AppColors.turquoise : null),
           ),
+          // O rótulo ocupa o que precisar e a miniatura fica com a sobra, em
+          // vez de ambos terem tamanho fixo. Assim o cartão não depende de
+          // acertar altura na conta: a versão anterior estourava por 0,1 pixel
+          // no aparelho e passava nos testes, porque a fonte do ambiente de
+          // teste tem métrica diferente da real.
           child: Column(
-            mainAxisSize: MainAxisSize.min,
             children: [
-              // Cada opção mostra o resultado aplicado ao avatar atual, em vez
-              // de um ícone genérico: a escolha é feita vendo o efeito real.
-              if (option.swatch != null)
-                Container(
-                  width: 64,
-                  height: 64,
-                  decoration: BoxDecoration(
-                    color: option.swatch,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.border),
-                  ),
-                )
-              else
-                AvatarArtwork(config: option.config, size: 64),
+              Expanded(
+                child: FittedBox(
+                  fit: BoxFit.contain,
+                  // Cada opção mostra o resultado aplicado ao avatar atual, em
+                  // vez de um ícone genérico: a escolha é feita vendo o efeito.
+                  child: option.swatch != null
+                      ? Container(
+                          width: 64,
+                          height: 64,
+                          decoration: BoxDecoration(
+                            color: option.swatch,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: AppColors.border),
+                          ),
+                        )
+                      : AvatarArtwork(config: option.config, size: 64),
+                ),
+              ),
               const SizedBox(height: AppSpacing.xxs),
-              Flexible(
-                child: Text(
-                  option.label,
-                  textAlign: TextAlign.center,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: selected
-                        ? AppColors.turquoise
-                        : AppColors.textSecondary,
-                    fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  ),
+              Text(
+                option.label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color:
+                      selected ? AppColors.turquoise : AppColors.textSecondary,
+                  fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 ),
               ),
             ],

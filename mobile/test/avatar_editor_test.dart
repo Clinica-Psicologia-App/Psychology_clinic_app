@@ -213,6 +213,46 @@ void main() {
       );
     });
 
+    // A grade de opções já estourou no aparelho por 0,1 pixel, com os cartões
+    // dimensionados por conta fixa. Este caso percorre todas as categorias
+    // procurando exceção de layout. Vale a ressalva de que a fonte do ambiente
+    // de teste tem métrica diferente da real, então ele não substitui olhar a
+    // tela — mas pega erro estrutural.
+    testWidgets('nenhuma categoria estoura o layout da grade', (tester) async {
+      await _pumpEditor(tester, const AvatarConfig());
+
+      const rotulos = [
+        'Pele',
+        'Rosto',
+        'Cabelo',
+        'Cor do cabelo',
+        'Olhos',
+        'Sobrancelhas',
+        'Nariz',
+        'Boca',
+        'Barba',
+        'Óculos',
+        'Marcas',
+        'Acessórios',
+        'Roupa',
+        'Cor da roupa',
+        'Fundo',
+      ];
+
+      for (final rotulo in rotulos) {
+        final chip = find.widgetWithText(ChoiceChip, rotulo);
+        await tester.scrollUntilVisible(chip, 120,
+            scrollable: find.byType(Scrollable).first);
+        await tester.tap(chip);
+        await tester.pumpAndSettle();
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: 'categoria "$rotulo" gerou exceção de layout',
+        );
+      }
+    });
+
     testWidgets('trocar de categoria mostra outras opções', (tester) async {
       await _pumpEditor(tester, const AvatarConfig());
 

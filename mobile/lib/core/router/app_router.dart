@@ -253,29 +253,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                   ),
                 ],
               ),
-              GoRoute(
-                path: 'patients',
-                builder: (_, __) =>
-                    const PatientsPage(role: ProfileRole.platformAdmin),
-                routes: [
-                  GoRoute(
-                    path: ':patientId',
-                    builder: (_, state) => PatientDetailsPage(
-                      role: ProfileRole.platformAdmin,
-                      patientId: state.pathParameters['patientId']!,
-                    ),
-                    routes: [
-                      GoRoute(
-                        path: 'edit',
-                        builder: (_, state) => EditPatientPage(
-                          role: ProfileRole.platformAdmin,
-                          patient: state.extra as Patient,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+              // Não existe rota de pacientes para o admin: a migration
+              // 20260720120011 tirou o acesso dele a linhas individuais, por
+              // privacidade clínica, e a RLS devolve zero. Manter a tela só
+              // produzia uma lista permanentemente vazia dizendo "nenhum
+              // paciente encontrado" — que é falso do ponto de vista da
+              // clínica. O admin usa a visão agregada abaixo.
               GoRoute(
                 path: 'patient-overview',
                 builder: (_, __) => const PatientOverviewPage(),

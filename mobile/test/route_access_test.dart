@@ -1,8 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:terapia_esquema/features/patients/presentation/patient_routes.dart';
 import 'package:terapia_esquema/core/router/route_access.dart';
 import 'package:terapia_esquema/features/profile/domain/profile_role.dart';
 
 void main() {
+  _adminPatientAccess();
+
   test('patient cannot access staff routes', () {
     expect(
       RouteAccess.isAllowed('/admin/patients', ProfileRole.patient),
@@ -221,5 +224,28 @@ void main() {
   test('homeFor returns role prefix', () {
     expect(RouteAccess.homeFor(ProfileRole.platformAdmin), '/platform');
     expect(RouteAccess.homeFor(ProfileRole.patient), '/patient');
+  });
+}
+
+/// O admin já teve uma rota de lista de pacientes que a RLS garantia estar
+/// sempre vazia: a migration 20260720120011 tirou o acesso dele a linhas
+/// individuais, por privacidade clínica, mas a interface continuou oferecendo
+/// a tela — e ela dizia "nenhum paciente encontrado", que é falso do ponto de
+/// vista da clínica. Estes casos travam a decisão.
+void _adminPatientAccess() {
+  group('acesso do admin a pacientes', () {
+    test('não existe rota de lista de pacientes para o admin', () {
+      expect(
+        () => PatientRoutes.list(ProfileRole.platformAdmin),
+        throwsStateError,
+      );
+    });
+
+    test('psicólogo continua com a lista', () {
+      expect(
+        PatientRoutes.list(ProfileRole.psychologist),
+        '/psychologist/patients',
+      );
+    });
   });
 }

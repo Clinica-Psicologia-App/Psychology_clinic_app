@@ -32,7 +32,14 @@ abstract final class PatientRoutes {
   static String list(ProfileRole role) {
     switch (role) {
       case ProfileRole.platformAdmin:
-        return '/platform/patients';
+        // O admin não lê pacientes individuais: a migration 20260720120011
+        // tirou esse acesso por privacidade clínica, e a RLS devolve zero
+        // linhas. A tela dele é /platform/patient-overview, com contagens
+        // agregadas por psicólogo. Lançar aqui evita que alguém reintroduza
+        // uma navegação que só levaria a uma lista permanentemente vazia.
+        throw StateError(
+          'Admin não acessa pacientes individuais — use a visão agregada',
+        );
       case ProfileRole.psychologist:
         return '/psychologist/patients';
       case ProfileRole.patient:

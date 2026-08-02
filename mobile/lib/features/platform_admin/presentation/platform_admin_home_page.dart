@@ -79,7 +79,11 @@ class PlatformAdminHomePage extends ConsumerWidget {
                     title: 'Pacientes',
                     subtitle: 'Visualizar, inativar e reativar pacientes.',
                     accentColor: AppColors.turquoise,
-                    onTap: () => context.push('/platform/patients'),
+                    // Admin não lê pacientes individuais (migration
+                    // 20260720120011): a RLS devolve zero linhas por
+                    // decisão de privacidade clínica. A tela dele é a
+                    // visão agregada por psicólogo.
+                    onTap: () => context.push('/platform/patient-overview'),
                   ),
                 ),
                 MotionReveal(

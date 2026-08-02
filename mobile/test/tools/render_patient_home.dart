@@ -36,7 +36,7 @@ const _patientId = 'pac-1';
 
 void main() {
   testWidgets('captura a home do paciente', (tester) async {
-    tester.view.physicalSize = const Size(1080, 3600);
+    tester.view.physicalSize = const Size(1080, 6000);
     tester.view.devicePixelRatio = 3.0;
     addTearDown(tester.view.reset);
 

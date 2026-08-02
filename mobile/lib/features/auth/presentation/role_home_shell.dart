@@ -175,9 +175,14 @@ class _HomeBody extends StatelessWidget {
             const SizedBox(height: AppSpacing.sm),
             MotionReveal(
               delay: const Duration(milliseconds: 140),
+              // Coluna única no celular: com 3 cards e 2 colunas, um deles
+              // sempre fica sozinho numa linha, ocupando só metade da
+              // largura — o mesmo problema de item órfão já corrigido antes
+              // nesta sessão para o resumo do profissional. Em telas largas
+              // os 3 cabem numa linha só.
               child: ResponsiveGrid(
-                compactColumns: 2,
-                mediumColumns: 2,
+                compactColumns: 1,
+                mediumColumns: 3,
                 expandedColumns: 3,
                 children: [
                   _PatientExploreCard(
@@ -636,9 +641,13 @@ class _PatientExploreCard extends StatelessWidget {
           borderRadius: AppRadius.xlAll,
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
+            // Ícone à esquerda, texto à direita: a mesma disposição se
+            // adapta bem tanto à largura inteira (celular, coluna única)
+            // quanto a uma célula de grade mais estreita (tablet e
+            // desktop) — um layout empilhado (ícone em cima) sobra vazio
+            // demais quando esticado à largura inteira do celular.
+            child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
               children: [
                 Container(
                   width: 52,
@@ -650,22 +659,30 @@ class _PatientExploreCard extends StatelessWidget {
                   ),
                   child: Icon(icon, color: accentColor, size: 26),
                 ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  title,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: AppColors.navy,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xxs),
-                Text(
-                  subtitle,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
-                    height: 1.35,
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          color: AppColors.navy,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xxs),
+                      Text(
+                        subtitle,
+                        maxLines: 3,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],

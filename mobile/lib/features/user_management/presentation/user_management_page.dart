@@ -18,6 +18,7 @@ import '../../auth/providers/auth_providers.dart';
 import '../../clinics/domain/clinic_summary.dart';
 import '../../clinics/providers/clinics_providers.dart';
 import '../../profile/domain/profile_role.dart';
+import '../../profile/presentation/widgets/user_avatar.dart';
 import '../domain/clinic_user.dart';
 import '../domain/create_clinic_user_request.dart';
 import '../providers/user_management_providers.dart';
@@ -591,10 +592,6 @@ class _UserRow extends StatelessWidget {
       ProfileRole.patient => AppColors.disabled,
     };
 
-    final initials = user.fullName.trim().isEmpty
-        ? '?'
-        : user.fullName.trim().characters.first.toUpperCase();
-
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
@@ -603,11 +600,17 @@ class _UserRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          CircleAvatar(
-            radius: isCompact ? 18 : 20,
-            backgroundColor: accent.withValues(alpha: 0.12),
-            foregroundColor: accent,
-            child: Text(initials),
+          // Exibe a foto ou o avatar geométrico que a pessoa escolheu, com
+          // as iniciais como fallback — o mesmo componente e as mesmas regras
+          // de degradação usados no próprio perfil.
+          UserAvatar.parts(
+            fullName: user.fullName,
+            initials: user.initials,
+            role: user.role,
+            avatarType: user.avatarType,
+            photoUrl: user.photoUrl,
+            avatarConfig: user.avatarConfig,
+            size: isCompact ? 36 : 40,
           ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(

@@ -5,6 +5,8 @@ import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../shared/widgets/app_motion.dart';
 import '../../../../shared/widgets/status_chip.dart';
+import '../../../profile/domain/profile_role.dart';
+import '../../../profile/presentation/widgets/user_avatar.dart';
 import '../../domain/patient.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
@@ -24,11 +26,6 @@ class PatientListTile extends StatelessWidget {
     final psychologist = patient.responsiblePsychologistName ?? 'Não informado';
     final status =
         patient.isActive ? patient.accessStatus?.label : 'Paciente inativo';
-    final avatarColor = patient.isActive
-        ? AppColors.blue.withValues(alpha: 0.12)
-        : AppColors.surfaceMuted;
-    final avatarTextColor =
-        patient.isActive ? AppColors.navy : AppColors.textMuted;
 
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -47,15 +44,21 @@ class PatientListTile extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  CircleAvatar(
-                    radius: 24,
-                    backgroundColor: avatarColor,
-                    child: Text(
-                      _initials(patient.fullName),
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: avatarTextColor,
-                        fontWeight: FontWeight.w600,
-                      ),
+                  // Paciente com conta mostra a foto ou o avatar que escolheu;
+                  // sem conta (cadastrado só pelo psicólogo) não há perfil, e
+                  // o componente já degrada para as iniciais.
+                  // Paciente inativo continua com o avatar esmaecido, como
+                  // era com o círculo de iniciais: é sinal de status na lista.
+                  Opacity(
+                    opacity: patient.isActive ? 1 : 0.45,
+                    child: UserAvatar.parts(
+                      fullName: patient.fullName,
+                      initials: _initials(patient.fullName),
+                      role: ProfileRole.patient,
+                      avatarType: patient.avatarType,
+                      photoUrl: patient.photoUrl,
+                      avatarConfig: patient.avatarConfig,
+                      size: 48,
                     ),
                   ),
                   const SizedBox(width: AppSpacing.sm),

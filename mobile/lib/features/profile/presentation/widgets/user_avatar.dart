@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../domain/avatar_config.dart';
 import '../../domain/avatar_type.dart';
 import '../../domain/profile_role.dart';
 import '../../domain/user_profile.dart';
@@ -13,17 +14,48 @@ import 'avatar_artwork.dart';
 /// falha de carregamento também cai nas iniciais — o usuário nunca vê ícone de
 /// imagem quebrada.
 class UserAvatar extends StatelessWidget {
-  const UserAvatar({
+  // Não pode ser `const`: os campos derivam de `profile` em tempo de execução.
+  UserAvatar({
     super.key,
-    required this.profile,
+    required UserProfile profile,
     this.size = 44,
-  });
+  })  : fullName = profile.fullName,
+        initials = profile.initials,
+        role = profile.role,
+        effectiveType = profile.effectiveAvatarType,
+        photoUrl = profile.photoUrl,
+        avatarConfig = profile.avatarConfig;
 
-  final UserProfile profile;
+  /// Para listas de outras pessoas (usuários da clínica, pacientes), onde o
+  /// modelo não é [UserProfile]. A degradação para iniciais é a mesma:
+  /// `photo` sem URL e `custom` sem configuração caem no fallback.
+  UserAvatar.parts({
+    super.key,
+    required this.fullName,
+    required this.initials,
+    required this.role,
+    required AvatarType avatarType,
+    this.photoUrl,
+    this.avatarConfig,
+    this.size = 44,
+  }) : effectiveType = switch (avatarType) {
+          AvatarType.photo =>
+            (photoUrl ?? '').trim().isEmpty ? AvatarType.initials : avatarType,
+          AvatarType.custom =>
+            avatarConfig == null ? AvatarType.initials : avatarType,
+          AvatarType.initials => AvatarType.initials,
+        };
+
+  final String fullName;
+  final String initials;
+  final ProfileRole role;
+  final AvatarType effectiveType;
+  final String? photoUrl;
+  final AvatarConfig? avatarConfig;
   final double size;
 
   Color get _accent {
-    switch (profile.role) {
+    switch (role) {
       case ProfileRole.platformAdmin:
         return AppColors.navy;
       case ProfileRole.psychologist:
@@ -36,7 +68,7 @@ class UserAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Foto de perfil de ${profile.fullName}',
+      label: 'Foto de perfil de $fullName',
       image: true,
       child: Container(
         width: size,
@@ -62,15 +94,15 @@ class UserAvatar extends StatelessWidget {
     // O avatar geométrico é desenhado no cliente a partir de `avatarConfig`:
     // não há arquivo no Storage, nem rede envolvida, então também não há
     // estado de carregamento nem de erro para tratar aqui.
-    if (profile.effectiveAvatarType == AvatarType.custom) {
-      final config = profile.avatarConfig;
+    if (effectiveType == AvatarType.custom) {
+      final config = avatarConfig;
       if (config != null) return AvatarArtwork(config: config, size: size);
       return _initials();
     }
 
-    if (profile.effectiveAvatarType == AvatarType.photo) {
+    if (effectiveType == AvatarType.photo) {
       return Image.network(
-        profile.photoUrl!,
+        photoUrl!,
         width: size,
         height: size,
         fit: BoxFit.cover,
@@ -97,7 +129,7 @@ class UserAvatar extends StatelessWidget {
   Widget _initials() {
     return Center(
       child: Text(
-        profile.initials,
+        initials,
         style: TextStyle(
           color: Colors.white,
           fontWeight: FontWeight.w700,

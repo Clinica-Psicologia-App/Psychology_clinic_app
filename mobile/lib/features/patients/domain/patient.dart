@@ -1,3 +1,7 @@
+import '../../profile/domain/avatar_config.dart';
+import '../../profile/domain/avatar_type.dart';
+import '../../profile/domain/user_profile.dart';
+
 /// Paciente da clínica (visão de listagem/detalhe).
 class Patient {
   const Patient({
@@ -21,6 +25,9 @@ class Patient {
     this.currentLifeContext,
     this.therapyDemands,
     this.profileId,
+    this.avatarType = AvatarType.initials,
+    this.photoUrl,
+    this.avatarConfig,
     this.responsiblePsychologistId,
     this.responsiblePsychologistName,
     this.accessStatus,
@@ -49,6 +56,12 @@ class Patient {
   final String? currentLifeContext;
   final String? therapyDemands;
   final String? profileId;
+
+  /// Avatar da conta do paciente, quando ele tem uma. Paciente sem conta
+  /// (cadastrado só pelo psicólogo) não tem perfil e segue nas iniciais.
+  final AvatarType avatarType;
+  final String? photoUrl;
+  final AvatarConfig? avatarConfig;
   final String? responsiblePsychologistId;
   final String? responsiblePsychologistName;
   final PatientAccessStatus? accessStatus;
@@ -103,9 +116,15 @@ class Patient {
 
   String? get displayEthnicGroup => _humanizeClinicalValue(ethnicGroup);
 
-  factory Patient.fromJson(Map<String, dynamic> json) {
+  factory Patient.fromJson(
+    Map<String, dynamic> json, {
+    String Function(String path)? publicUrlOf,
+  }) {
     final responsible = json['responsible_psychologist'];
     final accessProfile = json['access_profile'];
+    final access = accessProfile is Map
+        ? Map<String, dynamic>.from(accessProfile)
+        : const <String, dynamic>{};
 
     return Patient(
       id: json['id'] as String,
@@ -128,6 +147,20 @@ class Patient {
       currentLifeContext: json['current_life_context'] as String?,
       therapyDemands: json['therapy_demands'] as String?,
       profileId: json['profile_id'] as String?,
+      avatarType: AvatarType.fromKey(access['avatar_type'] as String?),
+      photoUrl: UserProfile.resolvePhotoUrl(
+        avatarPath: access['avatar_path'] as String?,
+        legacyAvatarUrl: access['avatar_url'] as String?,
+        avatarUpdatedAt: access['avatar_updated_at'] == null
+            ? null
+            : DateTime.tryParse(access['avatar_updated_at'] as String),
+        publicUrlOf: publicUrlOf,
+      ),
+      avatarConfig: AvatarConfig.fromJson(
+        access['avatar_config'] is Map
+            ? Map<String, dynamic>.from(access['avatar_config'] as Map)
+            : null,
+      ),
       responsiblePsychologistId: json['responsible_psychologist_id'] as String?,
       responsiblePsychologistName:
           responsible is Map ? responsible['full_name'] as String? : null,

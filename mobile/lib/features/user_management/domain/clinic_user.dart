@@ -1,4 +1,9 @@
+import 'package:characters/characters.dart';
+
+import '../../profile/domain/avatar_config.dart';
+import '../../profile/domain/avatar_type.dart';
 import '../../profile/domain/profile_role.dart';
+import '../../profile/domain/user_profile.dart';
 
 class ClinicUser {
   const ClinicUser({
@@ -18,6 +23,9 @@ class ClinicUser {
     this.phone,
     this.crp,
     this.createdAt,
+    this.avatarType = AvatarType.initials,
+    this.photoUrl,
+    this.avatarConfig,
   });
 
   final String id;
@@ -37,7 +45,27 @@ class ClinicUser {
   final int pendingPatientInvitationsCount;
   final DateTime? createdAt;
 
-  factory ClinicUser.fromJson(Map<String, dynamic> json) {
+  /// Avatar do usuário, vindo do mesmo `profiles` de onde sai o resto. A
+  /// policy de leitura já libera perfis da própria clínica, então exibi-lo
+  /// aqui não exigiu mudança de permissão.
+  final AvatarType avatarType;
+  final String? photoUrl;
+  final AvatarConfig? avatarConfig;
+
+  /// Iniciais para o fallback do avatar.
+  String get initials {
+    final parts =
+        fullName.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts.first.characters.first.toUpperCase();
+    return (parts.first.characters.first + parts.last.characters.first)
+        .toUpperCase();
+  }
+
+  factory ClinicUser.fromJson(
+    Map<String, dynamic> json, {
+    String Function(String path)? publicUrlOf,
+  }) {
     final role = ProfileRole.tryParse(json['role'] as String?);
     if (role == null) {
       throw FormatException('Invalid profile role: ${json['role']}');
@@ -63,6 +91,21 @@ class ClinicUser {
       createdAt: json['created_at'] == null
           ? null
           : DateTime.tryParse(json['created_at'] as String),
+      avatarType: AvatarType.fromKey(json['avatar_type'] as String?),
+      // Mesma montagem de URL do próprio perfil, cache busting incluído.
+      photoUrl: UserProfile.resolvePhotoUrl(
+        avatarPath: json['avatar_path'] as String?,
+        legacyAvatarUrl: json['avatar_url'] as String?,
+        avatarUpdatedAt: json['avatar_updated_at'] == null
+            ? null
+            : DateTime.tryParse(json['avatar_updated_at'] as String),
+        publicUrlOf: publicUrlOf,
+      ),
+      avatarConfig: AvatarConfig.fromJson(
+        json['avatar_config'] is Map
+            ? Map<String, dynamic>.from(json['avatar_config'] as Map)
+            : null,
+      ),
     );
   }
 

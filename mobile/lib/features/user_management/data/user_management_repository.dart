@@ -22,6 +22,10 @@ class UserManagementRepository {
   final EdgeApiClient _edgeApi;
   final ClinicsRepository _clinicsRepo;
 
+  /// Mesmo bucket e mesma montagem de URL usados no próprio perfil.
+  String _avatarPublicUrl(String path) =>
+      _client.storage.from('avatars').getPublicUrl(path);
+
   Future<List<ClinicUser>> listClinicUsers() async {
     try {
       final rows = await _client
@@ -29,6 +33,8 @@ class UserManagementRepository {
           .select(
             'id, clinic_id, full_name, email, phone, role, crp, is_active, '
             'can_receive_patients, patient_assignment_limit, '
+            'avatar_type, avatar_path, avatar_url, avatar_config, '
+            'avatar_updated_at, '
             'created_at, clinic:clinics!profiles_clinic_id_fkey('
             'id, name, clinic_type, is_active)',
           )
@@ -60,7 +66,7 @@ class UserManagementRepository {
         json['assigned_patients_count'] = patientsByPsychologist[id] ?? 0;
         json['pending_patient_invitations_count'] =
             invitationsByPsychologist[id] ?? 0;
-        return ClinicUser.fromJson(json);
+        return ClinicUser.fromJson(json, publicUrlOf: _avatarPublicUrl);
       }).toList();
     } catch (e) {
       throw mapToAppException(e);
@@ -94,7 +100,10 @@ class UserManagementRepository {
         );
       }
 
-      return ClinicUser.fromJson(Map<String, dynamic>.from(profileJson));
+      return ClinicUser.fromJson(
+        Map<String, dynamic>.from(profileJson),
+        publicUrlOf: _avatarPublicUrl,
+      );
     } catch (e) {
       throw mapToAppException(e);
     }

@@ -45,8 +45,12 @@ is_active,
 inactivated_at,
 created_at,
 responsible_psychologist:profiles!patients_responsible_psychologist_id_fkey(full_name),
-access_profile:profiles!patients_profile_id_fkey(is_active)
+access_profile:profiles!patients_profile_id_fkey(is_active, avatar_type, avatar_path, avatar_url, avatar_config, avatar_updated_at)
 ''';
+
+  /// Mesmo bucket e mesma montagem de URL usados no próprio perfil.
+  String _avatarPublicUrl(String path) =>
+      _client.storage.from('avatars').getPublicUrl(path);
 
   Future<List<Patient>> listPatients() async {
     try {
@@ -56,7 +60,10 @@ access_profile:profiles!patients_profile_id_fkey(is_active)
           .order('full_name');
 
       return (rows as List)
-          .map((row) => Patient.fromJson(Map<String, dynamic>.from(row)))
+          .map((row) => Patient.fromJson(
+                Map<String, dynamic>.from(row),
+                publicUrlOf: _avatarPublicUrl,
+              ))
           .toList();
     } catch (e) {
       throw mapToAppException(e);
@@ -72,7 +79,10 @@ access_profile:profiles!patients_profile_id_fkey(is_active)
           .maybeSingle();
 
       if (row == null) return null;
-      return Patient.fromJson(Map<String, dynamic>.from(row));
+      return Patient.fromJson(
+        Map<String, dynamic>.from(row),
+        publicUrlOf: _avatarPublicUrl,
+      );
     } catch (e) {
       throw mapToAppException(e);
     }
@@ -196,7 +206,10 @@ access_profile:profiles!patients_profile_id_fkey(is_active)
           .eq('id', request.patientId)
           .select(_patientDetailSelect)
           .single();
-      return Patient.fromJson(Map<String, dynamic>.from(row));
+      return Patient.fromJson(
+        Map<String, dynamic>.from(row),
+        publicUrlOf: _avatarPublicUrl,
+      );
     } catch (e) {
       throw mapToAppException(e);
     }

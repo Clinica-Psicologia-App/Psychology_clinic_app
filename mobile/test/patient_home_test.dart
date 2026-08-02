@@ -35,7 +35,7 @@ void main() {
 
     expect(tester.takeException(), isNull);
     expect(find.text('Seu progresso'), findsOneWidget);
-    expect(find.text('Explorar'), findsOneWidget);
+    expect(find.text('Seus espaços'), findsOneWidget);
   });
 
   testWidgets('resumo mostra metas, check-ins e resultados reais',
@@ -55,7 +55,7 @@ void main() {
     await _pumpHome(tester);
 
     expect(find.text('Mapa mental'), findsOneWidget);
-    expect(find.text('Biblioteca terapêutica'), findsOneWidget);
+    expect(find.text('Biblioteca'), findsOneWidget);
     expect(find.text('Monitor diário'), findsOneWidget);
   });
 

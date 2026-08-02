@@ -159,7 +159,7 @@ class _HomeBody extends StatelessWidget {
             const SizedBox(height: AppSpacing.xl),
             const AppSectionHeader(
               title: 'Seu progresso',
-              subtitle: 'Toque em um número para ver os detalhes.',
+              subtitle: 'Um resumo simples de como você está indo.',
             ),
             const SizedBox(height: AppSpacing.sm),
             const MotionReveal(
@@ -168,36 +168,37 @@ class _HomeBody extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xl),
             const AppSectionHeader(
-              title: 'Explorar',
-              subtitle: 'Acesso rápido às áreas do seu acompanhamento.',
+              title: 'Seus espaços',
+              subtitle: 'Escolha por onde continuar agora.',
               accentColor: _WorkspaceAccents.clinical,
             ),
             const SizedBox(height: AppSpacing.sm),
             MotionReveal(
               delay: const Duration(milliseconds: 140),
               child: ResponsiveGrid(
+                compactColumns: 2,
                 mediumColumns: 2,
                 expandedColumns: 3,
                 children: [
-                  ClinicalModuleCard(
+                  _PatientExploreCard(
                     icon: Icons.hub_outlined,
                     title: 'Mapa mental',
-                    subtitle: 'Síntese integrada da sua formulação clínica.',
+                    subtitle: 'Uma visão geral do que já conversamos.',
                     accentColor: _WorkspaceAccents.clinical,
                     onTap: () => context.push(MentalMapRoutes.patientList),
                   ),
-                  ClinicalModuleCard(
+                  _PatientExploreCard(
                     icon: Icons.menu_book_outlined,
-                    title: 'Biblioteca terapêutica',
-                    subtitle: 'Psicoeducação e recursos liberados para você.',
+                    title: 'Biblioteca',
+                    subtitle: 'Materiais e exercícios pensados para você.',
                     accentColor: _WorkspaceAccents.clinical,
                     onTap: () =>
                         context.push(TherapyResourceRoutes.patientList),
                   ),
-                  ClinicalModuleCard(
+                  _PatientExploreCard(
                     icon: Icons.monitor_heart_outlined,
                     title: 'Monitor diário',
-                    subtitle: 'Humor, rotina e percepção do dia a dia.',
+                    subtitle: 'Humor, rotina e como você tem se sentido.',
                     accentColor: _WorkspaceAccents.management,
                     onTap: () => context.push(DailyMonitorRoutes.patientList),
                   ),
@@ -207,7 +208,8 @@ class _HomeBody extends StatelessWidget {
             const SizedBox(height: AppSpacing.xl),
             const AppSectionHeader(
               title: 'Sua continuidade',
-              subtitle: 'Veja o próximo passo do seu acompanhamento.',
+              subtitle:
+                  'O caminho completo do seu acompanhamento, no seu ritmo.',
             ),
             const SizedBox(height: AppSpacing.sm),
             MotionReveal(
@@ -543,60 +545,146 @@ class _PatientNextStep extends ConsumerWidget {
       );
     }
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: AppRadius.lgAll,
-        border: Border.all(color: AppColors.border),
+    // Mesma sombra clay dos dois estados acima (ClinicalModuleCard já a usa)
+    // — antes este era o único card da tela com borda simples em vez de
+    // sombra, e destoava do resto.
+    return ClayCard(
+      accentColor: AppColors.turquoise,
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: AppColors.turquoise.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.check_circle_outline,
+                color: AppColors.turquoise,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Tudo em dia por hoje',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.navy,
+                        ),
+                  ),
+                  const SizedBox(height: AppSpacing.xxs),
+                  Text(
+                    'Você já cuidou do que precisava por hoje. Volte quando '
+                    'quiser — sem pressa.',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textSecondary,
+                          height: 1.4,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
-      child: Row(
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.turquoise.withValues(alpha: 0.12),
-              borderRadius: AppRadius.mdAll,
-            ),
-            child: const Icon(
-              Icons.check_circle_outline,
-              color: AppColors.turquoise,
-              size: 22,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
+    );
+  }
+}
+
+/// Atalho de exploração da home do paciente: selo circular colorido no
+/// topo, título e descrição abaixo — um "tile" de app, não uma linha de
+/// lista. Widget próprio (e não [ClinicalModuleCard], usado no resto do
+/// app): a tela do paciente pediu um tratamento mais amigável, e mudar o
+/// card compartilhado afetaria a home do profissional também.
+class _PatientExploreCard extends StatelessWidget {
+  const _PatientExploreCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.accentColor,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color accentColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return MotionSurface(
+      onTap: onTap,
+      borderRadius: AppRadius.xlAll,
+      child: ClayCard(
+        accentColor: accentColor,
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.xlAll),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: AppRadius.xlAll,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
+                Container(
+                  width: 52,
+                  height: 52,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: accentColor.withValues(alpha: 0.14),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: accentColor, size: 26),
+                ),
+                const SizedBox(height: AppSpacing.md),
                 Text(
-                  'Tudo em dia por hoje',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                  title,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    color: AppColors.navy,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.xxs),
                 Text(
-                  'Você já cuidou do que precisava. Volte quando quiser.',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                      ),
+                  subtitle,
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.textSecondary,
+                    height: 1.35,
+                  ),
                 ),
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
 /// Resumo do progresso do paciente: metas ativas, check-ins da semana e
-/// resultados liberados. Mesmo painel usado na home do profissional — os
-/// números são reais (nada de dado fictício) e cada um leva à tela
-/// correspondente.
+/// resultados liberados. Os números são reais (nada de dado fictício) e
+/// cada um leva à tela correspondente.
+///
+/// A renderização é própria ([_PatientMetricsPanel]), não a
+/// [_WorkspaceSummary] do profissional — mesma lógica de dados, visual
+/// mais caloroso (selo circular colorido atrás do ícone) sem arriscar a
+/// home do profissional, que reusa o painel original.
 class _PatientProgressSummary extends ConsumerWidget {
   const _PatientProgressSummary();
 
@@ -633,7 +721,7 @@ class _PatientProgressSummary extends ConsumerWidget {
     final recentCheckIns =
         checkIns.where((c) => c.checkedInAt.isAfter(weekAgo)).length;
 
-    return _WorkspaceSummary(
+    return _PatientMetricsPanel(
       metrics: [
         _WorkspaceMetric(
           icon: Icons.flag_outlined,
@@ -658,6 +746,108 @@ class _PatientProgressSummary extends ConsumerWidget {
           onTap: () => context.push('/patient/results'),
         ),
       ],
+    );
+  }
+}
+
+/// Painel de métricas com selo circular colorido atrás do ícone — a mesma
+/// estrutura de colunas do [_WorkspaceSummary], com um acabamento mais
+/// caloroso para a home do paciente.
+class _PatientMetricsPanel extends StatelessWidget {
+  const _PatientMetricsPanel({required this.metrics});
+
+  final List<_WorkspaceMetric> metrics;
+
+  @override
+  Widget build(BuildContext context) {
+    return ClayCard(
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.xlAll),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xs,
+          vertical: AppSpacing.md,
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            for (var i = 0; i < metrics.length; i++) ...[
+              if (i > 0)
+                Container(width: 1, height: 64, color: AppColors.border),
+              Expanded(child: _PatientMetricCell(metric: metrics[i])),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PatientMetricCell extends StatelessWidget {
+  const _PatientMetricCell({required this.metric});
+
+  final _WorkspaceMetric metric;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final duration = AppAnimations.resolve(
+      context,
+      const Duration(milliseconds: 320),
+    );
+
+    return Semantics(
+      button: true,
+      label: '${metric.label}: ${metric.value}',
+      child: InkWell(
+        onTap: metric.onTap,
+        borderRadius: AppRadius.mdAll,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xxs,
+            vertical: AppSpacing.xs,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: metric.accent.withValues(alpha: 0.14),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(metric.icon, size: 18, color: metric.accent),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              TweenAnimationBuilder<int>(
+                duration: duration,
+                curve: AppAnimations.standardCurve,
+                tween: IntTween(begin: 0, end: metric.value),
+                builder: (context, animated, _) {
+                  return Text(
+                    '$animated',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      color: AppColors.navy,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(height: AppSpacing.xxs),
+              Text(
+                metric.label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

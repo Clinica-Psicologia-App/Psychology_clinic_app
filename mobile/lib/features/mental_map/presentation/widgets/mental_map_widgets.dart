@@ -383,11 +383,10 @@ class MentalMapRadialHub extends StatelessWidget {
           'schemas': Rect.fromLTWH(centerNodeX, topY, nodeWidth, nodeHeight),
           'modes': Rect.fromLTWH(rightX, upperY, nodeWidth, nodeHeight),
           'problems': Rect.fromLTWH(rightX, lowerY, nodeWidth, nodeHeight),
-          'goals':
-              Rect.fromLTWH(centerNodeX, bottomY, nodeWidth, nodeHeight),
+          'goals': Rect.fromLTWH(centerNodeX, bottomY, nodeWidth, nodeHeight),
           'attachment': Rect.fromLTWH(leftX, upperY, nodeWidth, nodeHeight),
-          'coping': Rect.fromLTWH(
-              leftX, hubHeight * 0.36, nodeWidth, nodeHeight),
+          'coping':
+              Rect.fromLTWH(leftX, hubHeight * 0.36, nodeWidth, nodeHeight),
           'parental': Rect.fromLTWH(leftX, lowerY, nodeWidth, nodeHeight),
           'history': Rect.fromLTWH(leftX, bottomY, nodeWidth, nodeHeight),
         };
@@ -682,6 +681,19 @@ class _MentalMapMobileOrbitState extends State<_MentalMapMobileOrbit>
   }
 }
 
+// Alguns glifos do Material Icons não são desenhados centralizados dentro do
+// próprio em-square (a "tinta" do ícone pende para um lado) — Flutter centraliza
+// a caixa do ícone corretamente, mas o desenho em si fica torto dentro dela.
+// Confirmado visualmente comparando o mesmo layout com e sem a fonte real
+// carregada: sem fonte (glifo placeholder quadrado) tudo fica perfeito; com a
+// fonte real, flag_outlined e shield_outlined aparecem deslocados. Pequenos
+// ajustes manuais compensam esse desvio só para os glifos afetados.
+Offset _opticalNudgeFor(IconData icon) {
+  if (icon == Icons.flag_outlined) return const Offset(0.8, -0.5);
+  if (icon == Icons.shield_outlined) return const Offset(0.3, 0.5);
+  return Offset.zero;
+}
+
 class _MentalMapOrbitNode extends StatelessWidget {
   const _MentalMapOrbitNode({
     required this.data,
@@ -734,10 +746,13 @@ class _MentalMapOrbitNode extends StatelessWidget {
                     ]
                   : const [],
             ),
-            child: Icon(
-              data.icon,
-              color: data.isFilled ? data.accentColor : effectiveRingColor,
-              size: large ? 26 : 22,
+            child: Transform.translate(
+              offset: _opticalNudgeFor(data.icon),
+              child: Icon(
+                data.icon,
+                color: data.isFilled ? data.accentColor : effectiveRingColor,
+                size: large ? 26 : 22,
+              ),
             ),
           ),
           const SizedBox(height: 6),

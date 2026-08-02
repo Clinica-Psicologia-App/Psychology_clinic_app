@@ -625,11 +625,13 @@ class AvatarPainter extends CustomPainter {
             ..close(),
           paint,
         );
-        for (var i = 0; i < 7; i++) {
-          final t = i / 6;
+        // Cachos na borda visível: abaixo de ~62 eles ficam atrás dos ombros
+        // e o penteado passa a ser indistinguível do liso.
+        for (var i = 0; i < 8; i++) {
+          final t = i / 7;
           canvas.drawCircle(
-            Offset(24 + t * 52, 62 + math.sin(t * 3) * 5),
-            7,
+            Offset(23 + t * 54, 40 + math.sin(t * 6) * 14),
+            7.5,
             paint,
           );
         }
@@ -664,6 +666,68 @@ class AvatarPainter extends CustomPainter {
 
       case AvatarHairStyle.afro:
         canvas.drawCircle(const Offset(50, 30), 27, paint);
+
+      case AvatarHairStyle.coils:
+        // Volume redondo texturizado — menor que o black power, com cachos
+        // definidos marcados na borda.
+        canvas.drawCircle(const Offset(50, 31), 23, paint);
+        for (var i = 0; i < 11; i++) {
+          final a = math.pi + (i / 10) * math.pi;
+          canvas.drawCircle(
+            Offset(50 + math.cos(a) * 22, 31 + math.sin(a) * 22),
+            5.5,
+            paint,
+          );
+        }
+
+      case AvatarHairStyle.braids:
+        canvas.drawPath(
+          Path()
+            ..moveTo(29, 30)
+            ..quadraticBezierTo(29, 11, 50, 11)
+            ..quadraticBezierTo(71, 11, 71, 30)
+            ..lineTo(73, 70)
+            ..lineTo(27, 70)
+            ..close(),
+          paint,
+        );
+        // Divisões verticais sugerindo as tranças.
+        final risco = Paint()
+          ..color = Color.lerp(hair, Colors.black, 0.35)!
+          ..strokeWidth = 1.1
+          ..strokeCap = StrokeCap.round;
+        for (var i = 0; i < 6; i++) {
+          final x = 30.0 + i * 8;
+          canvas.drawLine(Offset(x, 22), Offset(x - 1, 70), risco);
+        }
+
+      case AvatarHairStyle.wavy:
+        canvas.drawPath(
+          Path()
+            ..moveTo(28, 30)
+            ..quadraticBezierTo(28, 11, 50, 11)
+            ..quadraticBezierTo(72, 11, 72, 30)
+            ..lineTo(73, 58)
+            ..quadraticBezierTo(68, 66, 62, 62)
+            ..quadraticBezierTo(56, 68, 50, 63)
+            ..quadraticBezierTo(44, 68, 38, 62)
+            ..quadraticBezierTo(32, 66, 27, 58)
+            ..close(),
+          paint,
+        );
+
+      case AvatarHairStyle.hijab:
+        // Véu caindo sobre os ombros, na cor da roupa.
+        canvas.drawPath(
+          Path()
+            ..moveTo(24, 34)
+            ..quadraticBezierTo(24, 8, 50, 8)
+            ..quadraticBezierTo(76, 8, 76, 34)
+            ..lineTo(80, 78)
+            ..lineTo(20, 78)
+            ..close(),
+          Paint()..color = AvatarPalette.of(config.outfitColor),
+        );
 
       default:
         return;
@@ -799,10 +863,114 @@ class AvatarPainter extends CustomPainter {
         sideburns(to: 38);
 
       case AvatarHairStyle.afro:
+      case AvatarHairStyle.coils:
         cap(spread: 0.98, drop: -3);
+
+      case AvatarHairStyle.pixie:
+        // Bem curto e colado, com uma mecha curta na testa.
+        cap(spread: 0.98, drop: 1);
+        sideburns(to: 38);
+        canvas.drawPath(
+          Path()
+            ..moveTo(34, 30)
+            ..quadraticBezierTo(42, 19, 58, 24)
+            ..quadraticBezierTo(48, 26, 42, 31)
+            ..close(),
+          paint,
+        );
+
+      case AvatarHairStyle.undercut:
+        // Laterais rentes e topo com volume jogado para o lado.
+        canvas.save();
+        canvas.clipPath(_facePath);
+        canvas.drawRect(
+          Rect.fromLTWH(
+              _headCenter.dx - _headRx, _hairlineY - 4, _headRx * 2, 14),
+          Paint()..color = hair.withValues(alpha: 0.45),
+        );
+        canvas.restore();
+        cap(spread: 0.88, drop: -3);
+        canvas.drawPath(
+          Path()
+            ..moveTo(35, 26)
+            ..quadraticBezierTo(44, 12, 66, 20)
+            ..quadraticBezierTo(54, 22, 46, 29)
+            ..close(),
+          paint,
+        );
+
+      case AvatarHairStyle.slickBack:
+        // Penteado para trás: sem franja, com volume no alto e riscos
+        // sugerindo o pente.
+        cap(spread: 1.0, drop: -2);
+        sideburns(to: 40);
+        final pente = Paint()
+          ..color = Color.lerp(hair, Colors.black, 0.30)!
+          ..strokeWidth = 0.9
+          ..strokeCap = StrokeCap.round;
+        for (var i = 0; i < 5; i++) {
+          final x = 40.0 + i * 5;
+          canvas.drawLine(Offset(x, 15), Offset(x - 2, 26), pente);
+        }
+
+      case AvatarHairStyle.wavy:
+        cap(spread: 1.04);
+        sideburns(to: 46);
+        canvas.drawPath(
+          Path()
+            ..moveTo(30, 30)
+            ..quadraticBezierTo(36, 14, 50, 14)
+            ..quadraticBezierTo(64, 14, 70, 30)
+            ..quadraticBezierTo(61, 21, 50, 21)
+            ..quadraticBezierTo(39, 21, 30, 30)
+            ..close(),
+          paint,
+        );
+
+      case AvatarHairStyle.braids:
+        cap(spread: 1.02);
+        sideburns(to: 44);
+
+      case AvatarHairStyle.hijab:
+        // Contorno do véu com abertura para o rosto: uma única forma com
+        // furo (evenOdd), para não repintar as feições já desenhadas.
+        final veu = Path()
+          ..fillType = PathFillType.evenOdd
+          ..addRRect(
+            RRect.fromRectAndRadius(
+              const Rect.fromLTWH(25, 9, 50, 62),
+              const Radius.circular(25),
+            ),
+          )
+          ..addOval(
+            Rect.fromCenter(
+              center: const Offset(50, 41),
+              width: _headRx * 1.72,
+              height: _headRy * 1.74,
+            ),
+          );
+        canvas.drawPath(
+          veu,
+          Paint()..color = AvatarPalette.of(config.outfitColor),
+        );
+        // Dobra sutil sobre o ombro.
+        canvas.drawPath(
+          Path()
+            ..moveTo(28, 58)
+            ..quadraticBezierTo(34, 70, 46, 72)
+            ..lineTo(30, 72)
+            ..close(),
+          Paint()
+            ..color = Color.lerp(
+              AvatarPalette.of(config.outfitColor),
+              Colors.black,
+              0.16,
+            )!,
+        );
     }
 
     // Brilho discreto no topo — o mesmo recurso das ilustrações de referência.
+    if (config.hairStyle == AvatarHairStyle.hijab) return;
     canvas.drawOval(
       Rect.fromCenter(
         center: Offset(_headCenter.dx - 5.5, _headCenter.dy - _headRy + 6),

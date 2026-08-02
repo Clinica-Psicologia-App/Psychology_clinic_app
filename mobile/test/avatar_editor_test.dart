@@ -184,12 +184,15 @@ void main() {
 
       expect(find.text('Porcelana'), findsOneWidget);
 
-      // "Cabelo" é a segunda categoria e está visível sem rolar a barra.
+      // "Cabelo" está visível sem rolar a barra de categorias.
       await tester.tap(find.text('Cabelo'));
       await tester.pumpAndSettle();
 
       expect(find.text('Porcelana'), findsNothing);
-      expect(find.text('Coque'), findsOneWidget);
+      // Item do topo da lista de propósito: a grade é rolável e o catálogo de
+      // cabelos cresce, então mirar um item do fim tornaria o teste refém da
+      // quantidade de opções em vez da troca de categoria.
+      expect(find.text('Raspado'), findsOneWidget);
     });
   });
 }

@@ -36,14 +36,26 @@ enum AvatarSkinTone {
 enum AvatarHairStyle {
   none('none'),
   buzz('buzz'),
+  pixie('pixie'),
   short('short'),
   shortCurly('short_curly'),
+  undercut('undercut'),
+  slickBack('slick_back'),
   medium('medium'),
+  wavy('wavy'),
   long('long'),
   longCurly('long_curly'),
+  coils('coils'),
+  braids('braids'),
   bun('bun'),
   ponytail('ponytail'),
-  afro('afro');
+  afro('afro'),
+
+  /// Véu de cabeça. Fica no mesmo eixo do cabelo porque ocupa o mesmo lugar
+  /// no desenho e é mutuamente exclusivo com ele — o que também resolve a
+  /// regra de compatibilidade sem precisar de uma camada de exceções.
+  /// A cor acompanha a da roupa: é peça de vestuário, não cabelo.
+  hijab('hijab');
 
   const AvatarHairStyle(this.key);
   final String key;

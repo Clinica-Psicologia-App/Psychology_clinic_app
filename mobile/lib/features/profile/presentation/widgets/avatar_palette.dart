@@ -111,14 +111,21 @@ abstract final class AvatarPalette {
     return switch (style) {
       AvatarHairStyle.none => 'Sem cabelo',
       AvatarHairStyle.buzz => 'Raspado',
+      AvatarHairStyle.pixie => 'Pixie',
       AvatarHairStyle.short => 'Curto',
       AvatarHairStyle.shortCurly => 'Curto cacheado',
-      AvatarHairStyle.medium => 'Médio',
+      AvatarHairStyle.undercut => 'Undercut',
+      AvatarHairStyle.slickBack => 'Penteado para trás',
+      AvatarHairStyle.medium => 'Chanel',
+      AvatarHairStyle.wavy => 'Ondulado',
       AvatarHairStyle.long => 'Longo',
       AvatarHairStyle.longCurly => 'Longo cacheado',
+      AvatarHairStyle.coils => 'Cachos definidos',
+      AvatarHairStyle.braids => 'Tranças',
       AvatarHairStyle.bun => 'Coque',
       AvatarHairStyle.ponytail => 'Rabo de cavalo',
       AvatarHairStyle.afro => 'Black power',
+      AvatarHairStyle.hijab => 'Hijab',
     };
   }
 

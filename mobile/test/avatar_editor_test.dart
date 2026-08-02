@@ -58,6 +58,38 @@ void main() {
       }
     });
 
+    test('cobre formato de rosto, nariz, boca e acessórios', () {
+      for (final face in AvatarFaceShape.values) {
+        for (final nose in AvatarNose.values) {
+          for (final mouth in AvatarMouth.values) {
+            for (final acc in AvatarAccessory.values) {
+              expect(
+                () => _paintOnce(
+                  AvatarPainter(AvatarConfig(
+                    faceShape: face,
+                    noseStyle: nose,
+                    mouthStyle: mouth,
+                    accessory: acc,
+                  )),
+                ),
+                returnsNormally,
+                reason: 'falhou em $face / $nose / $mouth / $acc',
+              );
+            }
+          }
+        }
+      }
+    });
+
+    test('formato do rosto altera o desenho', () {
+      const oval = AvatarConfig(faceShape: AvatarFaceShape.oval);
+      const square = AvatarConfig(faceShape: AvatarFaceShape.square);
+      expect(
+        const AvatarPainter(oval).shouldRepaint(const AvatarPainter(square)),
+        isTrue,
+      );
+    });
+
     test('só repinta quando a configuração muda', () {
       const a = AvatarConfig();
       const b = AvatarConfig(hairStyle: AvatarHairStyle.afro);

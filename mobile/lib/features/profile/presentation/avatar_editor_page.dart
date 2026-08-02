@@ -184,12 +184,16 @@ class _Preview extends StatelessWidget {
 
 enum _EditorCategory {
   skin('Pele'),
+  face('Rosto'),
   hair('Cabelo'),
   hairColor('Cor do cabelo'),
   eyes('Olhos'),
   eyebrows('Sobrancelhas'),
+  nose('Nariz'),
+  mouth('Boca'),
   facialHair('Barba'),
   glasses('Óculos'),
+  accessory('Acessórios'),
   outfit('Roupa'),
   outfitColor('Cor da roupa'),
   background('Fundo');
@@ -283,6 +287,34 @@ List<_Option> _optionsFor(_EditorCategory category, AvatarConfig config) {
           _Option(
             label: AvatarPalette.skinLabel(v),
             config: config.copyWith(skinTone: v),
+          ),
+      ],
+    _EditorCategory.face => [
+        for (final v in AvatarFaceShape.values)
+          _Option(
+            label: AvatarPalette.faceShapeLabel(v),
+            config: config.copyWith(faceShape: v),
+          ),
+      ],
+    _EditorCategory.nose => [
+        for (final v in AvatarNose.values)
+          _Option(
+            label: AvatarPalette.noseLabel(v),
+            config: config.copyWith(noseStyle: v),
+          ),
+      ],
+    _EditorCategory.mouth => [
+        for (final v in AvatarMouth.values)
+          _Option(
+            label: AvatarPalette.mouthLabel(v),
+            config: config.copyWith(mouthStyle: v),
+          ),
+      ],
+    _EditorCategory.accessory => [
+        for (final v in AvatarAccessory.values)
+          _Option(
+            label: AvatarPalette.accessoryLabel(v),
+            config: config.copyWith(accessory: v),
           ),
       ],
     _EditorCategory.hair => [

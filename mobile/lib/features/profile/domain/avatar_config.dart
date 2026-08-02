@@ -69,6 +69,56 @@ enum AvatarHairColor {
       _lookup(values, key, (e) => e.key, darkBrown);
 }
 
+enum AvatarFaceShape {
+  oval('oval'),
+  round('round'),
+  square('square');
+
+  const AvatarFaceShape(this.key);
+  final String key;
+
+  static AvatarFaceShape fromKey(String? key) =>
+      _lookup(values, key, (e) => e.key, oval);
+}
+
+enum AvatarNose {
+  soft('soft'),
+  straight('straight'),
+  wide('wide');
+
+  const AvatarNose(this.key);
+  final String key;
+
+  static AvatarNose fromKey(String? key) =>
+      _lookup(values, key, (e) => e.key, soft);
+}
+
+enum AvatarMouth {
+  softSmile('soft_smile'),
+  smile('smile'),
+  neutral('neutral'),
+  grin('grin');
+
+  const AvatarMouth(this.key);
+  final String key;
+
+  static AvatarMouth fromKey(String? key) =>
+      _lookup(values, key, (e) => e.key, softSmile);
+}
+
+enum AvatarAccessory {
+  none('none'),
+  studs('studs'),
+  hoops('hoops'),
+  necklace('necklace');
+
+  const AvatarAccessory(this.key);
+  final String key;
+
+  static AvatarAccessory fromKey(String? key) =>
+      _lookup(values, key, (e) => e.key, none);
+}
+
 enum AvatarEyeStyle {
   round('round'),
   almond('almond'),
@@ -181,6 +231,10 @@ class AvatarConfig {
   const AvatarConfig({
     this.schemaVersion = kAvatarConfigSchemaVersion,
     this.skinTone = AvatarSkinTone.medium,
+    this.faceShape = AvatarFaceShape.oval,
+    this.noseStyle = AvatarNose.soft,
+    this.mouthStyle = AvatarMouth.softSmile,
+    this.accessory = AvatarAccessory.none,
     this.hairStyle = AvatarHairStyle.short,
     this.hairColor = AvatarHairColor.darkBrown,
     this.eyeStyle = AvatarEyeStyle.almond,
@@ -194,6 +248,10 @@ class AvatarConfig {
 
   final int schemaVersion;
   final AvatarSkinTone skinTone;
+  final AvatarFaceShape faceShape;
+  final AvatarNose noseStyle;
+  final AvatarMouth mouthStyle;
+  final AvatarAccessory accessory;
   final AvatarHairStyle hairStyle;
   final AvatarHairColor hairColor;
   final AvatarEyeStyle eyeStyle;
@@ -222,6 +280,10 @@ class AvatarConfig {
     return AvatarConfig(
       schemaVersion: version is int ? version : kAvatarConfigSchemaVersion,
       skinTone: AvatarSkinTone.fromKey(str('skinTone')),
+      faceShape: AvatarFaceShape.fromKey(str('faceShape')),
+      noseStyle: AvatarNose.fromKey(str('noseStyle')),
+      mouthStyle: AvatarMouth.fromKey(str('mouthStyle')),
+      accessory: AvatarAccessory.fromKey(str('accessory')),
       hairStyle: AvatarHairStyle.fromKey(str('hairStyle')),
       hairColor: AvatarHairColor.fromKey(str('hairColor')),
       eyeStyle: AvatarEyeStyle.fromKey(str('eyeStyle')),
@@ -245,6 +307,10 @@ class AvatarConfig {
   Map<String, dynamic> toJson() => {
         'schemaVersion': kAvatarConfigSchemaVersion,
         'skinTone': skinTone.key,
+        'faceShape': faceShape.key,
+        'noseStyle': noseStyle.key,
+        'mouthStyle': mouthStyle.key,
+        'accessory': accessory.key,
         'hairStyle': hairStyle.key,
         'hairColor': hairColor.key,
         'eyeStyle': eyeStyle.key,
@@ -258,6 +324,10 @@ class AvatarConfig {
 
   AvatarConfig copyWith({
     AvatarSkinTone? skinTone,
+    AvatarFaceShape? faceShape,
+    AvatarNose? noseStyle,
+    AvatarMouth? mouthStyle,
+    AvatarAccessory? accessory,
     AvatarHairStyle? hairStyle,
     AvatarHairColor? hairColor,
     AvatarEyeStyle? eyeStyle,
@@ -270,6 +340,10 @@ class AvatarConfig {
   }) {
     return AvatarConfig(
       skinTone: skinTone ?? this.skinTone,
+      faceShape: faceShape ?? this.faceShape,
+      noseStyle: noseStyle ?? this.noseStyle,
+      mouthStyle: mouthStyle ?? this.mouthStyle,
+      accessory: accessory ?? this.accessory,
       hairStyle: hairStyle ?? this.hairStyle,
       hairColor: hairColor ?? this.hairColor,
       eyeStyle: eyeStyle ?? this.eyeStyle,
@@ -299,6 +373,10 @@ class AvatarConfig {
 
     return AvatarConfig(
       skinTone: pick(AvatarSkinTone.values),
+      faceShape: pick(AvatarFaceShape.values),
+      noseStyle: pick(AvatarNose.values),
+      mouthStyle: pick(AvatarMouth.values),
+      accessory: pick(AvatarAccessory.values),
       hairStyle: pick(AvatarHairStyle.values),
       hairColor: pick(AvatarHairColor.values),
       eyeStyle: pick(AvatarEyeStyle.values),
@@ -316,6 +394,10 @@ class AvatarConfig {
     if (identical(this, other)) return true;
     return other is AvatarConfig &&
         other.skinTone == skinTone &&
+        other.faceShape == faceShape &&
+        other.noseStyle == noseStyle &&
+        other.mouthStyle == mouthStyle &&
+        other.accessory == accessory &&
         other.hairStyle == hairStyle &&
         other.hairColor == hairColor &&
         other.eyeStyle == eyeStyle &&
@@ -330,6 +412,10 @@ class AvatarConfig {
   @override
   int get hashCode => Object.hash(
         skinTone,
+        faceShape,
+        noseStyle,
+        mouthStyle,
+        accessory,
         hairStyle,
         hairColor,
         eyeStyle,

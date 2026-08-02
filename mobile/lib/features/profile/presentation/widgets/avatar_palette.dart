@@ -24,6 +24,24 @@ abstract final class AvatarPalette {
     };
   }
 
+  /// Versão suave da paleta, para o fundo do retrato.
+  ///
+  /// O fundo usa um pastel dessaturado em vez da cor cheia da marca: com a cor
+  /// saturada atrás, o rosto perde o protagonismo e o conjunto fica infantil.
+  /// A cor cheia continua valendo para a roupa, que precisa de peso.
+  static Color background(AvatarPaletteColor color) {
+    return switch (color) {
+      AvatarPaletteColor.turquoise => const Color(0xFFCFE7E2),
+      AvatarPaletteColor.cyan => const Color(0xFFD3E6F0),
+      AvatarPaletteColor.blue => const Color(0xFFD6E1F2),
+      AvatarPaletteColor.purple => const Color(0xFFE0DCF0),
+      AvatarPaletteColor.navy => const Color(0xFFCBD3E0),
+      AvatarPaletteColor.rose => const Color(0xFFF2DEDF),
+      AvatarPaletteColor.amber => const Color(0xFFF0E4CE),
+      AvatarPaletteColor.slate => const Color(0xFFDFE3E8),
+    };
+  }
+
   static String label(AvatarPaletteColor color) {
     return switch (color) {
       AvatarPaletteColor.turquoise => 'Turquesa',
@@ -141,6 +159,40 @@ abstract final class AvatarPalette {
       AvatarGlasses.rounded => 'Redondos',
       AvatarGlasses.square => 'Quadrados',
       AvatarGlasses.halfRim => 'Meia armação',
+    };
+  }
+
+  static String faceShapeLabel(AvatarFaceShape shape) {
+    return switch (shape) {
+      AvatarFaceShape.oval => 'Oval',
+      AvatarFaceShape.round => 'Redondo',
+      AvatarFaceShape.square => 'Anguloso',
+    };
+  }
+
+  static String noseLabel(AvatarNose nose) {
+    return switch (nose) {
+      AvatarNose.soft => 'Suave',
+      AvatarNose.straight => 'Reto',
+      AvatarNose.wide => 'Largo',
+    };
+  }
+
+  static String mouthLabel(AvatarMouth mouth) {
+    return switch (mouth) {
+      AvatarMouth.softSmile => 'Sorriso leve',
+      AvatarMouth.smile => 'Sorriso',
+      AvatarMouth.neutral => 'Neutra',
+      AvatarMouth.grin => 'Sorriso aberto',
+    };
+  }
+
+  static String accessoryLabel(AvatarAccessory accessory) {
+    return switch (accessory) {
+      AvatarAccessory.none => 'Nenhum',
+      AvatarAccessory.studs => 'Brinco pequeno',
+      AvatarAccessory.hoops => 'Argolas',
+      AvatarAccessory.necklace => 'Colar',
     };
   }
 

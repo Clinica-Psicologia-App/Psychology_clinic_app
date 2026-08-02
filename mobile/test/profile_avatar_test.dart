@@ -55,6 +55,35 @@ void main() {
       expect(AvatarConfig.fromJson(null), isNull);
     });
 
+    test('campos novos sobrevivem à ida e volta do JSON', () {
+      const config = AvatarConfig(
+        faceShape: AvatarFaceShape.square,
+        noseStyle: AvatarNose.wide,
+        mouthStyle: AvatarMouth.grin,
+        accessory: AvatarAccessory.hoops,
+      );
+      final restaurado = AvatarConfig.fromJson(config.toJson())!;
+      expect(restaurado, config);
+    });
+
+    // Config gravada antes de existirem rosto, nariz, boca e acessórios: as
+    // chaves ausentes caem no padrão em vez de lançar. É o que permite
+    // ampliar o catálogo sem migration nem invalidar avatares já salvos.
+    test('config antiga sem os campos novos continua legível', () {
+      final antigo = AvatarConfig.fromJson(const {
+        'schemaVersion': 1,
+        'skinTone': 'tan',
+        'hairStyle': 'bun',
+      })!;
+
+      expect(antigo.skinTone, AvatarSkinTone.tan);
+      expect(antigo.hairStyle, AvatarHairStyle.bun);
+      expect(antigo.faceShape, AvatarFaceShape.oval);
+      expect(antigo.noseStyle, AvatarNose.soft);
+      expect(antigo.mouthStyle, AvatarMouth.softSmile);
+      expect(antigo.accessory, AvatarAccessory.none);
+    });
+
     test('serializa e desserializa preservando as escolhas', () {
       const config = AvatarConfig(
         skinTone: AvatarSkinTone.deep,

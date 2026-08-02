@@ -31,11 +31,19 @@ class EditProfileNotifier extends AsyncNotifier<void> {
   Future<void> build() async {}
 
   /// Bloqueia disparo duplo enquanto uma operação está em voo.
-  bool get _busy => state.isLoading;
+  ///
+  /// Flag própria, e não `state.isLoading`: como [build] é `async`, o estado
+  /// nasce em `loading` e só vira `data` no microtask seguinte. As telas
+  /// chamam no padrão `ref.read(provider.notifier).operacao(...)`, ou seja, a
+  /// primeira operação acontece no mesmo instante em que o notifier é criado —
+  /// ela via "ocupado", retornava em silêncio, e a tela anunciava sucesso sem
+  /// nada ter sido gravado. Só a segunda tentativa funcionava.
+  bool _inFlight = false;
 
   Future<void> _run(
       Future<void> Function(ProfileRepository repo) action) async {
-    if (_busy) return;
+    if (_inFlight) return;
+    _inFlight = true;
     state = const AsyncValue.loading();
     try {
       await action(ref.read(profileRepositoryProvider));
@@ -44,6 +52,10 @@ class EditProfileNotifier extends AsyncNotifier<void> {
     } catch (e, st) {
       state = AsyncValue.error(e, st);
       rethrow;
+    } finally {
+      // Em `finally` para que uma falha não deixe o notifier travado: sem
+      // isso, o primeiro erro impediria qualquer tentativa seguinte.
+      _inFlight = false;
     }
   }
 

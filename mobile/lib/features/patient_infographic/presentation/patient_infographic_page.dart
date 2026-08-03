@@ -124,16 +124,35 @@ class _PatientInfographicPageState
         dataBuilder: (data) {
           _patientName = data.header.name;
           _header = data.header;
+          if (!data.hasAnyContent) {
+            return const Padding(
+              padding: EdgeInsets.all(24),
+              child: Center(
+                child: HomologationEmptyPanel(
+                  icon: Icons.auto_graph_outlined,
+                  title: 'Ainda sem material para o infográfico',
+                  message:
+                      'O infográfico é montado a partir dos dados já registrados '
+                      'do paciente.',
+                  hint:
+                      'Preencha a Conceitualização inicial e conclua os '
+                      'instrumentos para enriquecer o retrato.',
+                ),
+              ),
+            );
+          }
           return Column(
             children: [
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                 child: HomologationInfoBanner(
                   icon: Icons.auto_awesome_outlined,
                   title: 'Material de apoio',
-                  message:
-                      'Gerado a partir dos dados já registrados. Revise antes '
-                      'de compartilhar — é apoio à formulação, não diagnóstico.',
+                  message: data.isSparse
+                      ? 'Poucos dados até aqui — complete a Conceitualização '
+                          'para enriquecer. Revise antes de compartilhar.'
+                      : 'Gerado a partir dos dados já registrados. Revise antes '
+                          'de compartilhar — é apoio à formulação, não diagnóstico.',
                 ),
               ),
               Expanded(

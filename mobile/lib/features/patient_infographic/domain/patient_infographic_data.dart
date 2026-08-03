@@ -23,6 +23,7 @@ class PatientInfographicData {
     this.personality = const [],
     this.resources = const [],
     this.closingLine,
+    this.generatedOn,
   });
 
   final InfographicHeader header;
@@ -53,6 +54,9 @@ class PatientInfographicData {
   /// Mensagem final de acolhimento (rodapé).
   final String? closingLine;
 
+  /// Data de geração do material (rodapé de documento).
+  final DateTime? generatedOn;
+
   bool get hasTimeline => timeline.isNotEmpty;
   bool get hasSchemas => schemas.isNotEmpty;
   bool get hasNeeds => needs.isNotEmpty;
@@ -62,6 +66,25 @@ class PatientInfographicData {
   bool get hasDirections => directions.isNotEmpty;
   bool get hasPersonality => personality.isNotEmpty;
   bool get hasResources => resources.isNotEmpty;
+
+  /// Quantas seções de conteúdo (fora o cabeçalho) têm dados.
+  int get contentSectionCount => [
+        hasTimeline,
+        hasSchemas,
+        hasNeeds,
+        hasModes,
+        hasStrengths,
+        hasChallenges,
+        hasDirections,
+        hasPersonality,
+        hasResources,
+      ].where((v) => v).length;
+
+  /// Há ao menos uma seção de conteúdo preenchida.
+  bool get hasAnyContent => contentSectionCount > 0;
+
+  /// Conteúdo mínimo — sugere ao profissional completar a conceitualização.
+  bool get isSparse => contentSectionCount <= 2;
 }
 
 /// Domínio de personalidade (Big Five) com escore e classificação.

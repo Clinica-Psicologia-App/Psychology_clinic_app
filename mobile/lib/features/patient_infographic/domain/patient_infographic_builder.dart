@@ -20,42 +20,56 @@ PatientInfographicData buildPatientInfographic({
 }) {
   final impressions = assessment?.clinicalImpressions;
 
+  // Limites por seção — mantêm o pôster legível mesmo com muito conteúdo.
+  const maxTimeline = 8;
+  const maxSection = 6;
+
   return PatientInfographicData(
     header: _buildHeader(patient),
     quote: _firstSentence(impressions?.observedTemperament),
-    timeline: _buildTimeline(timelineEvents),
-    schemas: _buildSchemas(dashboard),
-    needs: _splitLines(impressions?.emotionalNeedsText)
-        .map((n) => InfographicNeed(need: n, accent: AppColors.error))
-        .toList(),
-    modes: _buildModes(impressions?.modeHypothesesText),
-    strengths: _itemsFrom(
-      impressions?.resources,
-      icon: Icons.star_outline,
-      accent: AppColors.turquoise,
+    timeline: _cap(_buildTimeline(timelineEvents), maxTimeline),
+    schemas: _cap(_buildSchemas(dashboard), maxSection),
+    needs: _cap(
+      _splitLines(impressions?.emotionalNeedsText)
+          .map((n) => InfographicNeed(need: n, accent: AppColors.error))
+          .toList(),
+      maxSection,
     ),
-    challenges: _itemsFrom(
-      impressions?.vulnerabilities,
-      icon: Icons.report_problem_outlined,
-      accent: AppColors.warning,
+    modes: _cap(_buildModes(impressions?.modeHypothesesText), maxSection),
+    strengths: _cap(
+      _itemsFrom(impressions?.resources,
+          icon: Icons.star_outline, accent: AppColors.turquoise),
+      maxSection,
     ),
-    directions: _itemsFrom(
-      impressions?.therapeuticPriorities,
-      icon: Icons.check_circle_outline,
-      accent: AppColors.cyan,
+    challenges: _cap(
+      _itemsFrom(impressions?.vulnerabilities,
+          icon: Icons.report_problem_outlined, accent: AppColors.warning),
+      maxSection,
     ),
-    resources: _splitLines(impressions?.resources)
-        .map((r) => InfographicItem(
-              title: r,
-              icon: Icons.star_outline,
-              accent: AppColors.success,
-            ))
-        .toList(),
+    directions: _cap(
+      _itemsFrom(impressions?.therapeuticPriorities,
+          icon: Icons.check_circle_outline, accent: AppColors.cyan),
+      maxSection,
+    ),
+    resources: _cap(
+      _splitLines(impressions?.resources)
+          .map((r) => InfographicItem(
+                title: r,
+                icon: Icons.star_outline,
+                accent: AppColors.success,
+              ))
+          .toList(),
+      8,
+    ),
     closingLine:
         'Um retrato de apoio à formulação do caso — sempre sob leitura clínica '
         'do profissional.',
+    generatedOn: DateTime.now(),
   );
 }
+
+List<T> _cap<T>(List<T> items, int max) =>
+    items.length <= max ? items : items.sublist(0, max);
 
 List<InfographicItem> _itemsFrom(
   String? text, {

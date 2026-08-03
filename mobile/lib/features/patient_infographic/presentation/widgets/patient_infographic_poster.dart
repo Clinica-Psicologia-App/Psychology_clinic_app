@@ -25,52 +25,74 @@ class PatientInfographicPoster extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Distribuição curada em duas colunas (pula seções sem dados).
-    final left = <Widget>[
+    // Seções de fluxo (com peso ≈ altura), distribuídas para equilibrar as
+    // duas colunas em vez de uma divisão fixa.
+    final flow = <_WeightedSection>[
       if (data.hasTimeline)
-        _TimelineBlock(entries: data.timeline),
+        _WeightedSection(
+          2 + data.timeline.length,
+          _TimelineBlock(entries: data.timeline),
+        ),
       if (data.hasSchemas)
-        _SectionCard(
-          title: 'ESQUEMAS EM DESTAQUE',
-          subtitle: 'Domínios ativados no perfil',
-          accent: AppColors.purple,
-          child: _items(data.schemas, AppColors.purple),
+        _WeightedSection(
+          1 + data.schemas.length,
+          _SectionCard(
+            title: 'ESQUEMAS EM DESTAQUE',
+            subtitle: 'Domínios ativados no perfil',
+            accent: AppColors.purple,
+            child: _items(data.schemas, AppColors.purple),
+          ),
         ),
-      if (data.hasStrengths)
-        _SectionCard(
-          title: 'PONTOS FORTES E POTENCIAIS',
-          accent: AppColors.turquoise,
-          child: _items(data.strengths, AppColors.turquoise),
-        ),
-      if (data.hasDirections)
-        _SectionCard(
-          title: 'DIREÇÕES TERAPÊUTICAS',
-          accent: AppColors.cyan,
-          child: _items(data.directions, AppColors.cyan),
-        ),
-    ];
-
-    final right = <Widget>[
       if (data.hasNeeds)
-        _SectionCard(
-          title: 'NECESSIDADES EMOCIONAIS',
-          subtitle: 'e eventos de vida relacionados',
-          accent: AppColors.error,
-          child: _needs(data.needs),
+        _WeightedSection(
+          1 + data.needs.length,
+          _SectionCard(
+            title: 'NECESSIDADES EMOCIONAIS',
+            subtitle: 'e eventos de vida relacionados',
+            accent: AppColors.error,
+            child: _needs(data.needs),
+          ),
         ),
       if (data.hasModes)
-        _SectionCard(
-          title: 'MODOS E ESTILOS DE ENFRENTAMENTO',
-          accent: AppColors.turquoise,
-          child: _items(data.modes, AppColors.turquoise),
+        _WeightedSection(
+          1 +
+              data.modes.fold<int>(
+                  0, (s, m) => s + 1 + m.bullets.length),
+          _SectionCard(
+            title: 'MODOS E ESTILOS DE ENFRENTAMENTO',
+            accent: AppColors.turquoise,
+            child: _items(data.modes, AppColors.turquoise),
+          ),
+        ),
+      if (data.hasStrengths)
+        _WeightedSection(
+          1 + data.strengths.length,
+          _SectionCard(
+            title: 'PONTOS FORTES E POTENCIAIS',
+            accent: AppColors.turquoise,
+            child: _items(data.strengths, AppColors.turquoise),
+          ),
         ),
       if (data.hasChallenges)
-        _SectionCard(
-          title: 'DESAFIOS NA VIDA ADULTA',
-          accent: const Color(0xFFE0519A),
-          child: _items(data.challenges, const Color(0xFFE0519A)),
+        _WeightedSection(
+          1 + data.challenges.length,
+          _SectionCard(
+            title: 'DESAFIOS NA VIDA ADULTA',
+            accent: const Color(0xFFE0519A),
+            child: _items(data.challenges, const Color(0xFFE0519A)),
+          ),
+        ),
+      if (data.hasDirections)
+        _WeightedSection(
+          1 + data.directions.length,
+          _SectionCard(
+            title: 'DIREÇÕES TERAPÊUTICAS',
+            accent: AppColors.cyan,
+            child: _items(data.directions, AppColors.cyan),
+          ),
         ),
     ];
+    final (left, right) = _balanceColumns(flow);
 
     return Container(
       width: width,
@@ -113,10 +135,26 @@ class PatientInfographicPoster extends StatelessWidget {
               const SizedBox(height: _gap),
               _closing(data.closingLine!),
             ],
+            if (data.generatedOn != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                'Gerado em ${_formatDate(data.generatedOn!)} · material de apoio, '
+                'sob revisão do profissional',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                    color: AppColors.textMuted, fontSize: 11),
+              ),
+            ],
           ],
         ),
       ),
     );
+  }
+
+  static String _formatDate(DateTime d) {
+    final dd = d.day.toString().padLeft(2, '0');
+    final mm = d.month.toString().padLeft(2, '0');
+    return '$dd/$mm/${d.year}';
   }
 
   Widget _column(List<Widget> cards) {
@@ -490,6 +528,42 @@ class _Header extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Seção de fluxo com um peso ≈ à sua altura, para balancear as colunas.
+class _WeightedSection {
+  const _WeightedSection(this.weight, this.widget);
+  final int weight;
+  final Widget widget;
+}
+
+/// Distribui as seções em duas colunas equilibrando a altura total: percorre
+/// da mais "pesada" para a mais "leve", pondo cada uma na coluna mais curta.
+/// Mantém a ordem relativa dentro de cada coluna estável (pela ordem original).
+(List<Widget>, List<Widget>) _balanceColumns(List<_WeightedSection> sections) {
+  final indexed = [
+    for (var i = 0; i < sections.length; i++) (i, sections[i]),
+  ]..sort((a, b) => b.$2.weight.compareTo(a.$2.weight));
+
+  var leftWeight = 0;
+  var rightWeight = 0;
+  final leftIdx = <int>[];
+  final rightIdx = <int>[];
+  for (final (originalIndex, section) in indexed) {
+    if (leftWeight <= rightWeight) {
+      leftIdx.add(originalIndex);
+      leftWeight += section.weight;
+    } else {
+      rightIdx.add(originalIndex);
+      rightWeight += section.weight;
+    }
+  }
+  leftIdx.sort();
+  rightIdx.sort();
+  return (
+    [for (final i in leftIdx) sections[i].widget],
+    [for (final i in rightIdx) sections[i].widget],
+  );
 }
 
 // ── Avatar do cabeçalho ─────────────────────────────────────────────────────

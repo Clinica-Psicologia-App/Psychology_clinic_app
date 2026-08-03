@@ -24,6 +24,7 @@ import '../../features/clinics/presentation/clinic_routes.dart';
 import '../../features/clinics/presentation/clinics_page.dart';
 import '../../features/initial_assessment/presentation/initial_assessment_route_helpers.dart';
 import '../../features/mental_map/presentation/mental_map_route_helpers.dart';
+import '../../features/patient_infographic/presentation/patient_infographic_route_helpers.dart';
 import '../../features/patient_check_ins/presentation/patient_check_in_route_helpers.dart';
 import '../../features/patient_timeline/presentation/patient_timeline_route_helpers.dart';
 import '../../features/patient_problems/presentation/patient_problem_route_helpers.dart';
@@ -429,6 +430,7 @@ List<RouteBase> _staffPatientRoutes(ProfileRole role) {
             ...staffPatientTimelineRoutes(role: role),
             ...staffPatientGenogramRoutes(role: role),
             ...staffPatientMentalMapRoutes(role: role),
+            ...staffPatientInfographicRoutes(role: role),
             ...staffClinicalDashboardRoutes(role: role),
             ...staffPersonalityReferenceRoutes(role: role),
             ...staffClinicalReportRoutes(role: role),

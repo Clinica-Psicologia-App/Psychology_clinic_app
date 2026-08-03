@@ -12,6 +12,7 @@ import '../../../clinical_dashboard/presentation/clinical_dashboard_routes.dart'
 import '../../../daily_monitors/presentation/daily_monitor_routes.dart';
 import '../../../initial_assessment/presentation/initial_assessment_routes.dart';
 import '../../../mental_map/presentation/mental_map_routes.dart';
+import '../../../patient_infographic/presentation/patient_infographic_route_helpers.dart';
 import '../../../patient_check_ins/presentation/patient_check_in_routes.dart';
 import '../../../patient_problems/presentation/patient_problem_routes.dart';
 import '../../../personality_reference/presentation/personality_reference_routes.dart';
@@ -212,10 +213,10 @@ class FutureModulesSection extends ConsumerWidget {
           ),
           _ModuleSpec(
             icon: Icons.analytics_outlined,
-            title: 'Régua de Resultados',
+            title: 'Dashboard Clínico',
             subtitle: gatedSubtitle(
               featureKey: 'reports',
-              subtitle: 'Respostas e detalhe por categoria.',
+              subtitle: 'Resultados consolidados e perfil esquemático.',
             ),
             accentColor: AppColors.cyan,
             onTap: gatedTap(
@@ -261,12 +262,23 @@ class FutureModulesSection extends ConsumerWidget {
               MentalMapRoutes.staffList(role: role, patientId: patientId),
             ),
           ),
-          const _ModuleSpec(
+          _ModuleSpec(
             icon: Icons.auto_graph_outlined,
             title: 'Infográficos',
-            subtitle: 'Em breve',
+            subtitle: gatedSubtitle(
+              featureKey: 'reports',
+              subtitle: 'Retrato visual do caso, pronto para exportar.',
+            ),
             accentColor: AppColors.purple,
-            onTap: null,
+            onTap: gatedTap(
+              'reports',
+              () => context.push(
+                PatientInfographicRoutes.staffList(
+                  role: role,
+                  patientId: patientId,
+                ),
+              ),
+            ),
           ),
           const _ModuleSpec(
             icon: Icons.description_outlined,

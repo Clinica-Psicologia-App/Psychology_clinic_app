@@ -12,6 +12,7 @@ class AppPageHeader extends StatelessWidget {
     required this.title,
     this.subtitle,
     this.icon,
+    this.leading,
     this.primaryAction,
     this.secondaryAction,
     this.trailing,
@@ -21,6 +22,10 @@ class AppPageHeader extends StatelessWidget {
   final String title;
   final String? subtitle;
   final IconData? icon;
+
+  /// Widget à esquerda do título (ex.: avatar do usuário). Quando informado,
+  /// substitui o [icon] no lugar do ícone tonal padrão.
+  final Widget? leading;
   final Widget? primaryAction;
   final Widget? secondaryAction;
   final Widget? trailing;
@@ -44,7 +49,10 @@ class AppPageHeader extends StatelessWidget {
             final titleBlock = Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (icon != null) ...[
+                if (leading != null) ...[
+                  leading!,
+                  const SizedBox(width: AppSpacing.md),
+                ] else if (icon != null) ...[
                   _HeaderIcon(icon: icon!),
                   const SizedBox(width: AppSpacing.md),
                 ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../../shared/widgets/app_motion.dart';
@@ -12,6 +13,7 @@ import '../../../shared/widgets/status_chip.dart';
 import '../../clinical_reports/presentation/clinical_report_routes.dart';
 import '../../patient_invitations/domain/patient_invitation_draft.dart';
 import '../../profile/domain/profile_role.dart';
+import '../../profile/presentation/widgets/user_avatar.dart';
 import '../domain/patient.dart';
 import '../providers/patients_providers.dart';
 import 'patient_routes.dart';
@@ -98,45 +100,67 @@ class _PatientDetailsBody extends StatelessWidget {
             subtitle:
                 'Informações principais para identificação, contato e contexto clínico.',
             children: [
-              _InfoRow(label: 'E-mail', value: patient.email),
+              _InfoRow(
+                  icon: Icons.mail_outline,
+                  label: 'E-mail',
+                  value: patient.email),
               _SensitiveInfoRow(
+                icon: Icons.phone_outlined,
                 label: 'Telefone',
                 value: patient.phone,
                 maskedValue: _maskPhone(patient.phone),
               ),
               _SensitiveInfoRow(
+                icon: Icons.badge_outlined,
                 label: 'CPF',
                 value: patient.cpf,
                 maskedValue: _maskCpf(patient.cpf),
               ),
               _InfoRow(
-                label: 'Data de nascimento',
+                icon: Icons.cake_outlined,
+                label: 'Nascimento',
                 value: patient.birthDate != null
                     ? dateFormat.formatFullDate(patient.birthDate!)
                     : null,
               ),
-              _InfoRow(label: 'Gênero', value: patient.displayGender),
               _InfoRow(
+                  icon: Icons.wc_outlined,
+                  label: 'Gênero',
+                  value: patient.displayGender),
+              _InfoRow(
+                icon: Icons.favorite_border,
                 label: 'Estado civil',
                 value: patient.displayRelationshipStatus,
               ),
               _InfoRow(
+                icon: Icons.school_outlined,
                 label: 'Escolaridade',
                 value: patient.displayEducationLevel,
               ),
-              _InfoRow(label: 'Ocupação', value: patient.occupation),
-              _InfoRow(label: 'Naturalidade', value: _birthPlace(patient)),
               _InfoRow(
-                label: 'Orientação religiosa',
+                  icon: Icons.work_outline,
+                  label: 'Ocupação',
+                  value: patient.occupation),
+              _InfoRow(
+                  icon: Icons.place_outlined,
+                  label: 'Naturalidade',
+                  value: _birthPlace(patient)),
+              _InfoRow(
+                icon: Icons.self_improvement_outlined,
+                label: 'Religião',
                 value: patient.religiousOrientation,
               ),
               _InfoRow(
-                  label: 'Grupo étnico', value: patient.displayEthnicGroup),
+                  icon: Icons.groups_outlined,
+                  label: 'Grupo étnico',
+                  value: patient.displayEthnicGroup),
               _InfoRow(
-                label: 'Orientação sexual',
+                icon: Icons.diversity_1_outlined,
+                label: 'Orient. sexual',
                 value: patient.displaySexualOrientation,
               ),
               _InfoRow(
+                icon: Icons.child_care_outlined,
                 label: 'Filhos',
                 value: _hasChildrenLabel(patient.hasChildren),
               ),
@@ -254,7 +278,15 @@ class _PatientHeader extends StatelessWidget {
     final accessLabel = patient.accessStatus?.label;
 
     return AppPageHeader(
-      icon: Icons.person_outline,
+      leading: UserAvatar.parts(
+        fullName: patient.fullName,
+        initials: _initialsOf(patient.fullName),
+        role: ProfileRole.patient,
+        avatarType: patient.avatarType,
+        photoUrl: patient.photoUrl,
+        avatarConfig: patient.avatarConfig,
+        size: 60,
+      ),
       title: patient.fullName,
       subtitle: _subtitle,
       metadata: [
@@ -296,6 +328,20 @@ class _PatientHeader extends StatelessWidget {
       return 'Visão administrativa do cadastro, status e histórico preservado.';
     }
     return 'Resumo operacional do paciente e acesso aos módulos clínicos.';
+  }
+
+  /// Iniciais (1–2 letras) para o fallback do avatar, seguindo a mesma regra
+  /// de UserProfile.initials.
+  static String _initialsOf(String fullName) {
+    final parts = fullName
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
+    return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
+        .toUpperCase();
   }
 }
 
@@ -468,29 +514,81 @@ class _PatientLifecycleCardState extends ConsumerState<_PatientLifecycleCard> {
 }
 
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({required this.label, required this.value});
+  const _InfoRow({
+    required this.label,
+    required this.value,
+    this.icon = Icons.info_outline,
+  });
 
   final String label;
   final String? value;
+  final IconData icon;
 
   @override
   Widget build(BuildContext context) {
     if (value == null || value!.trim().isEmpty) return const SizedBox.shrink();
+    return _InfoRowLayout(
+      icon: icon,
+      label: label,
+      value: Text(
+        value!,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.navy,
+              fontWeight: FontWeight.w500,
+            ),
+      ),
+    );
+  }
+}
+
+/// Layout base de uma linha de dado: ícone + rótulo + valor (à direita).
+class _InfoRowLayout extends StatelessWidget {
+  const _InfoRowLayout({
+    required this.icon,
+    required this.label,
+    required this.value,
+    this.trailing,
+  });
+
+  final IconData icon;
+  final String label;
+  final Widget value;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(vertical: 7),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          Container(
+            width: 30,
+            height: 30,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceTint,
+              borderRadius: BorderRadius.circular(9),
+            ),
+            child: Icon(icon, size: 16, color: AppColors.cyan),
+          ),
+          const SizedBox(width: 10),
           SizedBox(
-            width: 140,
+            width: 96,
             child: Text(
               label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.textMuted,
                   ),
             ),
           ),
-          Expanded(child: Text(value!)),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: value,
+            ),
+          ),
+          if (trailing != null) trailing!,
         ],
       ),
     );
@@ -502,11 +600,13 @@ class _SensitiveInfoRow extends StatefulWidget {
     required this.label,
     required this.value,
     required this.maskedValue,
+    this.icon = Icons.lock_outline,
   });
 
   final String label;
   final String? value;
   final String? maskedValue;
+  final IconData icon;
 
   @override
   State<_SensitiveInfoRow> createState() => _SensitiveInfoRowState();
@@ -521,37 +621,29 @@ class _SensitiveInfoRowState extends State<_SensitiveInfoRow> {
       return const SizedBox.shrink();
     }
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 140,
-            child: Text(
-              widget.label,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+    return _InfoRowLayout(
+      icon: widget.icon,
+      label: widget.label,
+      value: Text(
+        _revealed ? widget.value! : widget.maskedValue!,
+        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: AppColors.navy,
+              fontWeight: FontWeight.w500,
+              letterSpacing: _revealed ? 0 : 1.5,
             ),
-          ),
-          Expanded(
-            child: Text(_revealed ? widget.value! : widget.maskedValue!),
-          ),
-          IconButton(
-            visualDensity: VisualDensity.compact,
-            tooltip: _revealed
-                ? 'Ocultar ${widget.label}'
-                : 'Mostrar ${widget.label}',
-            onPressed: () => setState(() => _revealed = !_revealed),
-            icon: Icon(
-              _revealed
-                  ? Icons.visibility_off_outlined
-                  : Icons.visibility_outlined,
-              size: 20,
-            ),
-          ),
-        ],
+      ),
+      trailing: IconButton(
+        visualDensity: VisualDensity.compact,
+        tooltip:
+            _revealed ? 'Ocultar ${widget.label}' : 'Mostrar ${widget.label}',
+        onPressed: () => setState(() => _revealed = !_revealed),
+        icon: Icon(
+          _revealed
+              ? Icons.visibility_off_outlined
+              : Icons.visibility_outlined,
+          size: 20,
+          color: AppColors.textMuted,
+        ),
       ),
     );
   }

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
+
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../domain/questionnaire.dart';
 import '../../domain/questionnaire_patient_status.dart';
 import '../../domain/reference_period.dart';
-import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class QuestionnaireListTile extends StatelessWidget {
   const QuestionnaireListTile({
@@ -21,19 +24,38 @@ class QuestionnaireListTile extends StatelessWidget {
   final bool showStaffDetails;
   final QuestionnairePatientStatus? patientStatus;
 
+  Color _headerColor() {
+    if (!enabled) return AppColors.disabledSurface;
+    return switch (patientStatus) {
+      QuestionnairePatientStatus.completed => AppColors.successContainer,
+      QuestionnairePatientStatus.draft => AppColors.warningContainer,
+      _ => AppColors.surfaceTintBlue,
+    };
+  }
+
+  Color _iconColor() {
+    if (!enabled) return AppColors.disabled;
+    return switch (patientStatus) {
+      QuestionnairePatientStatus.completed => AppColors.success,
+      QuestionnairePatientStatus.draft => AppColors.warning,
+      _ => AppColors.moduleQuestionnaires,
+    };
+  }
+
+  IconData _headerIcon() {
+    return switch (patientStatus) {
+      QuestionnairePatientStatus.completed => Icons.check_circle_outline,
+      QuestionnairePatientStatus.draft => Icons.edit_note_outlined,
+      _ => Icons.assignment_outlined,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
 
-    final meta = <Widget>[
-      Text('Código: ${questionnaire.code}'),
-      if (questionnaire.authorName != null &&
-          questionnaire.authorName!.trim().isNotEmpty)
-        Text('Autor: ${questionnaire.authorName}'),
-      if (questionnaire.instrumentVersion != null &&
-          questionnaire.instrumentVersion!.trim().isNotEmpty)
-        Text('Versao: ${questionnaire.instrumentVersion}'),
+    final chips = <Widget>[
       if (questionnaire.referencePeriod != ReferencePeriod.unspecified)
         _MetaChip(
           icon: Icons.schedule_outlined,
@@ -50,72 +72,221 @@ class QuestionnaireListTile extends StatelessWidget {
             : Icons.science_outlined,
         label: questionnaire.clinicalStatus.label,
       ),
-      if (patientStatus == QuestionnairePatientStatus.completed)
+      if (showStaffDetails)
+        _MetaChip(icon: Icons.tag_outlined, label: questionnaire.code),
+      if (showStaffDetails &&
+          questionnaire.authorName != null &&
+          questionnaire.authorName!.trim().isNotEmpty)
         _MetaChip(
-          icon: Icons.check_circle_outline,
-          label: 'Já respondido',
-          backgroundColor: colors.secondaryContainer,
-          iconColor: colors.secondary,
+          icon: Icons.person_outline,
+          label: questionnaire.authorName!,
         ),
-      if (patientStatus == QuestionnairePatientStatus.draft)
+      if (showStaffDetails &&
+          questionnaire.instrumentVersion != null &&
+          questionnaire.instrumentVersion!.trim().isNotEmpty)
         _MetaChip(
-          icon: Icons.edit_note_outlined,
-          label: 'Em andamento',
-          backgroundColor: colors.tertiaryContainer,
-          iconColor: colors.tertiary,
+          icon: Icons.label_outline,
+          label: questionnaire.instrumentVersion!,
         ),
     ];
 
+    final hasDescription = questionnaire.description != null &&
+        questionnaire.description!.trim().isNotEmpty;
+    final hasLicenseNote = showStaffDetails &&
+        questionnaire.licenseNotes != null &&
+        questionnaire.licenseNotes!.trim().isNotEmpty;
+    final hasBody = hasDescription || chips.isNotEmpty || hasLicenseNote;
+
     return ClayCard(
       margin: const EdgeInsets.only(bottom: 12),
-      child: ListTile(
-        enabled: enabled,
-        leading: CircleAvatar(
-          child: Icon(
-            Icons.assignment_outlined,
-            color: colors.onPrimaryContainer,
-          ),
-        ),
-        title: Text(questionnaire.name),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadius.lgAll,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: meta,
-            ),
-            if (questionnaire.description != null &&
-                questionnaire.description!.trim().isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  questionnaire.description!,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
+            // ── cabeçalho tonal ──────────────────────────────────
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              decoration: BoxDecoration(
+                color: _headerColor(),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(AppRadius.lg),
                 ),
               ),
-            if (showStaffDetails &&
-                questionnaire.licenseNotes != null &&
-                questionnaire.licenseNotes!.trim().isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  questionnaire.licenseNotes!,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: questionnaire.hasLicensePendingValidation
-                        ? colors.error
-                        : colors.onSurfaceVariant,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // avatar branco com ícone colorido
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.white,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: .08),
+                          blurRadius: 4,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                    child: Icon(_headerIcon(), size: 17, color: _iconColor()),
                   ),
+                  const SizedBox(width: 10),
+                  // nome + badge de status abaixo
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          questionnaire.name,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.navy,
+                            height: 1.3,
+                          ),
+                        ),
+                        if (patientStatus ==
+                            QuestionnairePatientStatus.draft) ...[
+                          const SizedBox(height: 4),
+                          const _StatusBadge(
+                            label: 'Em andamento',
+                            fg: AppColors.onWarningContainer,
+                          ),
+                        ] else if (patientStatus ==
+                            QuestionnairePatientStatus.completed) ...[
+                          const SizedBox(height: 4),
+                          const _StatusBadge(
+                            label: 'Concluído',
+                            fg: AppColors.onSuccessContainer,
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // chevron ou cadeado
+                  if (enabled)
+                    const Icon(Icons.chevron_right,
+                        size: 18, color: AppColors.textMuted)
+                  else
+                    const Icon(Icons.lock_outline,
+                        size: 16, color: AppColors.disabled),
+                ],
+              ),
+            ),
+
+            // ── corpo ────────────────────────────────────────────
+            if (hasBody)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (hasDescription) ...[
+                      Text(
+                        questionnaire.description!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.textMuted,
+                          height: 1.5,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (chips.isNotEmpty || hasLicenseNote)
+                        const SizedBox(height: 8),
+                    ],
+                    if (chips.isNotEmpty)
+                      Wrap(spacing: 6, runSpacing: 6, children: chips),
+                    if (hasLicenseNote) ...[
+                      if (chips.isNotEmpty) const SizedBox(height: 6),
+                      Text(
+                        questionnaire.licenseNotes!,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: questionnaire.hasLicensePendingValidation
+                              ? colors.error
+                              : colors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
           ],
         ),
-        trailing: enabled
-            ? const Icon(Icons.chevron_right)
-            : const Icon(Icons.lock_outline),
-        isThreeLine: questionnaire.description != null || showStaffDetails,
-        onTap: onTap,
+      ),
+    );
+  }
+}
+
+/// Badge inline no cabeçalho: fundo branco semi-transparente para destacar
+/// sobre a cor tonal do cabeçalho.
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({required this.label, required this.fg});
+
+  final String label;
+  final Color fg;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: .65),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: fg.withValues(alpha: .25), width: .8),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: fg,
+            letterSpacing: .1,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MetaChip extends StatelessWidget {
+  const _MetaChip({
+    required this.icon,
+    required this.label,
+  });
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceTint,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 13, color: AppColors.moduleQuestionnaires),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
+                  ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -128,46 +299,4 @@ String _referencePeriodLabel(ReferencePeriod period) {
     ReferencePeriod.lifetime => 'História de vida',
     ReferencePeriod.unspecified => 'Sem período',
   };
-}
-
-class _MetaChip extends StatelessWidget {
-  const _MetaChip({
-    required this.icon,
-    required this.label,
-    this.backgroundColor,
-    this.iconColor,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color? backgroundColor;
-  final Color? iconColor;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-    final bg = backgroundColor ?? colors.surfaceContainerHighest;
-    final ic = iconColor ?? colors.primary;
-
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 16, color: ic),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: Theme.of(context).textTheme.labelMedium,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

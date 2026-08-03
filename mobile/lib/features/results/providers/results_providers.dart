@@ -1,12 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../profile/domain/profile_role.dart';
-import '../data/results_repository.dart'
-    show
-        ResultsRepository,
-        AnswerAdjustmentInput,
-        SchemaAdjustmentInput,
-        ResultAdjustmentInput;
+import '../data/results_repository.dart' show ResultsRepository;
 import '../domain/patient_response_summary.dart';
 import '../domain/patient_result_detail.dart';
 import '../domain/schema_activation.dart';
@@ -51,10 +46,11 @@ class PatientResultsListNotifier extends FamilyAsyncNotifier<
   }
 
   Future<List<PatientResponseSummary>> _load() {
-    return ref.read(resultsRepositoryProvider).listPatientResponses(
-          arg.patientId,
-          onlyReviewed: arg.role == ProfileRole.patient,
-        );
+    // Sem filtro por revisão: o acesso do paciente é controlado pela liberação
+    // por paciente (RLS) e pelo bloqueio do módulo, não pelo antigo reviewed_at.
+    return ref
+        .read(resultsRepositoryProvider)
+        .listPatientResponses(arg.patientId);
   }
 }
 
@@ -82,48 +78,13 @@ final patientResultDetailProvider =
   ref,
   context,
 ) {
-  return ref.read(resultsRepositoryProvider).getResponseDetail(
-        context.responseId,
-        requireReviewed: context.role == ProfileRole.patient,
-      );
+  // Sem filtro por revisão: a liberação por paciente (RLS) controla o acesso.
+  return ref
+      .read(resultsRepositoryProvider)
+      .getResponseDetail(context.responseId);
 });
 
-final reviewQuestionnaireResponseProvider = AsyncNotifierProvider.family<
-    ReviewQuestionnaireResponseNotifier, void, String>(
-  ReviewQuestionnaireResponseNotifier.new,
-);
-
-class ReviewQuestionnaireResponseNotifier
-    extends FamilyAsyncNotifier<void, String> {
-  @override
-  Future<void> build(String arg) async {}
-
-  Future<void> submit({
-    required bool reviewed,
-    String? reviewNotes,
-    List<AnswerAdjustmentInput> adjustments = const [],
-    List<SchemaAdjustmentInput> schemaAdjustments = const [],
-    List<ResultAdjustmentInput> resultAdjustments = const [],
-  }) async {
-    state = const AsyncValue.loading();
-    try {
-      await ref.read(resultsRepositoryProvider).setResponseReviewed(
-            responseId: arg,
-            reviewed: reviewed,
-            reviewNotes: reviewNotes,
-            adjustments: adjustments,
-            schemaAdjustments: schemaAdjustments,
-            resultAdjustments: resultAdjustments,
-          );
-      state = const AsyncValue.data(null);
-    } catch (e, st) {
-      state = AsyncValue.error(e, st);
-      rethrow;
-    }
-  }
-}
-
-// ── Schema activations (régua manual) ──────────────────────────────────────
+// ── Ativação de esquemas (validação do psicólogo) ──────────────────────────
 
 class SchemaActivationsContext {
   const SchemaActivationsContext({

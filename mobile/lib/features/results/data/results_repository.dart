@@ -1,7 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/questionnaires/supported_questionnaire_codes.dart';
-import '../../../core/network/edge_api_client.dart';
 import '../../../core/errors/error_mapper.dart';
 import '../../../core/supabase/supabase_bootstrap.dart';
 import '../domain/patient_response_summary.dart';
@@ -9,14 +8,10 @@ import '../domain/patient_result_detail.dart';
 import '../domain/schema_activation.dart';
 
 class ResultsRepository {
-  ResultsRepository({
-    SupabaseClient? client,
-    EdgeApiClient? edgeApi,
-  })  : _client = client ?? SupabaseBootstrap.client,
-        _edgeApi = edgeApi ?? EdgeApiClient(client: client);
+  ResultsRepository({SupabaseClient? client})
+      : _client = client ?? SupabaseBootstrap.client;
 
   final SupabaseClient _client;
-  final EdgeApiClient _edgeApi;
 
   static const _listSelect = '''
 id,
@@ -128,55 +123,6 @@ questionnaire_results(
     }
   }
 
-  Future<void> setResponseReviewed({
-    required String responseId,
-    required bool reviewed,
-    String? reviewNotes,
-    List<AnswerAdjustmentInput> adjustments = const [],
-    List<SchemaAdjustmentInput> schemaAdjustments = const [],
-    List<ResultAdjustmentInput> resultAdjustments = const [],
-  }) async {
-    try {
-      await _edgeApi.invoke(
-        'review-questionnaire-response',
-        body: {
-          'response_id': responseId,
-          'reviewed': reviewed,
-          'review_notes': reviewNotes,
-          if (adjustments.isNotEmpty)
-            'adjustments': [
-              for (final adj in adjustments)
-                {
-                  'answer_id': adj.answerId,
-                  'professional_value': adj.professionalValue,
-                  'professional_note': adj.professionalNote,
-                },
-            ],
-          if (schemaAdjustments.isNotEmpty)
-            'schema_adjustments': [
-              for (final adj in schemaAdjustments)
-                {
-                  'schema_id': adj.schemaId,
-                  'professional_score': adj.professionalScore,
-                  'professional_note': adj.professionalNote,
-                },
-            ],
-          if (resultAdjustments.isNotEmpty)
-            'result_adjustments': [
-              for (final adj in resultAdjustments)
-                {
-                  'result_id': adj.resultId,
-                  'professional_score': adj.professionalScore,
-                  'professional_note': adj.professionalNote,
-                },
-            ],
-        },
-      );
-    } catch (e) {
-      throw mapToAppException(e);
-    }
-  }
-
   // ── Schema activations (régua manual) ──────────────────────────────────
 
   static const _activationSelectBase = '''
@@ -258,40 +204,4 @@ created_at
       throw mapToAppException(e);
     }
   }
-}
-
-class AnswerAdjustmentInput {
-  const AnswerAdjustmentInput({
-    required this.answerId,
-    this.professionalValue,
-    this.professionalNote,
-  });
-
-  final String answerId;
-  final int? professionalValue;
-  final String? professionalNote;
-}
-
-class SchemaAdjustmentInput {
-  const SchemaAdjustmentInput({
-    required this.schemaId,
-    this.professionalScore,
-    this.professionalNote,
-  });
-
-  final String schemaId;
-  final double? professionalScore;
-  final String? professionalNote;
-}
-
-class ResultAdjustmentInput {
-  const ResultAdjustmentInput({
-    required this.resultId,
-    this.professionalScore,
-    this.professionalNote,
-  });
-
-  final String resultId;
-  final double? professionalScore;
-  final String? professionalNote;
 }

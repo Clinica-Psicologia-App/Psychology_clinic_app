@@ -5,6 +5,7 @@ import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_spacing.dart';
 import 'brand_constellation.dart';
+import 'icon_optics.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 /// Banner informativo para telas em validação clínica (homologação).
@@ -87,7 +88,13 @@ class HomologationEmptyPanel extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Padding(
+    // Largura total + centralização: o painel é usado dentro de colunas com
+    // crossAxisAlignment.start (ex.: MentalMapSectionCard). Sem forçar a
+    // largura, o Column(min) encolhe à largura do texto e cola à esquerda,
+    // deslocando o círculo/ícone para fora do centro do card.
+    return Container(
+      width: double.infinity,
+      alignment: Alignment.topCenter,
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -109,13 +116,19 @@ class HomologationEmptyPanel extends StatelessWidget {
                     boxShadow: AppShadows.card,
                   ),
                 ),
-                BrandConstellation(
-                  size: const Size(84, 84),
+                const BrandConstellation(
+                  size: Size(84, 84),
                   color: AppColors.turquoise,
                   opacity: 0.4,
                   preset: BrandConstellationPreset.orbit,
                 ),
-                Icon(icon, size: 30, color: AppColors.turquoise),
+                // Nudge óptico: alguns glifos (ex.: flag) não têm a tinta
+                // centrada na caixa e ficariam tortos sobre o hub central.
+                OpticallyCenteredIcon(
+                  icon: icon,
+                  size: 30,
+                  color: AppColors.turquoise,
+                ),
               ],
             ),
           ),

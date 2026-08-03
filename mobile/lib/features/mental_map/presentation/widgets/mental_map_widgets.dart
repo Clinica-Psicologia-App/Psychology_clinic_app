@@ -7,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_severity.dart';
 import '../../../../shared/widgets/esquema_core_logo.dart';
 import '../../../../shared/widgets/homologation_ui.dart';
+import '../../../../shared/widgets/icon_optics.dart';
 import '../../domain/mental_case_map.dart';
 import '../mental_map_node_state.dart';
 import '../../domain/mental_map_case_summary.dart';
@@ -904,26 +905,11 @@ class _MentalMapMobileOrbitState extends State<_MentalMapMobileOrbit>
   }
 }
 
-// Alguns glifos do Material Icons não são desenhados centralizados dentro do
-// próprio em-square (a "tinta" pende para um lado). O Flutter centraliza a
-// caixa do ícone corretamente, então o desvio vem só do desenho da fonte.
-//
-// Os valores vêm de medição por pixel — test/tools/render_icon_options.dart
-// desenha cada glifo isolado e grande sobre fundo transparente, e o script
-// compara o centro da tinta (canal alfa) com o centro da caixa. Ficam como
-// fração do tamanho do ícone para valerem em qualquer tamanho.
-//
-// Entre os ícones em uso, só flag_outlined está de fato torto: a tinta cai
-// 2/96 avos para a direita e para baixo. shield_outlined está perfeitamente
-// centralizado — a versão anterior desta função o deslocava à toa, porque a
-// medição de então lia também os pixels do anel do nodo junto com o glifo.
-Offset _opticalNudgeFor(IconData icon, double size) {
-  const flagDrift = 2 / 96;
-  if (icon == Icons.flag_outlined) {
-    return Offset(-flagDrift * size, -flagDrift * size);
-  }
-  return Offset.zero;
-}
+// Correção de centramento óptico dos glifos — fonte única em icon_optics.dart,
+// compartilhada com os estados vazios (HomologationEmptyPanel). Ver a medição
+// em test/tools/measure_icon_drift.dart.
+Offset _opticalNudgeFor(IconData icon, double size) =>
+    opticalIconNudge(icon, size);
 
 class _MentalMapOrbitNode extends StatelessWidget {
   const _MentalMapOrbitNode({

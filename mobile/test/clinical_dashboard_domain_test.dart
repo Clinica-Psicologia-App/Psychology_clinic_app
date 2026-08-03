@@ -18,6 +18,7 @@ import 'package:terapia_esquema/features/results/domain/patient_response_summary
 import 'package:terapia_esquema/features/results/domain/patient_result_detail.dart';
 import 'package:terapia_esquema/features/results/domain/questionnaire_response_status.dart';
 import 'package:terapia_esquema/features/results/domain/result_snapshot.dart';
+import 'package:terapia_esquema/features/results/domain/schema_activation.dart';
 import 'package:terapia_esquema/features/results/domain/scoring_schema_result.dart';
 import 'package:terapia_esquema/features/results/domain/scoring_severity.dart';
 import 'package:terapia_esquema/features/results/domain/scoring_snapshot.dart';
@@ -268,6 +269,152 @@ void main() {
         'ATTACHMENT_STYLES_V1',
       ],
     );
+  });
+
+  test(
+      'buildConsolidatedSchemas ativa por averageScore (não pelo weightedScore)',
+      () {
+    // YSQ com um esquema cujo weightedScore é alto (18) mas a MÉDIA por item
+    // é baixa (2.0) → NÃO deve ativar. E outro com média 5.0 → deve ativar.
+    final ysq = buildInstrumentDashboard(
+      summary: const PatientResponseSummary(
+        id: 'resp-ysq',
+        questionnaireId: 'q',
+        questionnaireCode: 'YSQ_FOUNDATION_V1',
+        questionnaireName: 'YSQ',
+        status: QuestionnaireResponseStatus.completed,
+        answerCount: 90,
+        hasResults: true,
+        resultsCount: 1,
+      ),
+      detail: const PatientResultDetail(
+        id: 'resp-ysq',
+        patientId: 'p',
+        questionnaireId: 'q',
+        questionnaireCode: 'YSQ_FOUNDATION_V1',
+        questionnaireName: 'YSQ',
+        status: QuestionnaireResponseStatus.completed,
+        answers: [],
+        categoryResults: [
+          CategoryResult(
+            id: 'c',
+            snapshot: ResultSnapshot(
+              version: ScoringSnapshot.demoVersion,
+              scoring: ScoringSnapshot(
+                scaleMax: 6,
+                schemas: [
+                  ScoringSchemaResult(
+                    id: 's1',
+                    code: 'ABANDONO',
+                    name: 'Abandono',
+                    weightedScore: 18,
+                    averageScore: 2.0,
+                  ),
+                  ScoringSchemaResult(
+                    id: 's2',
+                    code: 'DESCONFIANCA',
+                    name: 'Desconfiança',
+                    weightedScore: 10,
+                    averageScore: 5.0,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    final rows = buildConsolidatedSchemas(
+      ysq: ysq,
+      yami: null,
+      attachment: null,
+      yci: null,
+      yrai: null,
+      activationsByResponseId: const {},
+    );
+
+    final abandono = rows.firstWhere((r) => r.code == 'ABANDONO');
+    final desconfianca = rows.firstWhere((r) => r.code == 'DESCONFIANCA');
+
+    // Abandono: weighted alto mas média 2.0 → não ativado.
+    expect(abandono.isAutoActivated, isFalse,
+        reason: 'weightedScore não deve disparar a ativação');
+    expect(abandono.score, 2.0, reason: 'exibe a média, não o weighted');
+    // Desconfiança: média 5.0 ≥ 4.0 → ativado pelo sistema.
+    expect(desconfianca.isAutoActivated, isTrue);
+    expect(desconfianca.isActivated, isTrue);
+  });
+
+  test('buildConsolidatedSchemas respeita ativação manual do psicólogo (◎)',
+      () {
+    final ysq = buildInstrumentDashboard(
+      summary: const PatientResponseSummary(
+        id: 'resp-ysq',
+        questionnaireId: 'q',
+        questionnaireCode: 'YSQ_FOUNDATION_V1',
+        questionnaireName: 'YSQ',
+        status: QuestionnaireResponseStatus.completed,
+        answerCount: 90,
+        hasResults: true,
+        resultsCount: 1,
+      ),
+      detail: const PatientResultDetail(
+        id: 'resp-ysq',
+        patientId: 'p',
+        questionnaireId: 'q',
+        questionnaireCode: 'YSQ_FOUNDATION_V1',
+        questionnaireName: 'YSQ',
+        status: QuestionnaireResponseStatus.completed,
+        answers: [],
+        categoryResults: [
+          CategoryResult(
+            id: 'c',
+            snapshot: ResultSnapshot(
+              version: ScoringSnapshot.demoVersion,
+              scoring: ScoringSnapshot(
+                scaleMax: 6,
+                schemas: [
+                  ScoringSchemaResult(
+                    id: 's1',
+                    code: 'SUBJUGACAO',
+                    name: 'Subjugação',
+                    averageScore: 2.5,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    final rows = buildConsolidatedSchemas(
+      ysq: ysq,
+      yami: null,
+      attachment: null,
+      yci: null,
+      yrai: null,
+      activationsByResponseId: {
+        'resp-ysq': [
+          SchemaActivation(
+            id: 'a1',
+            questionnaireResponseId: 'resp-ysq',
+            schemaCode: 'SUBJUGACAO',
+            schemaName: 'Subjugação',
+            psiObservation: 'Relevante clinicamente apesar da média baixa.',
+            activatedByProfileId: 'psi-1',
+            createdAt: DateTime(2025, 1, 1),
+          ),
+        ],
+      },
+    );
+
+    final subjugacao = rows.single;
+    expect(subjugacao.isAutoActivated, isFalse);
+    expect(subjugacao.isPsiActivated, isTrue);
+    expect(subjugacao.isActivated, isTrue);
+    expect(subjugacao.psiObservation, isNotNull);
   });
 
   test('ClinicalDashboardData.empty has no instrument results', () {

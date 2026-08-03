@@ -41,6 +41,8 @@ class PatientClinicalDashboardPage extends ConsumerWidget {
           child: DashboardHomePage(
             data: data,
             role: ProfileRole.patient,
+            onRefresh: () =>
+                ref.read(myClinicalDashboardProvider.notifier).refresh(),
           ),
         ),
       ),
@@ -84,6 +86,7 @@ class StaffPatientClinicalDashboardPage extends ConsumerWidget {
             data: data,
             role: role,
             patientId: patientId,
+            onRefresh: () => ref.invalidate(staffClinicalDashboardProvider(ctx)),
           ),
         ),
       ),
@@ -97,11 +100,13 @@ class DashboardHomePage extends StatelessWidget {
     required this.data,
     required this.role,
     this.patientId,
+    this.onRefresh,
   });
 
   final ClinicalDashboardData data;
   final ProfileRole role;
   final String? patientId;
+  final VoidCallback? onRefresh;
 
   @override
   Widget build(BuildContext context) {
@@ -159,6 +164,14 @@ class DashboardHomePage extends StatelessWidget {
                 ClinicalDashboardCalloutsSection(callouts: data.callouts),
                 ClinicalPriorityGrid(summary: data.caseSummary),
                 ClinicalRecentSignalsCard(summary: data.caseSummary),
+                // ── Card consolidado (principal) ─────────────────────────
+                if (data.hasConsolidatedSchemas)
+                  ConsolidatedSchemaProfileCard(
+                    data: data,
+                    isStaff: isStaff,
+                    onActivationChanged: onRefresh,
+                  ),
+                // ── Detalhe por instrumento (visão técnica ampliada) ─────
                 ClinicalInstrumentDetailsSection(
                   data: data,
                   isStaff: isStaff,

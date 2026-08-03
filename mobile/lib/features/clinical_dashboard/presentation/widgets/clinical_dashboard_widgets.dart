@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/clinical_kpi_chip.dart';
 import '../../../../shared/widgets/homologation_ui.dart';
 import 'clinical_dashboard_shared_widgets.dart';
 import '../../../patient_problems/domain/patient_problem_status.dart';
 import '../../../profile/domain/profile_role.dart';
+import '../../../results/providers/results_providers.dart';
 import '../../../therapy_goals/domain/therapy_goal_status.dart';
 import '../../domain/clinical_case_summary.dart';
 import '../../domain/clinical_dashboard_callouts.dart';
@@ -13,6 +16,7 @@ import '../../domain/clinical_dashboard_data.dart';
 import '../../domain/clinical_dashboard_score_row.dart';
 import '../../domain/clinical_instrument_dashboard.dart';
 import '../../domain/clinical_parental_dashboard.dart';
+import '../../domain/consolidated_schema_row.dart';
 import '../clinical_dashboard_routes.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
@@ -1316,4 +1320,819 @@ class ClinicalInstrumentDetailsSection extends StatelessWidget {
       ),
     );
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// PERFIL ESQUEMÁTICO CONSOLIDADO
+// Card principal do Dashboard Clínico: todos os esquemas de todos os
+// instrumentos numa visão única, dividida em Ativados × Não ativados.
+// ═══════════════════════════════════════════════════════════════════════════
+
+class ConsolidatedSchemaProfileCard extends ConsumerWidget {
+  const ConsolidatedSchemaProfileCard({
+    super.key,
+    required this.data,
+    required this.isStaff,
+    this.onActivationChanged,
+  });
+
+  final ClinicalDashboardData data;
+  final bool isStaff;
+
+  /// Chamado após qualquer ativação/desativação para que a página
+  /// invalide o provider e recarregue a lista consolidada.
+  final VoidCallback? onActivationChanged;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!data.hasConsolidatedSchemas) return const SizedBox.shrink();
+
+    final activated = data.activatedSchemas;
+    final nonActivated = data.nonActivatedSchemas;
+    final theme = Theme.of(context);
+
+    return ClayCard(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // ── Cabeçalho tonal ────────────────────────────────────────────
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: const BoxDecoration(
+              color: AppColors.surfaceTintBlue,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: .07),
+                        blurRadius: 4,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.schema_outlined,
+                    size: 18,
+                    color: AppColors.moduleQuestionnaires,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Perfil Esquemático Consolidado',
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.navy,
+                        ),
+                      ),
+                      Text(
+                        'Todos os instrumentos · ordem por relevância',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Badges de contagem
+                _SchemaCountBadge(
+                  count: activated.length,
+                  color: AppColors.error,
+                  label: 'ativos',
+                ),
+                const SizedBox(width: 6),
+                _SchemaCountBadge(
+                  count: nonActivated.length,
+                  color: AppColors.textMuted,
+                  label: 'n/a',
+                ),
+              ],
+            ),
+          ),
+
+          // ── Corpo: duas colunas ─────────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Coluna esquerda: Ativados
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 11),
+                    child: _ActivatedColumn(
+                      schemas: activated,
+                      isStaff: isStaff,
+                      onActivationChanged: onActivationChanged,
+                    ),
+                  ),
+                ),
+                // Coluna direita: Não ativados (com divisor à esquerda)
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.only(left: 11),
+                    decoration: const BoxDecoration(
+                      border: Border(
+                        left: BorderSide(color: AppColors.border),
+                      ),
+                    ),
+                    child: _NonActivatedColumn(
+                      schemas: nonActivated,
+                      isStaff: isStaff,
+                      onActivationChanged: onActivationChanged,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ── Legenda (somente para pacientes) ───────────────────────────
+          if (!isStaff)
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 0, 16, 14),
+              child: Wrap(
+                spacing: 14,
+                runSpacing: 6,
+                children: [
+                  _LegendItem(symbol: '●', label: 'Ativado pelo sistema'),
+                  _LegendItem(
+                    symbol: '◎',
+                    label: 'Ativado pelo profissional',
+                    color: AppColors.purple,
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Coluna de esquemas ativados ─────────────────────────────────────────────
+
+class _ActivatedColumn extends StatelessWidget {
+  const _ActivatedColumn({
+    required this.schemas,
+    required this.isStaff,
+    this.onActivationChanged,
+  });
+
+  final List<ConsolidatedSchemaRow> schemas;
+  final bool isStaff;
+  final VoidCallback? onActivationChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _ConsolidatedColumnHeader(
+          icon: Icons.check_circle_outline,
+          label: 'Ativados',
+          color: AppColors.error,
+        ),
+        const SizedBox(height: 8),
+        if (schemas.isEmpty)
+          Text(
+            'Nenhum',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: AppColors.textMuted,
+              fontStyle: FontStyle.italic,
+            ),
+          )
+        else
+          ...schemas.map(
+            (s) => _ActivatedSchemaRow(
+              schema: s,
+              isStaff: isStaff,
+              onActivationChanged: onActivationChanged,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// ── Coluna de esquemas não ativados ────────────────────────────────────────
+
+class _NonActivatedColumn extends StatelessWidget {
+  const _NonActivatedColumn({
+    required this.schemas,
+    required this.isStaff,
+    this.onActivationChanged,
+  });
+
+  final List<ConsolidatedSchemaRow> schemas;
+  final bool isStaff;
+  final VoidCallback? onActivationChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const _ConsolidatedColumnHeader(
+          icon: Icons.radio_button_unchecked,
+          label: 'Não ativados',
+          color: AppColors.textMuted,
+        ),
+        const SizedBox(height: 8),
+        if (schemas.isEmpty)
+          Text(
+            'Nenhum',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: AppColors.textMuted,
+              fontStyle: FontStyle.italic,
+            ),
+          )
+        else
+          ...schemas.map(
+            (s) => _NonActivatedSchemaRow(
+              schema: s,
+              isStaff: isStaff,
+              onActivationChanged: onActivationChanged,
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// ── Linha de esquema ativado ────────────────────────────────────────────────
+
+class _ActivatedSchemaRow extends ConsumerWidget {
+  const _ActivatedSchemaRow({
+    required this.schema,
+    required this.isStaff,
+    this.onActivationChanged,
+  });
+
+  final ConsolidatedSchemaRow schema;
+  final bool isStaff;
+  final VoidCallback? onActivationChanged;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final symbol = schema.isAutoActivated ? '●' : '◎';
+    final symbolColor =
+        schema.isAutoActivated ? AppColors.error : AppColors.purple;
+
+    Widget row = Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                symbol,
+                style: TextStyle(
+                  color: symbolColor,
+                  fontSize: 11,
+                  height: 1.8,
+                ),
+              ),
+              const SizedBox(width: 5),
+              Expanded(
+                child: Text(
+                  schema.name,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.navy,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 3),
+          // Barra de score compacta
+          _CompactScoreBar(fraction: schema.barFraction, color: symbolColor),
+          const SizedBox(height: 3),
+          Row(
+            children: [
+              if (schema.instrumentCode != null)
+                _InstrumentTag(code: _shortCode(schema.instrumentCode!)),
+              const Spacer(),
+              Text(
+                schema.score.toStringAsFixed(1),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: symbolColor,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    if (isStaff) {
+      row = InkWell(
+        onTap: () => _openSheet(context, ref),
+        borderRadius: BorderRadius.circular(6),
+        child: row,
+      );
+    }
+
+    return row;
+  }
+
+  void _openSheet(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => _ConsolidatedActivationSheet(
+        schema: schema,
+        onChanged: onActivationChanged,
+      ),
+    );
+  }
+}
+
+// ── Linha de esquema não ativado ────────────────────────────────────────────
+
+class _NonActivatedSchemaRow extends ConsumerWidget {
+  const _NonActivatedSchemaRow({
+    required this.schema,
+    required this.isStaff,
+    this.onActivationChanged,
+  });
+
+  final ConsolidatedSchemaRow schema;
+  final bool isStaff;
+  final VoidCallback? onActivationChanged;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+
+    Widget row = Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const Text(
+            '○',
+            style: TextStyle(
+              color: AppColors.textMuted,
+              fontSize: 10,
+              height: 1.6,
+            ),
+          ),
+          const SizedBox(width: 5),
+          Expanded(
+            child: Text(
+              schema.name,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.textSecondary,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                schema.score.toStringAsFixed(1),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: AppColors.textMuted,
+                  fontVariations: const [FontVariation('wght', 600)],
+                ),
+              ),
+              if (schema.instrumentCode != null)
+                _InstrumentTag(code: _shortCode(schema.instrumentCode!)),
+            ],
+          ),
+        ],
+      ),
+    );
+
+    if (isStaff) {
+      row = InkWell(
+        onTap: () => _openSheet(context, ref),
+        borderRadius: BorderRadius.circular(6),
+        child: row,
+      );
+    }
+
+    return row;
+  }
+
+  void _openSheet(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => _ConsolidatedActivationSheet(
+        schema: schema,
+        onChanged: onActivationChanged,
+      ),
+    );
+  }
+}
+
+// ── Sheet de ativação consolidada ───────────────────────────────────────────
+
+class _ConsolidatedActivationSheet extends ConsumerStatefulWidget {
+  const _ConsolidatedActivationSheet({
+    required this.schema,
+    this.onChanged,
+  });
+
+  final ConsolidatedSchemaRow schema;
+  final VoidCallback? onChanged;
+
+  @override
+  ConsumerState<_ConsolidatedActivationSheet> createState() =>
+      _ConsolidatedActivationSheetState();
+}
+
+class _ConsolidatedActivationSheetState
+    extends ConsumerState<_ConsolidatedActivationSheet> {
+  late final TextEditingController _obsController;
+  bool _saving = false;
+
+  bool get _isActivated => widget.schema.isActivated;
+  bool get _isPsiActivated => widget.schema.isPsiActivated;
+
+  @override
+  void initState() {
+    super.initState();
+    _obsController = TextEditingController(
+      text: widget.schema.psiObservation ?? '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _obsController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    try {
+      await ref
+          .read(manageSchemaActivationProvider(widget.schema.responseId).notifier)
+          .activate(
+            widget.schema.code,
+            widget.schema.name,
+            observation: _obsController.text.trim().isEmpty
+                ? null
+                : _obsController.text.trim(),
+          );
+      widget.onChanged?.call();
+      if (mounted) Navigator.of(context).pop();
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _deactivate() async {
+    setState(() => _saving = true);
+    try {
+      await ref
+          .read(manageSchemaActivationProvider(widget.schema.responseId).notifier)
+          .deactivate(widget.schema.code);
+      widget.onChanged?.call();
+      if (mounted) Navigator.of(context).pop();
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isAutoActivated = widget.schema.isAutoActivated;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        left: 20,
+        right: 20,
+        top: 24,
+        bottom: MediaQuery.viewInsetsOf(context).bottom + 24,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                _isActivated ? '●' : '◎',
+                style: TextStyle(
+                  color: isAutoActivated ? AppColors.error : AppColors.purple,
+                  fontSize: 18,
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  _isPsiActivated
+                      ? 'Editar ativação'
+                      : isAutoActivated
+                          ? 'Esquema ativo (sistema)'
+                          : 'Ativar esquema',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            widget.schema.name,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          Text(
+            'Score: ${widget.schema.score.toStringAsFixed(2)}',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: AppColors.textMuted,
+            ),
+          ),
+          if (widget.schema.instrumentName != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              widget.schema.instrumentName!,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.textMuted,
+              ),
+            ),
+          ],
+          if (!isAutoActivated) ...[
+            const SizedBox(height: 16),
+            TextField(
+              controller: _obsController,
+              decoration: const InputDecoration(
+                labelText: 'Observação clínica (opcional)',
+                hintText: 'Justificativa ou nota clínica para esta ativação',
+                border: OutlineInputBorder(),
+              ),
+              maxLines: 3,
+              textCapitalization: TextCapitalization.sentences,
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                if (_isPsiActivated)
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: _saving ? null : _deactivate,
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.error,
+                        side: const BorderSide(color: AppColors.error),
+                      ),
+                      child: _saving
+                          ? const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Desativar'),
+                    ),
+                  ),
+                if (_isPsiActivated) const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    onPressed: _saving ? null : _save,
+                    child: _saving
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : Text(_isPsiActivated ? 'Salvar' : 'Ativar'),
+                  ),
+                ),
+              ],
+            ),
+          ] else ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              decoration: BoxDecoration(
+                color: AppColors.errorContainer,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.info_outline,
+                    size: 16,
+                    color: AppColors.onErrorContainer,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Ativado automaticamente pelo sistema (score ≥ 4.0).',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.onErrorContainer,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ── Widgets auxiliares ──────────────────────────────────────────────────────
+
+class _ConsolidatedColumnHeader extends StatelessWidget {
+  const _ConsolidatedColumnHeader({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: color),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SchemaCountBadge extends StatelessWidget {
+  const _SchemaCountBadge({
+    required this.count,
+    required this.color,
+    required this.label,
+  });
+
+  final int count;
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        '$count $label',
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: color,
+        ),
+      ),
+    );
+  }
+}
+
+class _CompactScoreBar extends StatelessWidget {
+  const _CompactScoreBar({
+    required this.fraction,
+    required this.color,
+  });
+
+  final double fraction;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    // Sem LayoutBuilder: é incompatível com o IntrinsicHeight do card pai
+    // (LayoutBuilder não suporta medição de dimensões intrínsecas).
+    return Container(
+      height: 4,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .15),
+        borderRadius: BorderRadius.circular(2),
+      ),
+      child: FractionallySizedBox(
+        alignment: Alignment.centerLeft,
+        widthFactor: fraction.clamp(0.0, 1.0),
+        child: Container(
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InstrumentTag extends StatelessWidget {
+  const _InstrumentTag({required this.code});
+
+  final String code;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceTint,
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Text(
+        code,
+        style: const TextStyle(
+          fontSize: 9,
+          fontWeight: FontWeight.w700,
+          color: AppColors.moduleQuestionnaires,
+          letterSpacing: .3,
+        ),
+      ),
+    );
+  }
+}
+
+class _LegendItem extends StatelessWidget {
+  const _LegendItem({
+    required this.symbol,
+    required this.label,
+    this.color = AppColors.error,
+  });
+
+  final String symbol;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          symbol,
+          style: TextStyle(color: color, fontSize: 12),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label,
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: AppColors.textMuted,
+              ),
+        ),
+      ],
+    );
+  }
+}
+
+String _shortCode(String instrumentCode) {
+  // ATTACHMENT_STYLES_V1 → ATT  /  YSQ_LONG_V3 → YSQ  etc.
+  final upper = instrumentCode.toUpperCase();
+  if (upper.contains('ATTACHMENT')) return 'ATT';
+  if (upper.startsWith('YSQ')) return 'YSQ';
+  if (upper.startsWith('YAMI')) return 'YAMI';
+  if (upper.startsWith('YCI')) return 'YCI';
+  if (upper.startsWith('YRAI')) return 'YRAI';
+  if (upper.startsWith('PARENTAL')) return 'PAR';
+  // Fallback: primeiros 4 caracteres
+  return upper.length > 4 ? upper.substring(0, 4) : upper;
 }

@@ -3,6 +3,7 @@ import 'clinical_dashboard_callouts.dart';
 import 'clinical_dashboard_history_entry.dart';
 import 'clinical_instrument_dashboard.dart';
 import 'clinical_parental_dashboard.dart';
+import 'consolidated_schema_row.dart';
 
 class ClinicalDashboardData {
   const ClinicalDashboardData({
@@ -16,6 +17,7 @@ class ClinicalDashboardData {
     this.yrai,
     this.parental,
     required this.history,
+    this.consolidatedSchemas = const [],
   });
 
   static const empty = ClinicalDashboardData(
@@ -23,6 +25,7 @@ class ClinicalDashboardData {
     caseSummary: ClinicalCaseSummary.empty,
     callouts: [],
     history: [],
+    consolidatedSchemas: [],
   );
 
   final String patientName;
@@ -35,6 +38,17 @@ class ClinicalDashboardData {
   final ClinicalInstrumentDashboard? yrai;
   final ClinicalParentalDashboard? parental;
   final List<ClinicalDashboardHistoryEntry> history;
+
+  /// Todos os esquemas de todos os instrumentos com status de ativação.
+  final List<ConsolidatedSchemaRow> consolidatedSchemas;
+
+  List<ConsolidatedSchemaRow> get activatedSchemas =>
+      consolidatedSchemas.where((s) => s.isActivated).toList();
+
+  List<ConsolidatedSchemaRow> get nonActivatedSchemas =>
+      consolidatedSchemas.where((s) => !s.isActivated).toList();
+
+  bool get hasConsolidatedSchemas => consolidatedSchemas.isNotEmpty;
 
   bool get hasCaseSummary => !caseSummary.isEmpty;
 

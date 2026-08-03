@@ -2,10 +2,12 @@ import '../../mental_map/domain/mental_map_aggregator.dart';
 import '../../results/domain/patient_response_summary.dart';
 import '../../results/domain/patient_result_detail.dart';
 import '../../results/domain/questionnaire_response_status.dart';
+import '../../results/domain/schema_activation.dart';
 import '../../results/domain/scoring_schema_result.dart';
 import 'clinical_dashboard_history_entry.dart';
 import 'clinical_dashboard_score_row.dart';
 import 'clinical_instrument_dashboard.dart';
+import 'consolidated_schema_row.dart';
 
 const ysqInstrumentMarker = 'YSQ';
 const yamiInstrumentMarker = 'YAMI';
@@ -113,6 +115,7 @@ ClinicalDashboardScoreRow _rowFromSchema(ScoringSchemaResult schema) {
     name: schema.name,
     code: schema.code,
     score: score ?? 0,
+    averageScore: schema.averageScore,
     severityLabel:
         schema.severity?.hasLabel == true ? schema.severity!.label : null,
     severityColorKey: schema.severity?.colorKey,
@@ -214,4 +217,57 @@ bool patientHasStructuredDashboardResults(
       latestStructuredResponseByCode(responses, yraiInstrumentCode) != null ||
       latestStructuredResponseByCode(responses, attachmentInstrumentCode) !=
           null;
+}
+
+/// Consolida schemas de todos os instrumentos numa lista única, com status
+/// de ativação (auto ≥ 4.0 ou psi manual), ordenada por score descendente.
+List<ConsolidatedSchemaRow> buildConsolidatedSchemas({
+  required ClinicalInstrumentDashboard? ysq,
+  required ClinicalInstrumentDashboard? yami,
+  required ClinicalInstrumentDashboard? attachment,
+  required ClinicalInstrumentDashboard? yci,
+  required ClinicalInstrumentDashboard? yrai,
+  required Map<String, List<SchemaActivation>> activationsByResponseId,
+}) {
+  final rows = <ConsolidatedSchemaRow>[];
+
+  void addFrom(ClinicalInstrumentDashboard? dashboard) {
+    if (dashboard == null || dashboard.isEmpty) return;
+    final activations = activationsByResponseId[dashboard.responseId] ?? [];
+    final psiMap = {for (final a in activations) a.schemaCode: a};
+
+    for (final scoreRow in dashboard.allScores) {
+      // A ativação automática usa a MÉDIA por item (mesma métrica da tela de
+      // detalhe do questionário — SchemaAtivadosCard). O `score` de exibição
+      // pode ser o weighted, que está em outra escala e não serve ao limiar.
+      final activationScore = scoreRow.averageScore ?? 0;
+      final isAuto = activationScore >= kSchemaActivationThreshold;
+      final psi = psiMap[scoreRow.code];
+      // Exibe a média quando disponível, para casar com o detalhe.
+      final displayScore = scoreRow.averageScore ?? scoreRow.score;
+      rows.add(ConsolidatedSchemaRow(
+        name: scoreRow.name,
+        code: scoreRow.code,
+        score: displayScore,
+        responseId: dashboard.responseId,
+        isAutoActivated: isAuto,
+        isPsiActivated: psi != null && !isAuto,
+        psiObservation: psi?.psiObservation,
+        instrumentName: dashboard.questionnaireName,
+        instrumentCode: dashboard.questionnaireCode,
+        severityLabel: scoreRow.severityLabel,
+        severityColorKey: scoreRow.severityColorKey,
+        scaleMax: dashboard.scaleMax,
+      ));
+    }
+  }
+
+  addFrom(ysq);
+  addFrom(yami);
+  addFrom(attachment);
+  addFrom(yci);
+  addFrom(yrai);
+
+  rows.sort((a, b) => b.score.compareTo(a.score));
+  return rows;
 }

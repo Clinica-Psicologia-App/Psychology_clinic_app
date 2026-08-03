@@ -10,6 +10,7 @@ import '../../results/data/results_repository.dart';
 import '../../therapy_goals/data/therapy_goals_repository.dart';
 import '../../patient_timeline/data/patient_timeline_repository.dart';
 import '../domain/clinical_case_summary_builder.dart';
+import '../../results/domain/schema_activation.dart';
 import '../domain/clinical_dashboard_builder.dart';
 import '../domain/clinical_dashboard_callouts.dart';
 import '../domain/clinical_dashboard_data.dart';
@@ -176,6 +177,36 @@ class ClinicalDashboardRepository {
       }
     }
 
+    // Fetch schema activations for each instrument response in parallel.
+    final activationsByResponseId = <String, List<SchemaActivation>>{};
+    final activationFutures = <Future<void>>[];
+
+    void fetchActivations(String? responseId) {
+      if (responseId == null) return;
+      activationFutures.add(
+        _results
+            .listSchemaActivations(responseId, includeObservation: true)
+            .then((list) => activationsByResponseId[responseId] = list),
+      );
+    }
+
+    fetchActivations(ysqSummary?.id);
+    fetchActivations(yamiSummary?.id);
+    fetchActivations(attachmentSummary?.id);
+    fetchActivations(yciSummary?.id);
+    fetchActivations(yraiSummary?.id);
+
+    await Future.wait(activationFutures);
+
+    final consolidatedSchemas = buildConsolidatedSchemas(
+      ysq: ysq,
+      yami: yami,
+      attachment: attachment,
+      yci: yci,
+      yrai: yrai,
+      activationsByResponseId: activationsByResponseId,
+    );
+
     final caseSummary = buildClinicalCaseSummary(
       patientName: patientName,
       responses: responses,
@@ -208,6 +239,7 @@ class ClinicalDashboardRepository {
       yrai: yrai,
       parental: parental,
       history: buildStructuredHistory(responses),
+      consolidatedSchemas: consolidatedSchemas,
     );
   }
 

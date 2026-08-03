@@ -80,7 +80,7 @@ class SchemaAtivadosCard extends ConsumerWidget {
                   _CountBadge(
                     count: inativos.length,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    label: 'inativos',
+                    label: 'não ativados',
                   ),
               ],
             ),
@@ -181,7 +181,7 @@ class _StaffView extends ConsumerWidget {
             children: [
               _ColumnHeader(
                 icon: Icons.radio_button_unchecked,
-                label: 'Inativos',
+                label: 'Não ativados',
                 color: cs.onSurfaceVariant,
               ),
               const SizedBox(height: 6),

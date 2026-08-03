@@ -2,16 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../../shared/widgets/status_chip.dart';
-import '../../clinical_dashboard/presentation/clinical_dashboard_routes.dart';
+import '../../clinical_dashboard/domain/clinical_dashboard_data.dart';
+import '../../clinical_dashboard/presentation/widgets/clinical_dashboard_widgets.dart';
+import '../../clinical_dashboard/providers/clinical_dashboard_providers.dart';
 import '../../patients/providers/patients_providers.dart';
 import '../../profile/domain/profile_role.dart';
-import '../domain/patient_response_summary.dart';
 import '../providers/results_providers.dart';
 import 'result_routes.dart';
 import 'widgets/response_summary_tile.dart';
@@ -29,148 +31,238 @@ class PatientResultsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final ctx = PatientResultsContext(role: role, patientId: patientId);
-    final listAsync = ref.watch(patientResultsListProvider(ctx));
-    final patientAsync = ref.watch(patientDetailProvider(patientId));
     final isPatient = role == ProfileRole.patient;
+    final dashboardCtx =
+        StaffClinicalDashboardContext(role: role, patientId: patientId);
+
+    final dashboardAsync = isPatient
+        ? ref.watch(myClinicalDashboardProvider)
+        : ref.watch(staffClinicalDashboardProvider(dashboardCtx));
+
+    void refreshDashboard() {
+      if (isPatient) {
+        ref.read(myClinicalDashboardProvider.notifier).refresh();
+      } else {
+        ref.invalidate(staffClinicalDashboardProvider(dashboardCtx));
+      }
+    }
 
     return AppScaffold(
-      title: isPatient ? 'Meus resultados' : 'Resultados',
+      title: 'Dashboard clínico',
       actions: [
         IconButton(
           tooltip: 'Atualizar',
-          onPressed: () =>
-              ref.read(patientResultsListProvider(ctx).notifier).refresh(),
+          onPressed: refreshDashboard,
           icon: const Icon(Icons.refresh),
         ),
       ],
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (isPatient)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: ClayCard(
-                child: ListTile(
-                  leading: const Icon(Icons.analytics_outlined),
-                  title: const Text('Dashboard clínico'),
-                  subtitle: const Text('Gráficos dos principais instrumentos.'),
-                  trailing: const Icon(Icons.chevron_right),
-                  onTap: () =>
-                      context.push(ClinicalDashboardRoutes.patientList),
-                ),
-              ),
+      body: AsyncStateBody<ClinicalDashboardData>(
+        asyncValue: dashboardAsync,
+        onRetry: refreshDashboard,
+        emptyIcon: Icons.analytics_outlined,
+        dataBuilder: (data) {
+          final patientName = ref.watch(patientDetailProvider(patientId)).valueOrNull?.fullName;
+          return RefreshIndicator(
+            onRefresh: () async {
+              refreshDashboard();
+            },
+            child: _ConsolidatedResultsView(
+              data: data,
+              role: role,
+              patientId: patientId,
+              patientName: isPatient ? null : patientName,
+              onActivationChanged: refreshDashboard,
             ),
-          Expanded(
-            child: AsyncStateBody<List<PatientResponseSummary>>(
-              asyncValue: listAsync,
-              onRetry: () =>
-                  ref.read(patientResultsListProvider(ctx).notifier).refresh(),
-              emptyMessage: isPatient
-                  ? 'Nenhum resultado liberado ainda. Quando seu psicólogo '
-                      'concluir a análise, ele aparecerá aqui.'
-                  : 'Nenhuma resposta de questionário para este paciente.',
-              emptyIcon: Icons.analytics_outlined,
-              dataBuilder: (items) {
-                final patientName = patientAsync.valueOrNull?.fullName;
-                return RefreshIndicator(
-                  onRefresh: () async {
-                    await ref
-                        .read(patientResultsListProvider(ctx).notifier)
-                        .refresh();
-                  },
-                  child: _ResultsList(
-                    items: items,
-                    patientName: patientName,
-                    onOpen: (item) => context.push(
-                      ResultRoutes.detail(
-                        role: role,
-                        patientId: patientId,
-                        responseId: item.id,
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
 }
 
-class _ResultsList extends StatelessWidget {
-  const _ResultsList({
-    required this.items,
-    required this.onOpen,
+/// Corpo principal: cabeçalho + card consolidado. As respostas por
+/// questionário ficam recolhidas num expansível ("passar a régua").
+class _ConsolidatedResultsView extends StatelessWidget {
+  const _ConsolidatedResultsView({
+    required this.data,
+    required this.role,
+    required this.patientId,
+    required this.onActivationChanged,
     this.patientName,
   });
 
-  final List<PatientResponseSummary> items;
+  final ClinicalDashboardData data;
+  final ProfileRole role;
+  final String patientId;
+  final VoidCallback onActivationChanged;
   final String? patientName;
-  final ValueChanged<PatientResponseSummary> onOpen;
 
   @override
   Widget build(BuildContext context) {
-    final completed = items.where((item) => item.completedAt != null).length;
-    final withResults = items.where((item) => item.hasResults).length;
-    final reviewed = items.where((item) => item.isReviewed).length;
+    final isStaff = role != ProfileRole.patient;
+    final activated = data.activatedSchemas.length;
+    final total = data.consolidatedSchemas.length;
 
-    return ListView.builder(
+    return ListView(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.md,
         AppSpacing.md,
         AppSpacing.md,
         AppSpacing.xxl,
       ),
-      itemCount: items.length + 1,
-      itemBuilder: (context, index) {
-        if (index == 0) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-            child: AppPageHeader(
-              icon: Icons.analytics_outlined,
-              title: 'Resultados dos questionários',
-              subtitle: patientName == null
-                  ? 'Respostas aplicadas, status de conclusão e resultados calculados.'
-                  : 'Respostas aplicadas para $patientName, com status de conclusão e resultados calculados.',
-              metadata: [
-                StatusChip(
-                  label: '${items.length} resposta(s)',
-                  tone: AppStatusTone.info,
-                  icon: Icons.assignment_turned_in_outlined,
-                ),
-                StatusChip(
-                  label: '$completed concluída(s)',
-                  tone: AppStatusTone.completed,
-                  icon: Icons.check_circle_outline,
-                ),
-                StatusChip(
-                  label: '$withResults com resultado',
-                  tone: AppStatusTone.success,
-                  icon: Icons.analytics_outlined,
-                ),
-                if (reviewed > 0)
-                  StatusChip(
-                    label: '$reviewed revisada(s)',
-                    tone: AppStatusTone.neutral,
-                    icon: Icons.verified_outlined,
-                  ),
-              ],
+      children: [
+        AppPageHeader(
+          icon: Icons.analytics_outlined,
+          title: 'Perfil consolidado',
+          subtitle: patientName == null
+              ? 'Todos os esquemas e modos reunidos numa visão única, '
+                  'com o que está ativado e não ativado.'
+              : 'Perfil de $patientName reunindo todos os instrumentos, '
+                  'com esquemas ativados e não ativados.',
+          metadata: [
+            StatusChip(
+              label: '$total esquema(s)',
+              tone: AppStatusTone.info,
+              icon: Icons.schema_outlined,
             ),
-          );
-        }
-
-        final item = items[index - 1];
-        return MotionReveal(
-          delay: staggerDelay(index - 1),
-          child: ResponseSummaryTile(
-            summary: item,
-            onTap: () => onOpen(item),
+            StatusChip(
+              label: '$activated ativado(s)',
+              tone: AppStatusTone.success,
+              icon: Icons.check_circle_outline,
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        if (data.hasConsolidatedSchemas)
+          ConsolidatedSchemaProfileCard(
+            data: data,
+            isStaff: isStaff,
+            onActivationChanged: onActivationChanged,
+          )
+        else
+          const ClayCard(
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: Column(
+                children: [
+                  Icon(Icons.analytics_outlined,
+                      size: 40, color: AppColors.textMuted),
+                  SizedBox(height: 12),
+                  Text(
+                    'Ainda não há resultados consolidados.',
+                    textAlign: TextAlign.center,
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Assim que um questionário for concluído com resultados, '
+                    'o perfil aparecerá aqui.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
           ),
-        );
-      },
+        const SizedBox(height: AppSpacing.md),
+        // Acesso às respostas por questionário (régua item a item).
+        _ResponsesByQuestionnaireSection(
+          role: role,
+          patientId: patientId,
+        ),
+      ],
+    );
+  }
+}
+
+/// Seção recolhível com as respostas por questionário — mantém o acesso
+/// ao fluxo de "passar a régua" sem poluir a visão consolidada.
+class _ResponsesByQuestionnaireSection extends ConsumerWidget {
+  const _ResponsesByQuestionnaireSection({
+    required this.role,
+    required this.patientId,
+  });
+
+  final ProfileRole role;
+  final String patientId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ctx = PatientResultsContext(role: role, patientId: patientId);
+    final listAsync = ref.watch(patientResultsListProvider(ctx));
+    final theme = Theme.of(context);
+
+    return ClayCard(
+      child: Theme(
+        data: theme.copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          leading: const Icon(
+            Icons.fact_check_outlined,
+            color: AppColors.moduleQuestionnaires,
+          ),
+          title: Text(
+            'Respostas por questionário',
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          subtitle: Text(
+            'Abrir cada resposta e passar a régua',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: AppColors.textMuted,
+            ),
+          ),
+          children: [
+            listAsync.when(
+              loading: () => const Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+              error: (e, _) => Padding(
+                padding: const EdgeInsets.all(16),
+                child: Text(
+                  'Não foi possível carregar as respostas.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
+                ),
+              ),
+              data: (items) {
+                if (items.isEmpty) {
+                  return Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(
+                      'Nenhuma resposta registrada.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  );
+                }
+                return Column(
+                  children: [
+                    for (var i = 0; i < items.length; i++)
+                      MotionReveal(
+                        delay: staggerDelay(i),
+                        child: ResponseSummaryTile(
+                          summary: items[i],
+                          onTap: () => context.push(
+                            ResultRoutes.detail(
+                              role: role,
+                              patientId: patientId,
+                              responseId: items[i].id,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

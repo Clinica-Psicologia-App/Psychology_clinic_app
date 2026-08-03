@@ -34,6 +34,7 @@ class Patient {
     this.isActive = true,
     this.inactivatedAt,
     this.createdAt,
+    this.resultsReleasedAt,
   });
 
   final String id;
@@ -68,6 +69,12 @@ class Patient {
   final bool isActive;
   final DateTime? inactivatedAt;
   final DateTime? createdAt;
+
+  /// Quando não nulo, os resultados clínicos estão liberados ao paciente.
+  final DateTime? resultsReleasedAt;
+
+  /// Resultados clínicos liberados para o paciente ver.
+  bool get resultsReleased => resultsReleasedAt != null;
   String? get displayGender => _humanizeClinicalValue(gender, const {
         'female': 'Feminino',
         'feminino': 'Feminino',
@@ -171,6 +178,7 @@ class Patient {
       isActive: json['is_active'] as bool? ?? true,
       inactivatedAt: _parseDateTime(json['inactivated_at']),
       createdAt: _parseDateTime(json['created_at']),
+      resultsReleasedAt: _parseDateTime(json['results_released_at']),
     );
   }
 

@@ -35,6 +35,7 @@ class JourneyStep {
 List<JourneyStep> buildPatientJourneySteps(
   PatientJourneyProgress? progress, {
   ClinicFeatureEntitlements entitlements = ClinicFeatureEntitlements.empty,
+  bool resultsReleased = true,
 }) {
   final p = progress;
 
@@ -99,6 +100,8 @@ List<JourneyStep> buildPatientJourneySteps(
 
   JourneyStepAvailability clinicalDashboardStatus() {
     if (!enabled('reports')) return JourneyStepAvailability.blocked;
+    // Resultados só ficam disponíveis após o psicólogo liberar.
+    if (!resultsReleased) return JourneyStepAvailability.blocked;
     if (p == null) return JourneyStepAvailability.available;
     if (!p.hasClinicalDashboardData) {
       return JourneyStepAvailability.available;
@@ -108,6 +111,9 @@ List<JourneyStep> buildPatientJourneySteps(
 
   String? clinicalDashboardHint() {
     if (!enabled('reports')) return 'Módulo bloqueado pelo plano da clínica.';
+    if (!resultsReleased) {
+      return 'Aguardando a liberação do seu psicólogo.';
+    }
     if (p == null) return null;
     if (!p.hasClinicalDashboardData) {
       return 'Conclua YSQ ou YAMI para ver gráficos.';
@@ -221,6 +227,8 @@ List<JourneyStep> buildPatientJourneySteps(
   }
 
   JourneyStepAvailability mentalMapStatus() {
+    // O mapa mental deriva dos resultados clínicos — bloqueado até liberar.
+    if (!resultsReleased) return JourneyStepAvailability.blocked;
     if (p == null) return JourneyStepAvailability.available;
     if (!p.hasMentalMapRelevantData) {
       return JourneyStepAvailability.available;
@@ -229,6 +237,9 @@ List<JourneyStep> buildPatientJourneySteps(
   }
 
   String? mentalMapHint() {
+    if (!resultsReleased) {
+      return 'Aguardando a liberação do seu psicólogo.';
+    }
     if (p == null) return null;
     if (!p.hasMentalMapRelevantData) {
       return 'Registre dados nos módulos para montar o mapa.';

@@ -43,6 +43,7 @@ profile_id,
 responsible_psychologist_id,
 is_active,
 inactivated_at,
+results_released_at,
 created_at,
 responsible_psychologist:profiles!patients_responsible_psychologist_id_fkey(full_name),
 access_profile:profiles!patients_profile_id_fkey(is_active, avatar_type, avatar_path, avatar_url, avatar_config, avatar_updated_at)
@@ -65,6 +66,27 @@ access_profile:profiles!patients_profile_id_fkey(is_active, avatar_type, avatar_
                 publicUrlOf: _avatarPublicUrl,
               ))
           .toList();
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  /// Registro do paciente logado (via profile_id). RLS garante que só o
+  /// próprio paciente (ou staff da clínica) leia a linha.
+  Future<Patient?> getMyPatient() async {
+    try {
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) return null;
+      final row = await _client
+          .from('patients')
+          .select(_patientDetailSelect)
+          .eq('profile_id', userId)
+          .maybeSingle();
+      if (row == null) return null;
+      return Patient.fromJson(
+        Map<String, dynamic>.from(row),
+        publicUrlOf: _avatarPublicUrl,
+      );
     } catch (e) {
       throw mapToAppException(e);
     }
@@ -179,6 +201,33 @@ access_profile:profiles!patients_profile_id_fkey(is_active, avatar_type, avatar_
         throw AppException(
           code: AppExceptionCodes.notFound,
           message: 'Paciente não encontrado após a atualização.',
+        );
+      }
+      return patient;
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  /// Libera (ou revoga) o acesso do paciente aos resultados clínicos.
+  Future<Patient> setResultsReleased({
+    required String patientId,
+    required bool released,
+  }) async {
+    try {
+      await _client.rpc(
+        'set_patient_results_released',
+        params: {
+          'p_patient_id': patientId,
+          'p_released': released,
+        },
+      );
+
+      final patient = await getPatientById(patientId);
+      if (patient == null) {
+        throw AppException(
+          code: AppExceptionCodes.notFound,
+          message: 'Paciente não encontrado após a liberação.',
         );
       }
       return patient;

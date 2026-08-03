@@ -8,6 +8,7 @@ import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../../../shared/widgets/status_chip.dart';
+import '../../patients/presentation/widgets/results_release_card.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../results/presentation/result_routes.dart';
 import '../domain/clinical_dashboard_data.dart';
@@ -216,6 +217,9 @@ class DashboardHomePage extends StatelessWidget {
                       );
                     }).toList(),
                   ),
+                // ── Liberação dos resultados ao paciente ─────────────────
+                if (isStaff && patientId != null)
+                  ResultsReleaseCard(patientId: patientId!),
               ]),
             ),
           ),

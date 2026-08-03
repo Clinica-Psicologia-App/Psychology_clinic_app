@@ -39,6 +39,41 @@ final psychologistsOptionsProvider =
   return ref.read(patientsRepositoryProvider).listPsychologistsInClinic();
 });
 
+/// Registro do próprio paciente logado (para gatear seus módulos por liberação).
+final myPatientProvider = FutureProvider<Patient?>((ref) {
+  return ref.read(patientsRepositoryProvider).getMyPatient();
+});
+
+/// Libera/revoga o acesso do paciente aos resultados clínicos (psicólogo).
+final releaseResultsProvider =
+    AsyncNotifierProvider<ReleaseResultsNotifier, void>(
+  ReleaseResultsNotifier.new,
+);
+
+class ReleaseResultsNotifier extends AsyncNotifier<void> {
+  @override
+  Future<void> build() async {}
+
+  Future<Patient> submit({
+    required String patientId,
+    required bool released,
+  }) async {
+    state = const AsyncValue.loading();
+    try {
+      final patient = await ref
+          .read(patientsRepositoryProvider)
+          .setResultsReleased(patientId: patientId, released: released);
+      state = const AsyncValue.data(null);
+      ref.invalidate(patientDetailProvider(patientId));
+      ref.invalidate(patientsListProvider);
+      return patient;
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+      rethrow;
+    }
+  }
+}
+
 final createPatientProvider =
     AsyncNotifierProvider<CreatePatientNotifier, void>(
   CreatePatientNotifier.new,

@@ -96,19 +96,6 @@ class ResponseSummaryTile extends StatelessWidget {
                           label: summary.status.label,
                           color: accent,
                         ),
-                        if (summary.status ==
-                            QuestionnaireResponseStatus.completed)
-                          summary.isReviewed
-                              ? const _Pill(
-                                  icon: Icons.verified_outlined,
-                                  label: 'Liberado',
-                                  color: AppColors.success,
-                                )
-                              : const _Pill(
-                                  icon: Icons.straighten_outlined,
-                                  label: 'Régua pendente',
-                                  color: AppColors.warning,
-                                ),
                       ],
                     ),
                   ],

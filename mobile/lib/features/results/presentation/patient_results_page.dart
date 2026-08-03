@@ -208,7 +208,7 @@ class _ResponsesByQuestionnaireSection extends ConsumerWidget {
             ),
           ),
           subtitle: Text(
-            'Abrir cada resposta e passar a régua',
+            'Abrir cada resposta e ver o detalhe',
             style: theme.textTheme.bodySmall?.copyWith(
               color: AppColors.textMuted,
             ),

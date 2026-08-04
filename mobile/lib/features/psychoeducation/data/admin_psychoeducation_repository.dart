@@ -1,6 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/error_mapper.dart';
+import '../../../core/errors/app_exception.dart';
 import '../../../core/supabase/supabase_bootstrap.dart';
 import '../domain/psychoeducation_module.dart';
 
@@ -82,6 +85,50 @@ class AdminPsychoeducationRepository {
       throw mapToAppException(e);
     }
   }
+
+  // Reaproveita o bucket público da Biblioteca, com prefixo próprio.
+  static const _coversBucket = 'library-covers';
+  static const _coverExtensions = {'jpg', 'jpeg', 'png', 'webp'};
+
+  /// Envia a capa de um módulo e devolve a URL pública.
+  Future<String> uploadCover({
+    required String baseName,
+    required Uint8List bytes,
+    required String fileName,
+  }) async {
+    try {
+      final ext = _extensionOf(fileName);
+      final objectPath = 'psychoeducation/$baseName.$ext';
+      await _client.storage.from(_coversBucket).uploadBinary(
+            objectPath,
+            bytes,
+            fileOptions: FileOptions(upsert: true, contentType: _mimeFor(ext)),
+          );
+      final url = _client.storage.from(_coversBucket).getPublicUrl(objectPath);
+      return '$url?v=${DateTime.now().millisecondsSinceEpoch}';
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  String _extensionOf(String fileName) {
+    final dot = fileName.lastIndexOf('.');
+    final ext =
+        dot == -1 ? '' : fileName.substring(dot + 1).toLowerCase().trim();
+    if (!_coverExtensions.contains(ext)) {
+      throw AppException(
+        code: AppExceptionCodes.validation,
+        message: 'Formato não suportado. Use JPG, PNG ou WEBP.',
+      );
+    }
+    return ext;
+  }
+
+  String _mimeFor(String ext) => switch (ext) {
+        'png' => 'image/png',
+        'webp' => 'image/webp',
+        _ => 'image/jpeg',
+      };
 }
 
 /// Linha leve para a lista de curadoria (inclui status de publicação).

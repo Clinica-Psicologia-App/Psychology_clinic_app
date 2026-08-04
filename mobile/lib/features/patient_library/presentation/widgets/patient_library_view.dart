@@ -312,23 +312,19 @@ class _Card extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Badge + "Novo" numa linha só, para nunca se sobreporem.
-                Positioned(
-                  top: 8,
-                  left: 8,
-                  right: 8,
-                  child: Row(
-                    children: [
-                      if (item.badge != null)
-                        Flexible(
-                          child: _Badge(
-                              text: item.badge!, icon: item.badgeIcon),
-                        ),
-                      const Spacer(),
-                      if (item.isNew) const _NewTag(),
-                    ],
+                if (item.badge != null)
+                  Positioned(
+                    top: 8,
+                    left: 8,
+                    // Reserva espaço à direita p/ o "Novo" não colidir.
+                    right: item.isNew ? 52 : 8,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: _Badge(text: item.badge!, icon: item.badgeIcon),
+                    ),
                   ),
-                ),
+                if (item.isNew)
+                  const Positioned(top: 8, right: 8, child: _NewTag()),
                 Positioned(
                   left: 8,
                   right: 8,

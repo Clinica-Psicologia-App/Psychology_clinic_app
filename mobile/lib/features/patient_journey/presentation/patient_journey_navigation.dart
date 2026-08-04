@@ -8,8 +8,8 @@ import '../../questionnaires/presentation/questionnaire_routes.dart';
 import '../../mental_map/presentation/mental_map_routes.dart';
 import '../../patient_check_ins/presentation/patient_check_in_routes.dart';
 import '../../patient_problems/presentation/patient_problem_routes.dart';
+import '../../patient_library/presentation/patient_library_routes.dart';
 import '../../therapy_goals/presentation/therapy_goal_routes.dart';
-import '../../therapy_resources/presentation/therapy_resource_routes.dart';
 import '../domain/journey_step.dart';
 import '../domain/journey_step_availability.dart';
 import '../domain/journey_step_id.dart';
@@ -36,7 +36,7 @@ void navigateFromJourneyStep(BuildContext context, JourneyStep step) {
     case JourneyStepId.dailyMonitor:
       context.push(DailyMonitorRoutes.patientList);
     case JourneyStepId.library:
-      context.push(TherapyResourceRoutes.patientList);
+      context.push(PatientLibraryRoutes.patient);
     case JourneyStepId.results:
       // Lista de resultados liberados; o dashboard de gráficos é acessível
       // a partir dela.

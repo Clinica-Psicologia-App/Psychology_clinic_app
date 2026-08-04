@@ -12,6 +12,7 @@ import '../../../shared/widgets/esquema_core_logo.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../clinics/presentation/clinic_routes.dart';
+import '../../patient_library/presentation/admin_library_routes.dart';
 import '../../profile/presentation/profile_routes.dart';
 import '../../profile/presentation/widgets/user_avatar.dart';
 import '../../questionnaires/presentation/questionnaire_routes.dart';
@@ -149,6 +150,16 @@ class PlatformAdminHomePage extends ConsumerWidget {
                     subtitle: 'Liberar instrumentos por psicólogo.',
                     accentColor: AppColors.cyan,
                     onTap: () => context.push(QuestionnaireRoutes.adminAccess),
+                  ),
+                ),
+                MotionReveal(
+                  delay: staggerDelay(6),
+                  child: ClinicalModuleCard(
+                    icon: Icons.movie_filter_outlined,
+                    title: 'Catálogo da Biblioteca',
+                    subtitle: 'Curar filmes e séries e liberar aos psicólogos.',
+                    accentColor: AppColors.turquoise,
+                    onTap: () => context.push(AdminLibraryRoutes.catalog),
                   ),
                 ),
               ],

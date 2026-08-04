@@ -18,6 +18,7 @@ import '../../features/auth/providers/auth_providers.dart';
 import '../../features/daily_monitors/presentation/daily_monitor_route_helpers.dart';
 import '../../features/patient_journey/presentation/patient_journey_route_helpers.dart';
 import '../../features/patient_library/presentation/patient_library_routes.dart';
+import '../../features/patient_library/presentation/admin_library_routes.dart';
 import '../../features/genogram/presentation/genogram_route_helpers.dart';
 import '../../features/clinical_dashboard/presentation/clinical_dashboard_route_helpers.dart';
 import '../../features/clinical_reports/presentation/clinical_report_route_helpers.dart';
@@ -265,6 +266,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 path: 'patient-overview',
                 builder: (_, __) => const PatientOverviewPage(),
               ),
+              ...adminLibraryRoutes(),
             ],
           ),
         ],

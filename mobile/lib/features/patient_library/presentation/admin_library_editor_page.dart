@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -68,6 +69,7 @@ class _AdminLibraryEditorPageState
   bool get _isEditing => widget.workId != null;
   bool _loading = false;
   bool _saving = false;
+  bool _uploadingCover = false;
   String? _loadError;
 
   @override
@@ -330,7 +332,7 @@ class _AdminLibraryEditorPageState
                             const SizedBox(width: AppSpacing.md),
                             Expanded(child: _intensityDropdown()),
                           ]),
-                          _text(_coverUrl, 'URL da capa'),
+                          _coverSection(),
                           _text(_synopsis, 'Sinopse', lines: 3),
                           SwitchListTile(
                             contentPadding: EdgeInsets.zero,
@@ -483,6 +485,104 @@ class _AdminLibraryEditorPageState
         field: field,
         onChanged: () => setState(() {}),
       );
+
+  Future<void> _pickCover() async {
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1000,
+        imageQuality: 88,
+      );
+      if (picked == null) return;
+      setState(() => _uploadingCover = true);
+      final bytes = await picked.readAsBytes();
+      final base =
+          widget.workId ?? 'work_${DateTime.now().millisecondsSinceEpoch}';
+      final url = await ref.read(adminLibraryRepositoryProvider).uploadCover(
+            baseName: base,
+            bytes: bytes,
+            fileName: picked.name,
+          );
+      if (mounted) setState(() => _coverUrl.text = url);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_message(e))),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _uploadingCover = false);
+    }
+  }
+
+  Widget _coverSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Capa',
+            style: Theme.of(context)
+                .textTheme
+                .labelLarge
+                ?.copyWith(color: AppColors.textSecondary)),
+        const SizedBox(height: 6),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Preview reativo ao conteúdo do campo de URL.
+            AnimatedBuilder(
+              animation: _coverUrl,
+              builder: (_, __) {
+                final url = _coverUrl.text.trim();
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: SizedBox(
+                    width: 72,
+                    height: 104,
+                    child: url.isEmpty
+                        ? Container(
+                            color: AppColors.surfaceTintPurple,
+                            child: const Icon(Icons.image_outlined,
+                                color: AppColors.purple),
+                          )
+                        : Image.network(
+                            url,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => Container(
+                              color: AppColors.surfaceTintPurple,
+                              child: const Icon(Icons.broken_image_outlined,
+                                  color: AppColors.purple),
+                            ),
+                          ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  OutlinedButton.icon(
+                    onPressed: _uploadingCover ? null : _pickCover,
+                    icon: _uploadingCover
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.upload_outlined, size: 18),
+                    label: Text(_uploadingCover ? 'Enviando…' : 'Enviar imagem'),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  _text(_coverUrl, 'URL da capa (ou cole um link)'),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 }
 
 // ── Modelos de estado das listas ──────────────────────────────────────────────

@@ -9,6 +9,7 @@ import '../../mental_map/presentation/mental_map_routes.dart';
 import '../../patient_check_ins/presentation/patient_check_in_routes.dart';
 import '../../patient_problems/presentation/patient_problem_routes.dart';
 import '../../patient_library/presentation/patient_library_routes.dart';
+import '../../psychoeducation/presentation/psychoeducation_routes.dart';
 import '../../therapy_goals/presentation/therapy_goal_routes.dart';
 import '../domain/journey_step.dart';
 import '../domain/journey_step_availability.dart';
@@ -29,6 +30,8 @@ void navigateFromJourneyStep(BuildContext context, JourneyStep step) {
   switch (step.id) {
     case JourneyStepId.initialAssessment:
       context.push(InitialAssessmentRoutes.patient);
+    case JourneyStepId.psychoeducation:
+      context.push(PsychoeducationRoutes.patient);
     case JourneyStepId.questionnaires:
       context.push(
         QuestionnaireRoutes.list(role: ProfileRole.patient),

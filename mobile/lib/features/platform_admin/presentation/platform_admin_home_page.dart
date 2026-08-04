@@ -13,6 +13,7 @@ import '../../../shared/widgets/responsive_content.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../clinics/presentation/clinic_routes.dart';
 import '../../patient_library/presentation/admin_library_routes.dart';
+import '../../psychoeducation/presentation/psychoeducation_routes.dart';
 import '../../profile/presentation/profile_routes.dart';
 import '../../profile/presentation/widgets/user_avatar.dart';
 import '../../questionnaires/presentation/questionnaire_routes.dart';
@@ -160,6 +161,16 @@ class PlatformAdminHomePage extends ConsumerWidget {
                     subtitle: 'Curar filmes e séries e liberar aos psicólogos.',
                     accentColor: AppColors.turquoise,
                     onTap: () => context.push(AdminLibraryRoutes.catalog),
+                  ),
+                ),
+                MotionReveal(
+                  delay: staggerDelay(7),
+                  child: ClinicalModuleCard(
+                    icon: Icons.auto_stories_outlined,
+                    title: 'Psicoeducação',
+                    subtitle: 'Curar os módulos da Biblioteca e liberar.',
+                    accentColor: AppColors.purple,
+                    onTap: () => context.push(PsychoeducationRoutes.adminCatalog),
                   ),
                 ),
               ],

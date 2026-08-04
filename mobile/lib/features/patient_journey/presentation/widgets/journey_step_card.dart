@@ -106,6 +106,7 @@ class JourneyStepCard extends StatelessWidget {
   static Color _accentForStep(JourneyStep step) {
     return switch (step.id) {
       JourneyStepId.initialAssessment => AppColors.moduleDashboard,
+      JourneyStepId.psychoeducation => AppColors.purple,
       JourneyStepId.questionnaires => AppColors.moduleQuestionnaires,
       JourneyStepId.mentalMap => AppColors.moduleMentalMap,
       JourneyStepId.checkIn => AppColors.moduleCheckIn,

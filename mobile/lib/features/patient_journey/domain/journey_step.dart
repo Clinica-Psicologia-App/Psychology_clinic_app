@@ -258,6 +258,15 @@ List<JourneyStep> buildPatientJourneySteps(
       phase: JourneyPhase.conhecer,
       order: 0,
     ),
+    const JourneyStep(
+      id: JourneyStepId.psychoeducation,
+      title: 'Biblioteca de Psicoeducação',
+      subtitle: 'Entenda os esquemas, os modos e o Adulto Saudável, no seu ritmo.',
+      icon: Icons.auto_stories_outlined,
+      availability: JourneyStepAvailability.available,
+      phase: JourneyPhase.conhecer,
+      order: 1,
+    ),
     JourneyStep(
       id: JourneyStepId.genogram,
       title: 'Genograma',
@@ -266,7 +275,7 @@ List<JourneyStep> buildPatientJourneySteps(
       availability: genogramStatus(),
       phase: JourneyPhase.conhecer,
       progressHint: genogramHint(),
-      order: 1,
+      order: 2,
     ),
     JourneyStep(
       id: JourneyStepId.timeline,
@@ -276,7 +285,7 @@ List<JourneyStep> buildPatientJourneySteps(
       availability: timelineStatus(),
       phase: JourneyPhase.conhecer,
       progressHint: timelineHint(),
-      order: 2,
+      order: 3,
     ),
     // ── Fase 2 · Avaliar ─────────────────────────────────────────────────────
     JourneyStep(
@@ -287,7 +296,7 @@ List<JourneyStep> buildPatientJourneySteps(
       availability: questionnairesStatus(),
       phase: JourneyPhase.avaliar,
       progressHint: questionnairesHint(),
-      order: 3,
+      order: 4,
     ),
     // ── Fase 3 · Compreender ─────────────────────────────────────────────────
     JourneyStep(
@@ -298,7 +307,7 @@ List<JourneyStep> buildPatientJourneySteps(
       availability: problemsStatus(),
       phase: JourneyPhase.compreender,
       progressHint: problemsHint(),
-      order: 4,
+      order: 5,
     ),
     JourneyStep(
       id: JourneyStepId.mentalMap,
@@ -308,7 +317,7 @@ List<JourneyStep> buildPatientJourneySteps(
       availability: mentalMapStatus(),
       phase: JourneyPhase.compreender,
       progressHint: mentalMapHint(),
-      order: 5,
+      order: 6,
     ),
     // ── Fase 4 · Intervir ────────────────────────────────────────────────────
     JourneyStep(
@@ -319,7 +328,7 @@ List<JourneyStep> buildPatientJourneySteps(
       availability: therapyGoalsStatus(),
       phase: JourneyPhase.intervir,
       progressHint: therapyGoalsHint(),
-      order: 6,
+      order: 7,
     ),
     JourneyStep(
       id: JourneyStepId.library,
@@ -329,7 +338,7 @@ List<JourneyStep> buildPatientJourneySteps(
       availability: libraryStatus(),
       phase: JourneyPhase.intervir,
       progressHint: libraryHint(),
-      order: 7,
+      order: 8,
     ),
     // ── Fase 5 · Acompanhar ──────────────────────────────────────────────────
     JourneyStep(
@@ -340,7 +349,7 @@ List<JourneyStep> buildPatientJourneySteps(
       availability: checkInStatus(),
       phase: JourneyPhase.acompanhar,
       progressHint: checkInHint(),
-      order: 8,
+      order: 9,
     ),
     JourneyStep(
       id: JourneyStepId.dailyMonitor,
@@ -350,7 +359,7 @@ List<JourneyStep> buildPatientJourneySteps(
       availability: monitorStatus(),
       phase: JourneyPhase.acompanhar,
       progressHint: monitorHint(),
-      order: 9,
+      order: 10,
     ),
     JourneyStep(
       id: JourneyStepId.results,
@@ -360,7 +369,7 @@ List<JourneyStep> buildPatientJourneySteps(
       availability: clinicalDashboardStatus(),
       phase: JourneyPhase.acompanhar,
       progressHint: clinicalDashboardHint(),
-      order: 10,
+      order: 11,
     ),
   ];
 }

@@ -8,9 +8,15 @@ void main() {
   test('buildPatientJourneySteps marks modules with correct base availability',
       () {
     final steps = buildPatientJourneySteps(null);
-    expect(steps.length, 11);
+    expect(steps.length, 12);
 
     final byId = {for (final s in steps) s.id: s};
+
+    // Psicoeducação é sempre disponível (conteúdo educativo, gated no servidor).
+    expect(
+      byId[JourneyStepId.psychoeducation]!.availability,
+      JourneyStepAvailability.available,
+    );
 
     expect(
       byId[JourneyStepId.questionnaires]!.availability,
@@ -29,12 +35,13 @@ void main() {
       JourneyStepAvailability.available,
     );
     expect(steps.map((step) => step.order),
-        orderedEquals([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]));
+        orderedEquals([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]));
     expect(byId[JourneyStepId.initialAssessment]!.order, 0);
-    expect(byId[JourneyStepId.genogram]!.order, 1);
-    expect(byId[JourneyStepId.timeline]!.order, 2);
-    expect(byId[JourneyStepId.problems]!.order, 4);
-    expect(byId[JourneyStepId.dailyMonitor]!.order, 9);
+    expect(byId[JourneyStepId.psychoeducation]!.order, 1);
+    expect(byId[JourneyStepId.genogram]!.order, 2);
+    expect(byId[JourneyStepId.timeline]!.order, 3);
+    expect(byId[JourneyStepId.problems]!.order, 5);
+    expect(byId[JourneyStepId.dailyMonitor]!.order, 10);
   });
 
   test('progress marks questionnaires completed when all active done', () {

@@ -26,11 +26,14 @@ class LibraryHero {
     required this.title,
     required this.tagline,
     required this.coverGradient,
+    this.id,
     this.eyebrow,
     this.coverUrl,
     this.kind = LibraryItemKind.movie,
   });
 
+  /// Id da indicação em destaque (para abrir a obra ao tocar).
+  final String? id;
   final String title;
   final String tagline;
 

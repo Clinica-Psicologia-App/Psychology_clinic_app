@@ -46,6 +46,7 @@ LibraryContent? buildLibraryContent(List<LibraryIndication> indications) {
 LibraryHero _hero(LibraryIndication ind) {
   final w = ind.work;
   return LibraryHero(
+    id: ind.id,
     title: w.displayTitle,
     tagline: (w.patientLayer.before?.trim().isNotEmpty ?? false)
         ? w.patientLayer.before!

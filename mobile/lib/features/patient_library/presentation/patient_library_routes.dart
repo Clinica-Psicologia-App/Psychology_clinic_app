@@ -2,12 +2,16 @@ import 'package:go_router/go_router.dart';
 
 import '../../profile/domain/profile_role.dart';
 import 'patient_library_page.dart';
+import 'patient_library_work_page.dart';
 import 'staff_library_catalog_page.dart';
 import 'staff_library_work_page.dart';
 
 /// Rotas da Biblioteca (paciente + catálogo clínico do psicólogo).
 abstract final class PatientLibraryRoutes {
   static const patient = '/patient/library-stream';
+
+  static String patientWork(String indicationId) =>
+      '/patient/library-stream/$indicationId';
 
   static String staffCatalog({
     required ProfileRole role,
@@ -28,6 +32,14 @@ List<RouteBase> patientLibraryRoutes() {
     GoRoute(
       path: 'library-stream',
       builder: (_, __) => const PatientLibraryPage(),
+      routes: [
+        GoRoute(
+          path: ':indicationId',
+          builder: (context, state) => PatientLibraryWorkPage(
+            indicationId: state.pathParameters['indicationId']!,
+          ),
+        ),
+      ],
     ),
   ];
 }

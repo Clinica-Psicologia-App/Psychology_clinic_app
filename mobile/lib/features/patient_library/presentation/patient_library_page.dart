@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../domain/library_content.dart';
 import '../providers/patient_library_providers.dart';
+import 'patient_library_routes.dart';
 import 'widgets/patient_library_view.dart';
 
 /// Biblioteca do paciente (estilo streaming). Tema escuro fixo e imersivo.
@@ -70,12 +72,13 @@ class _Content extends StatelessWidget {
   Widget build(BuildContext context) {
     return PatientLibraryView(
       content: content,
-      onItemTap: (item) {
-        // Detalhe da obra (camada do paciente) — próxima etapa.
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(item.title)),
-        );
-      },
+      onItemTap: (item) =>
+          context.push(PatientLibraryRoutes.patientWork(item.id)),
+      onHeroTap: content.hero.id == null
+          ? null
+          : () => context.push(
+                PatientLibraryRoutes.patientWork(content.hero.id!),
+              ),
     );
   }
 }

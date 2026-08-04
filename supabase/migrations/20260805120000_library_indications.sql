@@ -110,6 +110,7 @@ BEGIN
         'rating', w.rating,
         'synopsis', w.synopsis,
         'cover_url', w.cover_url,
+        'intensity', w.intensity,
         'patient_layer', w.patient_layer
       )
     ) AS item

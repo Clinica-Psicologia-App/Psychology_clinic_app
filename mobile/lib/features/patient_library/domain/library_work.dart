@@ -13,6 +13,7 @@ class LibraryWork {
     this.rating,
     this.synopsis,
     this.coverUrl,
+    this.intensity,
     this.patientLayer = const LibraryPatientLayer(),
   });
 
@@ -29,6 +30,9 @@ class LibraryWork {
   final String? rating;
   final String? synopsis;
   final String? coverUrl;
+
+  /// Leve | Moderada | Alta — usado para o aviso de conteúdo ao paciente.
+  final String? intensity;
   final LibraryPatientLayer patientLayer;
 
   factory LibraryWork.fromJson(Map<String, dynamic> json) {
@@ -44,6 +48,7 @@ class LibraryWork {
       rating: json['rating'] as String?,
       synopsis: json['synopsis'] as String?,
       coverUrl: json['cover_url'] as String?,
+      intensity: json['intensity'] as String?,
       patientLayer: LibraryPatientLayer.fromJson(
         json['patient_layer'] is Map
             ? Map<String, dynamic>.from(json['patient_layer'] as Map)

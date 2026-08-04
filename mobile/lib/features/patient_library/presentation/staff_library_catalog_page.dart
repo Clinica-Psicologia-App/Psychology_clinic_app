@@ -46,9 +46,9 @@ class _StaffLibraryCatalogPageState
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: const AppPageHeader(
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: AppPageHeader(
               icon: Icons.movie_filter_outlined,
               title: 'Biblioteca clínica',
               subtitle:

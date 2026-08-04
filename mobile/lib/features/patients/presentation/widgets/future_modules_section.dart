@@ -13,6 +13,7 @@ import '../../../daily_monitors/presentation/daily_monitor_routes.dart';
 import '../../../initial_assessment/presentation/initial_assessment_routes.dart';
 import '../../../mental_map/presentation/mental_map_routes.dart';
 import '../../../patient_infographic/presentation/patient_infographic_route_helpers.dart';
+import '../../../patient_library/presentation/patient_library_routes.dart';
 import '../../../patient_check_ins/presentation/patient_check_in_routes.dart';
 import '../../../patient_problems/presentation/patient_problem_routes.dart';
 import '../../../personality_reference/presentation/personality_reference_routes.dart';
@@ -317,6 +318,24 @@ class FutureModulesSection extends ConsumerWidget {
               'resources',
               () => context.push(
                 TherapyResourceRoutes.staffList(
+                  role: role,
+                  patientId: patientId,
+                ),
+              ),
+            ),
+          ),
+          _ModuleSpec(
+            icon: Icons.movie_filter_outlined,
+            title: 'Biblioteca de filmes',
+            subtitle: gatedSubtitle(
+              featureKey: 'resources',
+              subtitle: 'Filmes e séries por esquema — indicar ao paciente.',
+            ),
+            accentColor: AppColors.purple,
+            onTap: gatedTap(
+              'resources',
+              () => context.push(
+                PatientLibraryRoutes.staffCatalog(
                   role: role,
                   patientId: patientId,
                 ),

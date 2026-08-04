@@ -433,6 +433,7 @@ List<RouteBase> _staffPatientRoutes(ProfileRole role) {
             ...staffPatientGenogramRoutes(role: role),
             ...staffPatientMentalMapRoutes(role: role),
             ...staffPatientInfographicRoutes(role: role),
+            ...staffPatientLibraryRoutes(role: role),
             ...staffClinicalDashboardRoutes(role: role),
             ...staffPersonalityReferenceRoutes(role: role),
             ...staffClinicalReportRoutes(role: role),

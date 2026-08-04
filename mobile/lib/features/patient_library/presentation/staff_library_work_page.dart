@@ -9,6 +9,7 @@ import '../../profile/domain/profile_role.dart';
 import '../domain/library_work.dart';
 import '../domain/library_work_full.dart';
 import '../providers/staff_library_providers.dart';
+import 'widgets/library_cover.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 /// Ficha clínica completa (camada do psicólogo) + ação de indicar ao paciente.
@@ -118,37 +119,55 @@ class _Header extends StatelessWidget {
       if (work.rating != null) work.rating!,
     ].join(' · ');
 
+    final info = Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(work.displayTitle,
+            style: theme.textTheme.headlineSmall
+                ?.copyWith(fontWeight: FontWeight.w800, color: AppColors.navy)),
+        if ((work.originalTitle ?? '').isNotEmpty)
+          Text(work.originalTitle!,
+              style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.textMuted, fontStyle: FontStyle.italic)),
+        const SizedBox(height: 6),
+        Text(meta,
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: AppColors.textSecondary)),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            if (work.primarySchema != null)
+              _Tag(work.primarySchema!, AppColors.purple, primary: true),
+            for (final s in work.associatedSchemas) _Tag(s, AppColors.cyan),
+            if (work.intensity != null)
+              _Tag('Intensidade ${work.intensity}', AppColors.warning),
+          ],
+        ),
+      ],
+    );
+
     return ClayCard(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(work.displayTitle,
-                style: theme.textTheme.headlineSmall
-                    ?.copyWith(fontWeight: FontWeight.w800, color: AppColors.navy)),
-            if ((work.originalTitle ?? '').isNotEmpty)
-              Text(work.originalTitle!,
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.textMuted, fontStyle: FontStyle.italic)),
-            const SizedBox(height: 6),
-            Text(meta,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: AppColors.textSecondary)),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
-              children: [
-                if (work.primarySchema != null)
-                  _Tag(work.primarySchema!, AppColors.purple, primary: true),
-                for (final s in work.associatedSchemas)
-                  _Tag(s, AppColors.cyan),
-                if (work.intensity != null)
-                  _Tag('Intensidade ${work.intensity}', AppColors.warning),
-              ],
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: SizedBox(
+                width: 84,
+                height: 120,
+                child: LibraryCover(
+                  gradient: const [Color(0xFF3B2F8F), Color(0xFF11808F)],
+                  url: work.coverUrl,
+                ),
+              ),
             ),
+            const SizedBox(width: 14),
+            Expanded(child: info),
           ],
         ),
       ),

@@ -14,6 +14,7 @@ import '../../auth/providers/auth_providers.dart';
 import '../../clinics/presentation/clinic_routes.dart';
 import '../../patient_library/presentation/admin_library_routes.dart';
 import '../../psychoeducation/presentation/psychoeducation_routes.dart';
+import '../../clinic_entitlements/presentation/admin_plans_page.dart';
 import '../../profile/presentation/profile_routes.dart';
 import '../../profile/presentation/widgets/user_avatar.dart';
 import '../../questionnaires/presentation/questionnaire_routes.dart';
@@ -171,6 +172,16 @@ class PlatformAdminHomePage extends ConsumerWidget {
                     subtitle: 'Curar os módulos da Biblioteca e liberar.',
                     accentColor: AppColors.purple,
                     onTap: () => context.push(PsychoeducationRoutes.adminCatalog),
+                  ),
+                ),
+                MotionReveal(
+                  delay: staggerDelay(8),
+                  child: ClinicalModuleCard(
+                    icon: Icons.tune_outlined,
+                    title: 'Planos e permissões',
+                    subtitle: 'Liberar módulos por clínica, fora do plano.',
+                    accentColor: AppColors.blue,
+                    onTap: () => context.push(AdminPlansPage.route),
                   ),
                 ),
               ],

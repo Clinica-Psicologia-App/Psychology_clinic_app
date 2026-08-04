@@ -5,11 +5,16 @@ import 'admin_psychoeducation_editor_page.dart';
 import 'psychoeducation_journey_page.dart';
 import 'psychoeducation_module_page.dart';
 
-/// Rotas da Biblioteca de Psicoeducação (paciente + curadoria do admin).
+/// Rotas da Biblioteca de Psicoeducação (paciente + psicólogo + curadoria admin).
 abstract final class PsychoeducationRoutes {
   // Paciente.
   static const patient = '/patient/psychoeducation';
   static String patientModule(String id) => '/patient/psychoeducation/$id';
+
+  // Psicólogo (leitura da referência).
+  static const psychologist = '/psychologist/psychoeducation';
+  static String psychologistModule(String id) =>
+      '/psychologist/psychoeducation/$id';
 
   // Admin (curadoria).
   static const adminCatalog = '/platform/psychoeducation';
@@ -22,7 +27,30 @@ List<RouteBase> psychoeducationPatientRoutes() {
   return [
     GoRoute(
       path: 'psychoeducation',
-      builder: (_, __) => const PsychoeducationJourneyPage(),
+      builder: (_, __) => PsychoeducationJourneyPage(
+        moduleRouteBuilder: PsychoeducationRoutes.patientModule,
+      ),
+      routes: [
+        GoRoute(
+          path: ':moduleId',
+          builder: (_, state) => PsychoeducationModulePage(
+            moduleId: state.pathParameters['moduleId']!,
+          ),
+        ),
+      ],
+    ),
+  ];
+}
+
+/// Sub-rotas do psicólogo (leitura; montadas sob /psychologist).
+List<RouteBase> psychoeducationPsychologistRoutes() {
+  return [
+    GoRoute(
+      path: 'psychoeducation',
+      builder: (_, __) => PsychoeducationJourneyPage(
+        moduleRouteBuilder: PsychoeducationRoutes.psychologistModule,
+        staffView: true,
+      ),
       routes: [
         GoRoute(
           path: ':moduleId',

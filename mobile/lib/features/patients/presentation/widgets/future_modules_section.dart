@@ -14,6 +14,7 @@ import '../../../initial_assessment/presentation/initial_assessment_routes.dart'
 import '../../../mental_map/presentation/mental_map_routes.dart';
 import '../../../patient_infographic/presentation/patient_infographic_route_helpers.dart';
 import '../../../patient_library/presentation/patient_library_routes.dart';
+import '../../../psychoeducation/presentation/psychoeducation_routes.dart';
 import '../../../patient_check_ins/presentation/patient_check_in_routes.dart';
 import '../../../patient_problems/presentation/patient_problem_routes.dart';
 import '../../../personality_reference/presentation/personality_reference_routes.dart';
@@ -340,6 +341,19 @@ class FutureModulesSection extends ConsumerWidget {
                   patientId: patientId,
                 ),
               ),
+            ),
+          ),
+          _ModuleSpec(
+            icon: Icons.auto_stories_outlined,
+            title: 'Psicoeducação',
+            subtitle: gatedSubtitle(
+              featureKey: 'resources',
+              subtitle: 'Módulos que o paciente vê na jornada.',
+            ),
+            accentColor: AppColors.moduleMentalMap,
+            onTap: gatedTap(
+              'resources',
+              () => context.push(PsychoeducationRoutes.psychologist),
             ),
           ),
         ],

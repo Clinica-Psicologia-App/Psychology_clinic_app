@@ -8,7 +8,6 @@ import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/clay_card.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../data/admin_psychoeducation_repository.dart';
-import '../domain/psychoeducation_module.dart';
 import '../providers/psychoeducation_providers.dart';
 import 'psychoeducation_routes.dart';
 

@@ -20,6 +20,7 @@ import '../../features/patient_journey/presentation/patient_journey_route_helper
 import '../../features/patient_library/presentation/patient_library_routes.dart';
 import '../../features/patient_library/presentation/admin_library_routes.dart';
 import '../../features/psychoeducation/presentation/psychoeducation_routes.dart';
+import '../../features/clinic_entitlements/presentation/admin_plans_page.dart';
 import '../../features/genogram/presentation/genogram_route_helpers.dart';
 import '../../features/clinical_dashboard/presentation/clinical_dashboard_route_helpers.dart';
 import '../../features/clinical_reports/presentation/clinical_report_route_helpers.dart';
@@ -269,6 +270,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
               ...adminLibraryRoutes(),
               ...psychoeducationAdminRoutes(),
+              GoRoute(
+                path: 'plans',
+                builder: (_, __) => const AdminPlansPage(),
+              ),
             ],
           ),
         ],
@@ -287,6 +292,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
                 path: 'questionnaires',
                 builder: (_, __) => const PsychologistQuestionnairesPage(),
               ),
+              ...psychoeducationPsychologistRoutes(),
               ...patientInvitationRoutesFor(ProfileRole.psychologist),
               ..._staffPatientRoutes(ProfileRole.psychologist),
             ],

@@ -10,12 +10,24 @@ import '../../../shared/widgets/clay_card.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../domain/psychoeducation_module.dart';
 import '../providers/psychoeducation_providers.dart';
-import 'psychoeducation_routes.dart';
 
-/// Jornada de psicoeducação do paciente: módulos organizados por etapa
+/// Jornada de psicoeducação: módulos organizados por etapa
 /// (Conhecer · Compreender · Transformar).
+///
+/// Usada pelo paciente e, em modo leitura, pelo psicólogo — a diferença é só a
+/// rota do módulo (`moduleRouteBuilder`) e o texto do cabeçalho (`staffView`).
 class PsychoeducationJourneyPage extends ConsumerWidget {
-  const PsychoeducationJourneyPage({super.key});
+  const PsychoeducationJourneyPage({
+    super.key,
+    required this.moduleRouteBuilder,
+    this.staffView = false,
+  });
+
+  /// Constrói a rota do leitor de um módulo a partir do id.
+  final String Function(String moduleId) moduleRouteBuilder;
+
+  /// Cabeçalho na visão do psicólogo (referência) x paciente (jornada).
+  final bool staffView;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -23,7 +35,9 @@ class PsychoeducationJourneyPage extends ConsumerWidget {
 
     return AppScaffold(
       title: 'Biblioteca de Psicoeducação',
-      subtitle: 'Uma jornada para entender e transformar seus padrões',
+      subtitle: staffView
+          ? 'Os módulos que os pacientes veem'
+          : 'Uma jornada para entender e transformar seus padrões',
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => _Error(
@@ -31,16 +45,26 @@ class PsychoeducationJourneyPage extends ConsumerWidget {
           onRetry: () => ref.invalidate(psychoeducationJourneyProvider),
         ),
         data: (modules) => modules.isEmpty
-            ? const _Empty()
-            : _Journey(modules: modules),
+            ? _Empty(staffView: staffView)
+            : _Journey(
+                modules: modules,
+                moduleRouteBuilder: moduleRouteBuilder,
+                staffView: staffView,
+              ),
       ),
     );
   }
 }
 
 class _Journey extends StatelessWidget {
-  const _Journey({required this.modules});
+  const _Journey({
+    required this.modules,
+    required this.moduleRouteBuilder,
+    required this.staffView,
+  });
   final List<PsychoeducationModule> modules;
+  final String Function(String moduleId) moduleRouteBuilder;
+  final bool staffView;
 
   @override
   Widget build(BuildContext context) {
@@ -49,17 +73,20 @@ class _Journey extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(
             AppSpacing.xl, AppSpacing.lg, AppSpacing.xl, AppSpacing.xxl),
         children: [
-          const AppPageHeader(
+          AppPageHeader(
             icon: Icons.auto_stories_outlined,
-            title: 'Sua jornada',
-            subtitle:
-                'Percorra os módulos no seu ritmo. Cada um traz cards para ler, '
-                'refletir e praticar.',
+            title: staffView ? 'Biblioteca de Psicoeducação' : 'Sua jornada',
+            subtitle: staffView
+                ? 'Referência dos módulos liberados aos pacientes. Toque para '
+                    'revisar o conteúdo.'
+                : 'Percorra os módulos no seu ritmo. Cada um traz cards para ler, '
+                    'refletir e praticar.',
           ),
           const SizedBox(height: AppSpacing.lg),
           for (final stage in PsychoeducationStage.values)
             _StageSection(
               stage: stage,
+              moduleRouteBuilder: moduleRouteBuilder,
               modules:
                   modules.where((m) => m.stage == stage.label).toList()
                     ..sort((a, b) => a.number.compareTo(b.number)),
@@ -71,9 +98,14 @@ class _Journey extends StatelessWidget {
 }
 
 class _StageSection extends StatelessWidget {
-  const _StageSection({required this.stage, required this.modules});
+  const _StageSection({
+    required this.stage,
+    required this.modules,
+    required this.moduleRouteBuilder,
+  });
   final PsychoeducationStage stage;
   final List<PsychoeducationModule> modules;
+  final String Function(String moduleId) moduleRouteBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -93,7 +125,7 @@ class _StageSection extends StatelessWidget {
                 ?.copyWith(color: AppColors.textMuted)),
         const SizedBox(height: AppSpacing.sm),
         for (final m in modules) ...[
-          _ModuleCard(module: m),
+          _ModuleCard(module: m, moduleRouteBuilder: moduleRouteBuilder),
           const SizedBox(height: AppSpacing.sm),
         ],
         const SizedBox(height: AppSpacing.md),
@@ -103,8 +135,9 @@ class _StageSection extends StatelessWidget {
 }
 
 class _ModuleCard extends StatelessWidget {
-  const _ModuleCard({required this.module});
+  const _ModuleCard({required this.module, required this.moduleRouteBuilder});
   final PsychoeducationModule module;
+  final String Function(String moduleId) moduleRouteBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -113,8 +146,7 @@ class _ModuleCard extends StatelessWidget {
     return ClayCard(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () =>
-            context.push(PsychoeducationRoutes.patientModule(module.id)),
+        onTap: () => context.push(moduleRouteBuilder(module.id)),
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Row(
@@ -174,7 +206,8 @@ class _ModuleCard extends StatelessWidget {
 }
 
 class _Empty extends StatelessWidget {
-  const _Empty();
+  const _Empty({required this.staffView});
+  final bool staffView;
   @override
   Widget build(BuildContext context) => Center(
         child: Padding(
@@ -183,15 +216,20 @@ class _Empty extends StatelessWidget {
             const Icon(Icons.auto_stories_outlined,
                 size: 56, color: AppColors.textMuted),
             const SizedBox(height: AppSpacing.md),
-            Text('Sua Biblioteca está a caminho',
+            Text(
+                staffView
+                    ? 'Nenhum módulo publicado ainda'
+                    : 'Sua Biblioteca está a caminho',
                 style: Theme.of(context)
                     .textTheme
                     .titleMedium
                     ?.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: AppSpacing.xs),
-            const Text(
-              'Os módulos de psicoeducação aparecem aqui assim que forem '
-              'liberados.',
+            Text(
+              staffView
+                  ? 'Os módulos aparecem aqui assim que o admin publicá-los.'
+                  : 'Os módulos de psicoeducação aparecem aqui assim que forem '
+                      'liberados.',
               textAlign: TextAlign.center,
             ),
           ]),

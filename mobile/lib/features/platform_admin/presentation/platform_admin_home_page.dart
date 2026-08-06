@@ -9,6 +9,7 @@ import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/clinical_module_card.dart';
 import '../../../shared/widgets/esquema_core_logo.dart';
+import '../../../shared/widgets/home_greeting_header.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../clinics/presentation/clinic_routes.dart';
@@ -59,6 +60,16 @@ class PlatformAdminHomePage extends ConsumerWidget {
                 showTagline: true,
               ),
             ),
+            if (profile != null) ...[
+              HomeGreetingHeader(
+                profile: profile,
+                accent: AppColors.purple,
+                name: profile.fullName.trim().split(RegExp(r'\s+')).first,
+                contextLine: 'Visão geral da plataforma e da operação.',
+                watermarkIcon: Icons.admin_panel_settings_outlined,
+              ),
+              const SizedBox(height: AppSpacing.xl),
+            ],
             const AppPageHeader(
               icon: Icons.admin_panel_settings_outlined,
               title: 'Gestão global',

@@ -27,6 +27,7 @@ import '../../patient_journey/presentation/patient_journey_routes.dart';
 import '../../patient_invitations/domain/patient_invitation.dart';
 import '../../patient_invitations/providers/patient_invitations_providers.dart';
 import '../../patient_invitations/presentation/patient_invitation_routes.dart';
+import '../../patients/domain/psychologist_alert.dart';
 import '../../patients/providers/patients_providers.dart';
 import '../../patients/presentation/patient_routes.dart';
 import '../../profile/domain/profile_role.dart';
@@ -256,6 +257,7 @@ class _PsychologistWorkspace extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const _PsychologistAlertsCard(),
         const AppSectionHeader(
           title: 'Central de trabalho',
           subtitle: 'Toque em um número para abrir a tela correspondente.',
@@ -424,6 +426,226 @@ class _PsychologistWorkspace extends ConsumerWidget {
         ),
       ],
     );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Alertas clínicos do psicólogo
+// ---------------------------------------------------------------------------
+
+/// Painel de atenções: convites expirando, check-ins em falta,
+/// questionários parados. Só aparece quando há ao menos um alerta.
+class _PsychologistAlertsCard extends ConsumerWidget {
+  const _PsychologistAlertsCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final alertsAsync = ref.watch(psychologistAlertsProvider);
+
+    return alertsAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (alerts) {
+        if (alerts.isEmpty) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+          child: _AlertsPanel(alerts: alerts),
+        );
+      },
+    );
+  }
+}
+
+class _AlertsPanel extends StatefulWidget {
+  const _AlertsPanel({required this.alerts});
+
+  final List<PsychologistAlert> alerts;
+
+  @override
+  State<_AlertsPanel> createState() => _AlertsPanelState();
+}
+
+class _AlertsPanelState extends State<_AlertsPanel> {
+  static const _initialCount = 3;
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final alerts = widget.alerts;
+    final hasMore = alerts.length > _initialCount;
+    final visible =
+        _expanded ? alerts : alerts.take(_initialCount).toList();
+
+    return ClayCard(
+      accentColor: AppColors.warning,
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.xlAll),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.md,
+              AppSpacing.xs,
+            ),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.notifications_outlined,
+                  size: 17,
+                  color: AppColors.warning,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Text(
+                  'Atenções',
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: AppColors.navy,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 7,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.warning.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    '${alerts.length}',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: AppColors.warning,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          for (final alert in visible) ...[
+            Divider(
+              height: 1,
+              thickness: 0.5,
+              color: AppColors.warning.withValues(alpha: 0.18),
+            ),
+            _AlertRow(alert: alert),
+          ],
+          if (hasMore) ...[
+            Divider(
+              height: 1,
+              thickness: 0.5,
+              color: AppColors.warning.withValues(alpha: 0.18),
+            ),
+            InkWell(
+              onTap: () => setState(() => _expanded = !_expanded),
+              borderRadius: const BorderRadius.only(
+                bottomLeft: Radius.circular(AppRadius.xl),
+                bottomRight: Radius.circular(AppRadius.xl),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.lg,
+                  vertical: AppSpacing.sm,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _expanded
+                          ? 'Mostrar menos'
+                          : 'Ver todos (${alerts.length})',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: AppColors.warning,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      _expanded
+                          ? Icons.expand_less_rounded
+                          : Icons.expand_more_rounded,
+                      size: 16,
+                      color: AppColors.warning,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AlertRow extends StatelessWidget {
+  const _AlertRow({required this.alert});
+
+  final PsychologistAlert alert;
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = switch (alert.kind) {
+      PsychologistAlertKind.missingCheckin => Icons.favorite_border,
+      PsychologistAlertKind.expiringInvitation =>
+        Icons.mark_email_unread_outlined,
+      PsychologistAlertKind.staleQuestionnaire =>
+        Icons.assignment_late_outlined,
+    };
+
+    return InkWell(
+      onTap: () => _navigate(context),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: 11,
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 17, color: AppColors.warning),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(
+              child: Text(
+                alert.message,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: AppColors.navy,
+                      height: 1.35,
+                    ),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            const Icon(
+              Icons.arrow_forward_ios_rounded,
+              size: 11,
+              color: AppColors.textMuted,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _navigate(BuildContext context) {
+    switch (alert.kind) {
+      case PsychologistAlertKind.missingCheckin:
+        if (alert.patientId != null) {
+          context.push(
+            PatientRoutes.detail(ProfileRole.psychologist, alert.patientId!),
+          );
+        }
+      case PsychologistAlertKind.expiringInvitation:
+        context.push(PatientInvitationRoutes.list(ProfileRole.psychologist));
+      case PsychologistAlertKind.staleQuestionnaire:
+        if (alert.patientId != null) {
+          context.push(
+            PatientRoutes.detail(ProfileRole.psychologist, alert.patientId!),
+          );
+        }
+    }
   }
 }
 

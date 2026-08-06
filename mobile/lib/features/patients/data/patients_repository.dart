@@ -6,6 +6,7 @@ import '../../../core/network/edge_api_client.dart';
 import '../../../core/supabase/supabase_bootstrap.dart';
 import '../domain/create_patient_request.dart';
 import '../domain/patient.dart';
+import '../domain/psychologist_alert.dart';
 import '../domain/psychologist_option.dart';
 import '../domain/update_patient_request.dart';
 
@@ -270,6 +271,16 @@ access_profile:profiles!patients_profile_id_fkey(is_active, avatar_type, avatar_
         'delete_patient_as_admin',
         params: {'p_patient_id': patientId},
       );
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  Future<List<PsychologistAlert>> fetchAlerts() async {
+    try {
+      final data = await _client.rpc('get_psychologist_alerts');
+      final json = Map<String, dynamic>.from(data as Map);
+      return PsychologistAlert.fromRpcJson(json);
     } catch (e) {
       throw mapToAppException(e);
     }

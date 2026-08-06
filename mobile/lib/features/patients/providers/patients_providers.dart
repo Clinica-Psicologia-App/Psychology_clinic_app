@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/patients_repository.dart';
 import '../domain/create_patient_request.dart';
 import '../domain/patient.dart';
+import '../domain/psychologist_alert.dart';
 import '../domain/psychologist_option.dart';
 import '../domain/update_patient_request.dart';
 
@@ -42,6 +43,10 @@ final psychologistsOptionsProvider =
 /// Registro do próprio paciente logado (para gatear seus módulos por liberação).
 final myPatientProvider = FutureProvider<Patient?>((ref) {
   return ref.read(patientsRepositoryProvider).getMyPatient();
+});
+
+final psychologistAlertsProvider = FutureProvider<List<PsychologistAlert>>((ref) {
+  return ref.read(patientsRepositoryProvider).fetchAlerts();
 });
 
 /// Libera/revoga o acesso do paciente aos resultados clínicos (psicólogo).

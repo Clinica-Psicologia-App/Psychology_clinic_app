@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/patients_repository.dart';
 import '../domain/create_patient_request.dart';
 import '../domain/patient.dart';
+import '../domain/patient_vitals.dart';
 import '../domain/psychologist_alert.dart';
 import '../domain/psychologist_option.dart';
 import '../domain/update_patient_request.dart';
@@ -47,6 +48,11 @@ final myPatientProvider = FutureProvider<Patient?>((ref) {
 
 final psychologistAlertsProvider = FutureProvider<List<PsychologistAlert>>((ref) {
   return ref.read(patientsRepositoryProvider).fetchAlerts();
+});
+
+final patientVitalsProvider =
+    FutureProvider.family<PatientVitals?, String>((ref, patientId) {
+  return ref.read(patientsRepositoryProvider).fetchVitals(patientId);
 });
 
 /// Libera/revoga o acesso do paciente aos resultados clínicos (psicólogo).

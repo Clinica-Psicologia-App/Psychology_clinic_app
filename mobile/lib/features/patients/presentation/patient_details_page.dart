@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_animations.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../../shared/widgets/app_motion.dart';
@@ -11,10 +13,14 @@ import '../../../shared/widgets/error_banner.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../clinical_reports/presentation/clinical_report_routes.dart';
+import '../../patient_check_ins/presentation/patient_check_in_routes.dart';
 import '../../patient_invitations/domain/patient_invitation_draft.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../profile/presentation/widgets/user_avatar.dart';
+import '../../questionnaires/presentation/questionnaire_routes.dart';
+import '../../therapy_goals/presentation/therapy_goal_routes.dart';
 import '../domain/patient.dart';
+import '../domain/patient_vitals.dart';
 import '../providers/patients_providers.dart';
 import 'patient_routes.dart';
 import 'widgets/future_modules_section.dart';
@@ -214,6 +220,8 @@ class _PatientDetailsBody extends StatelessWidget {
                 icon: const Icon(Icons.arrow_forward_rounded),
               ),
             ),
+            const SizedBox(height: AppSpacing.md),
+            _PatientVitalsSummary(role: role, patient: patient),
             const SizedBox(height: AppSpacing.xl),
             FutureModulesSection(
               role: role,
@@ -342,6 +350,221 @@ class _PatientHeader extends StatelessWidget {
     if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
     return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
         .toUpperCase();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Resumo vital do paciente
+// ---------------------------------------------------------------------------
+
+/// Painel de três métricas que dá ao psicólogo um panorama imediato
+/// antes de entrar nos módulos: último check-in, metas ativas e
+/// questionários em andamento. Cada coluna é tappable.
+class _PatientVitalsSummary extends ConsumerWidget {
+  const _PatientVitalsSummary({required this.role, required this.patient});
+
+  final ProfileRole role;
+  final Patient patient;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final vitalsAsync = ref.watch(patientVitalsProvider(patient.id));
+
+    return vitalsAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (vitals) {
+        if (vitals == null) return const SizedBox.shrink();
+        return _VitalsPanel(role: role, patient: patient, vitals: vitals);
+      },
+    );
+  }
+}
+
+class _VitalsPanel extends StatelessWidget {
+  const _VitalsPanel({
+    required this.role,
+    required this.patient,
+    required this.vitals,
+  });
+
+  final ProfileRole role;
+  final Patient patient;
+  final PatientVitals vitals;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return ClayCard(
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.xlAll),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.xs,
+            ),
+            child: Text(
+              'Resumo rápido',
+              style: theme.textTheme.labelMedium?.copyWith(
+                color: AppColors.textMuted,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.4,
+              ),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: _VitalCell(
+                    icon: Icons.favorite_border,
+                    accent: AppColors.turquoise,
+                    label: 'Último check-in',
+                    value: vitals.lastCheckinLabel,
+                    daysCount: vitals.lastCheckinDays,
+                    onTap: () => context.push(
+                      PatientCheckInRoutes.staffList(
+                        role: role,
+                        patientId: patient.id,
+                      ),
+                    ),
+                  ),
+                ),
+                Container(width: 1, height: 52, color: AppColors.border),
+                Expanded(
+                  child: _VitalCell(
+                    icon: Icons.flag_outlined,
+                    accent: AppColors.purple,
+                    label: 'Metas ativas',
+                    value: '${vitals.activeGoals}',
+                    onTap: () => context.push(
+                      TherapyGoalRoutes.staffList(
+                        role: role,
+                        patientId: patient.id,
+                      ),
+                    ),
+                  ),
+                ),
+                Container(width: 1, height: 52, color: AppColors.border),
+                Expanded(
+                  child: _VitalCell(
+                    icon: Icons.assignment_outlined,
+                    accent: AppColors.blue,
+                    label: 'Questionários',
+                    value: vitals.pendingQuestionnaires == 0
+                        ? 'Em dia'
+                        : '${vitals.pendingQuestionnaires} pend.',
+                    highlight: vitals.pendingQuestionnaires > 0,
+                    onTap: () => context.push(
+                      QuestionnaireRoutes.list(
+                        role: role,
+                        patientId: patient.id,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VitalCell extends StatelessWidget {
+  const _VitalCell({
+    required this.icon,
+    required this.accent,
+    required this.label,
+    required this.value,
+    required this.onTap,
+    this.daysCount,
+    this.highlight = false,
+  });
+
+  final IconData icon;
+  final Color accent;
+  final String label;
+  final String value;
+  final VoidCallback onTap;
+  final int? daysCount;
+  final bool highlight;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final effectiveAccent = highlight ? AppColors.warning : accent;
+
+    // Anima o número para dar vida ao painel sem pesar.
+    Widget valueWidget;
+    final numericValue = int.tryParse(value.replaceAll(RegExp(r'\D'), ''));
+    if (numericValue != null && !highlight) {
+      final duration = AppAnimations.resolve(
+        context,
+        const Duration(milliseconds: 320),
+      );
+      valueWidget = TweenAnimationBuilder<int>(
+        duration: duration,
+        tween: IntTween(begin: 0, end: numericValue),
+        builder: (_, v, __) => Text(
+          value.replaceAll(RegExp(r'\d+'), '$v'),
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: AppColors.navy,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      );
+    } else {
+      valueWidget = Text(
+        value,
+        style: theme.textTheme.titleMedium?.copyWith(
+          color: highlight ? effectiveAccent : AppColors.navy,
+          fontWeight: FontWeight.w700,
+        ),
+      );
+    }
+
+    return Semantics(
+      button: true,
+      label: '$label: $value',
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: AppRadius.mdAll,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.xs,
+            vertical: AppSpacing.sm,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: 19, color: effectiveAccent),
+              const SizedBox(height: 4),
+              valueWidget,
+              const SizedBox(height: 2),
+              Text(
+                label,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                  fontSize: 11,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
 

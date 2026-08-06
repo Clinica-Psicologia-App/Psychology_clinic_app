@@ -144,11 +144,11 @@ class _HomeBody extends StatelessWidget {
                 showTagline: true,
               ),
             ),
-          MotionReveal(
-            child: role == ProfileRole.patient
-                ? _PatientGreetingHeader(profile: profile)
-                : _ProfileHeader(profile: profile),
-          ),
+          // O HomeGreetingHeader tem coreografia própria de entrada — sem
+          // MotionReveal externo para não animar em dobro.
+          role == ProfileRole.patient
+              ? _PatientGreetingHeader(profile: profile)
+              : _ProfileHeader(profile: profile),
           const SizedBox(height: AppSpacing.xl),
           if (role == ProfileRole.psychologist) const _PsychologistWorkspace(),
           if (role == ProfileRole.patient) ...[

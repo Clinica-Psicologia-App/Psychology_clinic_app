@@ -1001,51 +1001,105 @@ class _ProfileHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final firstName = profile.fullName.trim().split(RegExp(r'\s+')).first;
-    final greeting = _PatientGreetingHeader.greetingForHour(
-      DateTime.now().hour,
-    );
+    final hour = DateTime.now().hour;
+    final greeting = _PatientGreetingHeader.greetingForHour(hour);
 
     final patients = ref.watch(patientsListProvider).valueOrNull;
     final invitations = ref.watch(patientInvitationsListProvider).valueOrNull;
 
     return Container(
       width: double.infinity,
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        // Um leve véu turquesa sobre a superfície dá calor ao cabeçalho sem
+        // virar um "hero" chapado de gradiente.
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.surface,
+            AppColors.turquoise.withValues(alpha: 0.10),
+          ],
+        ),
         borderRadius: AppRadius.xlAll,
+        border: Border.all(
+          color: AppColors.turquoise.withValues(alpha: 0.16),
+        ),
         boxShadow: AppShadows.clay(),
       ),
-      padding: const EdgeInsets.all(AppSpacing.xl),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Stack(
         children: [
-          // UserAvatar, e não um círculo com a inicial desenhado aqui: ele já
-          // resolve foto, avatar geométrico e iniciais, então a saudação
-          // reflete a identidade escolhida em vez de ignorá-la.
-          Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              boxShadow: AppShadows.clay(AppColors.turquoise),
+          // Marca-d'água discreta: dá assinatura ao cabeçalho sem competir
+          // com o conteúdo.
+          Positioned(
+            right: -10,
+            top: -12,
+            child: Icon(
+              Icons.psychology_alt_outlined,
+              size: 108,
+              color: AppColors.turquoise.withValues(alpha: 0.07),
             ),
-            child: UserAvatar(profile: profile, size: 56),
           ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+          Padding(
+            padding: const EdgeInsets.all(AppSpacing.xl),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(
-                  '$greeting, $firstName',
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    color: AppColors.navy,
-                    fontWeight: FontWeight.w600,
+                // Avatar maior, com anel branco e brilho clay — a identidade
+                // do profissional ganha o destaque pedido.
+                Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    shape: BoxShape.circle,
+                    boxShadow: AppShadows.clay(AppColors.turquoise),
                   ),
+                  child: UserAvatar(profile: profile, size: 76),
                 ),
-                const SizedBox(height: AppSpacing.xxs),
-                Text(
-                  _contextLine(patients?.length, invitations),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
+                const SizedBox(width: AppSpacing.lg),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            _timeIcon(hour),
+                            size: 15,
+                            color: AppColors.turquoise,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            greeting.toUpperCase(),
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: AppColors.turquoise,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        firstName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.headlineMedium?.copyWith(
+                          color: AppColors.navy,
+                          fontWeight: FontWeight.w800,
+                          height: 1.05,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        _contextLine(patients?.length, invitations),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: AppColors.textSecondary,
+                          height: 1.35,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -1054,6 +1108,13 @@ class _ProfileHeader extends ConsumerWidget {
         ],
       ),
     );
+  }
+
+  /// Ícone do período do dia, para acompanhar a saudação.
+  static IconData _timeIcon(int hour) {
+    if (hour < 12) return Icons.wb_twilight_outlined;
+    if (hour < 18) return Icons.wb_sunny_outlined;
+    return Icons.nightlight_outlined;
   }
 
   /// Uma frase sobre o estado real da carteira. Enquanto os dados carregam,

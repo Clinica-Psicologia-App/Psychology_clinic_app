@@ -9,12 +9,11 @@
 -- computa os 18 esquemas individualmente via question_scoring_rules e os
 -- embute no campo JSONB snapshot da linha de resultado.
 
-INSERT INTO question_categories (questionnaire_id, code, name, sort_order)
+INSERT INTO question_categories (questionnaire_id, code, name)
 SELECT
   q.id,
   'YSQ_GERAL',
-  'YSQ — Pontuação Geral',
-  1
+  'YSQ — Pontuação Geral'
 FROM questionnaires q
 WHERE q.code = 'YSQ_FOUNDATION_V1'
 ON CONFLICT DO NOTHING;

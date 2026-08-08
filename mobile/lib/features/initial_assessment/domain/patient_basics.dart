@@ -1,3 +1,6 @@
+import '../../../features/profile/domain/avatar_config.dart';
+import '../../../features/profile/domain/avatar_type.dart';
+
 /// Bloco 1 — "Conhecendo Você". Vive na tabela `patients` (visível ao
 /// paciente). A escrita pelo paciente passa pela edge function
 /// `update-patient-basics`, já que a RLS de `patients` só permite UPDATE
@@ -25,6 +28,10 @@ class PatientBasics {
     this.countryBirth,
     this.ethnicGroup,
     this.religiousOrientation,
+    // Avatar — vem do join com profiles.
+    this.avatarType = AvatarType.initials,
+    this.photoUrl,
+    this.avatarConfig,
   });
 
   /// Somente leitura para o paciente (identidade é gerida pela equipe).
@@ -47,6 +54,20 @@ class PatientBasics {
   final String? ethnicGroup;
   final String? religiousOrientation;
 
+  // Avatar (do perfil).
+  final AvatarType avatarType;
+  final String? photoUrl;
+  final AvatarConfig? avatarConfig;
+
+  /// Iniciais derivadas do nome completo (fallback para avatar tipo initials).
+  String get initials {
+    final name = (fullName ?? preferredName ?? '').trim();
+    if (name.isEmpty) return '?';
+    final parts = name.split(RegExp(r'\s+'));
+    if (parts.length == 1) return parts.first[0].toUpperCase();
+    return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+  }
+
   bool get hasDemographicExtras =>
       relationshipStatus != null ||
       sexualOrientation != null ||
@@ -66,7 +87,31 @@ class PatientBasics {
     return years < 0 ? null : years;
   }
 
-  factory PatientBasics.fromJson(Map<String, dynamic> json) {
+  factory PatientBasics.fromJson(
+    Map<String, dynamic> json, {
+    String Function(String path)? publicUrlOf,
+  }) {
+    final profile = json['access_profile'];
+    final p = profile is Map
+        ? Map<String, dynamic>.from(profile)
+        : const <String, dynamic>{};
+
+    final avatarUpdatedAt = p['avatar_updated_at'] == null
+        ? null
+        : DateTime.tryParse(p['avatar_updated_at'] as String);
+
+    String? resolvedPhotoUrl;
+    final path = (p['avatar_path'] as String?)?.trim();
+    if (path != null && path.isNotEmpty && publicUrlOf != null) {
+      final base = publicUrlOf(path);
+      resolvedPhotoUrl = avatarUpdatedAt != null
+          ? '$base?v=${avatarUpdatedAt.millisecondsSinceEpoch}'
+          : base;
+    } else {
+      resolvedPhotoUrl = (p['avatar_url'] as String?)?.trim();
+      if (resolvedPhotoUrl?.isEmpty ?? false) resolvedPhotoUrl = null;
+    }
+
     return PatientBasics(
       fullName: json['full_name'] as String?,
       preferredName: json['preferred_name'] as String?,
@@ -84,6 +129,13 @@ class PatientBasics {
       countryBirth: json['country_birth'] as String?,
       ethnicGroup: json['ethnic_group'] as String?,
       religiousOrientation: json['religious_orientation'] as String?,
+      avatarType: AvatarType.fromKey(p['avatar_type'] as String?),
+      photoUrl: resolvedPhotoUrl,
+      avatarConfig: AvatarConfig.fromJson(
+        p['avatar_config'] is Map
+            ? Map<String, dynamic>.from(p['avatar_config'] as Map)
+            : null,
+      ),
     );
   }
 

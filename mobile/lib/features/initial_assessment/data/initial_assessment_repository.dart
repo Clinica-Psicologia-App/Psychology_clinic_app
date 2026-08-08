@@ -70,7 +70,12 @@ class InitialAssessmentRepository {
       'has_children, uses_medication, medication_notes, psychiatric_followup, '
       'psychiatrist_notes, important_to_know, '
       'relationship_status, sexual_orientation, country_birth, '
-      'ethnic_group, religious_orientation';
+      'ethnic_group, religious_orientation, '
+      'access_profile:profiles!patients_profile_id_fkey'
+      '(avatar_type, avatar_path, avatar_url, avatar_config, avatar_updated_at)';
+
+  String _avatarPublicUrl(String path) =>
+      _client.storage.from('avatars').getPublicUrl(path);
 
   Future<InitialAssessment> load(String patientId) async {
     try {
@@ -113,7 +118,10 @@ class InitialAssessmentRepository {
         patientId: patientId,
         basics: basicsRow == null
             ? null
-            : PatientBasics.fromJson(Map<String, dynamic>.from(basicsRow)),
+            : PatientBasics.fromJson(
+                Map<String, dynamic>.from(basicsRow),
+                publicUrlOf: _avatarPublicUrl,
+              ),
         intake: intakeRow == null
             ? null
             : PatientIntake.fromJson(Map<String, dynamic>.from(intakeRow)),

@@ -13,6 +13,8 @@ import '../domain/initial_assessment.dart';
 import '../domain/life_area.dart';
 import '../domain/patient_basics.dart';
 import '../providers/initial_assessment_providers.dart';
+import '../../profile/domain/profile_role.dart' show ProfileRole;
+import '../../profile/presentation/widgets/user_avatar.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 /// Tela 1 do fluxo Conhecer na lente do terapeuta — leitura das respostas do
@@ -816,17 +818,16 @@ class _PatientBasicsCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Container(
-                  width: 30,
-                  height: 30,
-                  decoration: BoxDecoration(
-                    color: AppColors.navy.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(9),
-                  ),
-                  child: const Icon(Icons.person_outline,
-                      size: 17, color: AppColors.navy),
+                UserAvatar.parts(
+                  fullName: basics.fullName ?? basics.preferredName ?? '',
+                  initials: basics.initials,
+                  role: ProfileRole.patient,
+                  avatarType: basics.avatarType,
+                  photoUrl: basics.photoUrl,
+                  avatarConfig: basics.avatarConfig,
+                  size: 44,
                 ),
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,

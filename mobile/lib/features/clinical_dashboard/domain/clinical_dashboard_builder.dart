@@ -262,11 +262,11 @@ List<ConsolidatedSchemaRow> buildConsolidatedSchemas({
     }
   }
 
+  // Apenas YSQ (esquemas Young) e YAMI (modos) produzem dados de esquema
+  // individuais. YRAI, YCI e Attachment geram apenas pontuações agregadas por
+  // categoria e não pertencem ao perfil esquemático consolidado.
   addFrom(ysq);
   addFrom(yami);
-  addFrom(attachment);
-  addFrom(yci);
-  addFrom(yrai);
 
   rows.sort((a, b) => b.score.compareTo(a.score));
   return rows;

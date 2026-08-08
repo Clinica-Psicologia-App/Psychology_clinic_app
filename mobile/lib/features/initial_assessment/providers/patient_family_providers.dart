@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../auth/providers/auth_providers.dart';
 import '../data/patient_family_repository.dart';
 import '../domain/genogram_enums.dart';
 import '../domain/patient_family.dart';
@@ -14,7 +15,9 @@ final patientFamilyRepositoryProvider =
 });
 
 /// `patients.id` do paciente logado (lente do paciente na Tela 3).
+/// Assiste [authSessionProvider] para invalidar o cache ao trocar de usuário.
 final myFamilyPatientIdProvider = FutureProvider<String>((ref) {
+  ref.watch(authSessionProvider);
   return ref
       .read(patientFamilyRepositoryProvider)
       .getPatientIdForCurrentProfile();
@@ -61,6 +64,7 @@ class PatientFamilyMutationNotifier
     int? birthYear,
     int? deathYear,
     bool isDeceased = false,
+    bool isSensitive = false,
     bool? isCaregiver,
     BondQuality? bondQuality,
     int? emotionalPresence,
@@ -80,6 +84,7 @@ class PatientFamilyMutationNotifier
           birthYear: birthYear,
           deathYear: deathYear,
           isDeceased: isDeceased,
+          isSensitive: isSensitive,
           isCaregiver: isCaregiver,
           bondQuality: bondQuality,
           emotionalPresence: emotionalPresence,
@@ -100,6 +105,7 @@ class PatientFamilyMutationNotifier
     int? birthYear,
     int? deathYear,
     bool isDeceased = false,
+    bool isSensitive = false,
     bool? isCaregiver,
     BondQuality? bondQuality,
     int? emotionalPresence,
@@ -119,6 +125,7 @@ class PatientFamilyMutationNotifier
           birthYear: birthYear,
           deathYear: deathYear,
           isDeceased: isDeceased,
+          isSensitive: isSensitive,
           isCaregiver: isCaregiver,
           bondQuality: bondQuality,
           emotionalPresence: emotionalPresence,

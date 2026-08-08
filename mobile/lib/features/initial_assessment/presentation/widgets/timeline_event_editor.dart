@@ -52,6 +52,7 @@ class _TimelineEventEditorState extends ConsumerState<_TimelineEventEditor> {
   late LifeChapter? _chapter;
   int? _impact;
   final Set<TimelineBelief> _beliefs = {};
+  bool _isSensitive = false;
   bool _saving = false;
 
   bool get _isEditing => widget.entry != null;
@@ -67,6 +68,7 @@ class _TimelineEventEditorState extends ConsumerState<_TimelineEventEditor> {
     _chapter = e?.lifeChapter ?? widget.initialChapter;
     _impact = e?.emotionalImpact;
     _beliefs.addAll(e?.beliefs ?? const []);
+    _isSensitive = e?.isSensitive ?? false;
   }
 
   @override
@@ -99,6 +101,7 @@ class _TimelineEventEditorState extends ConsumerState<_TimelineEventEditor> {
           emotionalImpact: _impact,
           beliefs: _beliefs.toList(),
           beliefOther: beliefOther.isEmpty ? null : beliefOther,
+          isSensitive: _isSensitive,
         );
       } else {
         await notifier.createEntry(
@@ -109,6 +112,7 @@ class _TimelineEventEditorState extends ConsumerState<_TimelineEventEditor> {
           emotionalImpact: _impact,
           beliefs: _beliefs.toList(),
           beliefOther: beliefOther.isEmpty ? null : beliefOther,
+          isSensitive: _isSensitive,
         );
       }
       if (mounted) Navigator.of(context).pop();
@@ -236,7 +240,19 @@ class _TimelineEventEditorState extends ConsumerState<_TimelineEventEditor> {
                   isDense: true,
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
+              SwitchListTile(
+                value: _isSensitive,
+                onChanged: (v) => setState(() => _isSensitive = v),
+                title: const Text('Acontecimento sensível'),
+                subtitle: const Text(
+                  'Marca que este conteúdo é delicado e deve ser tratado com cuidado.',
+                ),
+                secondary: const Icon(Icons.lock_outline),
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+              ),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   if (_isEditing)

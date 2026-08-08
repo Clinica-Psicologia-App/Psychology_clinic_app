@@ -1,37 +1,29 @@
-/// Catálogo das 12 áreas de vida (Roda da Vida) do Bloco 3 — "Como está sua
-/// vida hoje?". Cada área tem a linguagem acolhedora do paciente e o
-/// agrupamento clínico (Young) usado na visão do terapeuta.
+/// Catálogo das 9 áreas de vida (Bloco 3 — "Como está sua vida hoje?")
+/// conforme especificação do cliente. Cada área tem a linguagem acolhedora
+/// do paciente e o agrupamento clínico Young usado na visão do terapeuta.
 ///
 /// As `key` batem com o CHECK de `patient_life_areas.area_key` no banco.
 enum LifeArea {
   workCareer,
-  financesMoney,
-  healthFitness,
+  loveRomance,
   family,
   friends,
-  loveRomance,
-  personalGrowth,
-  recreationFun,
-  physicalEnvironment,
-  contributionSocial,
-  spirituality,
-  mentalEmotionalHealth,
+  aloneTime,
+  physicalHealth,
+  emotionalHealth,
+  selfCare,
+  routineOrganization,
 }
 
 /// Agrupamentos clínicos de "Funcionamento Atual" (visão do terapeuta).
-/// O mapeamento 12→9 é uma leitura de domínio (o documento não fixa um de/para
-/// exato); serve apenas para agrupar visualmente. Os dados brutos continuam
-/// nas 12 áreas do paciente.
+/// Mapeamento 9→6 seguindo os domínios clássicos da Terapia do Esquema.
 enum FunctioningGroup {
   occupationalEducational,
   intimateRelationship,
   family,
   social,
   solitary,
-  lifestyleSelfCare,
-  physicalEmotionalHealth,
-  practicalFinancialAutonomy,
-  valuesPurposeSpirituality,
+  healthSelfCare,
 }
 
 extension FunctioningGroupMeta on FunctioningGroup {
@@ -43,12 +35,7 @@ extension FunctioningGroupMeta on FunctioningGroup {
         FunctioningGroup.family => 'Funcionamento familiar',
         FunctioningGroup.social => 'Funcionamento social',
         FunctioningGroup.solitary => 'Funcionamento solitário',
-        FunctioningGroup.lifestyleSelfCare => 'Estilo de vida e autocuidado',
-        FunctioningGroup.physicalEmotionalHealth => 'Saúde física e emocional',
-        FunctioningGroup.practicalFinancialAutonomy =>
-          'Autonomia prática e financeira',
-        FunctioningGroup.valuesPurposeSpirituality =>
-          'Valores, propósito, espiritualidade e contribuição social',
+        FunctioningGroup.healthSelfCare => 'Saúde e autocuidado',
       };
 }
 
@@ -56,96 +43,78 @@ extension LifeAreaMeta on LifeArea {
   /// Chave persistida (`patient_life_areas.area_key`).
   String get key => switch (this) {
         LifeArea.workCareer => 'work_career',
-        LifeArea.financesMoney => 'finances_money',
-        LifeArea.healthFitness => 'health_fitness',
+        LifeArea.loveRomance => 'love_romance',
         LifeArea.family => 'family',
         LifeArea.friends => 'friends',
-        LifeArea.loveRomance => 'love_romance',
-        LifeArea.personalGrowth => 'personal_growth',
-        LifeArea.recreationFun => 'recreation_fun',
-        LifeArea.physicalEnvironment => 'physical_environment',
-        LifeArea.contributionSocial => 'contribution_social',
-        LifeArea.spirituality => 'spirituality',
-        LifeArea.mentalEmotionalHealth => 'mental_emotional_health',
+        LifeArea.aloneTime => 'alone_time',
+        LifeArea.physicalHealth => 'physical_health',
+        LifeArea.emotionalHealth => 'emotional_health',
+        LifeArea.selfCare => 'self_care',
+        LifeArea.routineOrganization => 'routine_organization',
       };
 
   /// Nome da área na linguagem do paciente.
   String get label => switch (this) {
-        LifeArea.workCareer => 'Trabalho e Carreira',
-        LifeArea.financesMoney => 'Finanças & Dinheiro',
-        LifeArea.healthFitness => 'Saúde & Fitness',
+        LifeArea.workCareer => 'Trabalho ou Estudos',
+        LifeArea.loveRomance => 'Relacionamento Amoroso',
         LifeArea.family => 'Família',
         LifeArea.friends => 'Amigos',
-        LifeArea.loveRomance => 'Amor e Romance',
-        LifeArea.personalGrowth => 'Crescimento Pessoal',
-        LifeArea.recreationFun => 'Recreação & Diversão',
-        LifeArea.physicalEnvironment => 'Ambiente Físico',
-        LifeArea.contributionSocial => 'Contribuição & Impacto Social',
-        LifeArea.spirituality => 'Espiritualidade',
-        LifeArea.mentalEmotionalHealth => 'Saúde Mental & Emocional',
+        LifeArea.aloneTime => 'Tempo para mim',
+        LifeArea.physicalHealth => 'Saúde Física',
+        LifeArea.emotionalHealth => 'Saúde Emocional',
+        LifeArea.selfCare => 'Autocuidado',
+        LifeArea.routineOrganization => 'Rotina e Organização',
       };
 
   /// Descrição curta mostrada ao paciente no cartão.
   String get description => switch (this) {
         LifeArea.workCareer =>
-          'Satisfação no trabalho e crescimento profissional.',
-        LifeArea.financesMoney =>
-          'Segurança financeira e gestão do dinheiro.',
-        LifeArea.healthFitness =>
-          'Saúde física e nível de condicionamento.',
+          'Satisfação no trabalho, estudos e crescimento profissional.',
+        LifeArea.loveRomance =>
+          'Relacionamentos românticos e intimidade emocional.',
         LifeArea.family => 'Relacionamentos com membros da família.',
-        LifeArea.friends => 'Relacionamentos de amizade e parcerias.',
-        LifeArea.loveRomance => 'Relacionamentos românticos e intimidade.',
-        LifeArea.personalGrowth => 'Aprendizado e desenvolvimento pessoal.',
-        LifeArea.recreationFun => 'Hobbies e atividades de lazer.',
-        LifeArea.physicalEnvironment =>
-          'Satisfação com o espaço físico da casa e outros ambientes que frequenta.',
-        LifeArea.contributionSocial => 'Retribuir e fazer a diferença.',
-        LifeArea.spirituality => 'Práticas espirituais e crenças.',
-        LifeArea.mentalEmotionalHealth =>
-          'Bem-estar emocional e saúde mental.',
+        LifeArea.friends => 'Amizades e a qualidade dessas conexões.',
+        LifeArea.aloneTime =>
+          'Espaço para você mesmo(a): descanso, lazer e hobbies.',
+        LifeArea.physicalHealth =>
+          'Saúde do corpo, hábitos e bem-estar físico.',
+        LifeArea.emotionalHealth =>
+          'Bem-estar emocional e saúde mental no dia a dia.',
+        LifeArea.selfCare =>
+          'Como você cuida de si mesmo(a) nas pequenas coisas.',
+        LifeArea.routineOrganization =>
+          'Organização da rotina, compromissos e ambiente.',
       };
 
-  /// Pergunta guiada opcional exibida após a nota.
+  /// Pergunta guiada exibida após a nota de satisfação.
   String get guidedQuestion => switch (this) {
         LifeArea.workCareer => 'O maior desafio hoje é...',
-        LifeArea.financesMoney => 'O que mais influencia essa nota?',
-        LifeArea.healthFitness => 'O que você gostaria de cuidar melhor?',
+        LifeArea.loveRomance => 'O que mais acontece nessa área?',
         LifeArea.family => 'O que costuma ser mais difícil?',
         LifeArea.friends => 'Como você se sente nessas relações?',
-        LifeArea.loveRomance => 'O que mais acontece nessa área?',
-        LifeArea.personalGrowth => 'Em que gostaria de avançar?',
-        LifeArea.recreationFun => 'Quanto espaço isso ocupa na sua rotina?',
-        LifeArea.physicalEnvironment =>
-          'O que tornaria esses espaços melhores para você?',
-        LifeArea.contributionSocial => 'Como gostaria de contribuir?',
-        LifeArea.spirituality => 'Que lugar isso ocupa na sua vida?',
-        LifeArea.mentalEmotionalHealth =>
-          'O que mais tem afetado seu bem-estar?',
+        LifeArea.aloneTime => 'Que espaço você reserva para si mesmo(a)?',
+        LifeArea.physicalHealth => 'O que você gostaria de cuidar melhor?',
+        LifeArea.emotionalHealth => 'O que mais tem afetado seu bem-estar?',
+        LifeArea.selfCare => 'Em que área do autocuidado gostaria de avançar?',
+        LifeArea.routineOrganization =>
+          'O que costuma desorganizar sua rotina?',
       };
 
-  /// Agrupamento clínico (visão do terapeuta). Mapeamento de domínio.
+  /// Agrupamento clínico (visão do terapeuta).
   FunctioningGroup get group => switch (this) {
         LifeArea.workCareer => FunctioningGroup.occupationalEducational,
         LifeArea.loveRomance => FunctioningGroup.intimateRelationship,
         LifeArea.family => FunctioningGroup.family,
         LifeArea.friends => FunctioningGroup.social,
-        LifeArea.recreationFun => FunctioningGroup.solitary,
-        LifeArea.physicalEnvironment => FunctioningGroup.lifestyleSelfCare,
-        LifeArea.healthFitness => FunctioningGroup.physicalEmotionalHealth,
-        LifeArea.mentalEmotionalHealth =>
-          FunctioningGroup.physicalEmotionalHealth,
-        LifeArea.financesMoney =>
-          FunctioningGroup.practicalFinancialAutonomy,
-        LifeArea.personalGrowth =>
-          FunctioningGroup.practicalFinancialAutonomy,
-        LifeArea.contributionSocial =>
-          FunctioningGroup.valuesPurposeSpirituality,
-        LifeArea.spirituality => FunctioningGroup.valuesPurposeSpirituality,
+        LifeArea.aloneTime => FunctioningGroup.solitary,
+        LifeArea.physicalHealth => FunctioningGroup.healthSelfCare,
+        LifeArea.emotionalHealth => FunctioningGroup.healthSelfCare,
+        LifeArea.selfCare => FunctioningGroup.healthSelfCare,
+        LifeArea.routineOrganization => FunctioningGroup.healthSelfCare,
       };
 }
 
-/// Ordem canônica das 12 áreas (mesma da Roda da Vida no documento).
+/// Ordem canônica das 9 áreas conforme especificação do cliente.
 const List<LifeArea> kLifeAreasInOrder = LifeArea.values;
 
 /// Resolve uma [LifeArea] a partir da `key` persistida; null se desconhecida.

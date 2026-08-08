@@ -113,6 +113,7 @@ class PatientHistoryRepository {
     int? emotionalImpact,
     List<TimelineBelief> beliefs = const [],
     String? beliefOther,
+    bool isSensitive = false,
     required String filledByRole,
   }) {
     return {
@@ -124,6 +125,7 @@ class PatientHistoryRepository {
       'belief_keys':
           beliefs.isEmpty ? null : [for (final b in beliefs) b.key],
       'belief_other': beliefOther,
+      'is_sensitive': isSensitive,
       'filled_by_profile_id': _currentProfileId,
       'filled_by_role': filledByRole,
     };
@@ -139,6 +141,7 @@ class PatientHistoryRepository {
     int? emotionalImpact,
     List<TimelineBelief> beliefs = const [],
     String? beliefOther,
+    bool isSensitive = false,
   }) async {
     if (title.trim().isEmpty) {
       throw AppException(
@@ -162,6 +165,7 @@ class PatientHistoryRepository {
               emotionalImpact: emotionalImpact,
               beliefs: beliefs,
               beliefOther: beliefOther,
+              isSensitive: isSensitive,
               filledByRole: filledByRole,
             ),
           })
@@ -183,6 +187,7 @@ class PatientHistoryRepository {
     int? emotionalImpact,
     List<TimelineBelief> beliefs = const [],
     String? beliefOther,
+    bool isSensitive = false,
   }) async {
     if (title.trim().isEmpty) {
       throw AppException(
@@ -201,6 +206,7 @@ class PatientHistoryRepository {
             emotionalImpact: emotionalImpact,
             beliefs: beliefs,
             beliefOther: beliefOther,
+            isSensitive: isSensitive,
             filledByRole: filledByRole,
           ))
           .eq('id', eventId)

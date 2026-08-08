@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../auth/providers/auth_providers.dart';
 import '../data/patient_history_repository.dart';
 import '../domain/life_chapter.dart';
 import '../domain/patient_history.dart';
@@ -14,7 +15,9 @@ final patientHistoryRepositoryProvider =
 });
 
 /// `patients.id` do paciente logado (lente do paciente na Tela 2).
+/// Assiste [authSessionProvider] para invalidar o cache ao trocar de usuário.
 final myHistoryPatientIdProvider = FutureProvider<String>((ref) {
+  ref.watch(authSessionProvider);
   return ref
       .read(patientHistoryRepositoryProvider)
       .getPatientIdForCurrentProfile();
@@ -62,6 +65,7 @@ class PatientHistoryMutationNotifier
     int? emotionalImpact,
     List<TimelineBelief> beliefs = const [],
     String? beliefOther,
+    bool isSensitive = false,
   }) {
     return _run(() => _repo.createEntry(
           patientId: arg.patientId,
@@ -73,6 +77,7 @@ class PatientHistoryMutationNotifier
           emotionalImpact: emotionalImpact,
           beliefs: beliefs,
           beliefOther: beliefOther,
+          isSensitive: isSensitive,
         ));
   }
 
@@ -85,6 +90,7 @@ class PatientHistoryMutationNotifier
     int? emotionalImpact,
     List<TimelineBelief> beliefs = const [],
     String? beliefOther,
+    bool isSensitive = false,
   }) {
     return _run(() => _repo.updateEntry(
           eventId: eventId,
@@ -96,6 +102,7 @@ class PatientHistoryMutationNotifier
           emotionalImpact: emotionalImpact,
           beliefs: beliefs,
           beliefOther: beliefOther,
+          isSensitive: isSensitive,
         ));
   }
 

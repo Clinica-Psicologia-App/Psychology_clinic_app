@@ -32,7 +32,7 @@ class InitialAssessment {
   /// Bloco 1 privado + Bloco 2 clínico (staff-only).
   final ClinicalIntake? clinicalIntake;
 
-  /// Bloco 3 — sempre as 12 áreas na ordem canônica (mescladas com o que já
+  /// Bloco 3 — sempre as 9 áreas na ordem canônica (mescladas com o que já
   /// foi avaliado). Áreas ainda não avaliadas vêm com `score == null`.
   final List<LifeAreaAssessment> lifeAreas;
 
@@ -49,7 +49,7 @@ class InitialAssessment {
 
   int get ratedAreasCount => lifeAreas.where((a) => a.hasRating).length;
 
-  /// Garante as 12 áreas na ordem canônica, preenchendo lacunas com áreas
+  /// Garante as 9 áreas na ordem canônica, preenchendo lacunas com áreas
   /// vazias. Útil para renderizar o Mapa da Vida sempre completo.
   static List<LifeAreaAssessment> mergeAllAreas(
     List<LifeAreaAssessment> existing,

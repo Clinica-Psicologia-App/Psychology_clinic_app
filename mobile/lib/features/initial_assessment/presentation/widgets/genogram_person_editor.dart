@@ -41,6 +41,7 @@ class _GenogramPersonEditorState extends ConsumerState<_GenogramPersonEditor> {
   late final TextEditingController _eventsOther;
   String? _gender;
   bool _isDeceased = false;
+  bool _isSensitive = false;
   bool _isCaregiver = false;
   BondQuality? _bond;
   int? _presence;
@@ -67,6 +68,7 @@ class _GenogramPersonEditorState extends ConsumerState<_GenogramPersonEditor> {
     _eventsOther = TextEditingController(text: p?.linkedEventsOther ?? '');
     _gender = p?.gender;
     _isDeceased = p?.isDeceased ?? false;
+    _isSensitive = p?.isSensitive ?? false;
     _isCaregiver = p?.isCaregiver ?? false;
     _bond = p?.bondQuality;
     _presence = p?.emotionalPresence;
@@ -107,6 +109,7 @@ class _GenogramPersonEditorState extends ConsumerState<_GenogramPersonEditor> {
           gender: _gender,
           birthYear: birthYear,
           isDeceased: _isDeceased,
+          isSensitive: _isSensitive,
           isCaregiver: _isCaregiver,
           bondQuality: _bond,
           emotionalPresence: _presence,
@@ -124,6 +127,7 @@ class _GenogramPersonEditorState extends ConsumerState<_GenogramPersonEditor> {
           gender: _gender,
           birthYear: birthYear,
           isDeceased: _isDeceased,
+          isSensitive: _isSensitive,
           isCaregiver: _isCaregiver,
           bondQuality: _bond,
           emotionalPresence: _presence,
@@ -239,6 +243,17 @@ class _GenogramPersonEditorState extends ConsumerState<_GenogramPersonEditor> {
                 value: _isDeceased,
                 onChanged: (v) => setState(() => _isDeceased = v),
                 title: const Text('É falecido(a)?'),
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+              ),
+              SwitchListTile(
+                value: _isSensitive,
+                onChanged: (v) => setState(() => _isSensitive = v),
+                title: const Text('Conteúdo sensível'),
+                subtitle: const Text(
+                  'Indica que informações sobre esta pessoa são delicadas.',
+                ),
+                secondary: const Icon(Icons.lock_outline),
                 contentPadding: EdgeInsets.zero,
                 dense: true,
               ),

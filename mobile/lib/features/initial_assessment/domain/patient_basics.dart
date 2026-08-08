@@ -2,6 +2,10 @@
 /// paciente). A escrita pelo paciente passa pela edge function
 /// `update-patient-basics`, já que a RLS de `patients` só permite UPDATE
 /// por staff.
+///
+/// Os campos sócio-demográficos opcionais (sexualOrientation, etc.) são
+/// visíveis ao terapeuta no cabeçalho de Bloco 1 e ficam nulos quando o
+/// solicitante é o próprio paciente (a query não os seleciona nesse contexto).
 class PatientBasics {
   const PatientBasics({
     this.fullName,
@@ -15,6 +19,12 @@ class PatientBasics {
     this.psychiatricFollowup,
     this.psychiatristNotes,
     this.importantToKnow,
+    // Dados complementares — visíveis ao terapeuta no Bloco 1.
+    this.relationshipStatus,
+    this.sexualOrientation,
+    this.countryBirth,
+    this.ethnicGroup,
+    this.religiousOrientation,
   });
 
   /// Somente leitura para o paciente (identidade é gerida pela equipe).
@@ -29,6 +39,20 @@ class PatientBasics {
   final bool? psychiatricFollowup;
   final String? psychiatristNotes;
   final String? importantToKnow;
+
+  // Dados complementares — staff-only no contexto do Conhecer.
+  final String? relationshipStatus;
+  final String? sexualOrientation;
+  final String? countryBirth;
+  final String? ethnicGroup;
+  final String? religiousOrientation;
+
+  bool get hasDemographicExtras =>
+      relationshipStatus != null ||
+      sexualOrientation != null ||
+      countryBirth != null ||
+      ethnicGroup != null ||
+      religiousOrientation != null;
 
   /// Idade derivada da data de nascimento.
   int? get age {
@@ -55,6 +79,11 @@ class PatientBasics {
       psychiatricFollowup: json['psychiatric_followup'] as bool?,
       psychiatristNotes: json['psychiatrist_notes'] as String?,
       importantToKnow: json['important_to_know'] as String?,
+      relationshipStatus: json['relationship_status'] as String?,
+      sexualOrientation: json['sexual_orientation'] as String?,
+      countryBirth: json['country_birth'] as String?,
+      ethnicGroup: json['ethnic_group'] as String?,
+      religiousOrientation: json['religious_orientation'] as String?,
     );
   }
 

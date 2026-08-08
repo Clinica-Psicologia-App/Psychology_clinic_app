@@ -34,8 +34,17 @@ class _InitialAssessmentFamilyPageState
     extends ConsumerState<InitialAssessmentFamilyPage> {
   final Set<FamilyClimateTrait> _climate = {};
   final Set<TransgenerationalPattern> _patterns = {};
+  final _climateOtherCtrl = TextEditingController();
+  final _patternsOtherCtrl = TextEditingController();
   bool _initialized = false;
   bool _savingContext = false;
+
+  @override
+  void dispose() {
+    _climateOtherCtrl.dispose();
+    _patternsOtherCtrl.dispose();
+    super.dispose();
+  }
 
   InitialAssessmentContext get _ctx =>
       InitialAssessmentContext(role: widget.role, patientId: widget.patientId);
@@ -44,17 +53,24 @@ class _InitialAssessmentFamilyPageState
     if (_initialized) return;
     _climate.addAll(family.context.familyClimate);
     _patterns.addAll(family.context.transgenerationalPatterns);
+    _climateOtherCtrl.text = family.context.familyClimateOther ?? '';
+    _patternsOtherCtrl.text =
+        family.context.transgenerationalPatternsOther ?? '';
     _initialized = true;
   }
 
   Future<void> _saveContext() async {
     setState(() => _savingContext = true);
     try {
+      final climateOther = _climateOtherCtrl.text.trim();
+      final patternsOther = _patternsOtherCtrl.text.trim();
       await ref
           .read(patientFamilyMutationProvider(_ctx).notifier)
           .saveFamilyContext(
             familyClimate: _climate.toList(),
+            familyClimateOther: climateOther.isEmpty ? null : climateOther,
             patterns: _patterns.toList(),
+            patternsOther: patternsOther.isEmpty ? null : patternsOther,
           );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -109,12 +125,28 @@ class _InitialAssessmentFamilyPageState
                   if (!_climate.remove(t)) _climate.add(t);
                 }),
               ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _climateOtherCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Outro clima familiar (opcional)',
+                  isDense: true,
+                ),
+              ),
               const SizedBox(height: 20),
               _PatternsSection(
                 selected: _patterns,
                 onToggle: (p) => setState(() {
                   if (!_patterns.remove(p)) _patterns.add(p);
                 }),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _patternsOtherCtrl,
+                decoration: const InputDecoration(
+                  labelText: 'Outro padrão transgeracional (opcional)',
+                  isDense: true,
+                ),
               ),
               const SizedBox(height: 20),
               SizedBox(

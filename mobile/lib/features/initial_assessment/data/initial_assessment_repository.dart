@@ -68,7 +68,9 @@ class InitialAssessmentRepository {
   static const _basicsSelect =
       'full_name, preferred_name, birth_date, occupation, lives_with, '
       'has_children, uses_medication, medication_notes, psychiatric_followup, '
-      'psychiatrist_notes, important_to_know';
+      'psychiatrist_notes, important_to_know, '
+      'relationship_status, sexual_orientation, country_birth, '
+      'ethnic_group, religious_orientation';
 
   Future<InitialAssessment> load(String patientId) async {
     try {

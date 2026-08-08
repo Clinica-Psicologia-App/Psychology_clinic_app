@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../auth/providers/auth_providers.dart';
 import '../../profile/domain/profile_role.dart';
 import '../data/initial_assessment_repository.dart';
 import '../domain/assessment_catalog_item.dart';
@@ -14,7 +15,10 @@ final initialAssessmentRepositoryProvider =
 });
 
 /// `patients.id` do paciente logado (para a lente do paciente resolver a si).
+/// Assiste [authSessionProvider] para que o cache seja invalidado ao trocar de
+/// usuário — sem isso, dados de um paciente anterior vazam para a próxima sessão.
 final myAssessmentPatientIdProvider = FutureProvider<String>((ref) {
+  ref.watch(authSessionProvider);
   return ref
       .read(initialAssessmentRepositoryProvider)
       .getPatientIdForCurrentProfile();

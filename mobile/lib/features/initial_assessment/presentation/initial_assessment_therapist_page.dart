@@ -11,6 +11,7 @@ import 'initial_assessment_routes.dart';
 import '../domain/functioning_level.dart';
 import '../domain/initial_assessment.dart';
 import '../domain/life_area.dart';
+import '../domain/patient_basics.dart';
 import '../providers/initial_assessment_providers.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
@@ -201,6 +202,29 @@ class _InitialAssessmentTherapistPageState
               ListView(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 104),
                 children: [
+                  // ── Bloco 1 — Dados do Paciente (campo privado) ──────────
+                  _sectionHeader(
+                    context,
+                    step: 'Bloco 1',
+                    title: 'Dados do Paciente',
+                    icon: Icons.person_outline,
+                    accent: AppColors.navy,
+                    subtitle:
+                        'Informações gerais preenchidas pelo paciente + sua nota clínica.',
+                  ),
+                  if (data.basics != null)
+                    _PatientBasicsCard(basics: data.basics!),
+                  _group(
+                    context,
+                    title: 'Nota clínica inicial',
+                    icon: Icons.lock_outline,
+                    children: [
+                      _field(_observations, 'Observações iniciais',
+                          hint: 'Visível apenas para você',
+                          privateNote: true),
+                    ],
+                  ),
+
                   // ── Bloco 2 — Motivo da Procura ──────────────────────────
                   _sectionHeader(
                     context,
@@ -222,8 +246,6 @@ class _InitialAssessmentTherapistPageState
                       _field(_goals, 'Objetivos do paciente'),
                       _field(_motivation, 'Motivação'),
                       _field(_initialHypotheses, 'Hipóteses iniciais'),
-                      _field(_observations, 'Observações iniciais',
-                          hint: 'Visível apenas para você', privateNote: true),
                     ],
                   ),
 
@@ -702,6 +724,208 @@ class _InitialAssessmentTherapistPageState
             ),
         ],
       ),
+    );
+  }
+}
+
+/// Resumo (read-only) dos dados básicos do paciente no Bloco 1.
+class _PatientBasicsCard extends StatelessWidget {
+  const _PatientBasicsCard({required this.basics});
+
+  final PatientBasics basics;
+
+  static String? _humanize(String? raw, Map<String, String> map) {
+    if (raw == null || raw.isEmpty) return null;
+    return map[raw.toLowerCase()] ?? raw;
+  }
+
+  static String? _relStatus(String? v) => _humanize(v, const {
+        'single': 'Solteiro(a)',
+        'solteiro': 'Solteiro(a)',
+        'married': 'Casado(a)',
+        'casado': 'Casado(a)',
+        'divorced': 'Divorciado(a)',
+        'divorciado': 'Divorciado(a)',
+        'widowed': 'Viúvo(a)',
+        'viuvo': 'Viúvo(a)',
+        'stable_union': 'União estável',
+        'uniao_estavel': 'União estável',
+        'nao_informado': 'Não informado',
+      });
+
+  static String? _sexOrientation(String? v) => _humanize(v, const {
+        'heterosexual': 'Heterossexual',
+        'homosexual': 'Homossexual',
+        'bisexual': 'Bissexual',
+        'asexual': 'Assexual',
+        'pansexual': 'Pansexual',
+        'nao_informado': 'Não informado',
+      });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    // Monta a lista de pares (rótulo, valor) filtrando nulos e vazios.
+    String? _age() {
+      final a = basics.age;
+      final b = basics.birthDate;
+      if (a == null && b == null) return null;
+      if (a != null && b != null) {
+        return '$a anos (${b.day.toString().padLeft(2, '0')}/${b.month.toString().padLeft(2, '0')}/${b.year})';
+      }
+      return a != null ? '$a anos' : null;
+    }
+
+    final rows = <(String, String?)>[
+      ('Nome preferido', basics.preferredName ?? basics.fullName),
+      ('Idade', _age()),
+      ('Profissão/Ocupação', basics.occupation),
+      ('Com quem mora', basics.livesWith),
+      if (basics.hasChildren != null)
+        ('Tem filhos', basics.hasChildren! ? 'Sim' : 'Não'),
+      if (basics.usesMedication != null)
+        ('Usa medicação', basics.usesMedication! ? 'Sim' : 'Não'),
+      if ((basics.medicationNotes ?? '').isNotEmpty)
+        ('Medicação', basics.medicationNotes),
+      if (basics.psychiatricFollowup != null)
+        ('Acomp. psiquiátrico',
+            basics.psychiatricFollowup! ? 'Sim' : 'Não'),
+      if ((basics.psychiatristNotes ?? '').isNotEmpty)
+        ('Psiquiatra', basics.psychiatristNotes),
+      if ((basics.importantToKnow ?? '').isNotEmpty)
+        ('Algo importante', basics.importantToKnow),
+    ].where((r) => (r.$2 ?? '').trim().isNotEmpty).toList();
+
+    final extraRows = <(String, String?)>[
+      ('Estado civil', _relStatus(basics.relationshipStatus)),
+      ('Orientação sexual', _sexOrientation(basics.sexualOrientation)),
+      ('País de nascimento', basics.countryBirth),
+      ('Grupo étnico', basics.ethnicGroup),
+      ('Religião/Espiritualidade', basics.religiousOrientation),
+    ].where((r) => (r.$2 ?? '').trim().isNotEmpty).toList();
+
+    if (rows.isEmpty && extraRows.isEmpty) return const SizedBox.shrink();
+
+    return ClayCard(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: AppColors.navy.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  child: const Icon(Icons.person_outline,
+                      size: 17, color: AppColors.navy),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Dados do paciente',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.navy)),
+                      Text('Preenchidos na ficha',
+                          style: theme.textTheme.labelSmall
+                              ?.copyWith(color: AppColors.textMuted)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            for (var i = 0; i < rows.length; i++) ...[
+              if (i > 0)
+                Divider(
+                    height: 14,
+                    color: AppColors.navy.withValues(alpha: 0.08)),
+              _InfoRow(label: rows[i].$1, value: rows[i].$2!),
+            ],
+            if (extraRows.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceTint,
+                  borderRadius: BorderRadius.circular(10),
+                  border: const Border(
+                    left: BorderSide(color: AppColors.navy, width: 2.5),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Dados complementares',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: AppColors.navy,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3,
+                        )),
+                    const SizedBox(height: 6),
+                    for (var i = 0; i < extraRows.length; i++) ...[
+                      if (i > 0)
+                        Divider(
+                            height: 12,
+                            color: AppColors.navy.withValues(alpha: 0.08)),
+                      _InfoRow(
+                          label: extraRows[i].$1, value: extraRows[i].$2!),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 130,
+          child: Text(
+            label.toUpperCase(),
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: AppColors.textMuted,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 0.4,
+              fontSize: 10,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: AppColors.navy,
+              height: 1.35,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -124,6 +124,15 @@ serve(async (req) => {
       throw new AppError("INTERNAL_ERROR", "Failed to load categories", 500);
     }
 
+    if (!categories?.length) {
+      throw new AppError(
+        "CONFIGURATION_ERROR",
+        "Questionário sem categorias configuradas — impossível gravar resultados.",
+        422,
+        { questionnaire_id: response.questionnaire_id },
+      );
+    }
+
     const scoringPayload = await loadAndComputeScoring(
       client,
       response.questionnaire_id,

@@ -5,6 +5,32 @@ import 'package:terapia_esquema/features/clinical_dashboard/domain/clinical_case
 import 'package:terapia_esquema/features/clinical_dashboard/domain/clinical_dashboard_data.dart';
 import 'package:terapia_esquema/features/clinical_dashboard/domain/consolidated_schema_row.dart';
 import 'package:terapia_esquema/features/clinical_dashboard/presentation/widgets/clinical_dashboard_widgets.dart';
+import 'package:terapia_esquema/features/results/domain/ysq_taxonomy.dart';
+
+/// Monta a linha já resolvida pela taxonomia, como faz o builder.
+ConsolidatedSchemaRow _schema(
+  String code,
+  double score, {
+  bool psiActivated = false,
+}) {
+  final t = ysqSchemaByCode(code)!;
+  final d = ysqDomainByCode(t.domainCode)!;
+  return ConsolidatedSchemaRow(
+    name: t.name,
+    code: code,
+    score: score,
+    responseId: 'resp-ysq',
+    isAutoActivated: score >= 4.0,
+    isPsiActivated: psiActivated && score < 4.0,
+    instrumentName: 'YSQ',
+    instrumentCode: 'YSQ_FOUNDATION_V1',
+    scaleMax: 6,
+    domainCode: t.domainCode,
+    domainOrder: d.order,
+    schemaOrder: t.order,
+    unmetNeed: t.unmetNeed,
+  );
+}
 
 ClinicalDashboardData _dataWith(List<ConsolidatedSchemaRow> schemas) {
   return ClinicalDashboardData(
@@ -42,69 +68,79 @@ Future<void> _pump(
 }
 
 void main() {
-  const activatedAuto = ConsolidatedSchemaRow(
-    name: 'Desconfiança/Abuso',
-    code: 'DESCONFIANCA',
-    score: 5.0,
-    responseId: 'resp-ysq',
-    isAutoActivated: true,
-    instrumentName: 'YSQ',
-    instrumentCode: 'YSQ_FOUNDATION_V1',
-    scaleMax: 6,
-  );
+  final mistrust = _schema('YSQ_SCHEMA_MISTRUST_ABUSE', 5.0);
+  final subjugation =
+      _schema('YSQ_SCHEMA_SUBJUGATION', 2.5, psiActivated: true);
+  final selfSacrifice = _schema('YSQ_SCHEMA_SELF_SACRIFICE', 2.0);
 
-  const activatedPsi = ConsolidatedSchemaRow(
-    name: 'Subjugação',
-    code: 'SUBJUGACAO',
-    score: 2.5,
-    responseId: 'resp-ysq',
-    isAutoActivated: false,
-    isPsiActivated: true,
-    psiObservation: 'Relevante apesar da média baixa.',
-    instrumentName: 'YSQ',
-    instrumentCode: 'YSQ_FOUNDATION_V1',
-    scaleMax: 6,
-  );
-
-  const nonActivated = ConsolidatedSchemaRow(
-    name: 'Autossacrifício',
-    code: 'AUTOSSACRIFICIO',
-    score: 2.0,
-    responseId: 'resp-ysq',
-    isAutoActivated: false,
-    instrumentName: 'YSQ',
-    instrumentCode: 'YSQ_FOUNDATION_V1',
-    scaleMax: 6,
-  );
-
-  testWidgets('separa esquemas ativados e não ativados nas duas colunas',
+  testWidgets('agrupa os esquemas por domínio, com a necessidade central',
       (tester) async {
     await _pump(
       tester,
-      data: _dataWith(const [activatedAuto, activatedPsi, nonActivated]),
+      data: _dataWith([mistrust, subjugation, selfSacrifice]),
       isStaff: true,
     );
 
-    // Cabeçalho e títulos das colunas.
     expect(find.text('Perfil Esquemático Consolidado'), findsOneWidget);
-    expect(find.text('Ativados'), findsOneWidget);
-    expect(find.text('Não ativados'), findsOneWidget);
 
-    // Esquemas em suas respectivas colunas.
+    // Cabeçalhos de domínio, com numeral e necessidade central.
+    expect(find.text('Desconexão e rejeição'), findsOneWidget);
+    expect(find.text('Vínculos seguros'), findsOneWidget);
+    expect(find.text('I'), findsOneWidget);
+
+    expect(find.text('Orientação para o outro'), findsOneWidget);
+    expect(find.text('Liberdade de expressão'), findsOneWidget);
+    expect(find.text('IV'), findsOneWidget);
+
+    // Domínios sem esquema no snapshot não aparecem.
+    expect(find.text('Limites prejudicados'), findsNothing);
+
+    // Todos os esquemas aparecem — ativados e não ativados juntos, dentro
+    // do seu domínio. Não há mais separação em colunas.
     expect(find.text('Desconfiança/Abuso'), findsOneWidget);
     expect(find.text('Subjugação'), findsOneWidget);
     expect(find.text('Autossacrifício'), findsOneWidget);
+  });
 
-    // Contadores: 2 ativos, 1 não ativado.
+  testWidgets('conta ativados sobre o total de cada domínio', (tester) async {
+    await _pump(
+      tester,
+      data: _dataWith([mistrust, subjugation, selfSacrifice]),
+      isStaff: true,
+    );
+
+    // Domínio I: só Desconfiança, ativada.
+    expect(find.text('1 de 1 ativados'), findsOneWidget);
+    // Domínio IV: Subjugação (psi) ativada, Autossacrifício não.
+    expect(find.text('1 de 2 ativados'), findsOneWidget);
+    // Badge global no cabeçalho.
     expect(find.text('2 ativos'), findsOneWidget);
-    expect(find.text('1 n/a'), findsOneWidget);
+  });
+
+  testWidgets('mantém a ordem canônica dentro do domínio, não a de score',
+      (tester) async {
+    // Isolamento (ordem 4) tem score maior que Abandono (ordem 0).
+    await _pump(
+      tester,
+      data: _dataWith([
+        _schema('YSQ_SCHEMA_SOCIAL_ISOLATION', 5.0),
+        _schema('YSQ_SCHEMA_ABANDONMENT_INSTABILITY', 4.2),
+      ]),
+      isStaff: true,
+    );
+
+    final abandono =
+        tester.getTopLeft(find.text('Abandono/Instabilidade')).dy;
+    final isolamento =
+        tester.getTopLeft(find.text('Isolamento social/Alienação')).dy;
+    expect(abandono, lessThan(isolamento));
   });
 
   testWidgets('mostra legenda de símbolos apenas para o paciente',
       (tester) async {
     await _pump(
       tester,
-      data: _dataWith(const [activatedAuto, nonActivated]),
+      data: _dataWith([mistrust, selfSacrifice]),
       isStaff: false,
     );
 
@@ -119,17 +155,27 @@ void main() {
     expect(find.byType(ConsolidatedSchemaProfileCard), findsOneWidget);
   });
 
-  testWidgets('mostra "Nenhum" quando uma das colunas está vazia',
+  testWidgets('modos do YAMI ficam num bloco fora dos domínios',
       (tester) async {
-    // Só ativados → coluna "Não ativados" mostra "Nenhum".
+    const mode = ConsolidatedSchemaRow(
+      name: 'Protetor Desligado',
+      code: 'YAMI_MODE_DETACHED_PROTECTOR',
+      score: 4.9,
+      responseId: 'resp-yami',
+      isAutoActivated: true,
+      instrumentName: 'YAMI',
+      instrumentCode: 'YAMI_FOUNDATION_V1',
+      scaleMax: 6,
+    );
+
     await _pump(
       tester,
-      data: _dataWith(const [activatedAuto]),
+      data: _dataWith([mistrust, mode]),
       isStaff: true,
     );
 
-    expect(find.text('Nenhum'), findsOneWidget);
-    expect(find.text('1 ativos'), findsOneWidget);
-    expect(find.text('0 n/a'), findsOneWidget);
+    expect(find.text('Modos esquemáticos'), findsOneWidget);
+    expect(find.text('Protetor Desligado'), findsOneWidget);
+    expect(find.text('1 de 1 ativados'), findsWidgets);
   });
 }

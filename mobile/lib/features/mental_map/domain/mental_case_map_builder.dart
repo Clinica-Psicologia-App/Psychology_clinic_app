@@ -32,6 +32,10 @@ class MentalMapQuestionnaireContext {
 
 MentalCaseMap buildMentalCaseMap({
   required String patientName,
+  String patientInitials = 'P',
+  MentalCaseMapAvatarType patientAvatarType = MentalCaseMapAvatarType.initials,
+  String? patientPhotoUrl,
+  Map<String, dynamic>? patientAvatarConfig,
   required List<MentalMapQuestionnaireBlock> questionnaires,
   required List<MentalMapProblemSummary> activeProblems,
   required List<MentalMapGoalSummary> activeGoals,
@@ -52,6 +56,10 @@ MentalCaseMap buildMentalCaseMap({
   return MentalCaseMap(
     center: MentalCaseMapCenter(
       patientName: patientName,
+      initials: patientInitials,
+      avatarType: patientAvatarType,
+      photoUrl: patientPhotoUrl,
+      avatarConfig: patientAvatarConfig,
       activeProblemsLabel: _buildProblemsLabel(activeProblems.length),
       activeGoalsLabel: _buildGoalsLabel(activeGoals.length),
       lastCheckInLabel: _buildCheckInLabel(recentCheckIn),

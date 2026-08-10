@@ -4,9 +4,11 @@ import '../../results/domain/patient_result_detail.dart';
 import '../../results/domain/questionnaire_response_status.dart';
 import '../../results/domain/schema_activation.dart';
 import '../../results/domain/scoring_schema_result.dart';
+import '../../results/domain/ysq_taxonomy.dart';
 import 'clinical_dashboard_history_entry.dart';
 import 'clinical_dashboard_score_row.dart';
 import 'clinical_instrument_dashboard.dart';
+import 'consolidated_domain_group.dart';
 import 'consolidated_schema_row.dart';
 
 const ysqInstrumentMarker = 'YSQ';
@@ -220,7 +222,12 @@ bool patientHasStructuredDashboardResults(
 }
 
 /// Consolida schemas de todos os instrumentos numa lista única, com status
-/// de ativação (auto ≥ 4.0 ou psi manual), ordenada por score descendente.
+/// de ativação (auto ≥ 4.0 ou psi manual).
+///
+/// A ordenação é canônica — domínio, depois posição do esquema dentro do
+/// domínio — e não por pontuação. Ordenar por score achata a estrutura de
+/// domínios, que é justamente o eixo de leitura clínica do perfil. Modos do
+/// YAMI não têm domínio e vão para o fim, ordenados por score.
 List<ConsolidatedSchemaRow> buildConsolidatedSchemas({
   required ClinicalInstrumentDashboard? ysq,
   required ClinicalInstrumentDashboard? yami,
@@ -245,8 +252,13 @@ List<ConsolidatedSchemaRow> buildConsolidatedSchemas({
       final psi = psiMap[scoreRow.code];
       // Exibe a média quando disponível, para casar com o detalhe.
       final displayScore = scoreRow.averageScore ?? scoreRow.score;
+      // O nome vem do catálogo quando o código é um esquema do YSQ: o nome do
+      // snapshot é congelado na conclusão da resposta, então respostas antigas
+      // carregam grafias já corrigidas no catálogo.
+      final taxonomy = ysqSchemaByCode(scoreRow.code);
+      final domain = ysqDomainByCode(taxonomy?.domainCode);
       rows.add(ConsolidatedSchemaRow(
-        name: scoreRow.name,
+        name: taxonomy?.name ?? scoreRow.name,
         code: scoreRow.code,
         score: displayScore,
         responseId: dashboard.responseId,
@@ -258,6 +270,10 @@ List<ConsolidatedSchemaRow> buildConsolidatedSchemas({
         severityLabel: scoreRow.severityLabel,
         severityColorKey: scoreRow.severityColorKey,
         scaleMax: dashboard.scaleMax,
+        domainCode: taxonomy?.domainCode,
+        domainOrder: domain?.order,
+        schemaOrder: taxonomy?.order,
+        unmetNeed: taxonomy?.unmetNeed,
       ));
     }
   }
@@ -268,6 +284,52 @@ List<ConsolidatedSchemaRow> buildConsolidatedSchemas({
   addFrom(ysq);
   addFrom(yami);
 
-  rows.sort((a, b) => b.score.compareTo(a.score));
+  rows.sort((a, b) {
+    // Esquemas do YSQ primeiro, em ordem canônica; modos depois, por score.
+    final ad = a.domainOrder;
+    final bd = b.domainOrder;
+    if (ad == null && bd == null) return b.score.compareTo(a.score);
+    if (ad == null) return 1;
+    if (bd == null) return -1;
+    if (ad != bd) return ad.compareTo(bd);
+    return (a.schemaOrder ?? 0).compareTo(b.schemaOrder ?? 0);
+  });
   return rows;
+}
+
+/// Agrupa as linhas consolidadas nos 5 domínios de Young, em ordem canônica.
+///
+/// Domínios sem nenhum esquema presente no snapshot são omitidos — não faz
+/// sentido mostrar um domínio vazio quando o instrumento não foi respondido.
+List<ConsolidatedDomainGroup> buildConsolidatedDomainGroups(
+  List<ConsolidatedSchemaRow> rows,
+) {
+  final groups = <ConsolidatedDomainGroup>[];
+
+  for (final domain in kYsqDomains) {
+    final schemas = rows.where((r) => r.domainCode == domain.code).toList()
+      ..sort((a, b) => (a.schemaOrder ?? 0).compareTo(b.schemaOrder ?? 0));
+    if (schemas.isEmpty) continue;
+    groups.add(
+      ConsolidatedDomainGroup(
+        code: domain.code,
+        name: domain.name,
+        numeral: domain.numeral,
+        coreNeed: domain.coreNeed,
+        order: domain.order,
+        schemas: schemas,
+      ),
+    );
+  }
+
+  return groups;
+}
+
+/// Linhas que não pertencem a nenhum domínio do YSQ — os modos do YAMI.
+ConsolidatedModeGroup buildConsolidatedModeGroup(
+  List<ConsolidatedSchemaRow> rows,
+) {
+  final modes = rows.where((r) => !r.hasDomain).toList()
+    ..sort((a, b) => b.score.compareTo(a.score));
+  return ConsolidatedModeGroup(rows: modes);
 }

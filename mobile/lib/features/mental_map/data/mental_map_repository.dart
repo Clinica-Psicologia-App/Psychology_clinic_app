@@ -1,4 +1,5 @@
 import '../../daily_monitors/data/daily_monitors_repository.dart';
+import '../../profile/domain/avatar_type.dart';
 import '../../genogram/data/genogram_repository.dart';
 import '../../patient_check_ins/data/patient_check_ins_repository.dart';
 import '../../patient_problems/data/patient_problems_repository.dart';
@@ -11,6 +12,7 @@ import '../../therapy_goals/data/therapy_goals_repository.dart';
 import '../../therapy_goals/domain/therapy_goal_status.dart';
 import '../../therapy_resources/data/therapy_resources_repository.dart';
 import '../domain/mental_map_aggregator.dart';
+import '../domain/mental_case_map.dart';
 import '../domain/mental_case_map_builder.dart';
 import '../domain/mental_map_case_summary.dart';
 import '../domain/mental_map_check_in_summary.dart';
@@ -188,6 +190,12 @@ class MentalMapRepository {
       patientName: patient?.fullName ?? 'Paciente',
       caseMap: buildMentalCaseMap(
         patientName: patient?.fullName ?? 'Paciente',
+        patientInitials: _initialsOf(patient?.fullName ?? ''),
+        patientAvatarType: _toMapAvatarType(
+          patient?.avatarType ?? AvatarType.initials,
+        ),
+        patientPhotoUrl: patient?.photoUrl,
+        patientAvatarConfig: patient?.avatarConfig?.toJson(),
         questionnaires: blocks,
         activeProblems: activeProblems,
         activeGoals: activeGoals,
@@ -239,4 +247,19 @@ class MentalMapRepository {
     final m = date.month.toString().padLeft(2, '0');
     return '$d/$m/${date.year}';
   }
+
+  static String _initialsOf(String name) {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return 'P';
+    final parts = trimmed.split(RegExp(r'\s+'));
+    if (parts.length == 1) return parts.first[0].toUpperCase();
+    return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
+  }
+
+  static MentalCaseMapAvatarType _toMapAvatarType(AvatarType t) =>
+      switch (t) {
+        AvatarType.photo => MentalCaseMapAvatarType.photo,
+        AvatarType.custom => MentalCaseMapAvatarType.custom,
+        AvatarType.initials => MentalCaseMapAvatarType.initials,
+      };
 }

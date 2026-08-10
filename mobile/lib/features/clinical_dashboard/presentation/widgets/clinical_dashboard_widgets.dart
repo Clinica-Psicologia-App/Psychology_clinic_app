@@ -8,6 +8,7 @@ import '../../../../shared/widgets/homologation_ui.dart';
 import 'clinical_dashboard_shared_widgets.dart';
 import '../../../patient_problems/domain/patient_problem_status.dart';
 import '../../../profile/domain/profile_role.dart';
+import '../../../results/domain/schema_activation.dart';
 import '../../../results/providers/results_providers.dart';
 import '../../../therapy_goals/domain/therapy_goal_status.dart';
 import '../../domain/clinical_case_summary.dart';
@@ -16,6 +17,7 @@ import '../../domain/clinical_dashboard_data.dart';
 import '../../domain/clinical_dashboard_score_row.dart';
 import '../../domain/clinical_instrument_dashboard.dart';
 import '../../domain/clinical_parental_dashboard.dart';
+import '../../domain/consolidated_domain_group.dart';
 import '../../domain/consolidated_schema_row.dart';
 import '../clinical_dashboard_routes.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
@@ -1348,7 +1350,8 @@ class ConsolidatedSchemaProfileCard extends ConsumerWidget {
     if (!data.hasConsolidatedSchemas) return const SizedBox.shrink();
 
     final activated = data.activatedSchemas;
-    final nonActivated = data.nonActivatedSchemas;
+    final domains = data.consolidatedDomains;
+    final modes = data.consolidatedModes;
     final theme = Theme.of(context);
 
     return ClayCard(
@@ -1397,7 +1400,7 @@ class ConsolidatedSchemaProfileCard extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        'Todos os instrumentos · ordem por relevância',
+                        'Agrupado por domínio · ordem clínica',
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: AppColors.textMuted,
                         ),
@@ -1405,55 +1408,35 @@ class ConsolidatedSchemaProfileCard extends ConsumerWidget {
                     ],
                   ),
                 ),
-                // Badges de contagem
                 _SchemaCountBadge(
                   count: activated.length,
                   color: AppColors.error,
                   label: 'ativos',
                 ),
-                const SizedBox(width: 6),
-                _SchemaCountBadge(
-                  count: nonActivated.length,
-                  color: AppColors.textMuted,
-                  label: 'n/a',
-                ),
               ],
             ),
           ),
 
-          // ── Corpo: duas colunas ─────────────────────────────────────────
+          // ── Corpo: um bloco por domínio, em ordem canônica ──────────────
           Padding(
-            padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // Coluna esquerda: Ativados
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(right: 11),
-                    child: _ActivatedColumn(
-                      schemas: activated,
-                      isStaff: isStaff,
-                      onActivationChanged: onActivationChanged,
-                    ),
+                for (final domain in domains)
+                  _DomainSection(
+                    domain: domain,
+                    isStaff: isStaff,
+                    onActivationChanged: onActivationChanged,
                   ),
-                ),
-                // Coluna direita: Não ativados (com divisor à esquerda)
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.only(left: 11),
-                    decoration: const BoxDecoration(
-                      border: Border(
-                        left: BorderSide(color: AppColors.border),
-                      ),
-                    ),
-                    child: _NonActivatedColumn(
-                      schemas: nonActivated,
-                      isStaff: isStaff,
-                      onActivationChanged: onActivationChanged,
-                    ),
+                // Modos do YAMI não pertencem aos domínios de Young — bloco
+                // próprio no fim.
+                if (!modes.isEmpty)
+                  _ModeSection(
+                    modes: modes,
+                    isStaff: isStaff,
+                    onActivationChanged: onActivationChanged,
                   ),
-                ),
               ],
             ),
           ),
@@ -1481,251 +1464,250 @@ class ConsolidatedSchemaProfileCard extends ConsumerWidget {
   }
 }
 
-// ── Coluna de esquemas ativados ─────────────────────────────────────────────
+// ── Bloco de domínio ────────────────────────────────────────────────────────
 
-class _ActivatedColumn extends StatelessWidget {
-  const _ActivatedColumn({
-    required this.schemas,
+/// Uma cor por domínio. O esquema ativado aparece na cor do seu domínio; o não
+/// ativado fica cinza. A cor identifica o domínio — não a severidade —, então
+/// o contraste colorido × cinza é o que comunica ativação.
+const List<Color> _kDomainColors = [
+  Color(0xFF7C6A9C), // I  — Desconexão e rejeição
+  Color(0xFF2E7D6B), // II — Autonomia e desempenho prejudicados
+  Color(0xFFA6743C), // III — Limites prejudicados
+  Color(0xFF4A6FA5), // IV — Orientação para o outro
+  Color(0xFF9C5A6B), // V  — Hipervigilância e inibição
+];
+
+Color _domainColor(int order) =>
+    _kDomainColors[order.clamp(0, _kDomainColors.length - 1)];
+
+class _DomainSection extends StatelessWidget {
+  const _DomainSection({
+    required this.domain,
     required this.isStaff,
     this.onActivationChanged,
   });
 
-  final List<ConsolidatedSchemaRow> schemas;
+  final ConsolidatedDomainGroup domain;
   final bool isStaff;
   final VoidCallback? onActivationChanged;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final color = _domainColor(domain.order);
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _ConsolidatedColumnHeader(
-          icon: Icons.check_circle_outline,
-          label: 'Ativados',
-          color: AppColors.error,
-        ),
-        const SizedBox(height: 8),
-        if (schemas.isEmpty)
-          Text(
-            'Nenhum',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: AppColors.textMuted,
-              fontStyle: FontStyle.italic,
-            ),
-          )
-        else
-          ...schemas.map(
-            (s) => _ActivatedSchemaRow(
-              schema: s,
-              isStaff: isStaff,
-              onActivationChanged: onActivationChanged,
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-// ── Coluna de esquemas não ativados ────────────────────────────────────────
-
-class _NonActivatedColumn extends StatelessWidget {
-  const _NonActivatedColumn({
-    required this.schemas,
-    required this.isStaff,
-    this.onActivationChanged,
-  });
-
-  final List<ConsolidatedSchemaRow> schemas;
-  final bool isStaff;
-  final VoidCallback? onActivationChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const _ConsolidatedColumnHeader(
-          icon: Icons.radio_button_unchecked,
-          label: 'Não ativados',
-          color: AppColors.textMuted,
-        ),
-        const SizedBox(height: 8),
-        if (schemas.isEmpty)
-          Text(
-            'Nenhum',
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: AppColors.textMuted,
-              fontStyle: FontStyle.italic,
-            ),
-          )
-        else
-          ...schemas.map(
-            (s) => _NonActivatedSchemaRow(
-              schema: s,
-              isStaff: isStaff,
-              onActivationChanged: onActivationChanged,
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-// ── Linha de esquema ativado ────────────────────────────────────────────────
-
-class _ActivatedSchemaRow extends ConsumerWidget {
-  const _ActivatedSchemaRow({
-    required this.schema,
-    required this.isStaff,
-    this.onActivationChanged,
-  });
-
-  final ConsolidatedSchemaRow schema;
-  final bool isStaff;
-  final VoidCallback? onActivationChanged;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final symbol = schema.isAutoActivated ? '●' : '◎';
-    final symbolColor =
-        schema.isAutoActivated ? AppColors.error : AppColors.purple;
-
-    Widget row = Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                symbol,
-                style: TextStyle(
-                  color: symbolColor,
-                  fontSize: 11,
-                  height: 1.8,
+              // Numeral do domínio num selo da cor do domínio.
+              Container(
+                width: 22,
+                height: 22,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: .12),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  domain.numeral,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w700,
+                    height: 1,
+                  ),
                 ),
               ),
-              const SizedBox(width: 5),
+              const SizedBox(width: 8),
               Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      domain.name,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.navy,
+                        height: 1.25,
+                      ),
+                    ),
+                    const SizedBox(height: 1),
+                    Text(
+                      domain.coreNeed,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: AppColors.textMuted,
+                        height: 1.25,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Leitura do domínio: quantos ativaram sobre o total. Não é nota
+              // nem ranking — domínios não competem entre si.
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
                 child: Text(
-                  schema.name,
-                  style: theme.textTheme.bodySmall?.copyWith(
+                  domain.activationLabel,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: domain.hasActivated ? color : AppColors.textMuted,
                     fontWeight: FontWeight.w600,
-                    color: AppColors.navy,
                   ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 3),
-          // Barra de score compacta
-          _CompactScoreBar(fraction: schema.barFraction, color: symbolColor),
-          const SizedBox(height: 3),
-          Row(
-            children: [
-              if (schema.instrumentCode != null)
-                _InstrumentTag(code: _shortCode(schema.instrumentCode!)),
-              const Spacer(),
-              Text(
-                schema.score.toStringAsFixed(1),
-                style: theme.textTheme.labelSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: symbolColor,
-                ),
-              ),
-            ],
+          const SizedBox(height: 9),
+          ...domain.schemas.map(
+            (schema) => _SchemaBarRow(
+              schema: schema,
+              domainColor: color,
+              isStaff: isStaff,
+              onActivationChanged: onActivationChanged,
+            ),
           ),
         ],
-      ),
-    );
-
-    if (isStaff) {
-      row = InkWell(
-        onTap: () => _openSheet(context, ref),
-        borderRadius: BorderRadius.circular(6),
-        child: row,
-      );
-    }
-
-    return row;
-  }
-
-  void _openSheet(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (_) => _ConsolidatedActivationSheet(
-        schema: schema,
-        onChanged: onActivationChanged,
       ),
     );
   }
 }
 
-// ── Linha de esquema não ativado ────────────────────────────────────────────
+/// Modos do YAMI — fora dos domínios de Young, que só organizam esquemas.
+class _ModeSection extends StatelessWidget {
+  const _ModeSection({
+    required this.modes,
+    required this.isStaff,
+    this.onActivationChanged,
+  });
 
-class _NonActivatedSchemaRow extends ConsumerWidget {
-  const _NonActivatedSchemaRow({
+  final ConsolidatedModeGroup modes;
+  final bool isStaff;
+  final VoidCallback? onActivationChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(top: 2, bottom: 9),
+            child: Row(
+              children: [
+                const Icon(
+                  Icons.theater_comedy_outlined,
+                  size: 15,
+                  color: AppColors.textSecondary,
+                ),
+                const SizedBox(width: 7),
+                Expanded(
+                  child: Text(
+                    'Modos esquemáticos',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.navy,
+                    ),
+                  ),
+                ),
+                Text(
+                  '${modes.activatedCount} de ${modes.rows.length} ativados',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.textMuted,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ...modes.rows.map(
+            (mode) => _SchemaBarRow(
+              schema: mode,
+              domainColor: AppColors.turquoise,
+              isStaff: isStaff,
+              onActivationChanged: onActivationChanged,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Linha de esquema: nome, barra em escala do instrumento com a linha de corte
+/// desenhada, e score. A linha de corte torna a ativação autoevidente — quem
+/// cruza, ativou —, o que dispensa ordenar por score para enxergar o padrão.
+class _SchemaBarRow extends ConsumerWidget {
+  const _SchemaBarRow({
     required this.schema,
+    required this.domainColor,
     required this.isStaff,
     this.onActivationChanged,
   });
 
   final ConsolidatedSchemaRow schema;
+  final Color domainColor;
   final bool isStaff;
   final VoidCallback? onActivationChanged;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final activated = schema.isActivated;
+    final color = activated ? domainColor : AppColors.disabled;
+    final cutFraction =
+        (kSchemaActivationThreshold / schema.barMax).clamp(0.0, 1.0);
 
     Widget row = Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 7),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          const Text(
-            '○',
-            style: TextStyle(
-              color: AppColors.textMuted,
-              fontSize: 10,
-              height: 1.6,
+          // Ativado manualmente pelo profissional ganha marca própria.
+          if (schema.isPsiActivated)
+            const Padding(
+              padding: EdgeInsets.only(right: 4),
+              child: Icon(Icons.adjust, size: 10, color: AppColors.purple),
             ),
-          ),
-          const SizedBox(width: 5),
           Expanded(
             child: Text(
               schema.name,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: AppColors.textSecondary,
+                color: activated ? AppColors.navy : AppColors.textMuted,
+                fontWeight: activated ? FontWeight.w600 : FontWeight.w400,
+                height: 1.25,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
           ),
-          const SizedBox(width: 4),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                schema.score.toStringAsFixed(1),
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: AppColors.textMuted,
-                  fontVariations: const [FontVariation('wght', 600)],
-                ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 74,
+            child: _ThresholdBar(
+              fraction: schema.barFraction,
+              cutFraction: cutFraction,
+              color: color,
+            ),
+          ),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 24,
+            child: Text(
+              schema.score.toStringAsFixed(1),
+              textAlign: TextAlign.right,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: activated ? color : AppColors.textMuted,
+                fontWeight: FontWeight.w700,
+                fontFeatures: const [FontFeature.tabularFigures()],
               ),
-              if (schema.instrumentCode != null)
-                _InstrumentTag(code: _shortCode(schema.instrumentCode!)),
-            ],
+            ),
           ),
         ],
       ),
@@ -1733,7 +1715,15 @@ class _NonActivatedSchemaRow extends ConsumerWidget {
 
     if (isStaff) {
       row = InkWell(
-        onTap: () => _openSheet(context, ref),
+        onTap: () => showModalBottomSheet<void>(
+          context: context,
+          isScrollControlled: true,
+          useSafeArea: true,
+          builder: (_) => _ConsolidatedActivationSheet(
+            schema: schema,
+            onChanged: onActivationChanged,
+          ),
+        ),
         borderRadius: BorderRadius.circular(6),
         child: row,
       );
@@ -1741,15 +1731,63 @@ class _NonActivatedSchemaRow extends ConsumerWidget {
 
     return row;
   }
+}
 
-  void _openSheet(BuildContext context, WidgetRef ref) {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      builder: (_) => _ConsolidatedActivationSheet(
-        schema: schema,
-        onChanged: onActivationChanged,
+/// Barra com trilho e marca vertical no limiar de ativação.
+class _ThresholdBar extends StatelessWidget {
+  const _ThresholdBar({
+    required this.fraction,
+    required this.cutFraction,
+    required this.color,
+  });
+
+  final double fraction;
+  final double cutFraction;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 9,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final width = constraints.maxWidth;
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceTint,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                width: (width * fraction).clamp(0.0, width),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                ),
+              ),
+              // Marca do limiar (4.0): referência fixa em todas as barras.
+              Positioned(
+                left: (width * cutFraction).clamp(0.0, width - 1),
+                top: -2,
+                bottom: -2,
+                width: 1.4,
+                child: const DecoratedBox(
+                  decoration: BoxDecoration(color: AppColors.textSecondary),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -1973,35 +2011,6 @@ class _ConsolidatedActivationSheetState
 
 // ── Widgets auxiliares ──────────────────────────────────────────────────────
 
-class _ConsolidatedColumnHeader extends StatelessWidget {
-  const _ConsolidatedColumnHeader({
-    required this.icon,
-    required this.label,
-    required this.color,
-  });
-
-  final IconData icon;
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, size: 14, color: color),
-        const SizedBox(width: 4),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: color,
-              ),
-        ),
-      ],
-    );
-  }
-}
-
 class _SchemaCountBadge extends StatelessWidget {
   const _SchemaCountBadge({
     required this.count,
@@ -2027,65 +2036,6 @@ class _SchemaCountBadge extends StatelessWidget {
           fontSize: 11,
           fontWeight: FontWeight.w700,
           color: color,
-        ),
-      ),
-    );
-  }
-}
-
-class _CompactScoreBar extends StatelessWidget {
-  const _CompactScoreBar({
-    required this.fraction,
-    required this.color,
-  });
-
-  final double fraction;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    // Sem LayoutBuilder: é incompatível com o IntrinsicHeight do card pai
-    // (LayoutBuilder não suporta medição de dimensões intrínsecas).
-    return Container(
-      height: 4,
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: .15),
-        borderRadius: BorderRadius.circular(2),
-      ),
-      child: FractionallySizedBox(
-        alignment: Alignment.centerLeft,
-        widthFactor: fraction.clamp(0.0, 1.0),
-        child: Container(
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(2),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _InstrumentTag extends StatelessWidget {
-  const _InstrumentTag({required this.code});
-
-  final String code;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceTint,
-        borderRadius: BorderRadius.circular(4),
-      ),
-      child: Text(
-        code,
-        style: const TextStyle(
-          fontSize: 9,
-          fontWeight: FontWeight.w700,
-          color: AppColors.moduleQuestionnaires,
-          letterSpacing: .3,
         ),
       ),
     );
@@ -2124,15 +2074,3 @@ class _LegendItem extends StatelessWidget {
   }
 }
 
-String _shortCode(String instrumentCode) {
-  // ATTACHMENT_STYLES_V1 → ATT  /  YSQ_LONG_V3 → YSQ  etc.
-  final upper = instrumentCode.toUpperCase();
-  if (upper.contains('ATTACHMENT')) return 'ATT';
-  if (upper.startsWith('YSQ')) return 'YSQ';
-  if (upper.startsWith('YAMI')) return 'YAMI';
-  if (upper.startsWith('YCI')) return 'YCI';
-  if (upper.startsWith('YRAI')) return 'YRAI';
-  if (upper.startsWith('PARENTAL')) return 'PAR';
-  // Fallback: primeiros 4 caracteres
-  return upper.length > 4 ? upper.substring(0, 4) : upper;
-}

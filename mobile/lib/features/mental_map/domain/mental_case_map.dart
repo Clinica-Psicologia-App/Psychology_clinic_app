@@ -24,6 +24,10 @@ class MentalCaseMapCenter {
     required this.activeProblemsLabel,
     required this.activeGoalsLabel,
     required this.lastCheckInLabel,
+    this.initials = 'P',
+    this.avatarType = MentalCaseMapAvatarType.initials,
+    this.photoUrl,
+    this.avatarConfig,
   });
 
   static const empty = MentalCaseMapCenter(
@@ -37,7 +41,19 @@ class MentalCaseMapCenter {
   final String activeProblemsLabel;
   final String activeGoalsLabel;
   final String lastCheckInLabel;
+
+  /// Iniciais para fallback quando o avatar não tem foto ou artwork.
+  final String initials;
+
+  final MentalCaseMapAvatarType avatarType;
+  final String? photoUrl;
+
+  /// Config de artwork customizado (mapa livre de chaves).
+  final Map<String, dynamic>? avatarConfig;
 }
+
+/// Espelha [AvatarType] do domínio de perfil sem criar dependência direta.
+enum MentalCaseMapAvatarType { photo, custom, initials }
 
 class MentalCaseMapNode {
   const MentalCaseMapNode({

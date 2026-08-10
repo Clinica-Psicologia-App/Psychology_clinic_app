@@ -20,11 +20,30 @@ class ConsolidatedSchemaRow {
     this.severityLabel,
     this.severityColorKey,
     this.scaleMax,
+    this.domainCode,
+    this.domainOrder,
+    this.schemaOrder,
+    this.unmetNeed,
   });
 
   final String name;
   final String code;
   final double score;
+
+  /// Domínio de Young ao qual o esquema pertence. `null` para linhas que não
+  /// são esquemas do YSQ — os modos do YAMI, por exemplo.
+  final String? domainCode;
+
+  /// Ordem canônica do domínio (0–4). `null` fora do YSQ.
+  final int? domainOrder;
+
+  /// Ordem canônica dentro do domínio — sequência clínica, não pontuação.
+  final int? schemaOrder;
+
+  /// Necessidade emocional específica associada ao esquema.
+  final String? unmetNeed;
+
+  bool get hasDomain => domainCode != null;
 
   /// ID da resposta de origem — necessário para abrir o sheet de ativação.
   final String responseId;

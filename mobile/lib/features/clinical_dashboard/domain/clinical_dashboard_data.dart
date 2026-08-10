@@ -1,8 +1,10 @@
 import 'clinical_case_summary.dart';
+import 'clinical_dashboard_builder.dart';
 import 'clinical_dashboard_callouts.dart';
 import 'clinical_dashboard_history_entry.dart';
 import 'clinical_instrument_dashboard.dart';
 import 'clinical_parental_dashboard.dart';
+import 'consolidated_domain_group.dart';
 import 'consolidated_schema_row.dart';
 
 class ClinicalDashboardData {
@@ -48,7 +50,17 @@ class ClinicalDashboardData {
   List<ConsolidatedSchemaRow> get nonActivatedSchemas =>
       consolidatedSchemas.where((s) => !s.isActivated).toList();
 
+  /// Esquemas agrupados nos 5 domínios de Young, em ordem canônica.
+  List<ConsolidatedDomainGroup> get consolidatedDomains =>
+      buildConsolidatedDomainGroups(consolidatedSchemas);
+
+  /// Modos do YAMI — bloco à parte, fora dos domínios.
+  ConsolidatedModeGroup get consolidatedModes =>
+      buildConsolidatedModeGroup(consolidatedSchemas);
+
   bool get hasConsolidatedSchemas => consolidatedSchemas.isNotEmpty;
+
+  int get activatedSchemaCount => activatedSchemas.length;
 
   bool get hasCaseSummary => !caseSummary.isEmpty;
 

@@ -8,6 +8,10 @@ import '../../../../core/theme/app_severity.dart';
 import '../../../../shared/widgets/esquema_core_logo.dart';
 import '../../../../shared/widgets/homologation_ui.dart';
 import '../../../../shared/widgets/icon_optics.dart';
+import '../../../profile/domain/avatar_config.dart';
+import '../../../profile/domain/avatar_type.dart';
+import '../../../profile/domain/profile_role.dart';
+import '../../../profile/presentation/widgets/user_avatar.dart';
 import '../../domain/mental_case_map.dart';
 import '../mental_map_node_state.dart';
 import '../../domain/mental_map_case_summary.dart';
@@ -1203,7 +1207,12 @@ class _MentalMapHubCenter extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Semantics(
-      label: 'Paciente ${center.patientName}',
+      // No modo compacto o círculo é só a foto — sem texto, a pedido da
+      // clínica. O nome e a contagem de áreas seguem aqui para não sumirem
+      // de quem navega por leitor de tela.
+      label: compactSummary == null
+          ? 'Paciente ${center.patientName}'
+          : 'Paciente ${center.patientName}, $compactSummary',
       child: DecoratedBox(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
@@ -1226,30 +1235,20 @@ class _MentalMapHubCenter extends StatelessWidget {
           ],
         ),
         child: Padding(
-          padding: EdgeInsets.all(compactSummary == null ? 12 : 8),
+          padding: EdgeInsets.all(compactSummary == null ? 12 : 0),
           child: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                if (compactSummary case final summary?) ...[
-                  Text(
-                    center.patientName,
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    summary,
-                    textAlign: TextAlign.center,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+                if (compactSummary != null) ...[
+                  UserAvatar.parts(
+                    fullName: center.patientName,
+                    initials: center.initials,
+                    role: ProfileRole.patient,
+                    avatarType: _toAvatarType(center.avatarType),
+                    photoUrl: center.photoUrl,
+                    avatarConfig: AvatarConfig.fromJson(center.avatarConfig),
+                    size: 88,
                   ),
                 ] else ...[
                   const EsquemaCoreLogo.icon(size: 28),
@@ -1302,6 +1301,12 @@ class _MentalMapHubCenter extends StatelessWidget {
     );
   }
 }
+
+AvatarType _toAvatarType(MentalCaseMapAvatarType t) => switch (t) {
+      MentalCaseMapAvatarType.photo => AvatarType.photo,
+      MentalCaseMapAvatarType.custom => AvatarType.custom,
+      MentalCaseMapAvatarType.initials => AvatarType.initials,
+    };
 
 class _DashedBorderPainter extends CustomPainter {
   const _DashedBorderPainter({

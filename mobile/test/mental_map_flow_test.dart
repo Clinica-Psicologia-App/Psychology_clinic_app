@@ -65,32 +65,47 @@ void main() {
         (tester) async {
       await _pumpHub(tester);
 
-      expect(find.text('Roberto'), findsOneWidget);
       expect(find.textContaining('Sem problemas'), findsOneWidget);
       expect(find.textContaining('Sem objetivos ativos'), findsOneWidget);
       expect(find.textContaining('Sem check-in'), findsOneWidget);
     });
 
-    testWidgets('o núcleo resume quantas áreas estão ativas', (tester) async {
+    // O círculo passou a exibir só a foto do paciente — sem nome e sem
+    // rótulo, a pedido da clínica. As duas informações continuam existindo
+    // na camada semântica; se saírem de lá, some para leitor de tela.
+    testWidgets('o núcleo anuncia paciente e áreas ativas por semântica',
+        (tester) async {
+      final handle = tester.ensureSemantics();
       await _pumpHub(tester);
 
-      expect(find.text('4 áreas ativas'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel(RegExp(r'Paciente Roberto, 4 áreas ativas')),
+        findsOneWidget,
+      );
+      handle.dispose();
     });
 
     testWidgets('singular quando só uma área tem registro', (tester) async {
+      final handle = tester.ensureSemantics();
       await _pumpHub(tester, nodes: [_node('schemas', 'Esquemas', 1)]);
 
-      expect(find.text('1 área ativa'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel(RegExp(r'Paciente Roberto, 1 área ativa')),
+        findsOneWidget,
+      );
+      handle.dispose();
     });
 
     // Sem isto o fluxo continuaria correndo para quem pediu para reduzir
     // movimento no sistema.
     testWidgets('com "reduzir movimento" a tela ainda monta e não anima',
         (tester) async {
+      final handle = tester.ensureSemantics();
       await _pumpHub(tester, disableAnimations: true);
 
       expect(tester.takeException(), isNull);
-      expect(find.text('Roberto'), findsOneWidget);
+      expect(find.bySemanticsLabel(RegExp('Paciente Roberto')), findsOneWidget);
+      handle.dispose();
       // Se algum controller tivesse ficado repetindo, pumpAndSettle
       // estouraria o tempo em vez de assentar.
       await tester.pumpAndSettle();

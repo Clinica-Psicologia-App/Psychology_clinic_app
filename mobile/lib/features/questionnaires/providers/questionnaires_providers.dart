@@ -1,6 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../clinical_dashboard/providers/clinical_dashboard_providers.dart';
+import '../../mental_map/providers/mental_map_providers.dart';
 import '../../profile/domain/profile_role.dart';
+import '../../results/providers/results_providers.dart';
 import '../data/questionnaires_repository.dart';
 import '../domain/finish_questionnaire_result.dart';
 import '../domain/questionnaire_access_management_data.dart';
@@ -208,10 +211,27 @@ class FinishQuestionnaireNotifier extends FamilyAsyncNotifier<
                 questionnaireName: arg.questionnaireName,
               );
       state = AsyncValue.data(result);
+      _invalidateDependentProviders();
       return result;
     } catch (e, st) {
       state = AsyncValue.error(e, st);
       rethrow;
     }
+  }
+
+  /// Todas as telas que leem `questionnaire_responses`/`questionnaire_results`
+  /// ficam com cache desatualizado até isto rodar — sem ele, o status só
+  /// atualiza se o usuário atualizar a tela manualmente. `ref.invalidate` num
+  /// provider `.family` sem argumento invalida todas as instâncias em cache
+  /// (qualquer paciente, qualquer role), sem precisar saber qual delas está
+  /// ativa nesta sessão.
+  void _invalidateDependentProviders() {
+    ref.invalidate(questionnairePatientStatusProvider);
+    ref.invalidate(myClinicalDashboardProvider);
+    ref.invalidate(staffClinicalDashboardProvider);
+    ref.invalidate(myMentalMapProvider);
+    ref.invalidate(staffMentalMapProvider);
+    ref.invalidate(patientResultsListProvider);
+    ref.invalidate(patientResultDetailProvider);
   }
 }

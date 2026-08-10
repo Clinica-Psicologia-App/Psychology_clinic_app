@@ -1497,80 +1497,78 @@ class _DomainSection extends StatelessWidget {
     final color = _domainColor(domain.order);
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Numeral do domínio num selo da cor do domínio.
-              Container(
-                width: 22,
-                height: 22,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: .12),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: Text(
-                  domain.numeral,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.w700,
-                    height: 1,
-                  ),
-                ),
+      padding: const EdgeInsets.only(bottom: 14),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Trilha lateral na cor do domínio — separa os blocos sem gastar
+            // altura extra com bordas/padding de cartão.
+            Container(
+              width: 3,
+              margin: const EdgeInsets.only(right: 10),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(2),
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      domain.name,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.navy,
-                        height: 1.25,
-                      ),
-                    ),
-                    const SizedBox(height: 1),
-                    Text(
-                      domain.coreNeed,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: AppColors.textMuted,
-                        height: 1.25,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              // Leitura do domínio: quantos ativaram sobre o total. Não é nota
-              // nem ranking — domínios não competem entre si.
-              Padding(
-                padding: const EdgeInsets.only(top: 2),
-                child: Text(
-                  domain.activationLabel,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: domain.hasActivated ? color : AppColors.textMuted,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 9),
-          ...domain.schemas.map(
-            (schema) => _SchemaBarRow(
-              schema: schema,
-              domainColor: color,
-              isStaff: isStaff,
-              onActivationChanged: onActivationChanged,
             ),
-          ),
-        ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          '${domain.numeral} · ${domain.name}',
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.navy,
+                            height: 1.25,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          domain.coreNeed,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: AppColors.textMuted,
+                            height: 1.25,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      // Leitura do domínio: quantos ativaram sobre o total.
+                      // Não é nota nem ranking — domínios não competem entre
+                      // si.
+                      Text(
+                        domain.activationLabel,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color:
+                              domain.hasActivated ? color : AppColors.textMuted,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ...domain.schemas.map(
+                    (schema) => _SchemaBarRow(
+                      schema: schema,
+                      domainColor: color,
+                      isStaff: isStaff,
+                      onActivationChanged: onActivationChanged,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

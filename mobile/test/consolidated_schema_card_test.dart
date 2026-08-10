@@ -84,13 +84,11 @@ void main() {
     expect(find.text('Perfil Esquemático Consolidado'), findsOneWidget);
 
     // Cabeçalhos de domínio, com numeral e necessidade central.
-    expect(find.text('Desconexão e rejeição'), findsOneWidget);
+    expect(find.text('I · Desconexão e rejeição'), findsOneWidget);
     expect(find.text('Vínculos seguros'), findsOneWidget);
-    expect(find.text('I'), findsOneWidget);
 
-    expect(find.text('Orientação para o outro'), findsOneWidget);
+    expect(find.text('IV · Orientação para o outro'), findsOneWidget);
     expect(find.text('Liberdade de expressão'), findsOneWidget);
-    expect(find.text('IV'), findsOneWidget);
 
     // Domínios sem esquema no snapshot não aparecem.
     expect(find.text('Limites prejudicados'), findsNothing);

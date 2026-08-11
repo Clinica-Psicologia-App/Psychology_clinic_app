@@ -499,7 +499,7 @@ class _AlertsPanelState extends State<_AlertsPanel> {
                 ),
                 const SizedBox(width: AppSpacing.xs),
                 Text(
-                  'Atenções',
+                  'Notificações',
                   style: theme.textTheme.labelLarge?.copyWith(
                     color: AppColors.navy,
                     fontWeight: FontWeight.w700,
@@ -527,19 +527,11 @@ class _AlertsPanelState extends State<_AlertsPanel> {
             ),
           ),
           for (final alert in visible) ...[
-            Divider(
-              height: 1,
-              thickness: 0.5,
-              color: AppColors.warning.withValues(alpha: 0.18),
-            ),
+            const Divider(height: 1, thickness: 0.5, color: AppColors.border),
             _AlertRow(alert: alert),
           ],
           if (hasMore) ...[
-            Divider(
-              height: 1,
-              thickness: 0.5,
-              color: AppColors.warning.withValues(alpha: 0.18),
-            ),
+            const Divider(height: 1, thickness: 0.5, color: AppColors.border),
             InkWell(
               onTap: () => setState(() => _expanded = !_expanded),
               borderRadius: const BorderRadius.only(
@@ -582,6 +574,33 @@ class _AlertsPanelState extends State<_AlertsPanel> {
   }
 }
 
+/// Ícone e par de cores (traço/pílula × fundo claro) por tipo de alerta —
+/// convite expirando é tempo-crítico (vermelho), questionário parado pede
+/// atenção mas não é urgente (âmbar), check-in ausente é informativo
+/// (azul). Antes os três usavam a mesma cor e não se distinguiam.
+({IconData icon, Color fg, Color bg}) _alertStyle(PsychologistAlertKind kind) {
+  switch (kind) {
+    case PsychologistAlertKind.expiringInvitation:
+      return (
+        icon: Icons.mark_email_unread_outlined,
+        fg: AppColors.error,
+        bg: AppColors.errorContainer,
+      );
+    case PsychologistAlertKind.staleQuestionnaire:
+      return (
+        icon: Icons.assignment_late_outlined,
+        fg: AppColors.warning,
+        bg: AppColors.warningContainer,
+      );
+    case PsychologistAlertKind.missingCheckin:
+      return (
+        icon: Icons.event_busy_outlined,
+        fg: AppColors.info,
+        bg: AppColors.infoContainer,
+      );
+  }
+}
+
 class _AlertRow extends StatelessWidget {
   const _AlertRow({required this.alert});
 
@@ -589,41 +608,87 @@ class _AlertRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final icon = switch (alert.kind) {
-      PsychologistAlertKind.missingCheckin => Icons.favorite_border,
-      PsychologistAlertKind.expiringInvitation =>
-        Icons.mark_email_unread_outlined,
-      PsychologistAlertKind.staleQuestionnaire =>
-        Icons.assignment_late_outlined,
-    };
+    final style = _alertStyle(alert.kind);
+    final theme = Theme.of(context);
 
-    return InkWell(
-      onTap: () => _navigate(context),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: 11,
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 17, color: AppColors.warning),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Text(
-                alert.message,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.navy,
-                      height: 1.35,
-                    ),
+    return Semantics(
+      // A leitura visual divide nome, subtítulo e prazo em três textos; o
+      // leitor de tela continua ouvindo a frase completa de uma vez.
+      // `excludeSemantics` impede que os textos dos filhos vazem e se
+      // concatenem com este rótulo.
+      label: alert.message,
+      excludeSemantics: true,
+      button: true,
+      child: InkWell(
+        onTap: () => _navigate(context),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: 10,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: style.bg,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(style.icon, size: 15, color: style.fg),
               ),
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            const Icon(
-              Icons.arrow_forward_ios_rounded,
-              size: 11,
-              color: AppColors.textMuted,
-            ),
-          ],
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      alert.patientName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.navy,
+                        fontWeight: FontWeight.w600,
+                        height: 1.3,
+                      ),
+                    ),
+                    Text(
+                      alert.subtitleLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: AppColors.textMuted,
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                decoration: BoxDecoration(
+                  color: style.bg,
+                  borderRadius: BorderRadius.circular(999),
+                ),
+                child: Text(
+                  alert.pillLabel,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: style.fg,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 11,
+                color: AppColors.textMuted,
+              ),
+            ],
+          ),
         ),
       ),
     );

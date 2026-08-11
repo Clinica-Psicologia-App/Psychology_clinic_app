@@ -33,6 +33,35 @@ class PsychologistAlert {
     }
   }
 
+  /// Descrição curta do tipo de alerta, exibida abaixo do nome do paciente.
+  String get subtitleLabel {
+    switch (kind) {
+      case PsychologistAlertKind.missingCheckin:
+        return 'Check-in';
+      case PsychologistAlertKind.expiringInvitation:
+        return 'Convite';
+      case PsychologistAlertKind.staleQuestionnaire:
+        return 'Questionário em andamento';
+    }
+  }
+
+  /// Prazo isolado em forma de pílula ("9 dias", "nunca", "amanhã") — antes
+  /// enterrado no meio de [message], agora é o primeiro dado que o olho
+  /// encontra, já que é o que decide se o alerta precisa de ação agora.
+  String get pillLabel {
+    switch (kind) {
+      case PsychologistAlertKind.missingCheckin:
+        if (daysCount >= 999) return 'nunca';
+        return daysCount == 1 ? '1 dia' : '$daysCount dias';
+      case PsychologistAlertKind.expiringInvitation:
+        if (daysCount == 0) return 'hoje';
+        if (daysCount == 1) return 'amanhã';
+        return '$daysCount dias';
+      case PsychologistAlertKind.staleQuestionnaire:
+        return daysCount == 1 ? '1 dia' : '$daysCount dias';
+    }
+  }
+
   static List<PsychologistAlert> fromRpcJson(Map<String, dynamic> json) {
     final alerts = <PsychologistAlert>[];
 

@@ -11,6 +11,8 @@ import '../../profile/domain/profile_role.dart';
 import '../domain/library_work_full.dart';
 import '../providers/staff_library_providers.dart';
 import 'patient_library_routes.dart';
+import 'widgets/indicate_work_sheet.dart';
+import 'widgets/library_cover.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 /// Catálogo clínico (psicólogo): busca + filtro por esquema + indicação.
@@ -108,6 +110,7 @@ class _StaffLibraryCatalogPageState
                 itemCount: works.length,
                 itemBuilder: (_, i) => _WorkTile(
                   work: works[i],
+                  patientId: widget.patientId,
                   onTap: () => context.push(
                     PatientLibraryRoutes.staffWork(
                       role: widget.role,
@@ -149,11 +152,25 @@ class _SchemaChip extends StatelessWidget {
   }
 }
 
+/// Gradiente de fallback da capa por tipo de obra — mesma paleta usada na
+/// ficha de detalhe, só para a capa não ficar cinza quando a obra não tem
+/// `cover_url` cadastrada.
+const _kSeriesCoverFallback = [Color(0xFF2E7D6B), Color(0xFF11808F)];
+const _kMovieCoverFallback = [Color(0xFF3B2F8F), Color(0xFF7C6A9C)];
+
 class _WorkTile extends StatelessWidget {
-  const _WorkTile({required this.work, required this.onTap});
+  const _WorkTile({
+    required this.work,
+    required this.patientId,
+    required this.onTap,
+  });
 
   final LibraryWorkFull work;
+  final String patientId;
   final VoidCallback onTap;
+
+  bool get _isSeries =>
+      work.workType == 'Série' || work.workType == 'Minissérie';
 
   @override
   Widget build(BuildContext context) {
@@ -174,19 +191,16 @@ class _WorkTile extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceTintPurple,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  work.workType == 'Série' || work.workType == 'Minissérie'
-                      ? Icons.live_tv_outlined
-                      : Icons.movie_outlined,
-                  size: 20,
-                  color: AppColors.purple,
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: SizedBox(
+                  width: 48,
+                  height: 64,
+                  child: LibraryCover(
+                    gradient:
+                        _isSeries ? _kSeriesCoverFallback : _kMovieCoverFallback,
+                    url: work.coverUrl,
+                  ),
                 ),
               ),
               const SizedBox(width: 12),
@@ -214,9 +228,37 @@ class _WorkTile extends StatelessWidget {
                         ],
                       ),
                     ],
+                    const SizedBox(height: 8),
+                    // Indica direto do card — não exige mais entrar na
+                    // ficha da obra para liberar ao paciente.
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: OutlinedButton.icon(
+                        onPressed: () => showIndicateWorkSheet(
+                          context: context,
+                          patientId: patientId,
+                          work: work,
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          minimumSize: const Size(0, 0),
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        icon: const Icon(
+                          Icons.playlist_add_check_outlined,
+                          size: 15,
+                        ),
+                        label: const Text('Indicar'),
+                      ),
+                    ),
                   ],
                 ),
               ),
+              const SizedBox(width: 4),
               const Icon(Icons.chevron_right, color: AppColors.textMuted),
             ],
           ),

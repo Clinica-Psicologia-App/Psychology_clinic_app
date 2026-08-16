@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import 'journey_phase.dart';
 import 'journey_step_availability.dart';
@@ -17,6 +17,9 @@ class JourneyStep {
     required this.phase,
     this.progressHint,
     required this.order,
+    this.parentStepId,
+    this.recommendedByTherapistName,
+    this.progressFraction,
   });
 
   final JourneyStepId id;
@@ -29,6 +32,19 @@ class JourneyStep {
   final JourneyPhase phase;
   final String? progressHint;
   final int order;
+
+  /// Se não-nulo, este passo é um nó de apoio lateral ancorado ao passo de
+  /// id [parentStepId] — não aparece no fio principal.
+  final JourneyStepId? parentStepId;
+
+  /// Quando preenchido, o nó exibe o badge azul "Indicado por …".
+  final String? recommendedByTherapistName;
+
+  /// Fração de conclusão [0.0, 1.0] exibida no anel ao redor do nó.
+  /// `null` → anel omitido (sem dado mensurável ou passo bloqueado).
+  final double? progressFraction;
+
+  bool get isSupportNode => parentStepId != null;
 }
 
 /// Catálogo da trilha com disponibilidade derivada do progresso (quando houver).
@@ -247,6 +263,40 @@ List<JourneyStep> buildPatientJourneySteps(
     return 'Visão integrada com dados já registrados.';
   }
 
+  // Deriva fração a partir da disponibilidade para passos sem dado contínuo.
+  double? fromAvail(JourneyStepAvailability av) => switch (av) {
+        JourneyStepAvailability.blocked ||
+        JourneyStepAvailability.inDevelopment =>
+          null,
+        JourneyStepAvailability.available => 0.0,
+        JourneyStepAvailability.inProgress => 0.6,
+        JourneyStepAvailability.completed => 1.0,
+      };
+
+  double? questFraction() {
+    if (!enabled('questionnaires')) return null;
+    if (p == null || p.activeQuestionnaireCount == 0) return 0.0;
+    return p.completedQuestionnaireCount / p.activeQuestionnaireCount;
+  }
+
+  double? goalsFraction() {
+    if (p == null) return 0.0;
+    final total = p.activeTherapyGoalCount + p.completedTherapyGoalCount;
+    if (total == 0) return 0.0;
+    return p.completedTherapyGoalCount / total;
+  }
+
+  double? problemsFraction() {
+    if (p == null || p.totalProblemCount == 0) return 0.0;
+    return (p.totalProblemCount - p.openProblemCount) / p.totalProblemCount;
+  }
+
+  double? libraryFraction() {
+    if (!enabled('resources')) return null;
+    if (p == null || p.releasedResourceCount == 0) return 0.0;
+    return p.completedResourceCount / p.releasedResourceCount;
+  }
+
   return [
     // ── Fase 1 · Conhecer ────────────────────────────────────────────────────
     const JourneyStep(
@@ -261,11 +311,13 @@ List<JourneyStep> buildPatientJourneySteps(
     const JourneyStep(
       id: JourneyStepId.psychoeducation,
       title: 'Biblioteca de Psicoeducação',
-      subtitle: 'Entenda os esquemas, os modos e o Adulto Saudável, no seu ritmo.',
+      subtitle:
+          'Entenda os esquemas, os modos e o Adulto Saudável, no seu ritmo.',
       icon: Icons.auto_stories_outlined,
       availability: JourneyStepAvailability.available,
       phase: JourneyPhase.conhecer,
       order: 1,
+      parentStepId: JourneyStepId.initialAssessment,
     ),
     JourneyStep(
       id: JourneyStepId.genogram,
@@ -275,6 +327,7 @@ List<JourneyStep> buildPatientJourneySteps(
       availability: genogramStatus(),
       phase: JourneyPhase.conhecer,
       progressHint: genogramHint(),
+      progressFraction: fromAvail(genogramStatus()),
       order: 2,
     ),
     JourneyStep(
@@ -285,6 +338,7 @@ List<JourneyStep> buildPatientJourneySteps(
       availability: timelineStatus(),
       phase: JourneyPhase.conhecer,
       progressHint: timelineHint(),
+      progressFraction: fromAvail(timelineStatus()),
       order: 3,
     ),
     // ── Fase 2 · Avaliar ─────────────────────────────────────────────────────
@@ -296,6 +350,7 @@ List<JourneyStep> buildPatientJourneySteps(
       availability: questionnairesStatus(),
       phase: JourneyPhase.avaliar,
       progressHint: questionnairesHint(),
+      progressFraction: questFraction(),
       order: 4,
     ),
     // ── Fase 3 · Compreender ─────────────────────────────────────────────────
@@ -307,6 +362,7 @@ List<JourneyStep> buildPatientJourneySteps(
       availability: problemsStatus(),
       phase: JourneyPhase.compreender,
       progressHint: problemsHint(),
+      progressFraction: problemsFraction(),
       order: 5,
     ),
     JourneyStep(
@@ -328,6 +384,7 @@ List<JourneyStep> buildPatientJourneySteps(
       availability: therapyGoalsStatus(),
       phase: JourneyPhase.intervir,
       progressHint: therapyGoalsHint(),
+      progressFraction: goalsFraction(),
       order: 7,
     ),
     JourneyStep(
@@ -338,19 +395,11 @@ List<JourneyStep> buildPatientJourneySteps(
       availability: libraryStatus(),
       phase: JourneyPhase.intervir,
       progressHint: libraryHint(),
+      progressFraction: libraryFraction(),
       order: 8,
+      parentStepId: JourneyStepId.therapyGoals,
     ),
     // ── Fase 5 · Acompanhar ──────────────────────────────────────────────────
-    JourneyStep(
-      id: JourneyStepId.checkIn,
-      title: 'Check-in',
-      subtitle: 'Registro breve entre sessões.',
-      icon: Icons.fact_check_outlined,
-      availability: checkInStatus(),
-      phase: JourneyPhase.acompanhar,
-      progressHint: checkInHint(),
-      order: 9,
-    ),
     JourneyStep(
       id: JourneyStepId.dailyMonitor,
       title: 'Monitor diário',
@@ -359,7 +408,20 @@ List<JourneyStep> buildPatientJourneySteps(
       availability: monitorStatus(),
       phase: JourneyPhase.acompanhar,
       progressHint: monitorHint(),
+      progressFraction: p?.hasMonitorToday == true ? 1.0 : 0.0,
+      order: 9,
+    ),
+    JourneyStep(
+      id: JourneyStepId.checkIn,
+      title: 'Check-in',
+      subtitle: 'Registro breve entre sessões.',
+      icon: Icons.fact_check_outlined,
+      availability: checkInStatus(),
+      phase: JourneyPhase.acompanhar,
+      progressHint: checkInHint(),
+      progressFraction: p?.hasCheckInToday == true ? 1.0 : 0.0,
       order: 10,
+      parentStepId: JourneyStepId.dailyMonitor,
     ),
     JourneyStep(
       id: JourneyStepId.results,

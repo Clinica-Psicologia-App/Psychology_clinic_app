@@ -14,6 +14,7 @@ import '../domain/life_area_assessment.dart';
 import '../domain/patient_basics.dart';
 import '../providers/initial_assessment_providers.dart';
 import 'widgets/life_area_card.dart';
+import 'widgets/life_area_wheel_chart.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 /// Tela 1 do fluxo Conhecer na lente do paciente — Blocos 2 e 3.
@@ -158,8 +159,7 @@ class _InitialAssessmentPatientPageState
   }
 
   Future<void> _save() async {
-    final notifier =
-        ref.read(initialAssessmentMutationProvider(_ctx).notifier);
+    final notifier = ref.read(initialAssessmentMutationProvider(_ctx).notifier);
     try {
       await notifier.savePatientBasics(
         preferredName: _nullIfEmpty(_preferredName.text),
@@ -196,11 +196,11 @@ class _InitialAssessmentPatientPageState
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(initialAssessmentProvider(_ctx));
-    final saving =
-        ref.watch(initialAssessmentMutationProvider(_ctx)).isLoading;
+    final saving = ref.watch(initialAssessmentMutationProvider(_ctx)).isLoading;
 
     return AppScaffold(
       title: 'Como você está hoje?',
+      accent: AppColors.turquoise,
       body: AsyncStateBody<InitialAssessment>(
         asyncValue: async,
         onRetry: () => ref.invalidate(initialAssessmentProvider(_ctx)),
@@ -276,6 +276,26 @@ class _InitialAssessmentPatientPageState
                     'Como está sua vida hoje?',
                     'As pessoas costumam viver momentos diferentes em cada área '
                         'da vida. Avalie como você percebe cada uma delas neste momento.',
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.navy.withValues(alpha: 0.07),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: LifeAreaWheelChart(scores: _scores),
+                      ),
+                    ),
                   ),
                   for (final area in kLifeAreasInOrder)
                     LifeAreaCard(
@@ -383,9 +403,7 @@ class _InitialAssessmentPatientPageState
             helperText: age == null ? null : '$age anos',
           ),
           child: Text(
-            date == null
-                ? 'Toque para selecionar'
-                : loc.formatFullDate(date),
+            date == null ? 'Toque para selecionar' : loc.formatFullDate(date),
             style: date == null
                 ? TextStyle(color: Theme.of(context).hintColor)
                 : null,

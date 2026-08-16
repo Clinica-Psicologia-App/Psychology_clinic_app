@@ -55,9 +55,7 @@ class PatientInfographicPoster extends StatelessWidget {
         ),
       if (data.hasModes)
         _WeightedSection(
-          1 +
-              data.modes.fold<int>(
-                  0, (s, m) => s + 1 + m.bullets.length),
+          1 + data.modes.fold<int>(0, (s, m) => s + 1 + m.bullets.length),
           _SectionCard(
             title: 'MODOS E ESTILOS DE ENFRENTAMENTO',
             accent: AppColors.turquoise,
@@ -99,7 +97,8 @@ class PatientInfographicPoster extends StatelessWidget {
       color: _bg,
       padding: const EdgeInsets.all(28),
       child: DefaultTextStyle.merge(
-        style: const TextStyle(color: AppColors.navy, fontSize: 13, height: 1.35),
+        style:
+            const TextStyle(color: AppColors.navy, fontSize: 13, height: 1.35),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -141,8 +140,8 @@ class PatientInfographicPoster extends StatelessWidget {
                 'Gerado em ${_formatDate(data.generatedOn!)} · material de apoio, '
                 'sob revisão do profissional',
                 textAlign: TextAlign.center,
-                style: const TextStyle(
-                    color: AppColors.textMuted, fontSize: 11),
+                style:
+                    const TextStyle(color: AppColors.textMuted, fontSize: 11),
               ),
             ],
           ],
@@ -195,7 +194,9 @@ class PatientInfographicPoster extends StatelessWidget {
             children: [
               Text(item.title,
                   style: TextStyle(
-                      fontWeight: FontWeight.w700, color: accent, fontSize: 13)),
+                      fontWeight: FontWeight.w700,
+                      color: accent,
+                      fontSize: 13)),
               if (item.description != null) ...[
                 const SizedBox(height: 2),
                 Text(item.description!,
@@ -212,8 +213,8 @@ class PatientInfographicPoster extends StatelessWidget {
                       child: Container(
                         width: 4,
                         height: 4,
-                        decoration:
-                            BoxDecoration(color: accent, shape: BoxShape.circle),
+                        decoration: BoxDecoration(
+                            color: accent, shape: BoxShape.circle),
                       ),
                     ),
                     Expanded(
@@ -247,8 +248,7 @@ class PatientInfographicPoster extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(needs[i].need,
-                        style:
-                            const TextStyle(fontWeight: FontWeight.w600)),
+                        style: const TextStyle(fontWeight: FontWeight.w600)),
                     if (needs[i].relatedEvents != null) ...[
                       const SizedBox(height: 2),
                       Row(
@@ -302,7 +302,9 @@ class PatientInfographicPoster extends StatelessWidget {
             children: [
               Text(d.name,
                   style: TextStyle(
-                      fontWeight: FontWeight.w700, color: accent, fontSize: 13)),
+                      fontWeight: FontWeight.w700,
+                      color: accent,
+                      fontSize: 13)),
               if (d.classification != null)
                 Text(d.classification!,
                     style: const TextStyle(
@@ -483,8 +485,7 @@ class _Header extends StatelessWidget {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(f.icon,
-                                size: 16, color: AppColors.turquoise),
+                            Icon(f.icon, size: 16, color: AppColors.turquoise),
                             const SizedBox(width: 6),
                             Expanded(child: Text(f.text)),
                           ],
@@ -659,8 +660,8 @@ class _TimelineBlock extends StatelessWidget {
                       ),
                       if (i < entries.length - 1)
                         Expanded(
-                            child: Container(
-                                width: 2, color: AppColors.border)),
+                            child:
+                                Container(width: 2, color: AppColors.border)),
                     ],
                   ),
                   const SizedBox(width: 12),

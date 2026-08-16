@@ -7,6 +7,7 @@ import '../../../core/errors/error_mapper.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../profile/domain/profile_role.dart';
@@ -145,10 +146,12 @@ class _TherapyGoalFormPageState extends ConsumerState<TherapyGoalFormPage> {
       return goalAsync.when(
         loading: () => const AppScaffold(
           title: 'Carregando...',
+          accent: AppColors.turquoise,
           body: Center(child: CircularProgressIndicator()),
         ),
         error: (_, __) => AppScaffold(
           title: 'Erro',
+          accent: AppColors.turquoise,
           body: Center(
             child: FilledButton(
               onPressed: () =>
@@ -161,6 +164,7 @@ class _TherapyGoalFormPageState extends ConsumerState<TherapyGoalFormPage> {
           if (goal == null) {
             return const AppScaffold(
               title: 'Objetivo',
+              accent: AppColors.turquoise,
               body: Center(child: Text('Objetivo não encontrado.')),
             );
           }
@@ -176,6 +180,7 @@ class _TherapyGoalFormPageState extends ConsumerState<TherapyGoalFormPage> {
   Widget _buildForm(BuildContext context) {
     return AppScaffold(
       title: widget.isEdit ? 'Editar objetivo' : 'Novo objetivo',
+      accent: AppColors.turquoise,
       body: Form(
         key: _formKey,
         child: MotionReveal(

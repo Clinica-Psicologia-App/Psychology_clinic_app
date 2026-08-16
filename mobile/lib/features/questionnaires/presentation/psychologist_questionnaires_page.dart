@@ -6,6 +6,7 @@ import '../../../core/config/env_config.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../patients/presentation/patient_routes.dart';
@@ -23,6 +24,7 @@ class PsychologistQuestionnairesPage extends ConsumerWidget {
 
     return AppScaffold(
       title: 'Meus questionários',
+      accent: AppColors.blue,
       actions: [
         IconButton(
           tooltip: 'Atualizar',

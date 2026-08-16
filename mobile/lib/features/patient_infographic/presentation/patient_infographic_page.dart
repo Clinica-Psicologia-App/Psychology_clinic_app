@@ -111,6 +111,7 @@ class _PatientInfographicPageState
 
     return AppScaffold(
       title: 'Infográfico',
+      accent: AppColors.purple,
       actions: [
         IconButton(
           tooltip: 'Atualizar',
@@ -134,8 +135,7 @@ class _PatientInfographicPageState
                   message:
                       'O infográfico é montado a partir dos dados já registrados '
                       'do paciente.',
-                  hint:
-                      'Preencha a Conceitualização inicial e conclua os '
+                  hint: 'Preencha a Conceitualização inicial e conclua os '
                       'instrumentos para enriquecer o retrato.',
                 ),
               ),

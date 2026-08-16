@@ -117,9 +117,7 @@ class _ResultsReleaseCardState extends ConsumerState<ResultsReleaseCard> {
                   side: const BorderSide(color: AppColors.error),
                   minimumSize: const Size.fromHeight(48),
                 ),
-                icon: _busy
-                    ? const _Spinner()
-                    : const Icon(Icons.lock_outline),
+                icon: _busy ? const _Spinner() : const Icon(Icons.lock_outline),
                 label: const Text('Revogar liberação'),
               )
             else

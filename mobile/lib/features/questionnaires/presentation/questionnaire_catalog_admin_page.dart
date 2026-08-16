@@ -19,6 +19,7 @@ class QuestionnaireCatalogAdminPage extends ConsumerWidget {
     final catalog = ref.watch(questionnaireCatalogAdminListProvider);
     return AppScaffold(
       title: 'Catálogo de questionários',
+      accent: AppColors.blue,
       subtitle: 'Instrumentos, versões e governança clínica',
       actions: [
         IconButton(

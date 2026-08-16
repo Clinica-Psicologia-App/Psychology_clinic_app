@@ -30,8 +30,9 @@ class PatientInfographicContext {
 
 /// Compõe cadastro + dashboard consolidado + conceitualização + linha do tempo
 /// num único [PatientInfographicData], via builder determinístico.
-final patientInfographicProvider = FutureProvider.family<PatientInfographicData,
-    PatientInfographicContext>((ref, ctx) async {
+final patientInfographicProvider =
+    FutureProvider.family<PatientInfographicData, PatientInfographicContext>(
+        (ref, ctx) async {
   final patient = await ref.watch(patientDetailProvider(ctx.patientId).future);
   if (patient == null) {
     throw StateError('Paciente não encontrado.');

@@ -32,6 +32,7 @@ class InitialAssessmentHistoryPage extends ConsumerWidget {
 
     return AppScaffold(
       title: 'Minha História',
+      accent: AppColors.turquoise,
       body: AsyncStateBody<PatientHistory>(
         asyncValue: async,
         onRetry: () => ref.invalidate(patientHistoryProvider(ctx)),
@@ -88,8 +89,7 @@ class _ChapterSection extends StatelessWidget {
                 ?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
-          for (final entry in entries)
-            _EventCard(ctx: ctx, entry: entry),
+          for (final entry in entries) _EventCard(ctx: ctx, entry: entry),
           const SizedBox(height: 4),
           Align(
             alignment: Alignment.centerLeft,
@@ -191,8 +191,7 @@ class _EventCard extends StatelessWidget {
                 Row(
                   children: [
                     Icon(Icons.favorite,
-                        size: 13,
-                        color: _impactColor(entry.emotionalImpact!)),
+                        size: 13, color: _impactColor(entry.emotionalImpact!)),
                     const SizedBox(width: 4),
                     Text(
                       'Impacto ${entry.emotionalImpact}/10',

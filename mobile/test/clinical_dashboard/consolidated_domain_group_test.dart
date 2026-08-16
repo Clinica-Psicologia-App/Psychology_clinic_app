@@ -40,8 +40,9 @@ void main() {
     test('códigos e ordens são únicos dentro de cada domínio', () {
       expect(kYsqSchemas.map((s) => s.code).toSet(), hasLength(18));
       for (final d in kYsqDomains) {
-        final orders =
-            kYsqSchemas.where((s) => s.domainCode == d.code).map((s) => s.order);
+        final orders = kYsqSchemas
+            .where((s) => s.domainCode == d.code)
+            .map((s) => s.order);
         expect(orders.toSet(), hasLength(orders.length),
             reason: 'ordem duplicada no domínio ${d.code}');
       }

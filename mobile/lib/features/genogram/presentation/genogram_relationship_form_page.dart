@@ -7,6 +7,7 @@ import '../../../core/errors/error_mapper.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../profile/domain/profile_role.dart';
@@ -133,10 +134,12 @@ class _GenogramRelationshipFormPageState
       return relAsync.when(
         loading: () => const AppScaffold(
           title: 'Carregando...',
+          accent: AppColors.blue,
           body: Center(child: CircularProgressIndicator()),
         ),
         error: (_, __) => AppScaffold(
           title: 'Erro',
+          accent: AppColors.blue,
           body: Center(
             child: FilledButton(
               onPressed: () => ref.invalidate(
@@ -150,6 +153,7 @@ class _GenogramRelationshipFormPageState
           if (rel == null) {
             return const AppScaffold(
               title: 'Relação',
+              accent: AppColors.blue,
               body: Center(child: Text('Relação não encontrada.')),
             );
           }
@@ -177,10 +181,12 @@ class _GenogramRelationshipFormPageState
     return genogramAsync.when(
       loading: () => const AppScaffold(
         title: 'Carregando...',
+        accent: AppColors.blue,
         body: Center(child: CircularProgressIndicator()),
       ),
       error: (_, __) => AppScaffold(
         title: 'Erro',
+        accent: AppColors.blue,
         body: Center(
           child: FilledButton(
             onPressed: () {
@@ -205,6 +211,7 @@ class _GenogramRelationshipFormPageState
         if (data.people.length < 2) {
           return const AppScaffold(
             title: 'Nova relação',
+            accent: AppColors.blue,
             body: Center(
               child: Padding(
                 padding: EdgeInsets.all(24),
@@ -224,6 +231,7 @@ class _GenogramRelationshipFormPageState
   Widget _buildForm(GenogramData data) {
     return AppScaffold(
       title: widget.isEdit ? 'Editar relação' : 'Nova relação',
+      accent: AppColors.blue,
       body: MotionReveal(
         child: Form(
           key: _formKey,

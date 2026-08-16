@@ -7,6 +7,7 @@ import '../../../core/errors/error_mapper.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../domain/patient_check_in.dart';
@@ -137,10 +138,12 @@ class _PatientCheckInFormPageState
       return checkInAsync.when(
         loading: () => const AppScaffold(
           title: 'Carregando...',
+          accent: AppColors.turquoise,
           body: Center(child: CircularProgressIndicator()),
         ),
         error: (_, __) => AppScaffold(
           title: 'Erro',
+          accent: AppColors.turquoise,
           body: Center(
             child: FilledButton(
               onPressed: () => ref.invalidate(
@@ -154,12 +157,14 @@ class _PatientCheckInFormPageState
           if (checkIn == null) {
             return const AppScaffold(
               title: 'Check-in',
+              accent: AppColors.turquoise,
               body: Center(child: Text('Check-in não encontrado.')),
             );
           }
           if (!checkIn.isEditableToday) {
             return const AppScaffold(
               title: 'Check-in',
+              accent: AppColors.turquoise,
               body: Center(
                 child: Padding(
                   padding: EdgeInsets.all(24),
@@ -183,6 +188,7 @@ class _PatientCheckInFormPageState
   Widget _buildForm(BuildContext context, {required bool isEditToday}) {
     return AppScaffold(
       title: widget.isEdit || isEditToday ? 'Editar check-in' : 'Novo check-in',
+      accent: AppColors.turquoise,
       body: MotionReveal(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(

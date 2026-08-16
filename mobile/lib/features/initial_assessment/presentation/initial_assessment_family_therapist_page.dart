@@ -85,6 +85,7 @@ class _InitialAssessmentFamilyTherapistPageState
 
     return AppScaffold(
       title: 'Genograma emocional',
+      accent: AppColors.turquoise,
       body: AsyncStateBody<PatientFamily>(
         asyncValue: async,
         onRetry: () => ref.invalidate(patientFamilyProvider(_ctx)),
@@ -112,8 +113,8 @@ class _InitialAssessmentFamilyTherapistPageState
                   Align(
                     alignment: Alignment.centerLeft,
                     child: FilledButton.tonalIcon(
-                      onPressed: () => showGenogramPersonEditor(
-                          context: context, ctx: _ctx),
+                      onPressed: () =>
+                          showGenogramPersonEditor(context: context, ctx: _ctx),
                       icon: const Icon(Icons.person_add_alt_1, size: 18),
                       label: const Text('Adicionar pessoa'),
                     ),
@@ -213,8 +214,8 @@ class _InitialAssessmentFamilyTherapistPageState
               _chipsLine(theme, 'Perfil',
                   p.caregiverTraits.map((e) => e.label).toList()),
             if (p.feltNeeds.isNotEmpty)
-              _chipsLine(theme, 'Sentia',
-                  p.feltNeeds.map((e) => e.label).toList()),
+              _chipsLine(
+                  theme, 'Sentia', p.feltNeeds.map((e) => e.label).toList()),
             if (p.wishedNeeds.isNotEmpty)
               _chipsLine(theme, 'Gostaria',
                   p.wishedNeeds.map((e) => e.label).toList()),
@@ -239,7 +240,8 @@ class _InitialAssessmentFamilyTherapistPageState
 
   Widget _metaLine(ThemeData theme, GenogramPersonEntry p) {
     final parts = <String>[
-      if (p.bondQuality != null) 'Vínculo ${p.bondQuality!.label.toLowerCase()}',
+      if (p.bondQuality != null)
+        'Vínculo ${p.bondQuality!.label.toLowerCase()}',
       if (p.emotionalPresence != null) 'Presença ${p.emotionalPresence}/10',
       if (p.isDeceased) 'Falecido(a)',
     ];
@@ -289,8 +291,7 @@ class _InitialAssessmentFamilyTherapistPageState
                 style: theme.textTheme.titleSmall
                     ?.copyWith(fontWeight: FontWeight.w700)),
             if (climate.isNotEmpty)
-              _chipsLine(theme, 'Clima',
-                  climate.map((e) => e.label).toList()),
+              _chipsLine(theme, 'Clima', climate.map((e) => e.label).toList()),
             if (patterns.isNotEmpty)
               _chipsLine(theme, 'Padrões transgeracionais',
                   patterns.map((e) => e.label).toList()),

@@ -23,6 +23,7 @@ dependencies:
   pdf: ^3.11.1
   share_plus: ^10.1.4
   cached_network_image: ^3.4.1
+  flutter_svg: ^2.3.0
 
 dev_dependencies:
   flutter_test:
@@ -42,3 +43,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/branding/
+    - assets/greeting/

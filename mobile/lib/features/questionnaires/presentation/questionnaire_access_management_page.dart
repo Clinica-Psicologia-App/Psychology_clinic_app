@@ -36,6 +36,7 @@ class _QuestionnaireAccessManagementPageState
   Widget build(BuildContext context) {
     return AppScaffold(
       title: 'Questionários',
+      accent: AppColors.blue,
       subtitle: 'Catálogo, edição e permissões',
       actions: [
         IconButton(

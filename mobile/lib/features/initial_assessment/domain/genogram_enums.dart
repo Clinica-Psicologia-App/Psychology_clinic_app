@@ -122,7 +122,8 @@ enum TransgenerationalPattern {
   abusiveRelationships('abusive_relationships', 'Relacionamentos abusivos'),
   emotionalRigidity('emotional_rigidity', 'Rigidez emocional'),
   perfectionism('perfectionism', 'Perfeccionismo'),
-  excessiveCaretaking('excessive_caretaking', 'Cuidar excessivamente dos outros');
+  excessiveCaretaking(
+      'excessive_caretaking', 'Cuidar excessivamente dos outros');
 
   const TransgenerationalPattern(this.key, this.label);
   final String key;

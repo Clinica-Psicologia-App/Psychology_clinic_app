@@ -194,10 +194,12 @@ class _PatientTimelineEventFormPageState
       return eventAsync.when(
         loading: () => const AppScaffold(
           title: 'Carregando...',
+          accent: AppColors.cyan,
           body: Center(child: CircularProgressIndicator()),
         ),
         error: (_, __) => AppScaffold(
           title: 'Erro',
+          accent: AppColors.cyan,
           body: Center(
             child: FilledButton(
               onPressed: () => ref.invalidate(
@@ -211,6 +213,7 @@ class _PatientTimelineEventFormPageState
           if (event == null) {
             return const AppScaffold(
               title: 'Evento',
+              accent: AppColors.cyan,
               body: Center(child: Text('Evento não encontrado.')),
             );
           }
@@ -226,6 +229,7 @@ class _PatientTimelineEventFormPageState
   Widget _buildForm(BuildContext context) {
     return AppScaffold(
       title: widget.isEdit ? 'Editar evento' : 'Novo evento',
+      accent: AppColors.cyan,
       body: Form(
         key: _formKey,
         child: MotionReveal(

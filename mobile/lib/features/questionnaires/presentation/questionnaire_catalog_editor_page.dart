@@ -67,6 +67,7 @@ class _QuestionnaireCatalogEditorPageState
             .whenData((v) => v);
     return AppScaffold(
       title: id == null ? 'Novo questionário' : 'Editor do questionário',
+      accent: AppColors.blue,
       subtitle: 'Rascunho, perguntas e publicação',
       body: detailAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),

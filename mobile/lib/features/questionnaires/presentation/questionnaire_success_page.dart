@@ -5,6 +5,7 @@ import '../../../core/theme/app_animations.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/brand_constellation.dart';
 import '../../profile/domain/profile_role.dart';
@@ -78,6 +79,7 @@ class _QuestionnaireSuccessPageState extends State<QuestionnaireSuccessPage>
 
     return AppScaffold(
       title: 'Concluído',
+      accent: AppColors.blue,
       body: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(

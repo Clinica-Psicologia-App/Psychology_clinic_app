@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../patients/providers/patients_providers.dart';
@@ -46,6 +47,7 @@ class _AssignResourceToPatientPageState
 
     return AppScaffold(
       title: 'Liberar recurso',
+      accent: AppColors.purple,
       body: resourceAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => const Center(child: Text('Recurso não encontrado.')),

@@ -21,6 +21,7 @@ class AdminPsychoeducationCatalogPage extends ConsumerWidget {
 
     return AppScaffold(
       title: 'Psicoeducação',
+      accent: AppColors.purple,
       subtitle: 'Módulos da Biblioteca · liberação aos psicólogos e pacientes',
       actions: [
         IconButton(
@@ -42,8 +43,7 @@ class AdminPsychoeducationCatalogPage extends ConsumerWidget {
             onRetry: () => ref.invalidate(adminPsychoListProvider),
           ),
           data: (modules) => RefreshIndicator(
-            onRefresh: () async =>
-                ref.refresh(adminPsychoListProvider.future),
+            onRefresh: () async => ref.refresh(adminPsychoListProvider.future),
             child: modules.isEmpty
                 ? ListView(children: const [
                     SizedBox(height: 160),
@@ -88,8 +88,7 @@ class _ModuleCard extends ConsumerWidget {
         ),
       ),
       child: InkWell(
-        onTap: () =>
-            context.push(PsychoeducationRoutes.adminModule(module.id)),
+        onTap: () => context.push(PsychoeducationRoutes.adminModule(module.id)),
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Row(

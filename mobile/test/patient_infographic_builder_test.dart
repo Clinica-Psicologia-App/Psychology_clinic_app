@@ -56,7 +56,8 @@ void main() {
     expect(data.schemas.single.description, isNotNull);
   });
 
-  test('necessidades/modos/pontos fortes/desafios/direções saem dos textos', () {
+  test('necessidades/modos/pontos fortes/desafios/direções saem dos textos',
+      () {
     const impressions = ClinicalImpressions(
       observedTemperament: 'Reservada e cautelosa. Segue outra frase aqui.',
       emotionalNeedsText: 'Ser aceita\nTer segurança',
@@ -146,8 +147,7 @@ void main() {
   });
 
   test('seções respeitam o limite máximo de itens', () {
-    final manyNeeds =
-        List.generate(20, (i) => 'Necessidade $i').join('\n');
+    final manyNeeds = List.generate(20, (i) => 'Necessidade $i').join('\n');
     final data = buildPatientInfographic(
       patient: patient,
       dashboard: _dashboardWith(const []),

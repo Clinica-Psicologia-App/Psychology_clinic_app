@@ -58,8 +58,7 @@ class _GenogramPersonEditorState extends ConsumerState<_GenogramPersonEditor> {
     super.initState();
     final p = widget.person;
     _fullName = TextEditingController(text: p?.fullName ?? '');
-    _relationship =
-        TextEditingController(text: p?.relationshipToPatient ?? '');
+    _relationship = TextEditingController(text: p?.relationshipToPatient ?? '');
     final age = p?.birthYear == null
         ? ''
         : (DateTime.now().year - p!.birthYear!).toString();
@@ -218,8 +217,10 @@ class _GenogramPersonEditorState extends ConsumerState<_GenogramPersonEditor> {
                       initialValue: _gender,
                       decoration: const InputDecoration(labelText: 'Gênero'),
                       items: const [
-                        DropdownMenuItem(value: 'female', child: Text('Feminino')),
-                        DropdownMenuItem(value: 'male', child: Text('Masculino')),
+                        DropdownMenuItem(
+                            value: 'female', child: Text('Feminino')),
+                        DropdownMenuItem(
+                            value: 'male', child: Text('Masculino')),
                         DropdownMenuItem(value: 'other', child: Text('Outro')),
                         DropdownMenuItem(
                             value: 'unknown', child: Text('Não informado')),
@@ -362,8 +363,8 @@ class _GenogramPersonEditorState extends ConsumerState<_GenogramPersonEditor> {
         Row(
           children: [
             Expanded(
-              child: _label(
-                  'Quanto essa pessoa esteve emocionalmente presente?'),
+              child:
+                  _label('Quanto essa pessoa esteve emocionalmente presente?'),
             ),
             Text(_presence?.toString() ?? '—',
                 style: theme.textTheme.titleMedium

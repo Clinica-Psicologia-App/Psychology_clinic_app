@@ -9,6 +9,7 @@ import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../../profile/domain/profile_role.dart';
+import '../../profile/presentation/widgets/user_avatar.dart';
 import '../../user_management/domain/clinic_user.dart';
 import '../../user_management/providers/user_management_providers.dart';
 
@@ -21,6 +22,7 @@ class PatientOverviewPage extends ConsumerWidget {
 
     return AppScaffold(
       title: 'Distribuição de Pacientes',
+      accent: AppColors.blue,
       body: usersAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
@@ -306,7 +308,15 @@ class _PsychologistPatientCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                _Avatar(name: user.fullName),
+                UserAvatar.parts(
+                  fullName: user.fullName,
+                  initials: user.initials,
+                  role: user.role,
+                  avatarType: user.avatarType,
+                  photoUrl: user.photoUrl,
+                  avatarConfig: user.avatarConfig,
+                  size: 42,
+                ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Column(
@@ -367,53 +377,6 @@ class _PsychologistPatientCard extends StatelessWidget {
   }
 }
 
-class _Avatar extends StatelessWidget {
-  const _Avatar({required this.name});
-
-  final String name;
-
-  String get _initials {
-    final parts = name.trim().split(' ');
-    if (parts.length >= 2) {
-      return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
-    }
-    return name.substring(0, name.length.clamp(0, 2)).toUpperCase();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 42,
-      height: 42,
-      decoration: BoxDecoration(
-        color: AppColors.purple,
-        shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.white.withValues(alpha: 0.45),
-            blurRadius: 4,
-            offset: const Offset(-2, -2),
-          ),
-          BoxShadow(
-            color: AppColors.purple.withValues(alpha: 0.38),
-            blurRadius: 8,
-            offset: const Offset(3, 4),
-          ),
-        ],
-      ),
-      child: Center(
-        child: Text(
-          _initials,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-            fontSize: 14,
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _StatusPill extends StatelessWidget {
   const _StatusPill({required this.label, required this.color});

@@ -8,6 +8,7 @@ import '../../../shared/utils/brazil_validators.dart';
 import '../../../shared/utils/input_formatters.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../../shared/widgets/status_chip.dart';
@@ -72,6 +73,7 @@ class _CreatePatientInvitationPageState
 
     return AppScaffold(
       title: 'Convidar paciente',
+      accent: AppColors.blue,
       body: Form(
         key: _formKey,
         child: MotionReveal(

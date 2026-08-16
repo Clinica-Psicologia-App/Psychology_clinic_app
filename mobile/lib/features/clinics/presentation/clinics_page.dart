@@ -25,6 +25,7 @@ class ClinicsPage extends ConsumerWidget {
 
     return AppScaffold(
       title: 'Clínicas',
+      accent: AppColors.blue,
       subtitle: 'Clínicas e profissionais individuais',
       actions: [
         IconButton(

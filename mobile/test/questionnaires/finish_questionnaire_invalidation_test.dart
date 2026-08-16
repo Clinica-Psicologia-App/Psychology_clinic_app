@@ -37,12 +37,12 @@ class _FakeQuestionnairesRepository extends QuestionnairesRepository {
 
 void main() {
   const patientId = 'patient-1';
-  const staffCtx =
-      StaffClinicalDashboardContext(role: ProfileRole.psychologist, patientId: patientId);
-  const staffMapCtx =
-      StaffMentalMapContext(role: ProfileRole.psychologist, patientId: patientId);
-  const resultsCtx =
-      PatientResultsContext(role: ProfileRole.psychologist, patientId: patientId);
+  const staffCtx = StaffClinicalDashboardContext(
+      role: ProfileRole.psychologist, patientId: patientId);
+  const staffMapCtx = StaffMentalMapContext(
+      role: ProfileRole.psychologist, patientId: patientId);
+  const resultsCtx = PatientResultsContext(
+      role: ProfileRole.psychologist, patientId: patientId);
   const detailCtx = PatientResultDetailContext(
     role: ProfileRole.psychologist,
     responseId: 'resp-1',
@@ -70,10 +70,12 @@ void main() {
             return <String, QuestionnairePatientStatus>{};
           }),
           myClinicalDashboardProvider.overrideWith(
-            () => _CountingClinicalDashboardNotifier(rebuildCounts, 'myDashboard'),
+            () => _CountingClinicalDashboardNotifier(
+                rebuildCounts, 'myDashboard'),
           ),
           staffClinicalDashboardProvider.overrideWith((ref, ctx) {
-            rebuildCounts['staffDashboard'] = rebuildCounts['staffDashboard']! + 1;
+            rebuildCounts['staffDashboard'] =
+                rebuildCounts['staffDashboard']! + 1;
             return ClinicalDashboardData.empty;
           }),
           myMentalMapProvider.overrideWith(
@@ -96,7 +98,8 @@ void main() {
 
       // Popula o cache de todas as instâncias family relevantes — igual ao
       // que aconteceria com as telas abertas antes de finalizar.
-      await container.read(questionnairePatientStatusProvider(patientId).future);
+      await container
+          .read(questionnairePatientStatusProvider(patientId).future);
       await container.read(myClinicalDashboardProvider.future);
       await container.read(staffClinicalDashboardProvider(staffCtx).future);
       await container.read(myMentalMapProvider.future);
@@ -118,7 +121,8 @@ void main() {
           .submit();
 
       // Força a resolução das instâncias marcadas como inválidas.
-      await container.read(questionnairePatientStatusProvider(patientId).future);
+      await container
+          .read(questionnairePatientStatusProvider(patientId).future);
       await container.read(myClinicalDashboardProvider.future);
       await container.read(staffClinicalDashboardProvider(staffCtx).future);
       await container.read(myMentalMapProvider.future);

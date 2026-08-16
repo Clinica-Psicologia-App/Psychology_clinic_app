@@ -60,7 +60,8 @@ class _PsychoeducationModulePageState
           total: module.cards.length,
           color: color,
         ),
-      if (module.closing != null) _ClosingPage(text: module.closing!, color: color),
+      if (module.closing != null)
+        _ClosingPage(text: module.closing!, color: color),
     ];
     final total = pages.length;
 
@@ -156,8 +157,8 @@ class _IntroPage extends StatelessWidget {
                   color: color, fontWeight: FontWeight.w800, letterSpacing: 1)),
           const SizedBox(height: 4),
           Text(module.title,
-              style: theme.textTheme.headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.w800, color: AppColors.navy)),
+              style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800, color: AppColors.navy)),
           if (module.presentation != null) ...[
             const SizedBox(height: AppSpacing.md),
             Text(module.presentation!,
@@ -196,8 +197,8 @@ class _CardPage extends StatelessWidget {
                   color: color, fontWeight: FontWeight.w800, letterSpacing: 1)),
           const SizedBox(height: 6),
           Text(card.title,
-              style: theme.textTheme.titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w800, color: AppColors.navy)),
+              style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w800, color: AppColors.navy)),
           if (card.patientText != null) ...[
             const SizedBox(height: AppSpacing.md),
             Text(card.patientText!,
@@ -335,9 +336,7 @@ class _BottomBar extends StatelessWidget {
                     margin: const EdgeInsets.symmetric(horizontal: 3),
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: i == page
-                          ? color
-                          : color.withValues(alpha: 0.25),
+                      color: i == page ? color : color.withValues(alpha: 0.25),
                     ),
                   ),
               ],

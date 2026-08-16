@@ -65,8 +65,9 @@ class ConsolidatedSchemaRow {
 
   bool get isActivated => isAutoActivated || isPsiActivated;
 
-  double get barMax =>
-      (scaleMax != null && scaleMax! > 0) ? scaleMax! : kSchemaActivationThreshold * 1.5;
+  double get barMax => (scaleMax != null && scaleMax! > 0)
+      ? scaleMax!
+      : kSchemaActivationThreshold * 1.5;
 
   /// Proporção 0–1 para renderizar a barra de score.
   double get barFraction => (score / barMax).clamp(0.0, 1.0);

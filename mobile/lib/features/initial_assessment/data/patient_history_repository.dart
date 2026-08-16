@@ -64,7 +64,10 @@ class PatientHistoryRepository {
         message: 'Paciente não encontrado.',
       );
     }
-    return (patientId: row['id'] as String, clinicId: row['clinic_id'] as String);
+    return (
+      patientId: row['id'] as String,
+      clinicId: row['clinic_id'] as String
+    );
   }
 
   // ---------------------------------------------------------------------------
@@ -122,8 +125,7 @@ class PatientHistoryRepository {
       'life_chapter': lifeChapter?.key,
       'age_at_event': ageAtEvent,
       'emotional_impact': emotionalImpact,
-      'belief_keys':
-          beliefs.isEmpty ? null : [for (final b in beliefs) b.key],
+      'belief_keys': beliefs.isEmpty ? null : [for (final b in beliefs) b.key],
       'belief_other': beliefOther,
       'is_sensitive': isSensitive,
       'filled_by_profile_id': _currentProfileId,

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_severity.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_page_header.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../../shared/widgets/status_chip.dart';
@@ -28,6 +29,7 @@ class PatientMentalMapPage extends ConsumerWidget {
 
     return AppScaffold(
       title: 'Mapa mental',
+      accent: AppColors.purple,
       actions: [
         IconButton(
           tooltip: 'Atualizar',
@@ -74,6 +76,7 @@ class StaffPatientMentalMapPage extends ConsumerWidget {
 
     return AppScaffold(
       title: 'Mapa mental',
+      accent: AppColors.purple,
       actions: [
         IconButton(
           tooltip: 'Atualizar',

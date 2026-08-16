@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../profile/domain/profile_role.dart';
@@ -23,6 +24,7 @@ class PatientProblemsPage extends ConsumerWidget {
 
     return AppScaffold(
       title: 'Problemas',
+      accent: AppColors.warning,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final created =
@@ -82,6 +84,7 @@ class StaffPatientProblemsPage extends ConsumerWidget {
 
     return AppScaffold(
       title: 'Problemas',
+      accent: AppColors.warning,
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final created = await context.push<bool>(

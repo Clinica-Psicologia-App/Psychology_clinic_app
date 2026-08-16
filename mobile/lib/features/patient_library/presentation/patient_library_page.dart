@@ -34,8 +34,7 @@ class PatientLibraryPage extends ConsumerWidget {
                 ? const _DarkMessage(
                     icon: Icons.movie_filter_outlined,
                     title: 'Sua Biblioteca está a caminho',
-                    message:
-                        'Seu psicólogo ainda não indicou obras para você. '
+                    message: 'Seu psicólogo ainda não indicou obras para você. '
                         'Quando indicar, elas aparecem aqui.',
                   )
                 : _Content(content: content),

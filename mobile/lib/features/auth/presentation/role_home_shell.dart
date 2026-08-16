@@ -5,17 +5,15 @@ import 'package:go_router/go_router.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
 import '../../../core/theme/app_animations.dart';
-import '../../../core/theme/app_breakpoints.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/app_canopy_header.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/clay_card.dart';
 import '../../../shared/widgets/clinical_module_card.dart';
-import '../../../shared/widgets/esquema_core_logo.dart';
-import '../../../shared/widgets/home_greeting_header.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../../clinic_entitlements/domain/clinic_feature_entitlement.dart';
 import '../../clinic_entitlements/providers/clinic_entitlements_providers.dart';
@@ -33,7 +31,6 @@ import '../../patients/presentation/patient_routes.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../profile/domain/user_profile.dart';
 import '../../profile/presentation/profile_routes.dart';
-import '../../profile/presentation/widgets/user_avatar.dart';
 import '../../questionnaires/domain/questionnaire_patient_status.dart';
 import '../../questionnaires/presentation/questionnaire_routes.dart';
 import '../../questionnaires/providers/questionnaires_providers.dart';
@@ -73,27 +70,7 @@ class RoleHomeShell extends ConsumerWidget {
     final authState = ref.watch(authControllerProvider);
     final profile = authState.valueOrNull;
 
-    return AppScaffold(
-      title: title,
-      subtitle: subtitle,
-      useResponsivePadding: false,
-      actions: [
-        if (profile != null)
-          Padding(
-            padding: const EdgeInsets.only(right: AppSpacing.sm),
-            child: Tooltip(
-              message: 'Meu perfil',
-              child: InkWell(
-                customBorder: const CircleBorder(),
-                onTap: () => context.push(ProfileRoutes.me),
-                child: Padding(
-                  padding: const EdgeInsets.all(6),
-                  child: UserAvatar(profile: profile, size: 32),
-                ),
-              ),
-            ),
-          ),
-      ],
+    return AppCanopyScaffold(
       body: authState.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
@@ -130,112 +107,117 @@ class _HomeBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isWide = AppBreakpoints.isWide(context);
+    // Canopy full-bleed no topo (ele reserva o inset da status bar); o
+    // conteúdo flui abaixo, com a largura máxima responsiva de sempre.
+    final header = role == ProfileRole.patient
+        ? _PatientGreetingHeader(profile: profile)
+        : _ProfileHeader(profile: profile);
 
-    final content = ResponsiveContent(
-      child: ListView(
-        padding: const EdgeInsets.all(AppSpacing.xl),
-        children: [
-          if (isWide)
-            const Padding(
-              padding: EdgeInsets.only(bottom: AppSpacing.xl),
-              child: EsquemaCoreLogo.horizontal(
-                size: 44,
-                showName: true,
-                showTagline: true,
-              ),
+    return ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        header,
+        ResponsiveContent(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              0,
+              AppSpacing.lg,
+              0,
+              AppSpacing.xl,
             ),
-          // O HomeGreetingHeader tem coreografia própria de entrada — sem
-          // MotionReveal externo para não animar em dobro.
-          role == ProfileRole.patient
-              ? _PatientGreetingHeader(profile: profile)
-              : _ProfileHeader(profile: profile),
-          const SizedBox(height: AppSpacing.xl),
-          if (role == ProfileRole.psychologist) const _PsychologistWorkspace(),
-          if (role == ProfileRole.patient) ...[
-            const MotionReveal(
-              delay: Duration(milliseconds: 60),
-              child: _PatientNextStep(),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            const AppSectionHeader(
-              title: 'Seu progresso',
-              subtitle: 'Um resumo simples de como você está indo.',
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            const MotionReveal(
-              delay: Duration(milliseconds: 100),
-              child: _PatientProgressSummary(),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            const AppSectionHeader(
-              title: 'Seus espaços',
-              subtitle: 'Escolha por onde continuar agora.',
-              accentColor: _WorkspaceAccents.clinical,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            MotionReveal(
-              delay: const Duration(milliseconds: 140),
-              // Coluna única no celular: com 3 cards e 2 colunas, um deles
-              // sempre fica sozinho numa linha, ocupando só metade da
-              // largura — o mesmo problema de item órfão já corrigido antes
-              // nesta sessão para o resumo do profissional. Em telas largas
-              // os 3 cabem numa linha só.
-              child: ResponsiveGrid(
-                compactColumns: 1,
-                mediumColumns: 3,
-                expandedColumns: 3,
-                children: [
-                  _PatientExploreCard(
-                    icon: Icons.hub_outlined,
-                    title: 'Mapa mental',
-                    subtitle: 'Uma visão geral do que já conversamos.',
-                    accentColor: _WorkspaceAccents.clinical,
-                    onTap: () => context.push(MentalMapRoutes.patientList),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (role == ProfileRole.psychologist)
+                  const _PsychologistWorkspace(),
+                if (role == ProfileRole.patient) ...[
+                  const MotionReveal(
+                    delay: Duration(milliseconds: 60),
+                    child: _PatientNextStep(),
                   ),
-                  _PatientExploreCard(
-                    icon: Icons.menu_book_outlined,
-                    title: 'Biblioteca',
-                    subtitle: 'Materiais e exercícios pensados para você.',
-                    accentColor: _WorkspaceAccents.clinical,
-                    onTap: () =>
-                        context.push(TherapyResourceRoutes.patientList),
+                  const SizedBox(height: AppSpacing.xl),
+                  const AppSectionHeader(
+                    title: 'Seu progresso',
+                    subtitle: 'Um resumo simples de como você está indo.',
                   ),
-                  _PatientExploreCard(
-                    icon: Icons.monitor_heart_outlined,
-                    title: 'Monitor diário',
-                    subtitle: 'Humor, rotina e como você tem se sentido.',
-                    accentColor: _WorkspaceAccents.management,
-                    onTap: () => context.push(DailyMonitorRoutes.patientList),
+                  const SizedBox(height: AppSpacing.sm),
+                  const MotionReveal(
+                    delay: Duration(milliseconds: 100),
+                    child: _PatientProgressSummary(),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  const AppSectionHeader(
+                    title: 'Seus espaços',
+                    subtitle: 'Escolha por onde continuar agora.',
+                    accentColor: _WorkspaceAccents.clinical,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  MotionReveal(
+                    delay: const Duration(milliseconds: 140),
+                    // Coluna única no celular: com 3 cards e 2 colunas, um deles
+                    // sempre fica sozinho numa linha, ocupando só metade da
+                    // largura — o mesmo problema de item órfão já corrigido antes
+                    // nesta sessão para o resumo do profissional. Em telas largas
+                    // os 3 cabem numa linha só.
+                    child: ResponsiveGrid(
+                      compactColumns: 1,
+                      mediumColumns: 3,
+                      expandedColumns: 3,
+                      children: [
+                        _PatientExploreCard(
+                          icon: Icons.hub_outlined,
+                          title: 'Mapa mental',
+                          subtitle: 'Uma visão geral do que já conversamos.',
+                          accentColor: _WorkspaceAccents.clinical,
+                          onTap: () =>
+                              context.push(MentalMapRoutes.patientList),
+                        ),
+                        _PatientExploreCard(
+                          icon: Icons.menu_book_outlined,
+                          title: 'Biblioteca',
+                          subtitle:
+                              'Materiais e exercícios pensados para você.',
+                          accentColor: _WorkspaceAccents.clinical,
+                          onTap: () =>
+                              context.push(TherapyResourceRoutes.patientList),
+                        ),
+                        _PatientExploreCard(
+                          icon: Icons.monitor_heart_outlined,
+                          title: 'Monitor diário',
+                          subtitle: 'Humor, rotina e como você tem se sentido.',
+                          accentColor: _WorkspaceAccents.management,
+                          onTap: () =>
+                              context.push(DailyMonitorRoutes.patientList),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xl),
+                  const AppSectionHeader(
+                    title: 'Sua continuidade',
+                    subtitle:
+                        'O caminho completo do seu acompanhamento, no seu ritmo.',
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  MotionReveal(
+                    delay: const Duration(milliseconds: 180),
+                    child: ClinicalModuleCard(
+                      icon: Icons.route_outlined,
+                      title: 'Meu plano terapêutico',
+                      subtitle:
+                          'Continue de onde parou: questionários, monitor diário e '
+                          'seus recursos.',
+                      accentColor: AppColors.purple,
+                      onTap: () => context.push(PatientJourneyRoutes.journey),
+                    ),
                   ),
                 ],
-              ),
+              ],
             ),
-            const SizedBox(height: AppSpacing.xl),
-            const AppSectionHeader(
-              title: 'Sua continuidade',
-              subtitle:
-                  'O caminho completo do seu acompanhamento, no seu ritmo.',
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            MotionReveal(
-              delay: const Duration(milliseconds: 180),
-              child: ClinicalModuleCard(
-                icon: Icons.route_outlined,
-                title: 'Meu plano terapêutico',
-                subtitle:
-                    'Continue de onde parou: questionários, monitor diário e '
-                    'seus recursos.',
-                accentColor: AppColors.purple,
-                onTap: () => context.push(PatientJourneyRoutes.journey),
-              ),
-            ),
-          ],
-        ],
-      ),
+          ),
+        ),
+      ],
     );
-
-    return content;
   }
 }
 
@@ -244,63 +226,13 @@ class _PsychologistWorkspace extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final patients = ref.watch(patientsListProvider).valueOrNull ?? const [];
-    final invitations =
-        ref.watch(patientInvitationsListProvider).valueOrNull ?? const [];
-    final questionnaires =
-        ref.watch(psychologistQuestionnairesProvider).valueOrNull ?? const [];
-
-    final activePatients = patients.where((patient) => patient.isActive).length;
-    final pendingInvitations =
-        invitations.where((invitation) => invitation.isPending).length;
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // O resumo da carteira ("Central de trabalho") agora flutua no canopy
+        // (ver _ProfileHeader.footer); aqui fica só o painel de notificações e
+        // os grupos de módulos.
         const _PsychologistAlertsCard(),
-        const AppSectionHeader(
-          title: 'Central de trabalho',
-          subtitle: 'Toque em um número para abrir a tela correspondente.',
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        MotionReveal(
-          delay: const Duration(milliseconds: 80),
-          child: _WorkspaceSummary(
-            metrics: [
-              _WorkspaceMetric(
-                icon: Icons.people_outline,
-                label: 'Pacientes',
-                value: activePatients,
-                accent: _WorkspaceAccents.management,
-                onTap: () => context.push(
-                  PatientRoutes.list(ProfileRole.psychologist),
-                ),
-              ),
-              _WorkspaceMetric(
-                icon: Icons.mark_email_unread_outlined,
-                label: 'Convites',
-                value: pendingInvitations,
-                // Convite parado é a única métrica aqui que pede ação: por
-                // isso ganha cor de alerta enquanto houver algum na fila.
-                accent: pendingInvitations > 0
-                    ? AppColors.warning
-                    : _WorkspaceAccents.management,
-                onTap: () => context.push(
-                  PatientInvitationRoutes.list(ProfileRole.psychologist),
-                ),
-              ),
-              _WorkspaceMetric(
-                icon: Icons.assignment_outlined,
-                label: 'Questionários',
-                value: questionnaires.length,
-                accent: _WorkspaceAccents.assessment,
-                onTap: () =>
-                    context.push(QuestionnaireRoutes.psychologistCatalog),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: AppSpacing.xl),
         const AppSectionHeader(
           title: 'Carteira de pacientes',
           subtitle: 'Cadastro, convites e plano de cuidado.',
@@ -474,8 +406,7 @@ class _AlertsPanelState extends State<_AlertsPanel> {
     final theme = Theme.of(context);
     final alerts = widget.alerts;
     final hasMore = alerts.length > _initialCount;
-    final visible =
-        _expanded ? alerts : alerts.take(_initialCount).toList();
+    final visible = _expanded ? alerts : alerts.take(_initialCount).toList();
 
     return ClayCard(
       accentColor: AppColors.warning,
@@ -615,10 +546,13 @@ class _AlertRow extends StatelessWidget {
       // A leitura visual divide nome, subtítulo e prazo em três textos; o
       // leitor de tela continua ouvindo a frase completa de uma vez.
       // `excludeSemantics` impede que os textos dos filhos vazem e se
-      // concatenem com este rótulo.
+      // concatenem com este rótulo. A ação de toque vive no próprio nó (o
+      // `excludeSemantics` descartaria a do InkWell): sem ela, o nó não é
+      // focável e é mesclado ao conteúdo vizinho pelo leitor de tela.
       label: alert.message,
       excludeSemantics: true,
       button: true,
+      onTap: () => _navigate(context),
       child: InkWell(
         onTap: () => _navigate(context),
         child: Padding(
@@ -667,8 +601,7 @@ class _AlertRow extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.xs),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: style.bg,
                   borderRadius: BorderRadius.circular(999),
@@ -724,12 +657,14 @@ class _PatientGreetingHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final firstName = profile.fullName.trim().split(RegExp(r'\s+')).first;
-    return HomeGreetingHeader(
+    return AppCanopyHeader(
       profile: profile,
       accent: AppColors.blue,
       name: firstName,
+      areaLabel: 'Meu espaço',
       contextLine: 'Que bom te ver por aqui. Este é o seu espaço de cuidado.',
       watermarkIcon: Icons.spa_outlined,
+      onProfileTap: () => context.push(ProfileRoutes.me),
     );
   }
 }
@@ -1241,13 +1176,59 @@ class _ProfileHeader extends ConsumerWidget {
     final firstName = profile.fullName.trim().split(RegExp(r'\s+')).first;
     final patients = ref.watch(patientsListProvider).valueOrNull;
     final invitations = ref.watch(patientInvitationsListProvider).valueOrNull;
+    final questionnaires =
+        ref.watch(psychologistQuestionnairesProvider).valueOrNull ?? const [];
 
-    return HomeGreetingHeader(
+    final activePatients =
+        (patients ?? const []).where((patient) => patient.isActive).length;
+    final pendingInvitations = (invitations ?? const [])
+        .where((invitation) => invitation.isPending)
+        .length;
+
+    return AppCanopyHeader(
       profile: profile,
       accent: _WorkspaceAccents.clinical,
       name: firstName,
-      contextLine: _contextLine(patients?.length, invitations),
+      areaLabel: 'Profissional',
+      contextLine: _contextLine(
+        patients == null ? null : activePatients,
+        invitations,
+      ),
       watermarkIcon: Icons.psychology_alt_outlined,
+      onProfileTap: () => context.push(ProfileRoutes.me),
+      // Resumo da carteira flutuando sobre a base do canopy — o antigo bloco
+      // "Central de trabalho", promovido ao cabeçalho.
+      footer: _WorkspaceSummary(
+        metrics: [
+          _WorkspaceMetric(
+            icon: Icons.people_outline,
+            label: 'Pacientes',
+            value: activePatients,
+            accent: _WorkspaceAccents.management,
+            onTap: () => context.push(
+              PatientRoutes.list(ProfileRole.psychologist),
+            ),
+          ),
+          _WorkspaceMetric(
+            icon: Icons.mark_email_unread_outlined,
+            label: 'Convites',
+            value: pendingInvitations,
+            accent: pendingInvitations > 0
+                ? AppColors.warning
+                : _WorkspaceAccents.management,
+            onTap: () => context.push(
+              PatientInvitationRoutes.list(ProfileRole.psychologist),
+            ),
+          ),
+          _WorkspaceMetric(
+            icon: Icons.assignment_outlined,
+            label: 'Questionários',
+            value: questionnaires.length,
+            accent: _WorkspaceAccents.assessment,
+            onTap: () => context.push(QuestionnaireRoutes.psychologistCatalog),
+          ),
+        ],
+      ),
     );
   }
 

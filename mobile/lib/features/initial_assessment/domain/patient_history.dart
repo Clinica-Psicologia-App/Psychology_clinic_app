@@ -15,7 +15,8 @@ class PatientHistory {
   /// Eventos de um capítulo, ordenados por idade quando disponível.
   List<TimelineEntry> entriesFor(LifeChapter chapter) {
     final list = entries.where((e) => e.lifeChapter == chapter).toList()
-      ..sort((a, b) => (a.ageAtEvent ?? 1 << 30).compareTo(b.ageAtEvent ?? 1 << 30));
+      ..sort((a, b) =>
+          (a.ageAtEvent ?? 1 << 30).compareTo(b.ageAtEvent ?? 1 << 30));
     return list;
   }
 

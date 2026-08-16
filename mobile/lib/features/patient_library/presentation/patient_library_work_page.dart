@@ -96,9 +96,10 @@ class _PatientLibraryWorkPageState
       ref.invalidate(myLibraryContentProvider);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(status == 'Assistido'
-            ? 'Respostas enviadas. Obrigado por compartilhar.'
-            : 'Tudo certo — bom filme!')),
+        SnackBar(
+            content: Text(status == 'Assistido'
+                ? 'Respostas enviadas. Obrigado por compartilhar.'
+                : 'Tudo certo — bom filme!')),
       );
     } catch (e) {
       if (mounted) showErrorBanner(context, e);
@@ -114,8 +115,8 @@ class _PatientLibraryWorkPageState
     return Scaffold(
       backgroundColor: _bg,
       body: async.when(
-        loading: () =>
-            const Center(child: CircularProgressIndicator(color: Colors.white54)),
+        loading: () => const Center(
+            child: CircularProgressIndicator(color: Colors.white54)),
         error: (e, _) => _msg('Não foi possível carregar a obra'),
         data: (list) {
           LibraryIndication? ind;
@@ -253,7 +254,8 @@ class _PatientLibraryWorkPageState
                                     child: CircularProgressIndicator(
                                         strokeWidth: 2, color: Colors.black))
                                 : const Icon(Icons.check),
-                            label: Text(_saving ? 'Enviando…' : 'Enviar respostas'),
+                            label: Text(
+                                _saving ? 'Enviando…' : 'Enviar respostas'),
                           ),
                         ],
                       ),
@@ -499,7 +501,8 @@ class _SafetyCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: const Color(0xFFE0519A).withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFE0519A).withValues(alpha: 0.45)),
+        border:
+            Border.all(color: const Color(0xFFE0519A).withValues(alpha: 0.45)),
       ),
       child: const Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -520,7 +523,8 @@ class _SafetyCard extends StatelessWidget {
             'Tudo bem sentir. Respire com calma, faça uma pausa se precisar e '
             'lembre do recurso de regulação que você combinou com seu psicólogo. '
             'Se quiser, avise seu psicólogo.',
-            style: TextStyle(color: Colors.white70, height: 1.4, fontSize: 12.5),
+            style:
+                TextStyle(color: Colors.white70, height: 1.4, fontSize: 12.5),
           ),
         ],
       ),

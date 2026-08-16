@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../profile/domain/profile_role.dart';
@@ -38,6 +39,7 @@ class _PatientInvitationsPageState
 
     return AppScaffold(
       title: 'Convites de pacientes',
+      accent: AppColors.blue,
       actions: [
         IconButton(
           tooltip: 'Atualizar',

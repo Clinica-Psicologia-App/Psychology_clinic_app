@@ -35,6 +35,7 @@ class PsychoeducationJourneyPage extends ConsumerWidget {
 
     return AppScaffold(
       title: 'Biblioteca de Psicoeducação',
+      accent: AppColors.purple,
       subtitle: staffView
           ? 'Os módulos que os pacientes veem'
           : 'Uma jornada para entender e transformar seus padrões',
@@ -87,9 +88,8 @@ class _Journey extends StatelessWidget {
             _StageSection(
               stage: stage,
               moduleRouteBuilder: moduleRouteBuilder,
-              modules:
-                  modules.where((m) => m.stage == stage.label).toList()
-                    ..sort((a, b) => a.number.compareTo(b.number)),
+              modules: modules.where((m) => m.stage == stage.label).toList()
+                ..sort((a, b) => a.number.compareTo(b.number)),
             ),
         ],
       ),
@@ -117,8 +117,8 @@ class _StageSection extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(top: AppSpacing.md, bottom: 2),
           child: Text(stage.label,
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w800, color: AppColors.navy)),
+              style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800, color: AppColors.navy)),
         ),
         Text(stage.subtitle,
             style: theme.textTheme.bodySmall

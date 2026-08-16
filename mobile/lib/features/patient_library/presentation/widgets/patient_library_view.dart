@@ -198,8 +198,7 @@ class _HeroButton extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon,
-                  size: 22, color: filled ? Colors.black : Colors.white),
+              Icon(icon, size: 22, color: filled ? Colors.black : Colors.white),
               const SizedBox(width: 8),
               Text(
                 label,

@@ -44,6 +44,7 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
 
     return AppScaffold(
       title: 'Pacientes',
+      accent: AppColors.blue,
       useResponsivePadding: true,
       actions: [
         IconButton(
@@ -80,8 +81,7 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
           final isStaff = widget.role.isStaff;
 
           return RefreshIndicator(
-            onRefresh: () =>
-                ref.read(patientsListProvider.notifier).refresh(),
+            onRefresh: () => ref.read(patientsListProvider.notifier).refresh(),
             child: CustomScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
               slivers: [
@@ -146,8 +146,7 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
                               return FilterChip(
                                 selected: _filter == f,
                                 label: Text(f.label),
-                                onSelected: (_) =>
-                                    setState(() => _filter = f),
+                                onSelected: (_) => setState(() => _filter = f),
                               );
                             }).toList(),
                           ),
@@ -338,8 +337,7 @@ class _PatientsHeader extends StatelessWidget {
                   Expanded(
                     child: FilledButton.icon(
                       onPressed: onNew,
-                      icon:
-                          const Icon(Icons.person_add_outlined, size: 18),
+                      icon: const Icon(Icons.person_add_outlined, size: 18),
                       label: const Text('Novo paciente'),
                       style: FilledButton.styleFrom(
                         padding: const EdgeInsets.symmetric(

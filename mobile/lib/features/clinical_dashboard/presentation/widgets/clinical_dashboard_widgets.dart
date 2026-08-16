@@ -1400,7 +1400,7 @@ class ConsolidatedSchemaProfileCard extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        'Agrupado por domínio · ordem clínica',
+                        'Agrupado por domínio · maior pontuação primeiro',
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: AppColors.textMuted,
                         ),
@@ -1416,6 +1416,27 @@ class ConsolidatedSchemaProfileCard extends ConsumerWidget {
               ],
             ),
           ),
+
+          // ── Dica de interação (só para o psicólogo) ────────────────────
+          if (isStaff)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
+              child: Row(
+                children: [
+                  const Icon(Icons.touch_app_outlined,
+                      size: 13, color: AppColors.purple),
+                  const SizedBox(width: 5),
+                  Text(
+                    'Toque em qualquer esquema para ativar ou desativar',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.purple.withValues(alpha: 0.75),
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+              ),
+            ),
 
           // ── Corpo: um bloco por domínio, em ordem canônica ──────────────
           Padding(
@@ -1556,7 +1577,9 @@ class _DomainSection extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  ...domain.schemas.map(
+                  ...([...domain.schemas]
+                        ..sort((a, b) => b.score.compareTo(a.score)))
+                      .map(
                     (schema) => _SchemaBarRow(
                       schema: schema,
                       domainColor: color,
@@ -1833,7 +1856,8 @@ class _ConsolidatedActivationSheetState
     setState(() => _saving = true);
     try {
       await ref
-          .read(manageSchemaActivationProvider(widget.schema.responseId).notifier)
+          .read(
+              manageSchemaActivationProvider(widget.schema.responseId).notifier)
           .activate(
             widget.schema.code,
             widget.schema.name,
@@ -1852,7 +1876,8 @@ class _ConsolidatedActivationSheetState
     setState(() => _saving = true);
     try {
       await ref
-          .read(manageSchemaActivationProvider(widget.schema.responseId).notifier)
+          .read(
+              manageSchemaActivationProvider(widget.schema.responseId).notifier)
           .deactivate(widget.schema.code);
       widget.onChanged?.call();
       if (mounted) Navigator.of(context).pop();
@@ -2071,4 +2096,3 @@ class _LegendItem extends StatelessWidget {
     );
   }
 }
-

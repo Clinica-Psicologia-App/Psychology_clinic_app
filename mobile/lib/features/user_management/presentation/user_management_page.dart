@@ -35,6 +35,7 @@ class UserManagementPage extends ConsumerWidget {
 
     return AppScaffold(
       title: 'Equipe e permissões',
+      accent: AppColors.blue,
       subtitle: isPlatformAdmin
           ? 'Psicólogos e administradores da plataforma'
           : 'Gestão da equipe da clínica',

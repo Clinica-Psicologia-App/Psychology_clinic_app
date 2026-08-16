@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../profile/domain/profile_role.dart';
 import '../providers/initial_assessment_providers.dart';
@@ -77,10 +78,12 @@ class _MyInitialAssessmentEntry extends ConsumerWidget {
       ),
       loading: () => const AppScaffold(
         title: 'Como você está hoje?',
+        accent: AppColors.turquoise,
         body: Center(child: CircularProgressIndicator()),
       ),
       error: (_, __) => const AppScaffold(
         title: 'Como você está hoje?',
+        accent: AppColors.turquoise,
         body: Center(
           child: Padding(
             padding: EdgeInsets.all(24),
@@ -109,10 +112,12 @@ class _MyHistoryEntry extends ConsumerWidget {
       ),
       loading: () => const AppScaffold(
         title: 'Minha História',
+        accent: AppColors.turquoise,
         body: Center(child: CircularProgressIndicator()),
       ),
       error: (_, __) => const AppScaffold(
         title: 'Minha História',
+        accent: AppColors.turquoise,
         body: Center(
           child: Padding(
             padding: EdgeInsets.all(24),
@@ -141,10 +146,12 @@ class _MyFamilyEntry extends ConsumerWidget {
       ),
       loading: () => const AppScaffold(
         title: 'Minha Família',
+        accent: AppColors.turquoise,
         body: Center(child: CircularProgressIndicator()),
       ),
       error: (_, __) => const AppScaffold(
         title: 'Minha Família',
+        accent: AppColors.turquoise,
         body: Center(
           child: Padding(
             padding: EdgeInsets.all(24),

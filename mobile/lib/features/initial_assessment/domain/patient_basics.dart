@@ -81,8 +81,8 @@ class PatientBasics {
     if (birth == null) return null;
     final now = DateTime.now();
     var years = now.year - birth.year;
-    final hadBirthday =
-        now.month > birth.month || (now.month == birth.month && now.day >= birth.day);
+    final hadBirthday = now.month > birth.month ||
+        (now.month == birth.month && now.day >= birth.day);
     if (!hadBirthday) years--;
     return years < 0 ? null : years;
   }

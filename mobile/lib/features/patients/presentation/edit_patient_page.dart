@@ -5,6 +5,7 @@ import '../../../core/errors/app_exception.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../profile/domain/profile_role.dart';
@@ -115,6 +116,7 @@ class _EditPatientPageState extends ConsumerState<EditPatientPage> {
 
     return AppScaffold(
       title: widget.patient.fullName,
+      accent: AppColors.blue,
       body: MotionReveal(
         child: Form(
           key: _formKey,

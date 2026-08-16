@@ -65,14 +65,14 @@ class AdminFeatureDef {
 }
 
 const adminManageableFeatures = <AdminFeatureDef>[
-  AdminFeatureDef('patients', 'Pacientes',
-      'Cadastro e acompanhamento de pacientes.'),
+  AdminFeatureDef(
+      'patients', 'Pacientes', 'Cadastro e acompanhamento de pacientes.'),
   AdminFeatureDef('questionnaires', 'Questionários',
       'YSQ, YPI e instrumentos de esquema e apego.'),
   AdminFeatureDef('reports', 'Relatórios e dashboards',
       'Dashboard clínico, síntese gráfica e infográficos.'),
   AdminFeatureDef('resources', 'Recursos e Biblioteca',
       'Recursos terapêuticos, Biblioteca de filmes e Psicoeducação.'),
-  AdminFeatureDef('audit', 'Auditoria',
-      'Registros de auditoria e rastreabilidade.'),
+  AdminFeatureDef(
+      'audit', 'Auditoria', 'Registros de auditoria e rastreabilidade.'),
 ];

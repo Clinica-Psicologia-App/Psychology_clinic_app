@@ -69,10 +69,7 @@ class AdminPsychoeducationRepository {
 
   Future<void> updateModule(String id, Map<String, dynamic> values) async {
     try {
-      await _client
-          .from('psychoeducation_modules')
-          .update(values)
-          .eq('id', id);
+      await _client.from('psychoeducation_modules').update(values).eq('id', id);
     } catch (e) {
       throw mapToAppException(e);
     }

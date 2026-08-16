@@ -49,6 +49,7 @@ class PatientResultsPage extends ConsumerWidget {
 
     return AppScaffold(
       title: 'Dashboard clínico',
+      accent: AppColors.purple,
       actions: [
         IconButton(
           tooltip: 'Atualizar',
@@ -61,7 +62,8 @@ class PatientResultsPage extends ConsumerWidget {
         onRetry: refreshDashboard,
         emptyIcon: Icons.analytics_outlined,
         dataBuilder: (data) {
-          final patientName = ref.watch(patientDetailProvider(patientId)).valueOrNull?.fullName;
+          final patientName =
+              ref.watch(patientDetailProvider(patientId)).valueOrNull?.fullName;
           return RefreshIndicator(
             onRefresh: () async {
               refreshDashboard();

@@ -26,8 +26,7 @@ class ProfilePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(authControllerProvider);
 
-    return AppScaffold(
-      title: 'Meu perfil',
+    return AppCanopyScaffold(
       body: async.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
@@ -152,130 +151,145 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
   }
 
   Widget _buildBody(UserProfile p) {
-    return MotionReveal(
-      child: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _HeaderCard(
-            profile: p,
-            busy: _busyAvatar,
-            onEditPhoto: _busyAvatar ? null : _openPhotoSheet,
-          ),
-          const SizedBox(height: 12),
-          _SectionCard(
-            title: 'Dados pessoais',
-            icon: Icons.badge_outlined,
-            children: [
-              TextField(
-                controller: _name,
-                textCapitalization: TextCapitalization.words,
-                decoration: const InputDecoration(
-                  labelText: 'Nome completo',
-                  prefixIcon: Icon(Icons.person_outline),
-                ),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _phone,
-                keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  labelText: 'Telefone',
-                  hintText: 'Opcional',
-                  prefixIcon: Icon(Icons.phone_outlined),
-                ),
-              ),
-              if (_dirty) ...[
-                const SizedBox(height: 14),
-                Row(
+    return ListView(
+      padding: EdgeInsets.zero,
+      children: [
+        _ProfileCanopyHeader(
+          profile: p,
+          busy: _busyAvatar,
+          onEditPhoto: _busyAvatar ? null : _openPhotoSheet,
+          onBack: () => Navigator.of(context).maybePop(),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+          child: MotionReveal(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _SectionCard(
+                  title: 'Dados pessoais',
+                  icon: Icons.badge_outlined,
                   children: [
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: _savingDetails ? null : _saveDetails,
-                        icon: _savingDetails
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child:
-                                    CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.check, size: 18),
-                        label: Text(
-                          _savingDetails ? 'Salvando...' : 'Salvar alterações',
-                        ),
+                    TextField(
+                      controller: _name,
+                      textCapitalization: TextCapitalization.words,
+                      decoration: const InputDecoration(
+                        labelText: 'Nome completo',
+                        prefixIcon: Icon(Icons.person_outline),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    TextButton(
-                      onPressed: _savingDetails ? null : _discard,
-                      child: const Text('Descartar'),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _phone,
+                      keyboardType: TextInputType.phone,
+                      decoration: const InputDecoration(
+                        labelText: 'Telefone',
+                        hintText: 'Opcional',
+                        prefixIcon: Icon(Icons.phone_outlined),
+                      ),
                     ),
+                    if (_dirty) ...[
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: FilledButton.icon(
+                              onPressed: _savingDetails ? null : _saveDetails,
+                              icon: _savingDetails
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Icon(Icons.check, size: 18),
+                              label: Text(
+                                _savingDetails
+                                    ? 'Salvando...'
+                                    : 'Salvar alterações',
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          TextButton(
+                            onPressed: _savingDetails ? null : _discard,
+                            child: const Text('Descartar'),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
-              ],
-            ],
-          ),
-          const SizedBox(height: 12),
-          _SectionCard(
-            title: 'Conta e acessos',
-            icon: Icons.shield_outlined,
-            children: [
-              _ReadOnlyRow(
-                icon: Icons.alternate_email_rounded,
-                label: 'E-mail',
-                value: p.email,
-                hint: 'Somente o administrador pode alterar.',
-              ),
-              const Divider(height: 20),
-              _ReadOnlyRow(
-                icon: Icons.workspace_premium_outlined,
-                label: 'Perfil de acesso',
-                value: p.role.label,
-              ),
-              const Divider(height: 20),
-              _ReadOnlyRow(
-                icon: p.isActive
-                    ? Icons.check_circle_outline
-                    : Icons.cancel_outlined,
-                label: 'Situação',
-                value: p.isActive ? 'Ativo' : 'Inativo',
-                valueColor: p.isActive ? AppColors.success : AppColors.error,
-              ),
-              if (p.createdAt != null) ...[
-                const Divider(height: 20),
-                _ReadOnlyRow(
-                  icon: Icons.event_outlined,
-                  label: 'Membro desde',
-                  value: _formatDate(context, p.createdAt!),
+                const SizedBox(height: 12),
+                _SectionCard(
+                  title: 'Conta e acessos',
+                  icon: Icons.shield_outlined,
+                  children: [
+                    _ReadOnlyRow(
+                      icon: Icons.alternate_email_rounded,
+                      label: 'E-mail',
+                      value: p.email,
+                      hint: 'Somente o administrador pode alterar.',
+                      accent: AppColors.blue,
+                    ),
+                    const Divider(height: 22),
+                    _ReadOnlyRow(
+                      icon: Icons.workspace_premium_outlined,
+                      label: 'Perfil de acesso',
+                      value: p.role.label,
+                      accent: AppColors.purple,
+                    ),
+                    const Divider(height: 22),
+                    _ReadOnlyRow(
+                      icon: p.isActive
+                          ? Icons.check_circle_outline
+                          : Icons.cancel_outlined,
+                      label: 'Situação',
+                      value: p.isActive ? 'Ativo' : 'Inativo',
+                      valueColor:
+                          p.isActive ? AppColors.success : AppColors.error,
+                      accent: p.isActive ? AppColors.success : AppColors.error,
+                    ),
+                    if (p.createdAt != null) ...[
+                      const Divider(height: 22),
+                      _ReadOnlyRow(
+                        icon: Icons.event_outlined,
+                        label: 'Membro desde',
+                        value: _formatDate(context, p.createdAt!),
+                        accent: AppColors.cyan,
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 12),
+                ClayCard(
+                  child: ListTile(
+                    leading: const Icon(Icons.lock_outline),
+                    title: const Text('Alterar senha'),
+                    subtitle: const Text(
+                      'Você será desconectado após definir a nova senha.',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.push(AppRoutes.updatePassword),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.error,
+                    side: const BorderSide(color: AppColors.error),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                  ),
+                  onPressed: _confirmSignOut,
+                  icon: const Icon(Icons.logout, size: 18),
+                  label: const Text('Sair da conta'),
                 ),
               ],
-            ],
-          ),
-          const SizedBox(height: 12),
-          ClayCard(
-            child: ListTile(
-              leading: const Icon(Icons.lock_outline),
-              title: const Text('Alterar senha'),
-              subtitle: const Text(
-                'Você será desconectado após definir a nova senha.',
-              ),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => context.push(AppRoutes.updatePassword),
             ),
           ),
-          const SizedBox(height: 20),
-          OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.error,
-              side: const BorderSide(color: AppColors.error),
-              padding: const EdgeInsets.symmetric(vertical: 14),
-            ),
-            onPressed: _confirmSignOut,
-            icon: const Icon(Icons.logout, size: 18),
-            label: const Text('Sair da conta'),
-          ),
-          const SizedBox(height: 24),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -562,55 +576,119 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
 // Header
 // ---------------------------------------------------------------------------
 
-class _HeaderCard extends StatelessWidget {
-  const _HeaderCard({
+/// Canopy de identidade: avatar grande com botão de foto, nome, e-mail e papel
+/// sobre o gradiente navy→azul — o mesmo idioma premium das home. A câmera e o
+/// overlay de carregamento preservam o comportamento anterior.
+class _ProfileCanopyHeader extends StatelessWidget {
+  const _ProfileCanopyHeader({
     required this.profile,
     required this.busy,
     required this.onEditPhoto,
+    required this.onBack,
   });
 
   final UserProfile profile;
   final bool busy;
   final VoidCallback? onEditPhoto;
+  final VoidCallback onBack;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final topInset = MediaQuery.paddingOf(context).top;
+    final ringColor = Color.lerp(AppColors.navy, AppColors.blue, 0.55)!;
 
-    return ClayCard(
-      clipBehavior: Clip.antiAlias,
-      child: Container(
-        width: double.infinity,
-        color: AppColors.surfaceTintTurquoise,
-        padding: const EdgeInsets.fromLTRB(20, 24, 20, 22),
-        child: Column(
-          children: [
-            Stack(
-              children: [
-                Opacity(
-                  opacity: busy ? 0.5 : 1,
-                  child: UserAvatar(profile: profile, size: 96),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color.lerp(AppColors.navy, AppColors.blue, 0.22)!,
+            Color.lerp(AppColors.navy, AppColors.blue, 0.72)!,
+            AppColors.blue,
+          ],
+          stops: const [0.0, 0.6, 1.0],
+        ),
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.blue.withValues(alpha: 0.3),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      padding: EdgeInsets.fromLTRB(16, topInset + 6, 16, 26),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Material(
+                color: Colors.white.withValues(alpha: 0.16),
+                shape: const CircleBorder(),
+                child: InkWell(
+                  customBorder: const CircleBorder(),
+                  onTap: onBack,
+                  child: const Padding(
+                    padding: EdgeInsets.all(8),
+                    child: Icon(
+                      Icons.arrow_back_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                  ),
                 ),
-                if (busy)
-                  const Positioned.fill(
-                    child: Center(
-                      child: SizedBox(
-                        width: 26,
-                        height: 26,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          color: Colors.white,
-                        ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                'Meu perfil',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Stack(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.26),
+                  shape: BoxShape.circle,
+                ),
+                child: Opacity(
+                  opacity: busy ? 0.5 : 1,
+                  child: UserAvatar(profile: profile, size: 92),
+                ),
+              ),
+              if (busy)
+                const Positioned.fill(
+                  child: Center(
+                    child: SizedBox(
+                      width: 26,
+                      height: 26,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: Colors.white,
                       ),
                     ),
                   ),
-                Positioned(
-                  right: 0,
-                  bottom: 0,
+                ),
+              Positioned(
+                right: 2,
+                bottom: 2,
+                child: Container(
+                  padding: const EdgeInsets.all(2.5),
+                  decoration: BoxDecoration(
+                    color: ringColor,
+                    shape: BoxShape.circle,
+                  ),
                   child: Material(
                     color: AppColors.turquoise,
                     shape: const CircleBorder(),
-                    elevation: 2,
                     child: InkWell(
                       customBorder: const CircleBorder(),
                       onTap: onEditPhoto,
@@ -618,92 +696,69 @@ class _HeaderCard extends StatelessWidget {
                         padding: EdgeInsets.all(7),
                         child: Icon(
                           Icons.photo_camera_rounded,
-                          size: 17,
+                          size: 16,
                           color: Colors.white,
                         ),
                       ),
                     ),
                   ),
                 ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            profile.fullName,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            profile.email,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: Colors.white.withValues(alpha: 0.82),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(_roleIcon(profile.role), size: 14, color: Colors.white),
+                const SizedBox(width: 6),
+                Text(
+                  profile.role.label,
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ],
             ),
-            const SizedBox(height: 14),
-            Text(
-              profile.fullName,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.navy,
-              ),
-            ),
-            const SizedBox(height: 3),
-            Text(
-              profile.email,
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            _RoleBadge(role: profile.role),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
 }
 
-class _RoleBadge extends StatelessWidget {
-  const _RoleBadge({required this.role});
-
-  final ProfileRole role;
-
-  Color get _color {
-    switch (role) {
-      case ProfileRole.platformAdmin:
-        return AppColors.navy;
-      case ProfileRole.psychologist:
-        return AppColors.turquoise;
-      case ProfileRole.patient:
-        return AppColors.blue;
-    }
-  }
-
-  IconData get _icon {
-    switch (role) {
-      case ProfileRole.platformAdmin:
-        return Icons.admin_panel_settings_outlined;
-      case ProfileRole.psychologist:
-        return Icons.psychology_outlined;
-      case ProfileRole.patient:
-        return Icons.self_improvement_outlined;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.75),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _color.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(_icon, size: 14, color: _color),
-          const SizedBox(width: 6),
-          Text(
-            role.label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: _color,
-                  fontWeight: FontWeight.w700,
-                ),
-          ),
-        ],
-      ),
-    );
+IconData _roleIcon(ProfileRole role) {
+  switch (role) {
+    case ProfileRole.platformAdmin:
+      return Icons.admin_panel_settings_outlined;
+    case ProfileRole.psychologist:
+      return Icons.psychology_outlined;
+    case ProfileRole.patient:
+      return Icons.self_improvement_outlined;
   }
 }
 
@@ -758,6 +813,7 @@ class _ReadOnlyRow extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
+    required this.accent,
     this.hint,
     this.valueColor,
   });
@@ -765,6 +821,7 @@ class _ReadOnlyRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
+  final Color accent;
   final String? hint;
   final Color? valueColor;
 
@@ -774,9 +831,14 @@ class _ReadOnlyRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(top: 2),
-          child: Icon(icon, size: 17, color: AppColors.textMuted),
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: accent.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, size: 18, color: accent),
         ),
         const SizedBox(width: 12),
         Expanded(

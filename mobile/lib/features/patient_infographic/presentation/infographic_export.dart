@@ -60,16 +60,16 @@ class InfographicExport {
   /// Nome de arquivo seguro a partir do nome do paciente.
   static String fileBase(String patientName) {
     final safe = patientName
-            .toLowerCase()
-            .replaceAll(RegExp(r'[àáâã]'), 'a')
-            .replaceAll(RegExp(r'[éê]'), 'e')
-            .replaceAll(RegExp(r'[íî]'), 'i')
-            .replaceAll(RegExp(r'[óôõ]'), 'o')
-            .replaceAll(RegExp(r'[úû]'), 'u')
-            .replaceAll('ç', 'c')
-            .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
-            .replaceAll(RegExp(r'^-|-$'), '')
-            .trim();
+        .toLowerCase()
+        .replaceAll(RegExp(r'[àáâã]'), 'a')
+        .replaceAll(RegExp(r'[éê]'), 'e')
+        .replaceAll(RegExp(r'[íî]'), 'i')
+        .replaceAll(RegExp(r'[óôõ]'), 'o')
+        .replaceAll(RegExp(r'[úû]'), 'u')
+        .replaceAll('ç', 'c')
+        .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+        .replaceAll(RegExp(r'^-|-$'), '')
+        .trim();
     final base = safe.isEmpty ? 'paciente' : safe;
     final date = DateTime.now().toIso8601String().substring(0, 10);
     return 'infografico-$base-$date';

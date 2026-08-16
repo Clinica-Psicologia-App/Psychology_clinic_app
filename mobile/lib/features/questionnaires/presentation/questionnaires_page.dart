@@ -6,6 +6,7 @@ import '../../../core/config/env_config.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../patients/providers/patients_providers.dart';
@@ -50,6 +51,7 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
 
     return AppScaffold(
       title: title,
+      accent: AppColors.blue,
       body: patientIdAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => const Center(

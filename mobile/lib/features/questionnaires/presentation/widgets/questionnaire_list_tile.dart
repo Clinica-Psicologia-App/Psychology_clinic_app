@@ -107,8 +107,7 @@ class QuestionnaireListTile extends StatelessWidget {
           children: [
             // ── cabeçalho tonal ──────────────────────────────────
             Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
                 color: _headerColor(),
                 borderRadius: const BorderRadius.vertical(

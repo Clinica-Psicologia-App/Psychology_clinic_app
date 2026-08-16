@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../profile/domain/profile_role.dart';
@@ -83,6 +84,7 @@ class _TherapyResourceDetailPageState
 
     return const AppScaffold(
       title: 'Recurso',
+      accent: AppColors.purple,
       body: Center(child: Text('Parâmetros inválidos.')),
     );
   }
@@ -92,6 +94,7 @@ class _TherapyResourceDetailPageState
 
     return AppScaffold(
       title: 'Meu recurso',
+      accent: AppColors.purple,
       body: accessAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, __) => _errorBody(() => ref.invalidate(
@@ -124,6 +127,7 @@ class _TherapyResourceDetailPageState
 
     return AppScaffold(
       title: 'Detalhe do recurso',
+      accent: AppColors.purple,
       actions: [
         IconButton(
           tooltip: 'Editar material',

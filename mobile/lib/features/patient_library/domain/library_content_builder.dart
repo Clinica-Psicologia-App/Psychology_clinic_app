@@ -58,7 +58,8 @@ LibraryHero _hero(LibraryIndication ind) {
   );
 }
 
-LibraryItem _item(LibraryIndication ind, {bool isNew = false, double? progress}) {
+LibraryItem _item(LibraryIndication ind,
+    {bool isNew = false, double? progress}) {
   final w = ind.work;
   return LibraryItem(
     id: ind.id,

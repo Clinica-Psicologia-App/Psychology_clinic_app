@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../shared/widgets/app_motion.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../profile/domain/profile_role.dart';
 import '../providers/patient_timeline_providers.dart';
@@ -27,6 +28,7 @@ class PatientTimelineEventDetailPage extends ConsumerWidget {
 
     return AppScaffold(
       title: 'Evento',
+      accent: AppColors.cyan,
       actions: [
         IconButton(
           tooltip: 'Atualizar',

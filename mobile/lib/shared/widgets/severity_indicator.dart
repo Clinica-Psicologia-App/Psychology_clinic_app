@@ -32,9 +32,8 @@ class SeverityBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = label?.trim().isNotEmpty == true
-        ? label!
-        : severity.defaultLabel;
+    final text =
+        label?.trim().isNotEmpty == true ? label! : severity.defaultLabel;
 
     return Semantics(
       label: 'Severidade: $text',
@@ -141,9 +140,8 @@ class SeverityBar extends StatelessWidget {
         value: value.clamp(0, 1),
         minHeight: minHeight,
         backgroundColor: theme.colorScheme.surfaceContainerHighest,
-        color: severity.hasSeverity
-            ? severity.color
-            : theme.colorScheme.primary,
+        color:
+            severity.hasSeverity ? severity.color : theme.colorScheme.primary,
       ),
     );
   }

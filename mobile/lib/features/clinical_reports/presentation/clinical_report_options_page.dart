@@ -7,6 +7,7 @@ import '../../../core/errors/error_mapper.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../../shared/widgets/homologation_ui.dart';
@@ -104,6 +105,7 @@ class _ClinicalReportOptionsPageState
 
     return AppScaffold(
       title: 'Gerar relatório',
+      accent: AppColors.navy,
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
         children: [

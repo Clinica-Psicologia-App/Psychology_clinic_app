@@ -79,8 +79,7 @@ class PatientProblemListTile extends StatelessWidget {
     if (problem.category != null && problem.category!.trim().isNotEmpty) {
       subtitleParts.add(problem.category!.trim());
     }
-    if (problem.description != null &&
-        problem.description!.trim().isNotEmpty) {
+    if (problem.description != null && problem.description!.trim().isNotEmpty) {
       subtitleParts.add(problem.description!.trim());
     }
 

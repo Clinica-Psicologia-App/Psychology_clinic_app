@@ -41,20 +41,16 @@ const Map<String, String> _byKeyword = {
       'Vínculos muito fundidos, com dificuldade de estabelecer limites saudáveis.',
   'eu pouco':
       'Vínculos muito fundidos, com dificuldade de estabelecer limites saudáveis.',
-  'subjugacao':
-      'Coloca-se em segundo plano para evitar conflito ou rejeição.',
+  'subjugacao': 'Coloca-se em segundo plano para evitar conflito ou rejeição.',
   'autossacrificio':
       'Coloca as necessidades dos outros à frente das próprias, muitas vezes ao custo de si.',
-  'aprovacao':
-      'Busca reconhecimento externo para sentir que tem valor.',
-  'reconhecimento':
-      'Busca reconhecimento externo para sentir que tem valor.',
+  'aprovacao': 'Busca reconhecimento externo para sentir que tem valor.',
+  'reconhecimento': 'Busca reconhecimento externo para sentir que tem valor.',
   'negativismo':
       'Foco no que pode dar errado; dificuldade de sustentar esperança.',
   'pessimismo':
       'Foco no que pode dar errado; dificuldade de sustentar esperança.',
-  'inibicao':
-      'Contém emoções e impulsos espontâneos para manter controle.',
+  'inibicao': 'Contém emoções e impulsos espontâneos para manter controle.',
   'padroes':
       'Autocobrança elevada e dificuldade em flexibilizar regras para si e para os outros.',
   'perfeccion':
@@ -63,8 +59,7 @@ const Map<String, String> _byKeyword = {
       'Necessidade de se sentir especial; pode reagir com competitividade quando se sente desvalorizada.',
   'arrogo':
       'Necessidade de se sentir especial; pode reagir com competitividade quando se sente desvalorizada.',
-  'autocontrole':
-      'Dificuldade em tolerar frustração e adiar gratificações.',
+  'autocontrole': 'Dificuldade em tolerar frustração e adiar gratificações.',
 };
 
 String _normalize(String value) {

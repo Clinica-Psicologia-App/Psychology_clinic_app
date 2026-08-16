@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../profile/domain/profile_role.dart';
 import '../providers/daily_monitors_providers.dart';
@@ -32,6 +33,7 @@ class DailyMonitorDetailPage extends ConsumerWidget {
 
     return AppScaffold(
       title: _isPatient ? 'Meu registro' : 'Registro diário',
+      accent: AppColors.cyan,
       actions: [
         IconButton(
           tooltip: 'Atualizar',

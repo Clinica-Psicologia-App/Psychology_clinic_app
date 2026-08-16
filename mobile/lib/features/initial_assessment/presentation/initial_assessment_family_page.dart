@@ -89,6 +89,7 @@ class _InitialAssessmentFamilyPageState
 
     return AppScaffold(
       title: 'Minha Família',
+      accent: AppColors.turquoise,
       body: AsyncStateBody<PatientFamily>(
         asyncValue: async,
         onRetry: () => ref.invalidate(patientFamilyProvider(_ctx)),

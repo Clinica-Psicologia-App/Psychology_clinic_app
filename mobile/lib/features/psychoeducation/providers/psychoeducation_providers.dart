@@ -26,8 +26,7 @@ final adminPsychoeducationRepositoryProvider =
 });
 
 /// Lista de curadoria (todos os módulos, publicados ou não).
-final adminPsychoListProvider =
-    FutureProvider<List<AdminPsychoModule>>((ref) {
+final adminPsychoListProvider = FutureProvider<List<AdminPsychoModule>>((ref) {
   return ref.read(adminPsychoeducationRepositoryProvider).listAll();
 });
 

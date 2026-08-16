@@ -7,6 +7,7 @@ import '../../../core/errors/error_mapper.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../profile/domain/profile_role.dart';
@@ -125,10 +126,12 @@ class _TherapyResourceFormPageState
       return resourceAsync.when(
         loading: () => const AppScaffold(
           title: 'Carregando',
+          accent: AppColors.purple,
           body: Center(child: CircularProgressIndicator()),
         ),
         error: (_, __) => AppScaffold(
           title: 'Material',
+          accent: AppColors.purple,
           body: Center(
             child: FilledButton(
               onPressed: () => ref.invalidate(
@@ -142,6 +145,7 @@ class _TherapyResourceFormPageState
           if (resource == null) {
             return const AppScaffold(
               title: 'Material',
+              accent: AppColors.purple,
               body: Center(child: Text('Material não encontrado.')),
             );
           }
@@ -160,6 +164,7 @@ class _TherapyResourceFormPageState
 
     return AppScaffold(
       title: widget.isEdit ? 'Editar material' : 'Novo material',
+      accent: AppColors.purple,
       body: Form(
         key: _formKey,
         child: MotionReveal(

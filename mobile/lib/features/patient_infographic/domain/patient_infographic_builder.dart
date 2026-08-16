@@ -111,11 +111,13 @@ String? _firstSentence(String? text) {
 InfographicHeader _buildHeader(Patient patient) {
   final facts = <InfographicFact>[
     if (_ageOf(patient.birthDate) != null)
-      InfographicFact(Icons.person_outline, '${_ageOf(patient.birthDate)} anos'),
+      InfographicFact(
+          Icons.person_outline, '${_ageOf(patient.birthDate)} anos'),
     if (_notEmpty(patient.displayEducationLevel))
       InfographicFact(Icons.school_outlined, patient.displayEducationLevel!),
     if (_birthPlace(patient) != null)
-      InfographicFact(Icons.place_outlined, 'Natural de ${_birthPlace(patient)}'),
+      InfographicFact(
+          Icons.place_outlined, 'Natural de ${_birthPlace(patient)}'),
     if (_notEmpty(patient.displayRelationshipStatus))
       InfographicFact(
           Icons.favorite_border, patient.displayRelationshipStatus!),
@@ -136,7 +138,8 @@ InfographicHeader _buildHeader(Patient patient) {
   );
 }
 
-List<InfographicTimelineEntry> _buildTimeline(List<PatientTimelineEvent> events) {
+List<InfographicTimelineEntry> _buildTimeline(
+    List<PatientTimelineEvent> events) {
   // Ordena por data quando disponível (mais antigo → mais recente).
   final sorted = [...events]..sort((a, b) {
       final da = a.eventDate;
@@ -223,11 +226,8 @@ String? _birthPlace(Patient patient) {
 bool _notEmpty(String? value) => value != null && value.trim().isNotEmpty;
 
 String _initialsOf(String fullName) {
-  final parts = fullName
-      .trim()
-      .split(RegExp(r'\s+'))
-      .where((p) => p.isNotEmpty)
-      .toList();
+  final parts =
+      fullName.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
   if (parts.isEmpty) return '?';
   if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
   return (parts.first.substring(0, 1) + parts.last.substring(0, 1))

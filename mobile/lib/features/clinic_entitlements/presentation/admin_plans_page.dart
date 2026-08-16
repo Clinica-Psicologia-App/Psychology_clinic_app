@@ -25,6 +25,7 @@ class AdminPlansPage extends ConsumerWidget {
 
     return AppScaffold(
       title: 'Planos e permissões',
+      accent: AppColors.blue,
       subtitle: 'Liberar módulos por clínica',
       actions: [
         IconButton(
@@ -97,8 +98,8 @@ class _ClinicTile extends ConsumerWidget {
                   ?.copyWith(fontWeight: FontWeight.w700)),
           subtitle: Text(
             '${clinic.userCount} profissional(is) · ${clinic.patientCount} paciente(s)',
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: AppColors.textMuted),
+            style:
+                theme.textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
           ),
           children: [
             entAsync.when(
@@ -187,8 +188,8 @@ class _FeatureSwitchState extends ConsumerState<_FeatureSwitch> {
           style: theme.textTheme.bodyMedium
               ?.copyWith(fontWeight: FontWeight.w600)),
       subtitle: Text(widget.feature.description,
-          style: theme.textTheme.bodySmall
-              ?.copyWith(color: AppColors.textMuted)),
+          style:
+              theme.textTheme.bodySmall?.copyWith(color: AppColors.textMuted)),
     );
   }
 }

@@ -10,6 +10,7 @@ import '../../../shared/widgets/responsive_content.dart';
 import '../data/admin_library_repository.dart';
 import '../providers/admin_library_providers.dart';
 import 'admin_library_routes.dart';
+import 'widgets/library_cover.dart';
 
 /// Curadoria do catálogo da Biblioteca (admin): lista todas as obras, controla
 /// a publicação (liberação para os psicólogos) e leva ao editor.
@@ -33,6 +34,7 @@ class _AdminLibraryCatalogPageState
 
     return AppScaffold(
       title: 'Catálogo da Biblioteca',
+      accent: AppColors.cyan,
       subtitle: 'Curadoria de filmes e séries · liberação para os psicólogos',
       actions: [
         IconButton(
@@ -70,8 +72,7 @@ class _AdminLibraryCatalogPageState
             ),
             Expanded(
               child: listAsync.when(
-                loading: () =>
-                    const Center(child: CircularProgressIndicator()),
+                loading: () => const Center(child: CircularProgressIndicator()),
                 error: (error, _) => _Error(
                   message: _message(error),
                   onRetry: () => ref.invalidate(adminLibraryListProvider),
@@ -85,8 +86,8 @@ class _AdminLibraryCatalogPageState
                           Center(child: Text('Nenhuma obra encontrada.')),
                         ])
                       : ListView.separated(
-                          padding: const EdgeInsets.fromLTRB(AppSpacing.xl, 0,
-                              AppSpacing.xl, 96),
+                          padding: const EdgeInsets.fromLTRB(
+                              AppSpacing.xl, 0, AppSpacing.xl, 96),
                           itemCount: items.length,
                           separatorBuilder: (_, __) =>
                               const SizedBox(height: AppSpacing.sm),
@@ -101,6 +102,9 @@ class _AdminLibraryCatalogPageState
     );
   }
 }
+
+const _kSeriesCoverFallback = [Color(0xFF2E7D6B), Color(0xFF11808F)];
+const _kMovieCoverFallback = [Color(0xFF3B2F8F), Color(0xFF7C6A9C)];
 
 class _WorkCard extends ConsumerWidget {
   const _WorkCard({required this.work});
@@ -129,19 +133,18 @@ class _WorkCard extends ConsumerWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceTintPurple,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(
-                  work.workType == 'Série' || work.workType == 'Minissérie'
-                      ? Icons.live_tv_outlined
-                      : Icons.movie_outlined,
-                  size: 22,
-                  color: AppColors.purple,
+              ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: SizedBox(
+                  width: 48,
+                  height: 64,
+                  child: LibraryCover(
+                    gradient: work.workType == 'Série' ||
+                            work.workType == 'Minissérie'
+                        ? _kSeriesCoverFallback
+                        : _kMovieCoverFallback,
+                    url: work.coverUrl,
+                  ),
                 ),
               ),
               const SizedBox(width: AppSpacing.md),
@@ -217,9 +220,8 @@ class _PublishSwitch extends ConsumerWidget {
         Text(
           work.isPublished ? 'Publicada' : 'Oculta',
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: work.isPublished
-                    ? AppColors.success
-                    : AppColors.textMuted,
+                color:
+                    work.isPublished ? AppColors.success : AppColors.textMuted,
                 fontWeight: FontWeight.w700,
               ),
         ),

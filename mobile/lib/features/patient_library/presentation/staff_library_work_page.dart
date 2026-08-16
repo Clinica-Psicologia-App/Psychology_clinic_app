@@ -31,6 +31,7 @@ class StaffLibraryWorkPage extends ConsumerWidget {
 
     return AppScaffold(
       title: 'Ficha da obra',
+      accent: AppColors.cyan,
       body: AsyncStateBody<LibraryWorkFull?>(
         asyncValue: async,
         onRetry: () => ref.invalidate(libraryWorkProvider(workId)),
@@ -50,21 +51,24 @@ class StaffLibraryWorkPage extends ConsumerWidget {
                       Icons.flag_outlined),
                   _ListCard('Objetivos terapêuticos',
                       work.psychologist.objectives, Icons.adjust_outlined),
-                  _ListCard('Focos de observação',
-                      work.psychologist.observationFocus, Icons.visibility_outlined),
+                  _ListCard(
+                      'Focos de observação',
+                      work.psychologist.observationFocus,
+                      Icons.visibility_outlined),
                   _ChipsCard('Mobilizações emocionais',
                       work.psychologist.emotionalMobilizations),
-                  _ListCard('Cuidados clínicos e alertas',
+                  _ListCard(
+                      'Cuidados clínicos e alertas',
                       work.psychologist.clinicalCautions,
                       Icons.warning_amber_outlined,
                       accent: AppColors.warning),
                   _ChipsCard('Modos ativados', work.psychologist.schemaModes),
-                  _ListCard('Intervenções sugeridas',
+                  _ListCard(
+                      'Intervenções sugeridas',
                       work.psychologist.sessionInterventions,
                       Icons.handyman_outlined),
                   _ListCard('Perguntas para sessão',
-                      work.psychologist.sessionQuestions,
-                      Icons.help_outline),
+                      work.psychologist.sessionQuestions, Icons.help_outline),
                   if ((work.psychologist.clinicalNote ?? '').isNotEmpty)
                     _TextCard(
                         title: 'Observação clínica',
@@ -77,8 +81,8 @@ class StaffLibraryWorkPage extends ConsumerWidget {
                 right: 16,
                 bottom: 16,
                 child: FilledButton.icon(
-                  style:
-                      FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+                  style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(52)),
                   onPressed: () => _openIndicate(context, work),
                   icon: const Icon(Icons.playlist_add_check_outlined),
                   label: const Text('Indicar ao paciente'),
@@ -180,7 +184,8 @@ class _Tag extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withValues(alpha: primary ? 0.16 : 0.10),
         borderRadius: BorderRadius.circular(999),
-        border: primary ? Border.all(color: color.withValues(alpha: 0.4)) : null,
+        border:
+            primary ? Border.all(color: color.withValues(alpha: 0.4)) : null,
       ),
       child: Text(label,
           style: TextStyle(
@@ -192,7 +197,8 @@ class _Tag extends StatelessWidget {
 }
 
 class _SectionCard extends StatelessWidget {
-  const _SectionCard({required this.title, required this.child, this.icon, this.accent});
+  const _SectionCard(
+      {required this.title, required this.child, this.icon, this.accent});
   final String title;
   final Widget child;
   final IconData? icon;
@@ -267,8 +273,8 @@ class _ListCard extends StatelessWidget {
                   ),
                   Expanded(
                     child: Text(it,
-                        style: theme.textTheme.bodyMedium
-                            ?.copyWith(color: AppColors.textSecondary, height: 1.4)),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                            color: AppColors.textSecondary, height: 1.4)),
                   ),
                 ],
               ),
@@ -325,7 +331,9 @@ class _PatientPreview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    if ((layer.before ?? '').isEmpty && layer.during.isEmpty && layer.after.isEmpty) {
+    if ((layer.before ?? '').isEmpty &&
+        layer.during.isEmpty &&
+        layer.after.isEmpty) {
       return const SizedBox.shrink();
     }
     return _SectionCard(
@@ -353,4 +361,3 @@ class _PatientPreview extends StatelessWidget {
     );
   }
 }
-

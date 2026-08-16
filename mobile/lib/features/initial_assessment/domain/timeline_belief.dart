@@ -32,7 +32,8 @@ extension TimelineBeliefMeta on TimelineBelief {
         TimelineBelief.mustHandleAlone => 'Tenho que resolver tudo sozinho(a).',
         TimelineBelief.mustBePerfect => 'Preciso ser perfeito(a).',
         TimelineBelief.iAmABurden => 'Sou um peso.',
-        TimelineBelief.feelingsAreDangerous => 'Mostrar sentimentos é perigoso.',
+        TimelineBelief.feelingsAreDangerous =>
+          'Mostrar sentimentos é perigoso.',
       };
 }
 

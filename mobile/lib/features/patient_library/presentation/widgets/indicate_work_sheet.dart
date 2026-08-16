@@ -109,7 +109,8 @@ class _IndicateWorkSheetState extends ConsumerState<IndicateWorkSheet> {
           ),
           const SizedBox(height: 20),
           FilledButton.icon(
-            style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(50)),
+            style:
+                FilledButton.styleFrom(minimumSize: const Size.fromHeight(50)),
             onPressed: _saving ? null : _submit,
             icon: _saving
                 ? const SizedBox(

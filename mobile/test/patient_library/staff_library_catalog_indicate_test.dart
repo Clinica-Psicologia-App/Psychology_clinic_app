@@ -5,10 +5,14 @@ import 'package:terapia_esquema/features/patient_library/domain/library_work_ful
 import 'package:terapia_esquema/features/patient_library/presentation/staff_library_catalog_page.dart';
 import 'package:terapia_esquema/features/patient_library/providers/staff_library_providers.dart';
 import 'package:terapia_esquema/features/profile/domain/profile_role.dart';
+import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
-/// Antes, indicar uma obra exigia entrar na ficha de detalhe. Agora o card
-/// da lista já tem o botão "Indicar" — este teste garante que ele funciona
-/// sem depender de navegação, e que a capa aparece no card.
+/// Antes, indicar uma obra exigia entrar na ficha de detalhe. Depois, o
+/// botão ficou ao lado do chip de esquema (Wrap) e sua posição mudava
+/// conforme o tamanho do texto do esquema — pulava de linha em obras com
+/// nome de esquema longo. Agora é um rodapé de largura cheia, desacoplado
+/// do chip: estes testes garantem que funciona sem navegação e que a
+/// posição é sempre a mesma, curto ou longo o esquema.
 void main() {
   const work = LibraryWorkFull(
     id: 'work-1',
@@ -48,25 +52,26 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('card mostra a capa e o botão Indicar, sem precisar abrir a ficha',
+  testWidgets(
+      'card mostra a capa e o rodapé "Indicar ao paciente", sem precisar abrir a ficha',
       (tester) async {
     final notifier = _RecordingIndicateNotifier();
     await pumpCatalog(tester, notifier: notifier);
 
     expect(find.text('A viagem de Chihiro'), findsOneWidget);
-    expect(find.text('Indicar'), findsOneWidget);
-    expect(find.byIcon(Icons.playlist_add_check_outlined), findsOneWidget);
+    expect(find.text('Indicar ao paciente'), findsOneWidget);
+    expect(find.byIcon(Icons.send_rounded), findsOneWidget);
 
     // Nenhuma navegação disparada ainda.
     expect(notifier.calls, isEmpty);
   });
 
-  testWidgets('tocar em Indicar abre o sheet e confirma sem sair do catálogo',
+  testWidgets('tocar no rodapé abre o sheet e confirma sem sair do catálogo',
       (tester) async {
     final notifier = _RecordingIndicateNotifier();
     await pumpCatalog(tester, notifier: notifier);
 
-    await tester.tap(find.text('Indicar'));
+    await tester.tap(find.text('Indicar ao paciente'));
     await tester.pumpAndSettle();
 
     expect(find.text('Indicar “A viagem de Chihiro”'), findsOneWidget);
@@ -83,6 +88,60 @@ void main() {
     // cabeçalho da página.
     expect(find.text('Biblioteca clínica'), findsNWidgets(2));
     expect(find.text('Obra indicada ao paciente.'), findsOneWidget);
+  });
+
+  testWidgets(
+      'rodapé fica no mesmo offset com esquema curto ou longo — o bug era '
+      'exatamente essa posição variar com o tamanho do texto do chip',
+      (tester) async {
+    const esquemaCurto = LibraryWorkFull(
+      id: 'work-2',
+      displayTitle: 'Esquema curto',
+      workType: 'Filme',
+      primarySchema: 'Fracasso',
+    );
+    const esquemaLongo = LibraryWorkFull(
+      id: 'work-3',
+      displayTitle: 'Esquema longo',
+      workType: 'Filme',
+      primarySchema: 'Subjugação',
+    );
+
+    final notifier = _RecordingIndicateNotifier();
+    tester.view.physicalSize = const Size(1080, 3000);
+    tester.view.devicePixelRatio = 3.0;
+    addTearDown(tester.view.reset);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          libraryCatalogProvider
+              .overrideWith((ref, filter) => [esquemaCurto, esquemaLongo]),
+          librarySchemasProvider.overrideWith((ref) => const []),
+          indicateWorkProvider.overrideWith(() => notifier),
+        ],
+        child: const MaterialApp(
+          home: StaffLibraryCatalogPage(
+            role: ProfileRole.psychologist,
+            patientId: 'patient-1',
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final cardCurtoTop =
+        tester.getTopLeft(find.widgetWithText(ClayCard, 'Esquema curto')).dy;
+    final cardLongoTop =
+        tester.getTopLeft(find.widgetWithText(ClayCard, 'Esquema longo')).dy;
+    final footerButtons = find.text('Indicar ao paciente');
+    expect(footerButtons, findsNWidgets(2));
+
+    final offsetCurto =
+        tester.getTopLeft(footerButtons.at(0)).dy - cardCurtoTop;
+    final offsetLongo =
+        tester.getTopLeft(footerButtons.at(1)).dy - cardLongoTop;
+    expect(offsetCurto, closeTo(offsetLongo, 1.0));
   });
 }
 

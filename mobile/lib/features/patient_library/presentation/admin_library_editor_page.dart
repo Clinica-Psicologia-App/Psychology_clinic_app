@@ -4,12 +4,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/clay_card.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../domain/library_work_full.dart';
 import '../providers/admin_library_providers.dart';
+import 'widgets/library_cover.dart';
 
 /// Editor de obra do catálogo (criar ou editar). Cobre metadados, a camada
 /// clínica (só do staff) e a camada do paciente.
@@ -81,8 +84,9 @@ class _AdminLibraryEditorPageState
   Future<void> _load() async {
     setState(() => _loading = true);
     try {
-      final work =
-          await ref.read(adminLibraryRepositoryProvider).getWork(widget.workId!);
+      final work = await ref
+          .read(adminLibraryRepositoryProvider)
+          .getWork(widget.workId!);
       if (work != null) _populate(work);
       if (mounted) setState(() => _loading = false);
     } catch (e) {
@@ -289,6 +293,7 @@ class _AdminLibraryEditorPageState
   Widget build(BuildContext context) {
     return AppScaffold(
       title: _isEditing ? 'Editar obra' : 'Nova obra',
+      accent: AppColors.cyan,
       subtitle: 'Catálogo da Biblioteca',
       actions: [
         if (_isEditing)
@@ -309,7 +314,19 @@ class _AdminLibraryEditorPageState
                       padding: const EdgeInsets.fromLTRB(
                           AppSpacing.xl, AppSpacing.lg, AppSpacing.xl, 120),
                       children: [
-                        _section('Identificação'),
+                        // ── 1. Hero: preview reactivo ──────────────────────
+                        _WorkHero(
+                          titleController: _title,
+                          coverController: _coverUrl,
+                          workType: _workType,
+                          isPublished: _isPublished,
+                          onTogglePublished: (v) =>
+                              setState(() => _isPublished = v),
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+
+                        // ── 2. Identificação + Capa ─────────────────────────
+                        _section('Identificação', AppColors.cyan),
                         _card([
                           _text(_title, 'Título exibido', required: true),
                           _text(_originalTitle, 'Título original'),
@@ -317,8 +334,7 @@ class _AdminLibraryEditorPageState
                             Expanded(child: _typeDropdown()),
                             const SizedBox(width: AppSpacing.md),
                             Expanded(
-                              child: _text(_year, 'Ano', number: true),
-                            ),
+                                child: _text(_year, 'Ano', number: true)),
                           ]),
                           _text(_genres, 'Gêneros'),
                           Row(children: [
@@ -328,50 +344,83 @@ class _AdminLibraryEditorPageState
                           ]),
                           Row(children: [
                             Expanded(
-                                child: _text(_rating, 'Classificação (etária)')),
+                                child: _text(
+                                    _rating, 'Classificação (etária)')),
                             const SizedBox(width: AppSpacing.md),
                             Expanded(child: _intensityDropdown()),
                           ]),
-                          _coverSection(),
                           _text(_synopsis, 'Sinopse', lines: 3),
-                          SwitchListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: const Text('Animação'),
+                          _AnimationToggle(
                             value: _isAnimation,
                             onChanged: (v) => setState(() => _isAnimation = v),
                           ),
-                          SwitchListTile(
-                            contentPadding: EdgeInsets.zero,
-                            title: const Text('Publicada (liberada aos psicólogos)'),
-                            value: _isPublished,
-                            onChanged: (v) => setState(() => _isPublished = v),
-                          ),
                         ]),
-                        _section('Classificação clínica'),
+                        const SizedBox(height: AppSpacing.sm),
+                        // Capa: logo abaixo do card de identificação,
+                        // sem seção separada — é metadata da obra.
+                        _coverSection(),
+                        const SizedBox(height: AppSpacing.lg),
+
+                        // ── 3. Classificação clínica ────────────────────────
+                        _section('Classificação clínica', AppColors.purple),
                         _card([
                           _text(_primarySchema, 'Esquema principal'),
                           _text(_domain, 'Domínio'),
-                          _listEditor('Esquemas associados', _associatedSchemas),
+                          _listEditor(
+                              'Esquemas associados', _associatedSchemas),
                           _listEditor('Temas', _themes),
                         ]),
-                        _section('Camada do psicólogo (não visível ao paciente)'),
-                        _card([
-                          _listEditor('Quando indicar', _whenToIndicate),
-                          _listEditor('Objetivos', _objectives),
-                          _listEditor('Focos de observação', _observationFocus),
-                          _listEditor(
-                              'Mobilizações emocionais', _emotionalMobilizations),
-                          _listEditor('Cuidados clínicos', _clinicalCautions),
-                          _listEditor('Modos de esquema', _schemaModes),
-                          _listEditor(
-                              'Intervenções em sessão', _sessionInterventions),
-                          _listEditor('Perguntas de sessão', _sessionQuestions),
-                          _text(_clinicalNote, 'Nota clínica', lines: 3),
-                        ]),
-                        _section('Camada do paciente'),
+                        const SizedBox(height: AppSpacing.lg),
+
+                        // ── 4. Camada do psicólogo (3 sub-cards) ───────────
+                        _section('Camada do psicólogo', AppColors.blue,
+                            subtitle: 'Não visível ao paciente'),
+                        _subcard(
+                          icon: Icons.medical_services_outlined,
+                          title: 'Indicação clínica',
+                          color: AppColors.blue,
+                          children: [
+                            _listEditor('Quando indicar', _whenToIndicate),
+                            _listEditor('Objetivos', _objectives),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        _subcard(
+                          icon: Icons.psychology_outlined,
+                          title: 'Análise da obra',
+                          color: AppColors.blue,
+                          children: [
+                            _listEditor(
+                                'Focos de observação', _observationFocus),
+                            _listEditor('Mobilizações emocionais',
+                                _emotionalMobilizations),
+                            _listEditor(
+                                'Modos de esquema', _schemaModes),
+                            _listEditor(
+                                'Cuidados clínicos', _clinicalCautions),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        _subcard(
+                          icon: Icons.forum_outlined,
+                          title: 'Para a sessão',
+                          color: AppColors.blue,
+                          children: [
+                            _listEditor('Intervenções em sessão',
+                                _sessionInterventions),
+                            _listEditor(
+                                'Perguntas de sessão', _sessionQuestions),
+                            _text(_clinicalNote, 'Nota clínica', lines: 3),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.lg),
+
+                        // ── 5. Camada do paciente ───────────────────────────
+                        _section('Camada do paciente', AppColors.turquoise),
                         _card([
                           _text(_patientBefore, 'Antes de assistir', lines: 3),
-                          _listEditor('Enquanto assiste, observe', _patientDuring),
+                          _listEditor(
+                              'Enquanto assiste, observe', _patientDuring),
                           const SizedBox(height: AppSpacing.sm),
                           _AfterQuestionsEditor(
                             questions: _patientAfter,
@@ -380,17 +429,27 @@ class _AdminLibraryEditorPageState
                           _text(_whereToWatch, 'Onde assistir'),
                         ]),
                         const SizedBox(height: AppSpacing.xl),
-                        FilledButton.icon(
-                          onPressed: _saving ? null : _save,
-                          icon: _saving
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2, color: Colors.white),
-                                )
-                              : const Icon(Icons.save_outlined),
-                          label: Text(_isEditing ? 'Salvar' : 'Criar obra'),
+
+                        // ── Salvar ──────────────────────────────────────────
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: FilledButton.icon(
+                            onPressed: _saving ? null : _save,
+                            icon: _saving
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2, color: Colors.white),
+                                  )
+                                : const Icon(Icons.save_outlined),
+                            label: Text(
+                              _isEditing ? 'Salvar alterações' : 'Criar obra',
+                              style: const TextStyle(
+                                  fontSize: 15, fontWeight: FontWeight.w700),
+                            ),
+                          ),
                         ),
                       ],
                     ),
@@ -401,14 +460,12 @@ class _AdminLibraryEditorPageState
 
   // ── Builders ──────────────────────────────────────────────────────────────
 
-  Widget _section(String title) => Padding(
-        padding: const EdgeInsets.only(top: AppSpacing.lg, bottom: AppSpacing.sm),
-        child: Text(
-          title,
-          style: Theme.of(context)
-              .textTheme
-              .titleSmall
-              ?.copyWith(fontWeight: FontWeight.w700, color: AppColors.navy),
+  Widget _section(String title, Color accent, {String? subtitle}) => Padding(
+        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+        child: AppSectionHeader(
+          title: title,
+          subtitle: subtitle,
+          accentColor: accent,
         ),
       );
 
@@ -418,6 +475,65 @@ class _AdminLibraryEditorPageState
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              for (var i = 0; i < children.length; i++) ...[
+                children[i],
+                if (i != children.length - 1)
+                  const SizedBox(height: AppSpacing.sm),
+              ],
+            ],
+          ),
+        ),
+      );
+
+  // Sub-card com cabeçalho ícone em pill colorido + separador sutil.
+  Widget _subcard({
+    required IconData icon,
+    required String title,
+    required Color color,
+    required List<Widget> children,
+  }) =>
+      ClayCard(
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Cabeçalho: ícone em container arredondado + rótulo
+              Container(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom: BorderSide(
+                      color: color.withValues(alpha: 0.18),
+                      width: 1,
+                    ),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 30,
+                      height: 30,
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                      child: Icon(icon, size: 15, color: color),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: color,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
               for (var i = 0; i < children.length; i++) ...[
                 children[i],
                 if (i != children.length - 1)
@@ -516,71 +632,303 @@ class _AdminLibraryEditorPageState
   }
 
   Widget _coverSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Capa',
-            style: Theme.of(context)
-                .textTheme
-                .labelLarge
-                ?.copyWith(color: AppColors.textSecondary)),
-        const SizedBox(height: 6),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Preview reativo ao conteúdo do campo de URL.
-            AnimatedBuilder(
-              animation: _coverUrl,
-              builder: (_, __) {
-                final url = _coverUrl.text.trim();
-                return ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: SizedBox(
-                    width: 72,
-                    height: 104,
-                    child: url.isEmpty
-                        ? Container(
-                            color: AppColors.surfaceTintPurple,
-                            child: const Icon(Icons.image_outlined,
-                                color: AppColors.purple),
-                          )
-                        : Image.network(
-                            url,
-                            fit: BoxFit.cover,
-                            errorBuilder: (_, __, ___) => Container(
-                              color: AppColors.surfaceTintPurple,
-                              child: const Icon(Icons.broken_image_outlined,
-                                  color: AppColors.purple),
+    return AnimatedBuilder(
+      animation: _coverUrl,
+      builder: (context, _) {
+        final url = _coverUrl.text.trim();
+        final isSer = _workType == 'Série' || _workType == 'Minissérie';
+        final theme = Theme.of(context);
+        final hasCover = url.isNotEmpty;
+
+        return ClayCard(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Rótulo da seção dentro do card
+                Row(
+                  children: [
+                    Icon(Icons.image_outlined,
+                        size: 15, color: AppColors.purple),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Capa',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: AppColors.purple,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Preview
+                    ClipRRect(
+                      borderRadius: AppRadius.lgAll,
+                      child: SizedBox(
+                        width: 84,
+                        height: 120,
+                        child: LibraryCover(
+                          gradient: isSer
+                              ? const [Color(0xFF2E7D6B), Color(0xFF11808F)]
+                              : const [Color(0xFF3B2F8F), Color(0xFF7C6A9C)],
+                          url: hasCover ? url : null,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          OutlinedButton.icon(
+                            onPressed: _uploadingCover ? null : _pickCover,
+                            icon: _uploadingCover
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2),
+                                  )
+                                : const Icon(Icons.upload_outlined, size: 18),
+                            label: Text(_uploadingCover
+                                ? 'Enviando…'
+                                : 'Enviar imagem'),
+                          ),
+                          const SizedBox(height: AppSpacing.sm),
+                          TextFormField(
+                            controller: _coverUrl,
+                            decoration: const InputDecoration(
+                              labelText: 'URL da capa',
+                              hintText: 'https://…',
+                              isDense: true,
+                              border: OutlineInputBorder(),
                             ),
                           ),
-                  ),
-                );
-              },
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            hasCover
+                                ? 'Pré-visualização atualizada ao lado.'
+                                : 'Suba uma imagem ou cole a URL diretamente.',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  OutlinedButton.icon(
-                    onPressed: _uploadingCover ? null : _pickCover,
-                    icon: _uploadingCover
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.upload_outlined, size: 18),
-                    label: Text(_uploadingCover ? 'Enviando…' : 'Enviar imagem'),
+          ),
+        );
+      },
+    );
+  }
+}
+
+// ── Hero reactivo ─────────────────────────────────────────────────────────────
+
+/// Card de resumo no topo do editor: capa em altura total + título + badge de
+/// tipo + chip de publicação. Escuta dois controllers sem rebuildar a página.
+class _WorkHero extends StatelessWidget {
+  const _WorkHero({
+    required this.titleController,
+    required this.coverController,
+    required this.workType,
+    required this.isPublished,
+    required this.onTogglePublished,
+  });
+
+  final TextEditingController titleController;
+  final TextEditingController coverController;
+  final String workType;
+  final bool isPublished;
+  final ValueChanged<bool> onTogglePublished;
+
+  bool get _isSeries => workType == 'Série' || workType == 'Minissérie';
+
+  IconData get _typeIcon => switch (workType) {
+        'Série' || 'Minissérie' => Icons.live_tv_outlined,
+        'Episódio' => Icons.smart_display_outlined,
+        _ => Icons.movie_outlined,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final pubColor = isPublished ? AppColors.success : AppColors.textMuted;
+
+    return AnimatedBuilder(
+      animation: Listenable.merge([titleController, coverController]),
+      builder: (context, _) {
+        final url = coverController.text.trim();
+        final title = titleController.text.trim();
+
+        return ClayCard(
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.xlAll),
+          child: SizedBox(
+            height: 168,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // ── Capa: ocupa toda a altura do card ────────────────
+                SizedBox(
+                  width: 116,
+                  child: LibraryCover(
+                    gradient: _isSeries
+                        ? const [Color(0xFF2E7D6B), Color(0xFF11808F)]
+                        : const [Color(0xFF3B2F8F), Color(0xFF7C6A9C)],
+                    url: url.isEmpty ? null : url,
                   ),
-                  const SizedBox(height: AppSpacing.sm),
-                  _text(_coverUrl, 'URL da capa (ou cole um link)'),
-                ],
-              ),
+                ),
+                // ── Painel direito ───────────────────────────────────
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.md),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        // Topo: badge de tipo + título
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Badge de tipo (pill com ícone)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: AppColors.cyan.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(99),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(_typeIcon,
+                                      size: 11, color: AppColors.cyan),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    workType,
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: AppColors.cyan,
+                                      fontWeight: FontWeight.w800,
+                                      letterSpacing: 0.4,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            // Título reactivo
+                            Text(
+                              title.isEmpty ? 'Sem título' : title,
+                              maxLines: 4,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                height: 1.25,
+                              ),
+                            ),
+                          ],
+                        ),
+                        // Rodapé: chip de publicação (toque para alternar)
+                        GestureDetector(
+                          onTap: () => onTogglePublished(!isPublished),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: pubColor.withValues(alpha: 0.10),
+                              borderRadius: BorderRadius.circular(99),
+                              border: Border.all(
+                                  color: pubColor.withValues(alpha: 0.28)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  isPublished
+                                      ? Icons.visibility_outlined
+                                      : Icons.visibility_off_outlined,
+                                  size: 12,
+                                  color: pubColor,
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  isPublished ? 'Publicada' : 'Oculta',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: pubColor,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Toggle de animação com visual de chip — substitui o SwitchListTile genérico.
+class _AnimationToggle extends StatelessWidget {
+  const _AnimationToggle({required this.value, required this.onChanged});
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: value
+            ? AppColors.cyan.withValues(alpha: 0.08)
+            : AppColors.surface,
+        borderRadius: AppRadius.mdAll,
+        border: Border.all(
+          color: value
+              ? AppColors.cyan.withValues(alpha: 0.25)
+              : AppColors.border,
         ),
-      ],
+      ),
+      child: SwitchListTile(
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.xxs,
+        ),
+        dense: true,
+        title: Text(
+          'Animação',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+            color: value ? AppColors.cyan : AppColors.textSecondary,
+          ),
+        ),
+        secondary: Icon(
+          Icons.animation_outlined,
+          size: 20,
+          color: value ? AppColors.cyan : AppColors.textMuted,
+        ),
+        value: value,
+        onChanged: onChanged,
+      ),
     );
   }
 }
@@ -599,10 +947,8 @@ class _ListField {
       ..addAll(values.map((v) => TextEditingController(text: v)));
   }
 
-  List<String> get values => controllers
-      .map((c) => c.text.trim())
-      .where((s) => s.isNotEmpty)
-      .toList();
+  List<String> get values =>
+      controllers.map((c) => c.text.trim()).where((s) => s.isNotEmpty).toList();
 
   void dispose() {
     for (final c in controllers) {
@@ -640,50 +986,93 @@ class _StringListEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: Theme.of(context)
-                .textTheme
-                .labelLarge
-                ?.copyWith(color: AppColors.textSecondary)),
-        const SizedBox(height: 6),
-        for (var i = 0; i < field.controllers.length; i++)
+        Text(
+          label,
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.2,
+          ),
+        ),
+        if (field.controllers.isEmpty)
           Padding(
-            padding: const EdgeInsets.only(bottom: 6),
-            child: Row(
+            padding: const EdgeInsets.only(top: 6, bottom: 2),
+            child: Text(
+              'Nenhum item ainda.',
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: AppColors.textMuted),
+            ),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Column(
               children: [
-                Expanded(
-                  child: TextField(
-                    controller: field.controllers[i],
-                    decoration: const InputDecoration(
-                      isDense: true,
-                      border: OutlineInputBorder(),
+                for (var i = 0; i < field.controllers.length; i++)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Row(
+                      children: [
+                        // Número do item
+                        Container(
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceTint,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Center(
+                            child: Text(
+                              '${i + 1}',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: AppColors.textSecondary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: TextField(
+                            controller: field.controllers[i],
+                            decoration: const InputDecoration(
+                              isDense: true,
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.remove_circle_outline,
+                              size: 20),
+                          color: AppColors.error,
+                          padding: const EdgeInsets.all(4),
+                          constraints: const BoxConstraints(),
+                          onPressed: () {
+                            field.controllers.removeAt(i).dispose();
+                            onChanged();
+                          },
+                        ),
+                      ],
                     ),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.remove_circle_outline),
-                  color: AppColors.error,
-                  onPressed: () {
-                    field.controllers.removeAt(i).dispose();
-                    onChanged();
-                  },
-                ),
               ],
             ),
           ),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton.icon(
-            onPressed: () {
-              field.controllers.add(TextEditingController());
-              onChanged();
-            },
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('Adicionar'),
+        TextButton.icon(
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
+          onPressed: () {
+            field.controllers.add(TextEditingController());
+            onChanged();
+          },
+          icon: const Icon(Icons.add_circle_outline, size: 16),
+          label: const Text('Adicionar item'),
         ),
       ],
     );
@@ -701,64 +1090,114 @@ class _AfterQuestionsEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Depois de assistir (perguntas)',
-            style: Theme.of(context)
-                .textTheme
-                .labelLarge
-                ?.copyWith(color: AppColors.textSecondary)),
-        const SizedBox(height: 6),
-        for (var i = 0; i < questions.length; i++)
+        Text(
+          'Depois de assistir (perguntas)',
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.2,
+          ),
+        ),
+        if (questions.isEmpty)
           Padding(
-            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+            padding: const EdgeInsets.only(top: 6, bottom: 2),
+            child: Text(
+              'Nenhuma pergunta ainda.',
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: AppColors.textMuted),
+            ),
+          )
+        else
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
             child: Column(
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: questions[i].question,
-                        decoration: const InputDecoration(
-                          labelText: 'Pergunta',
-                          isDense: true,
-                          border: OutlineInputBorder(),
-                        ),
+                for (var i = 0; i < questions.length; i++)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                    child: Container(
+                      padding: const EdgeInsets.all(AppSpacing.sm),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceTint,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                width: 24,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  color: AppColors.turquoise
+                                      .withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    '${i + 1}',
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: AppColors.turquoise,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: TextField(
+                                  controller: questions[i].question,
+                                  decoration: const InputDecoration(
+                                    labelText: 'Pergunta',
+                                    isDense: true,
+                                    border: OutlineInputBorder(),
+                                  ),
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.remove_circle_outline,
+                                    size: 20),
+                                color: AppColors.error,
+                                padding: const EdgeInsets.all(4),
+                                constraints: const BoxConstraints(),
+                                onPressed: () {
+                                  questions.removeAt(i).dispose();
+                                  onChanged();
+                                },
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: questions[i].fieldType,
+                            decoration: const InputDecoration(
+                              labelText: 'Tipo de campo (ex.: texto longo)',
+                              isDense: true,
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.remove_circle_outline),
-                      color: AppColors.error,
-                      onPressed: () {
-                        questions.removeAt(i).dispose();
-                        onChanged();
-                      },
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                TextField(
-                  controller: questions[i].fieldType,
-                  decoration: const InputDecoration(
-                    labelText: 'Tipo de campo (ex.: Campo de texto longo.)',
-                    isDense: true,
-                    border: OutlineInputBorder(),
                   ),
-                ),
               ],
             ),
           ),
-        Align(
-          alignment: Alignment.centerLeft,
-          child: TextButton.icon(
-            onPressed: () {
-              questions.add(_QuestionField('', null));
-              onChanged();
-            },
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('Adicionar pergunta'),
+        TextButton.icon(
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           ),
+          onPressed: () {
+            questions.add(_QuestionField('', null));
+            onChanged();
+          },
+          icon: const Icon(Icons.add_circle_outline, size: 16),
+          label: const Text('Adicionar pergunta'),
         ),
       ],
     );

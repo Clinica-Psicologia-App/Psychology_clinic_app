@@ -636,7 +636,8 @@ class _Milestone extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: filled ? accent : AppColors.surface,
-        border: filled ? null : Border.all(color: accent.withValues(alpha: 0.28)),
+        border:
+            filled ? null : Border.all(color: accent.withValues(alpha: 0.28)),
         boxShadow: [
           BoxShadow(
             color: (filled ? accent : AppColors.navy)

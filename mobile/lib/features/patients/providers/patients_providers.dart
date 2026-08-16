@@ -46,7 +46,8 @@ final myPatientProvider = FutureProvider<Patient?>((ref) {
   return ref.read(patientsRepositoryProvider).getMyPatient();
 });
 
-final psychologistAlertsProvider = FutureProvider<List<PsychologistAlert>>((ref) {
+final psychologistAlertsProvider =
+    FutureProvider<List<PsychologistAlert>>((ref) {
   return ref.read(patientsRepositoryProvider).fetchAlerts();
 });
 

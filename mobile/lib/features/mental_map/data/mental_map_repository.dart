@@ -256,8 +256,7 @@ class MentalMapRepository {
     return '${parts.first[0]}${parts.last[0]}'.toUpperCase();
   }
 
-  static MentalCaseMapAvatarType _toMapAvatarType(AvatarType t) =>
-      switch (t) {
+  static MentalCaseMapAvatarType _toMapAvatarType(AvatarType t) => switch (t) {
         AvatarType.photo => MentalCaseMapAvatarType.photo,
         AvatarType.custom => MentalCaseMapAvatarType.custom,
         AvatarType.initials => MentalCaseMapAvatarType.initials,

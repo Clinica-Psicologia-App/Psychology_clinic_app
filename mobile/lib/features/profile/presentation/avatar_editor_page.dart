@@ -93,6 +93,7 @@ class _AvatarEditorPageState extends ConsumerState<AvatarEditorPage> {
       },
       child: AppScaffold(
         title: 'Meu avatar',
+        accent: AppColors.navy,
         useResponsivePadding: true,
         actions: [
           IconButton(

@@ -110,6 +110,7 @@ class _GenogramPageBody extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppScaffold(
       title: 'Genograma',
+      accent: AppColors.blue,
       actions: [
         IconButton(
           tooltip: 'Atualizar',

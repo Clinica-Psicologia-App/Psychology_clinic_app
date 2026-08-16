@@ -42,23 +42,22 @@ class UserManagementRepository {
           .order('clinic_id')
           .order('full_name');
 
-      final patientRows = await _client
-          .from('patients')
-          .select('responsible_psychologist_id')
-          .eq('is_active', true);
-      final invitationRows = await _client
-          .from('patient_invitations')
-          .select('responsible_psychologist_id')
-          .eq('status', 'pending');
+      // platform_admin não pode fazer SELECT direto em patients/invitations
+      // (RLS bloqueado por privacidade clínica). A RPC get_patient_counts_by_psychologist
+      // é SECURITY DEFINER e retorna contagens agregadas com segurança.
+      final rpcRows = await _client
+          .rpc('get_patient_counts_by_psychologist') as List;
 
-      final patientsByPsychologist = _countByProfile(
-        patientRows as List,
-        'responsible_psychologist_id',
-      );
-      final invitationsByPsychologist = _countByProfile(
-        invitationRows as List,
-        'responsible_psychologist_id',
-      );
+      final patientsByPsychologist = <String, int>{
+        for (final row in rpcRows)
+          row['psychologist_id'] as String:
+              (row['active_count'] as num?)?.toInt() ?? 0,
+      };
+      final invitationsByPsychologist = <String, int>{
+        for (final row in rpcRows)
+          row['psychologist_id'] as String:
+              (row['pending_invites'] as num?)?.toInt() ?? 0,
+      };
 
       return (rows as List).map((row) {
         final json = Map<String, dynamic>.from(row as Map);
@@ -185,12 +184,3 @@ class UserManagementRepository {
   }
 }
 
-Map<String, int> _countByProfile(List<dynamic> rows, String field) {
-  final counts = <String, int>{};
-  for (final row in rows) {
-    final profileId = (row as Map)[field] as String?;
-    if (profileId == null || profileId.isEmpty) continue;
-    counts[profileId] = (counts[profileId] ?? 0) + 1;
-  }
-  return counts;
-}

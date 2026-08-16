@@ -101,9 +101,8 @@ class LifeAreaCard extends StatelessWidget {
                     divisions: 9,
                     label: (score ?? 5).toString(),
                     activeColor: color,
-                    onChanged: readOnly
-                        ? null
-                        : (v) => onScoreChanged(v.round()),
+                    onChanged:
+                        readOnly ? null : (v) => onScoreChanged(v.round()),
                   ),
                 ),
               ],
@@ -159,9 +158,8 @@ class _SufferingRow extends StatelessWidget {
             Checkbox(
               value: enabled,
               visualDensity: VisualDensity.compact,
-              onChanged: readOnly
-                  ? null
-                  : (v) => onChanged((v ?? false) ? 0 : null),
+              onChanged:
+                  readOnly ? null : (v) => onChanged((v ?? false) ? 0 : null),
             ),
             Expanded(
               child: Text(

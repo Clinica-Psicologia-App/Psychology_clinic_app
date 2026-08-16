@@ -13,8 +13,10 @@ import 'package:flutter/material.dart';
 /// Só entram aqui glifos com desvio perceptível (≥ ~3% do tamanho num eixo);
 /// os demais são desenhados suficientemente centrados e retornam [Offset.zero].
 Offset _driftFor(IconData icon) {
-  if (icon == Icons.report_problem_outlined) return const Offset(-0.0020, 0.1053);
-  if (icon == Icons.self_improvement_outlined) return const Offset(-0.0009, 0.0924);
+  if (icon == Icons.report_problem_outlined)
+    return const Offset(-0.0020, 0.1053);
+  if (icon == Icons.self_improvement_outlined)
+    return const Offset(-0.0009, 0.0924);
   if (icon == Icons.favorite_border) return const Offset(-0.0022, -0.0667);
   if (icon == Icons.schema_outlined) return const Offset(-0.0865, -0.0020);
   if (icon == Icons.flag_outlined) return const Offset(-0.0132, -0.0480);

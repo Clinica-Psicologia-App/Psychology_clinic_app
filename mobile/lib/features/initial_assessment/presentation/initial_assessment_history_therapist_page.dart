@@ -88,6 +88,7 @@ class _InitialAssessmentHistoryTherapistPageState
 
     return AppScaffold(
       title: 'Linha do Tempo',
+      accent: AppColors.turquoise,
       body: AsyncStateBody<PatientHistory>(
         asyncValue: async,
         onRetry: () => ref.invalidate(patientHistoryProvider(_ctx)),
@@ -98,7 +99,8 @@ class _InitialAssessmentHistoryTherapistPageState
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
                 children: [
                   for (final chapter in kLifeChaptersInOrder)
-                    _chapterBlock(context, chapter, history.entriesFor(chapter)),
+                    _chapterBlock(
+                        context, chapter, history.entriesFor(chapter)),
                   if (history.unchaptered.isNotEmpty)
                     _chapterBlockRaw(
                         context, 'Outros acontecimentos', history.unchaptered),
@@ -222,7 +224,8 @@ class _InitialAssessmentHistoryTherapistPageState
             if ((entry.description ?? '').isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
-                child: Text(entry.description!, style: theme.textTheme.bodySmall),
+                child:
+                    Text(entry.description!, style: theme.textTheme.bodySmall),
               ),
             if (entry.beliefs.isNotEmpty)
               Padding(

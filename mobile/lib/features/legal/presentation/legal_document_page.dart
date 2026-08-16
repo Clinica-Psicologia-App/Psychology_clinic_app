@@ -4,6 +4,7 @@ import '../../../core/legal/legal_documents.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/responsive_content.dart';
 
@@ -29,6 +30,7 @@ class LegalDocumentPage extends StatelessWidget {
 
     return AppScaffold(
       title: title,
+      accent: AppColors.navy,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(AppSpacing.md),

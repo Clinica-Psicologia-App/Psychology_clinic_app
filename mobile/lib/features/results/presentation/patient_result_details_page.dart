@@ -44,6 +44,7 @@ class PatientResultDetailsPage extends ConsumerWidget {
 
     return AppScaffold(
       title: 'Detalhe do resultado',
+      accent: AppColors.purple,
       actions: [
         IconButton(
           tooltip: 'Atualizar',

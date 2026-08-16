@@ -7,6 +7,7 @@ import '../../../shared/utils/brazil_validators.dart';
 import '../../../shared/utils/input_formatters.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/form_section.dart';
 import '../../../shared/widgets/error_banner.dart';
@@ -130,6 +131,7 @@ class _CreatePatientPageState extends ConsumerState<CreatePatientPage> {
 
     return AppScaffold(
       title: 'Novo paciente',
+      accent: AppColors.blue,
       body: FormPageBody(
         maxWidth: 640,
         child: Form(

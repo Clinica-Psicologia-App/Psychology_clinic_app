@@ -66,8 +66,7 @@ void main() {
     );
   });
 
-  test('falha não deixa o notifier travado para a próxima tentativa',
-      () async {
+  test('falha não deixa o notifier travado para a próxima tentativa', () async {
     final notifier = container.read(editProfileProvider.notifier);
 
     repo.shouldFail = true;

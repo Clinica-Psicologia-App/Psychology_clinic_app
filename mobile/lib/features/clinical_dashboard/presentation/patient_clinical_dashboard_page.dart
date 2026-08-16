@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_page_header.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../../shared/widgets/responsive_content.dart';
@@ -24,6 +25,7 @@ class PatientClinicalDashboardPage extends ConsumerWidget {
 
     return AppScaffold(
       title: 'Dashboard clínico',
+      accent: AppColors.navy,
       actions: [
         IconButton(
           tooltip: 'Atualizar',
@@ -68,6 +70,7 @@ class StaffPatientClinicalDashboardPage extends ConsumerWidget {
 
     return AppScaffold(
       title: 'Dashboard clínico',
+      accent: AppColors.navy,
       actions: [
         IconButton(
           tooltip: 'Atualizar',
@@ -87,7 +90,8 @@ class StaffPatientClinicalDashboardPage extends ConsumerWidget {
             data: data,
             role: role,
             patientId: patientId,
-            onRefresh: () => ref.invalidate(staffClinicalDashboardProvider(ctx)),
+            onRefresh: () =>
+                ref.invalidate(staffClinicalDashboardProvider(ctx)),
           ),
         ),
       ),

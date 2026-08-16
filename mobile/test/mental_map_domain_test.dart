@@ -1044,8 +1044,7 @@ void main() {
     expect(highlights[1].severityColorKey, 'amber');
   });
 
-  test(
-      'buildMentalCaseMap schema node carries worst aggregateSeverityColorKey',
+  test('buildMentalCaseMap schema node carries worst aggregateSeverityColorKey',
       () {
     final map = buildMentalCaseMap(
       patientName: 'Teste',
@@ -1079,15 +1078,12 @@ void main() {
       genogramData: const GenogramData(people: [], relationships: []),
     );
 
-    final schemaNode =
-        map.primaryNodes.firstWhere((n) => n.id == 'schemas');
+    final schemaNode = map.primaryNodes.firstWhere((n) => n.id == 'schemas');
     // worst-of: red > amber → red
     expect(schemaNode.aggregateSeverityColorKey, 'red');
   });
 
-  test(
-      'buildMentalCaseMap problems node derives severity from intensity',
-      () {
+  test('buildMentalCaseMap problems node derives severity from intensity', () {
     final map = buildMentalCaseMap(
       patientName: 'Teste',
       questionnaires: const [],
@@ -1111,14 +1107,12 @@ void main() {
       genogramData: const GenogramData(people: [], relationships: []),
     );
 
-    final problemsNode =
-        map.primaryNodes.firstWhere((n) => n.id == 'problems');
+    final problemsNode = map.primaryNodes.firstWhere((n) => n.id == 'problems');
     // max intensity = 8 (≥ 7) → red
     expect(problemsNode.aggregateSeverityColorKey, 'red');
   });
 
-  test('buildMentalCaseMap problems node severity green for low intensity',
-      () {
+  test('buildMentalCaseMap problems node severity green for low intensity', () {
     final map = buildMentalCaseMap(
       patientName: 'Teste',
       questionnaires: const [],
@@ -1136,8 +1130,7 @@ void main() {
       genogramData: const GenogramData(people: [], relationships: []),
     );
 
-    final problemsNode =
-        map.primaryNodes.firstWhere((n) => n.id == 'problems');
+    final problemsNode = map.primaryNodes.firstWhere((n) => n.id == 'problems');
     expect(problemsNode.aggregateSeverityColorKey, 'green');
   });
 
@@ -1152,8 +1145,7 @@ void main() {
       genogramData: const GenogramData(people: [], relationships: []),
     );
 
-    final historyNode =
-        map.contextNodes.firstWhere((n) => n.id == 'history');
+    final historyNode = map.contextNodes.firstWhere((n) => n.id == 'history');
     expect(historyNode.aggregateSeverityColorKey, isNull);
   });
 }

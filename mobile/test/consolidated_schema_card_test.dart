@@ -127,8 +127,7 @@ void main() {
       isStaff: true,
     );
 
-    final abandono =
-        tester.getTopLeft(find.text('Abandono/Instabilidade')).dy;
+    final abandono = tester.getTopLeft(find.text('Abandono/Instabilidade')).dy;
     final isolamento =
         tester.getTopLeft(find.text('Isolamento social/Alienação')).dy;
     expect(abandono, lessThan(isolamento));

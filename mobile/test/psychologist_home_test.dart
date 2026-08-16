@@ -27,7 +27,8 @@ void main() {
     await _pumpHome(tester);
 
     expect(tester.takeException(), isNull);
-    expect(find.text('Central de trabalho'), findsOneWidget);
+    // O resumo da carteira ("Central de trabalho") foi promovido ao canopy;
+    // as seções de módulos seguem no corpo.
     expect(find.text('Carteira de pacientes'), findsOneWidget);
   });
 

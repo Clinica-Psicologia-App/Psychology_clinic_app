@@ -7,6 +7,7 @@ import '../../../core/errors/error_mapper.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../auth/providers/auth_providers.dart';
@@ -140,10 +141,12 @@ class _CreateDailyMonitorPageState
       return monitorAsync.when(
         loading: () => const AppScaffold(
           title: 'Editar registro',
+          accent: AppColors.cyan,
           body: Center(child: CircularProgressIndicator()),
         ),
         error: (_, __) => AppScaffold(
           title: 'Editar registro',
+          accent: AppColors.cyan,
           body: Center(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -164,12 +167,14 @@ class _CreateDailyMonitorPageState
           if (monitor == null) {
             return const AppScaffold(
               title: 'Editar registro',
+              accent: AppColors.cyan,
               body: Center(child: Text('Registro não encontrado.')),
             );
           }
           if (!monitor.isEditableToday) {
             return AppScaffold(
               title: 'Editar registro',
+              accent: AppColors.cyan,
               body: Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24),
@@ -194,6 +199,7 @@ class _CreateDailyMonitorPageState
   Widget _buildForm(BuildContext context) {
     return AppScaffold(
       title: widget.isEdit ? 'Editar registro' : 'Novo registro',
+      accent: AppColors.cyan,
       body: Form(
         key: _formKey,
         child: MotionReveal(

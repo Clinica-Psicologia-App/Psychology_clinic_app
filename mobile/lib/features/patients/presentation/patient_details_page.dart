@@ -42,6 +42,7 @@ class PatientDetailsPage extends ConsumerWidget {
 
     return AppScaffold(
       title: 'Paciente',
+      accent: AppColors.blue,
       body: asyncPatient.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
@@ -861,9 +862,7 @@ class _SensitiveInfoRowState extends State<_SensitiveInfoRow> {
             _revealed ? 'Ocultar ${widget.label}' : 'Mostrar ${widget.label}',
         onPressed: () => setState(() => _revealed = !_revealed),
         icon: Icon(
-          _revealed
-              ? Icons.visibility_off_outlined
-              : Icons.visibility_outlined,
+          _revealed ? Icons.visibility_off_outlined : Icons.visibility_outlined,
           size: 20,
           color: AppColors.textMuted,
         ),

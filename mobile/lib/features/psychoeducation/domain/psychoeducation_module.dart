@@ -99,7 +99,8 @@ class PsychoeducationModule {
 /// Etapas da jornada, na ordem em que aparecem para o paciente.
 enum PsychoeducationStage {
   conhecer('Conhecer', 'Entenda o modelo, as necessidades e as origens.'),
-  compreender('Compreender', 'Identifique sua história, seus padrões e esquemas.'),
+  compreender(
+      'Compreender', 'Identifique sua história, seus padrões e esquemas.'),
   transformar(
       'Transformar', 'Reconheça a ativação e fortaleça o Adulto Saudável.');
 

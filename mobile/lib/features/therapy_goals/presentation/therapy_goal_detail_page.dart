@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../profile/domain/profile_role.dart';
@@ -34,6 +35,7 @@ class TherapyGoalDetailPage extends ConsumerWidget {
 
     return AppScaffold(
       title: 'Objetivo',
+      accent: AppColors.turquoise,
       actions: [
         IconButton(
           tooltip: 'Atualizar',

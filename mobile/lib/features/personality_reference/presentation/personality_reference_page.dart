@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_motion.dart';
@@ -21,6 +21,7 @@ class StaffPersonalityReferencePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppScaffold(
       title: 'Referência de personalidade',
+      accent: AppColors.purple,
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -139,11 +140,10 @@ class _FactorCard extends StatelessWidget {
                   children: [
                     Text(
                       factor.name,
-                      style:
-                          Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: AppColors.navy,
-                              ),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.navy,
+                          ),
                     ),
                     const SizedBox(height: 8),
                     Text(

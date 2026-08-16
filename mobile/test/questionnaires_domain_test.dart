@@ -170,7 +170,8 @@ void main() {
     );
   });
 
-  test('parental context selection requires role when caregiver is enabled', () {
+  test('parental context selection requires role when caregiver is enabled',
+      () {
     expect(
       validateParentalContextSelection(
         caregivers: const [
@@ -188,7 +189,8 @@ void main() {
     expect(
       validateParentalContextSelection(
         caregivers: const [
-          CaregiverInput(enabled: true, role: 'outro', otherText1: '', otherText2: ''),
+          CaregiverInput(
+              enabled: true, role: 'outro', otherText1: '', otherText2: ''),
           CaregiverInput(enabled: false),
           CaregiverInput(enabled: false),
         ],

@@ -86,6 +86,7 @@ class _QuestionnaireAnswerPageState
     if (questions.isEmpty) {
       return AppScaffold(
         title: session.questionnaire.name,
+        accent: AppColors.blue,
         body: const Center(
           child: Text('Este questionário não possui perguntas ativas.'),
         ),
@@ -110,6 +111,7 @@ class _QuestionnaireAnswerPageState
       },
       child: AppScaffold(
         title: session.questionnaire.name,
+        accent: AppColors.blue,
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../shared/widgets/app_motion.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../domain/journey_step.dart' show JourneyStep, buildPatientJourneySteps;
 import '../domain/journey_step_id.dart';
@@ -38,6 +39,7 @@ class JourneyPlaceholderPage extends StatelessWidget {
 
     return AppScaffold(
       title: title,
+      accent: AppColors.turquoise,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(32),

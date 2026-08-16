@@ -194,6 +194,7 @@ class _AdminPsychoeducationEditorPageState
   Widget build(BuildContext context) {
     return AppScaffold(
       title: _isEditing ? 'Editar módulo' : 'Novo módulo',
+      accent: AppColors.purple,
       subtitle: 'Biblioteca de Psicoeducação',
       actions: [
         if (_isEditing)
@@ -281,8 +282,10 @@ class _AdminPsychoeducationEditorPageState
         padding:
             const EdgeInsets.only(top: AppSpacing.lg, bottom: AppSpacing.sm),
         child: Text(title,
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w700, color: AppColors.navy)),
+            style: Theme.of(context)
+                .textTheme
+                .titleSmall
+                ?.copyWith(fontWeight: FontWeight.w700, color: AppColors.navy)),
       );
 
   Widget _card(List<Widget> children) => ClayCard(
@@ -422,7 +425,8 @@ class _AdminPsychoeducationEditorPageState
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.upload_outlined, size: 18),
-                    label: Text(_uploadingCover ? 'Enviando…' : 'Enviar imagem'),
+                    label:
+                        Text(_uploadingCover ? 'Enviando…' : 'Enviar imagem'),
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   _text(_coverUrl, 'URL da capa (ou cole um link)'),
@@ -493,8 +497,7 @@ class _CardEditor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget f(TextEditingController c, String label, {int lines = 1}) =>
-        Padding(
+    Widget f(TextEditingController c, String label, {int lines = 1}) => Padding(
           padding: const EdgeInsets.only(bottom: AppSpacing.sm),
           child: TextField(
             controller: c,
@@ -531,7 +534,8 @@ class _CardEditor extends StatelessWidget {
             f(field.patientText, 'Texto do paciente', lines: 3),
             f(field.reflection, 'Reflexão'),
             f(field.exercise, 'Exercício'),
-            f(field.therapistText, 'Texto do terapeuta (opcional, não vai ao paciente)',
+            f(field.therapistText,
+                'Texto do terapeuta (opcional, não vai ao paciente)',
                 lines: 2),
             f(field.imageUrl, 'URL da imagem'),
           ],

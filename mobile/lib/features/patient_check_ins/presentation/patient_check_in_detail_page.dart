@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../profile/domain/profile_role.dart';
 import '../providers/patient_check_ins_providers.dart';
@@ -32,6 +33,7 @@ class PatientCheckInDetailPage extends ConsumerWidget {
 
     return AppScaffold(
       title: 'Check-in',
+      accent: AppColors.turquoise,
       actions: [
         IconButton(
           tooltip: 'Atualizar',

@@ -8,6 +8,7 @@ import '../../../core/errors/error_mapper.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../profile/domain/profile_role.dart';
@@ -162,10 +163,12 @@ class _PatientProblemFormPageState
       return problemAsync.when(
         loading: () => const AppScaffold(
           title: 'Carregando...',
+          accent: AppColors.warning,
           body: Center(child: CircularProgressIndicator()),
         ),
         error: (_, __) => AppScaffold(
           title: 'Erro',
+          accent: AppColors.warning,
           body: Center(
             child: FilledButton(
               onPressed: () => ref.invalidate(
@@ -179,6 +182,7 @@ class _PatientProblemFormPageState
           if (problem == null) {
             return const AppScaffold(
               title: 'Problema',
+              accent: AppColors.warning,
               body: Center(child: Text('Problema não encontrado.')),
             );
           }
@@ -194,6 +198,7 @@ class _PatientProblemFormPageState
   Widget _buildForm(BuildContext context) {
     return AppScaffold(
       title: widget.isEdit ? 'Editar problema' : 'Novo problema',
+      accent: AppColors.warning,
       body: Form(
         key: _formKey,
         child: MotionReveal(

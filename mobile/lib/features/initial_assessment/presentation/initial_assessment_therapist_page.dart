@@ -16,6 +16,7 @@ import '../providers/initial_assessment_providers.dart';
 import '../../profile/domain/profile_role.dart' show ProfileRole;
 import '../../profile/presentation/widgets/user_avatar.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
+import 'widgets/life_area_wheel_chart.dart';
 
 /// Tela 1 do fluxo Conhecer na lente do terapeuta — leitura das respostas do
 /// paciente + campos clínicos (Bloco 1 privado, Bloco 2 clínico, comentários
@@ -194,6 +195,7 @@ class _InitialAssessmentTherapistPageState
 
     return AppScaffold(
       title: 'Conceitualização inicial',
+      accent: AppColors.turquoise,
       body: AsyncStateBody<InitialAssessment>(
         asyncValue: async,
         onRetry: () => ref.invalidate(initialAssessmentProvider(_ctx)),
@@ -222,8 +224,7 @@ class _InitialAssessmentTherapistPageState
                     icon: Icons.lock_outline,
                     children: [
                       _field(_observations, 'Observações iniciais',
-                          hint: 'Visível apenas para você',
-                          privateNote: true),
+                          hint: 'Visível apenas para você', privateNote: true),
                     ],
                   ),
 
@@ -234,7 +235,8 @@ class _InitialAssessmentTherapistPageState
                     title: 'Motivo da Procura / Queixa Atual',
                     icon: Icons.record_voice_over_outlined,
                     accent: AppColors.blue,
-                    subtitle: 'O que o paciente trouxe e a sua leitura clínica.',
+                    subtitle:
+                        'O que o paciente trouxe e a sua leitura clínica.',
                   ),
                   if (data.intake != null) _PatientIntakeCard(data: data),
                   _group(
@@ -259,6 +261,31 @@ class _InitialAssessmentTherapistPageState
                     icon: Icons.tune_outlined,
                     accent: AppColors.turquoise,
                     subtitle: 'Satisfação e sofrimento por área da vida.',
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).cardColor,
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.navy.withValues(alpha: 0.07),
+                            blurRadius: 10,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: LifeAreaWheelChart(
+                          scores: {
+                            for (final area in kLifeAreasInOrder)
+                              area: data.lifeAreaFor(area).score,
+                          },
+                        ),
+                      ),
+                    ),
                   ),
                   for (final group in FunctioningGroup.values)
                     _functioningGroup(context, data, group),
@@ -301,7 +328,7 @@ class _InitialAssessmentTherapistPageState
                   ),
                   _group(
                     context,
-                    title: 'Hipóteses de esquema',
+                    title: 'Hipóteses de esquemas',
                     icon: Icons.schema_outlined,
                     children: [
                       _field(_schemaHypothesesText, 'Hipóteses de esquemas'),
@@ -427,8 +454,7 @@ class _InitialAssessmentTherapistPageState
             ),
             const SizedBox(height: 10),
             for (var i = 0; i < areas.length; i++) ...[
-              if (i > 0)
-                const Divider(height: 20, color: AppColors.border),
+              if (i > 0) const Divider(height: 20, color: AppColors.border),
               _areaRow(context, data, areas[i]),
             ],
           ],
@@ -791,8 +817,7 @@ class _PatientBasicsCard extends StatelessWidget {
       if ((basics.medicationNotes ?? '').isNotEmpty)
         ('Medicação', basics.medicationNotes),
       if (basics.psychiatricFollowup != null)
-        ('Acomp. psiquiátrico',
-            basics.psychiatricFollowup! ? 'Sim' : 'Não'),
+        ('Acomp. psiquiátrico', basics.psychiatricFollowup! ? 'Sim' : 'Não'),
       if ((basics.psychiatristNotes ?? '').isNotEmpty)
         ('Psiquiatra', basics.psychiatristNotes),
       if ((basics.importantToKnow ?? '').isNotEmpty)
@@ -848,8 +873,7 @@ class _PatientBasicsCard extends StatelessWidget {
             for (var i = 0; i < rows.length; i++) ...[
               if (i > 0)
                 Divider(
-                    height: 14,
-                    color: AppColors.navy.withValues(alpha: 0.08)),
+                    height: 14, color: AppColors.navy.withValues(alpha: 0.08)),
               _InfoRow(label: rows[i].$1, value: rows[i].$2!),
             ],
             if (extraRows.isNotEmpty) ...[
@@ -878,8 +902,7 @@ class _PatientBasicsCard extends StatelessWidget {
                         Divider(
                             height: 12,
                             color: AppColors.navy.withValues(alpha: 0.08)),
-                      _InfoRow(
-                          label: extraRows[i].$1, value: extraRows[i].$2!),
+                      _InfoRow(label: extraRows[i].$1, value: extraRows[i].$2!),
                     ],
                   ],
                 ),
@@ -992,8 +1015,7 @@ class _PatientIntakeCard extends StatelessWidget {
             for (var i = 0; i < rows.length; i++) ...[
               if (i > 0)
                 Divider(
-                    height: 18,
-                    color: AppColors.cyan.withValues(alpha: 0.15)),
+                    height: 18, color: AppColors.cyan.withValues(alpha: 0.15)),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

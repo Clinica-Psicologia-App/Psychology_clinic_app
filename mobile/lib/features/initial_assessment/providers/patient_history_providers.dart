@@ -5,7 +5,8 @@ import '../data/patient_history_repository.dart';
 import '../domain/life_chapter.dart';
 import '../domain/patient_history.dart';
 import '../domain/timeline_belief.dart';
-import 'initial_assessment_providers.dart' show InitialAssessmentContext, filledByRoleFor;
+import 'initial_assessment_providers.dart'
+    show InitialAssessmentContext, filledByRoleFor;
 
 export 'initial_assessment_providers.dart' show InitialAssessmentContext;
 

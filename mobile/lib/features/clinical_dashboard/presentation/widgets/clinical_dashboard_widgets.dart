@@ -1400,7 +1400,7 @@ class ConsolidatedSchemaProfileCard extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        'Agrupado por domínio · maior pontuação primeiro',
+                        'Agrupado por domínio · ordem clínica',
                         style: theme.textTheme.labelSmall?.copyWith(
                           color: AppColors.textMuted,
                         ),
@@ -1422,16 +1422,24 @@ class ConsolidatedSchemaProfileCard extends ConsumerWidget {
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
               child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.touch_app_outlined,
-                      size: 13, color: AppColors.purple),
+                  const Padding(
+                    padding: EdgeInsets.only(top: 1),
+                    child: Icon(Icons.touch_app_outlined,
+                        size: 13, color: AppColors.purple),
+                  ),
                   const SizedBox(width: 5),
-                  Text(
-                    'Toque em qualquer esquema para ativar ou desativar',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: AppColors.purple.withValues(alpha: 0.75),
-                      fontStyle: FontStyle.italic,
+                  // Expanded: sem ele a dica estoura o Row quando a fonte do
+                  // sistema está ampliada ou a tela é estreita.
+                  Expanded(
+                    child: Text(
+                      'Toque em qualquer esquema para ativar ou desativar',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: AppColors.purple.withValues(alpha: 0.75),
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
                   ),
                 ],
@@ -1577,9 +1585,11 @@ class _DomainSection extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  ...([...domain.schemas]
-                        ..sort((a, b) => b.score.compareTo(a.score)))
-                      .map(
+                  // Ordem canônica de Young, já aplicada em
+                  // buildConsolidatedDomainGroups — não reordenar por score
+                  // aqui: dentro do domínio a sequência é clínica, validada
+                  // com a psicóloga responsável.
+                  ...domain.schemas.map(
                     (schema) => _SchemaBarRow(
                       schema: schema,
                       domainColor: color,

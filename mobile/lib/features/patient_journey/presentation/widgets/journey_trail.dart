@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_animations.dart';
@@ -184,6 +185,8 @@ class _JourneyTrailState extends State<JourneyTrail>
                     : (_sideX(index) + _sideX(index + 1)) / 2,
                 incomingSolid: index <= solidThrough,
                 outgoingSolid: index + 1 <= solidThrough,
+                hasIncoming: index > 0,
+                hasOutgoing: index < mainSteps.length - 1,
                 isCurrent: index == currentIndex,
                 showHere: index == currentIndex && _openIndex != index,
                 phase: isFirstOfPhase ? step.phase : null,
@@ -211,6 +214,8 @@ class _TrailStop extends StatelessWidget {
     required this.exitX,
     required this.incomingSolid,
     required this.outgoingSolid,
+    required this.hasIncoming,
+    required this.hasOutgoing,
     required this.isCurrent,
     required this.showHere,
     required this.phase,
@@ -229,6 +234,8 @@ class _TrailStop extends StatelessWidget {
   final double exitX;
   final bool incomingSolid;
   final bool outgoingSolid;
+  final bool hasIncoming;
+  final bool hasOutgoing;
   final bool isCurrent;
   final bool showHere;
   final JourneyPhase? phase;
@@ -236,11 +243,80 @@ class _TrailStop extends StatelessWidget {
   final void Function(JourneyStep) onSupportTap;
   final VoidCallback onTap;
 
-  static const double _baseHeight = 120;
-  static const double _nodeSize = 64;
+  // Folga a mais que a original: o rótulo agora tem título + linha de estado,
+  // e ambos cresceram (13,5 / 11 pt) — cabe até duas linhas de título.
+  static const double _baseHeight = 150;
+  // Nó menor que o anel de progresso (r=36): sobra folga entre a face branca
+  // e o fio do anel, evitando que os dois se leiam como um alvo concêntrico.
+  static const double _nodeSize = 60;
   static const double _supportNodeSize = 44.0;
   static const double _phaseBand = 40;
   static const double _baseNodeCenterY = 44;
+
+  /// Áreas onde o caminho deve abrir folga: o rótulo do nó e, quando houver,
+  /// o divisor de fase. Medidas com o texto real (não com a caixa reservada),
+  /// para o corte acompanhar exatamente o que está escrito.
+  static const double _gapPadX = 6;
+  static const double _gapPadY = 3;
+
+  List<Rect> _textGaps(
+    BuildContext context, {
+    required double width,
+    required double nodeCenterX,
+    required double nodeCenterY,
+  }) {
+    final theme = Theme.of(context);
+    final scaler = MediaQuery.textScalerOf(context);
+
+    Size measure(String text, TextStyle? style, int maxLines, double maxWidth) {
+      final painter = TextPainter(
+        text: TextSpan(text: text, style: style),
+        textDirection: TextDirection.ltr,
+        textAlign: TextAlign.center,
+        maxLines: maxLines,
+        textScaler: scaler,
+      )..layout(maxWidth: maxWidth);
+      return Size(painter.width, painter.height);
+    }
+
+    Rect centered(Size size, double centerX, double top) => Rect.fromLTWH(
+          centerX - size.width / 2 - _gapPadX,
+          top - _gapPadY,
+          size.width + _gapPadX * 2,
+          size.height + _gapPadY * 2,
+        );
+
+    final gaps = <Rect>[];
+
+    // Rótulo do nó: título (até 2 linhas) e a linha de estado abaixo.
+    final labelTop = nodeCenterY + _nodeSize / 2 + 6;
+    final title =
+        measure(step.title, _NodeLabel.titleStyle(theme), 2, _NodeLabel.width);
+    gaps.add(centered(title, nodeCenterX, labelTop));
+
+    final status = _NodeLabel.statusOf(step);
+    if (status != null) {
+      final statusSize =
+          measure(status, _NodeLabel.statusStyle(theme), 1, _NodeLabel.width);
+      gaps.add(
+        centered(statusSize, nodeCenterX, labelTop + title.height + 2),
+      );
+    }
+
+    // Divisor de fase: o texto fica centrado na largura toda da parada.
+    if (phase != null) {
+      final label = _PhaseCheckpoint.labelOf(phase!);
+      final size = measure(
+        label,
+        _PhaseCheckpoint.labelStyle(theme),
+        1,
+        double.infinity,
+      );
+      gaps.add(centered(size, width / 2, 6));
+    }
+
+    return gaps;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -264,6 +340,12 @@ class _TrailStop extends StatelessWidget {
           final supportCenterX =
               supportOnRight ? w * 0.84 : w * 0.16;
           final supportR = _supportNodeSize / 2;
+          final gaps = _textGaps(
+            context,
+            width: w,
+            nodeCenterX: nodeCenterX,
+            nodeCenterY: nodeCenterY,
+          );
 
           return Stack(
             clipBehavior: Clip.none,
@@ -281,6 +363,9 @@ class _TrailStop extends StatelessWidget {
                     nodeCenterY: nodeCenterY,
                     incomingSolid: incomingSolid,
                     outgoingSolid: outgoingSolid,
+                    hasIncoming: hasIncoming,
+                    hasOutgoing: hasOutgoing,
+                    gaps: gaps,
                     solidColor: AppColors.turquoise,
                     trackColor: AppColors.borderStrong,
                   ),
@@ -293,11 +378,12 @@ class _TrailStop extends StatelessWidget {
                   top: 6,
                   left: 0,
                   right: 0,
-                  child: Center(child: _PhaseCheckpoint(phase: phase!)),
+                  child: _PhaseCheckpoint(phase: phase!),
                 ),
               if (showHere)
                 Positioned(
-                  top: nodeCenterY - _nodeSize / 2 - 26,
+                  // Acima do anel de progresso (r=39), não só do nó.
+                  top: nodeCenterY - 39 - 30,
                   left: nodeCenterX - 62,
                   width: 124,
                   child: const Center(child: _HereTag()),
@@ -318,24 +404,6 @@ class _TrailStop extends StatelessWidget {
                   ),
                 ),
               ),
-              // Anel de progresso ACIMA do nó — cobre sombras e a trilha que
-              // passam pelo raio do anel, garantindo aparência circular limpa.
-              if (step.progressFraction != null)
-                Positioned(
-                  top: nodeCenterY - 44,
-                  left: nodeCenterX - 44,
-                  width: 88,
-                  height: 88,
-                  child: IgnorePointer(
-                    child: CustomPaint(
-                      painter: _ProgressRingPainter(
-                        fraction: step.progressFraction!,
-                        accent: _accentForStep(step),
-                        backgroundColor: AppColors.background,
-                      ),
-                    ),
-                  ),
-                ),
               Positioned(
                 top: nodeCenterY + _nodeSize / 2 + 6,
                 left: nodeCenterX - 74,
@@ -381,10 +449,10 @@ class _TrailStop extends StatelessWidget {
                 // Anel de progresso do nó de apoio — ACIMA do círculo.
                 if (support.progressFraction != null)
                   Positioned(
-                    top: nodeCenterY - 33,
-                    left: supportCenterX - 33,
-                    width: 66,
-                    height: 66,
+                    top: nodeCenterY - 36,
+                    left: supportCenterX - 36,
+                    width: 72,
+                    height: 72,
                     child: IgnorePointer(
                       child: CustomPaint(
                         painter: _ProgressRingPainter(
@@ -392,25 +460,25 @@ class _TrailStop extends StatelessWidget {
                           accent: support.recommendedByTherapistName != null
                               ? const Color(0xFF0EA5E9)
                               : const Color(0xFFD97706),
-                          backgroundColor: AppColors.background,
-                          radius: 27.0,
-                          strokeWidth: 3.5,
+                          backgroundColor: Colors.white,
+                          radius: 29.0,
+                          strokeWidth: 2.0,
                         ),
                       ),
                     ),
                   ),
                 // Rótulo abaixo do círculo de apoio.
                 Positioned(
-                  top: nodeCenterY + supportR + 4,
-                  left: supportCenterX - 55,
-                  width: 110,
+                  top: nodeCenterY + supportR + 6,
+                  left: supportCenterX - 58,
+                  width: 116,
                   child: Text(
                     support.title,
                     textAlign: TextAlign.center,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          fontSize: 10,
+                          fontSize: 11.5,
                           height: 1.2,
                           fontWeight: FontWeight.w600,
                           color: support.recommendedByTherapistName != null
@@ -434,25 +502,74 @@ class _NodeLabel extends StatelessWidget {
   final JourneyStep step;
   final bool isCurrent;
 
+  /// Largura útil do rótulo. Também é o limite usado para medir a área que
+  /// abre folga no caminho.
+  static const double width = 148;
+
+  /// Linha de estado sob o título. É ela que tira a sensação de tela vazia:
+  /// o paciente lê o que falta em cada parada sem precisar tocar no nó.
+  static String? statusOf(JourneyStep step) {
+    final f = step.progressFraction;
+    return switch (step.availability) {
+      JourneyStepAvailability.completed => 'Concluído',
+      JourneyStepAvailability.inProgress =>
+        f != null ? '${(f * 100).round()}% concluído' : 'Em andamento',
+      JourneyStepAvailability.available =>
+        f != null && f > 0 ? '${(f * 100).round()}% concluído' : 'Não iniciado',
+      JourneyStepAvailability.blocked => 'Bloqueado',
+      JourneyStepAvailability.inDevelopment => 'Em breve',
+    };
+  }
+
+  static TextStyle? titleStyle(ThemeData theme) =>
+      theme.textTheme.labelSmall?.copyWith(
+        fontSize: 13.5,
+        height: 1.25,
+        fontWeight: FontWeight.w600,
+        letterSpacing: -0.1,
+      );
+
+  static TextStyle? statusStyle(ThemeData theme) =>
+      theme.textTheme.labelSmall?.copyWith(
+        fontSize: 11,
+        height: 1.2,
+        fontWeight: FontWeight.w400,
+      );
+
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final dimmed = step.availability == JourneyStepAvailability.blocked ||
         step.availability == JourneyStepAvailability.inDevelopment;
-    return Text(
-      step.title,
-      textAlign: TextAlign.center,
-      maxLines: 2,
-      overflow: TextOverflow.ellipsis,
-      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            fontSize: 11.5,
-            height: 1.2,
-            fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w600,
-            color: isCurrent
-                ? AppColors.turquoise
-                : dimmed
-                    ? AppColors.textMuted
-                    : AppColors.textSecondary,
+    final status = statusOf(step);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          step.title,
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: titleStyle(theme)?.copyWith(
+            color: dimmed ? AppColors.textMuted : AppColors.textPrimary,
           ),
+        ),
+        if (status != null) ...[
+          const SizedBox(height: 2),
+          Text(
+            status,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: statusStyle(theme)?.copyWith(
+              color: isCurrent
+                  ? _accentForStep(step)
+                  : AppColors.textMuted.withValues(alpha: 0.9),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
@@ -480,39 +597,40 @@ class _TrailNode extends StatelessWidget {
     final visual = _nodeVisual(step.availability, accent);
 
     Widget circle(double pulse) {
-      final glowSpread = 4 + 5 * pulse;
-      final glowAlpha = 0.22 + 0.20 * pulse;
+      // Volume vem de luz coerente, não de degrau de cor: a face é uma esfera
+      // iluminada do alto-esquerdo, com sombra de contato curta e sombra de
+      // projeção longa. O nó atual só levanta um pouco mais do plano.
+      final lift = isCurrent ? 1.0 : 0.0;
+      // Tom de sombreado da face, derivado do próprio acento (mantém a
+      // esfera na família cromática do módulo em vez de cinza morto).
+      final shade = Color.lerp(visual.fill, accent, 0.10)!;
+      final deepShade = Color.lerp(visual.fill, accent, 0.22)!;
+
       return Container(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          color: visual.fill,
-          gradient: visual.useGradient
-              ? LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [accent, Color.lerp(accent, AppColors.purple, 0.5)!],
-                )
-              : null,
+          gradient: RadialGradient(
+            center: const Alignment(-0.42, -0.52),
+            radius: 1.05,
+            colors: [Colors.white, visual.fill, shade, deepShade],
+            stops: const [0.0, 0.38, 0.78, 1.0],
+          ),
           border: visual.ringWidth > 0
               ? Border.all(color: visual.ring, width: visual.ringWidth)
               : null,
           boxShadow: [
-            if (isCurrent)
-              BoxShadow(
-                color: accent.withValues(alpha: glowAlpha),
-                spreadRadius: glowSpread,
-                blurRadius: 0,
-              ),
-            // Relevo "apertável": um degrau mais escuro embaixo.
+            // Sombra de contato: curta, escura, logo abaixo do nó.
             BoxShadow(
-              color: visual.base3d,
-              offset: const Offset(0, 5),
-              blurRadius: 0,
+              color: AppColors.navy.withValues(alpha: 0.13 + 0.05 * lift),
+              offset: Offset(0, 2 + 1 * lift),
+              blurRadius: 3 + 2 * lift,
             ),
+            // Sombra de projeção: longa e difusa, deslocada para a direita
+            // porque a luz vem do alto-esquerdo.
             BoxShadow(
-              color: AppColors.navy.withValues(alpha: 0.14),
-              offset: const Offset(0, 9),
-              blurRadius: 14,
+              color: AppColors.navy.withValues(alpha: 0.10 + 0.05 * lift),
+              offset: Offset(1.5, 7 + 3 * lift),
+              blurRadius: 14 + 8 * lift,
             ),
           ],
         ),
@@ -520,37 +638,70 @@ class _TrailNode extends StatelessWidget {
           clipBehavior: Clip.none,
           alignment: Alignment.center,
           children: [
-            // Brilho superior (gloss) — dá acabamento de botão aos nós cheios.
-            if (visual.gloss)
+            // Realce especular no alto: a "quina" de luz da esfera.
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.white.withValues(alpha: 0.85),
+                      Colors.white.withValues(alpha: 0.0),
+                    ],
+                    stops: const [0.0, 0.42],
+                  ),
+                ),
+              ),
+            ),
+            // Ícone em relevo: uma cópia clara deslocada para baixo faz o
+            // traço parecer gravado na face, em vez de colado por cima.
+            Transform.translate(
+              offset: const Offset(0, 1),
+              child: Icon(
+                step.icon,
+                size: isCurrent ? 34 : 32,
+                color: Colors.white.withValues(alpha: 0.75),
+              ),
+            ),
+            Icon(step.icon, size: isCurrent ? 34 : 32, color: visual.icon),
+            // Anel de progresso ENTRE o ícone e o badge — o badge renderiza
+            // acima, o anel renderiza acima das sombras do Container.
+            //
+            // Positioned.fill (em vez de offsets fixos) mantém o anel sempre
+            // concêntrico ao nó: o painter desenha com raio maior que a caixa
+            // e transborda, o que o Stack com Clip.none permite.
+            if (step.progressFraction != null)
               Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: RadialGradient(
-                      center: const Alignment(-0.35, -0.55),
-                      radius: 0.85,
-                      colors: [
-                        Colors.white.withValues(alpha: 0.38),
-                        Colors.white.withValues(alpha: 0.0),
-                      ],
+                child: IgnorePointer(
+                  child: CustomPaint(
+                    painter: _ProgressRingPainter(
+                      fraction: step.progressFraction!,
+                      accent: accent,
+                      backgroundColor: Colors.white,
                     ),
                   ),
                 ),
               ),
-            Icon(step.icon, size: 28, color: visual.icon),
             if (visual.badge != null)
               Positioned(
-                right: -3,
+                right: -2,
                 bottom: -1,
                 child: Container(
-                  width: 22,
-                  height: 22,
+                  width: 18,
+                  height: 18,
                   decoration: BoxDecoration(
-                    color: visual.badgeColor,
+                    color: Colors.white,
                     shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.background, width: 3),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.navy.withValues(alpha: 0.10),
+                        blurRadius: 4,
+                      ),
+                    ],
                   ),
-                  child: Icon(visual.badge, size: 11, color: Colors.white),
+                  child: Icon(visual.badge, size: 10, color: visual.badgeColor),
                 ),
               ),
           ],
@@ -690,46 +841,60 @@ class _PhaseCheckpoint extends StatelessWidget {
 
   final JourneyPhase phase;
 
+  /// Cor da fase: acompanha as três auras da atmosfera de fundo, então a
+  /// divisória e o ambiente falam a mesma língua cromática.
+  static const _phaseTints = [
+    Color(0xFF0E8F88),
+    Color(0xFF6B52C9),
+    Color(0xFF9A6A33),
+  ];
+
+  static String labelOf(JourneyPhase phase) =>
+      'Fase ${phase.stepNumber} · ${phase.label}';
+
+  static TextStyle? labelStyle(ThemeData theme) =>
+      theme.textTheme.labelSmall?.copyWith(
+        fontWeight: FontWeight.w600,
+        fontSize: 11.5,
+        letterSpacing: 1.3,
+      );
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppColors.border),
-        boxShadow: AppShadows.soft,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 20,
-            height: 20,
-            alignment: Alignment.center,
+    final tint = _phaseTints[(phase.stepNumber - 1) % _phaseTints.length];
+
+    Widget rule(bool toRight) => Expanded(
+          child: Container(
+            height: 1,
             decoration: BoxDecoration(
-              color: AppColors.turquoise.withValues(alpha: 0.16),
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              '${phase.stepNumber}',
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: AppColors.turquoise,
-                fontWeight: FontWeight.w700,
-                fontSize: 10.5,
+              gradient: LinearGradient(
+                begin: toRight ? Alignment.centerLeft : Alignment.centerRight,
+                end: toRight ? Alignment.centerRight : Alignment.centerLeft,
+                colors: [
+                  tint.withValues(alpha: 0.0),
+                  tint.withValues(alpha: 0.28),
+                ],
               ),
             ),
           ),
-          const SizedBox(width: 7),
-          Text(
-            'Fase ${phase.stepNumber} · ${phase.label}',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: AppColors.navy,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 0.3,
+        );
+
+    // Divisor tipográfico: linhas finas que se dissolvem nas bordas com o nome
+    // da fase em maiúsculas espaçadas — sumário editorial, não placa.
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+      child: Row(
+        children: [
+          rule(true),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Text(
+              labelOf(phase),
+              style: labelStyle(theme)?.copyWith(color: tint),
             ),
           ),
+          rule(false),
         ],
       ),
     );
@@ -742,18 +907,18 @@ class _HereTag extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.navy,
-        borderRadius: BorderRadius.circular(999),
-        boxShadow: AppShadows.card,
+        color: AppColors.navy.withValues(alpha: 0.90),
+        borderRadius: BorderRadius.circular(11),
       ),
       child: Text(
-        '✦ Você está aqui',
+        'VOCÊ ESTÁ AQUI',
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: Colors.white,
-              fontWeight: FontWeight.w700,
-              fontSize: 10,
+              fontWeight: FontWeight.w500,
+              fontSize: 9,
+              letterSpacing: 0.6,
             ),
       ),
     );
@@ -773,8 +938,7 @@ class _SupportNodeButton extends StatelessWidget {
     final isRecommended = step.recommendedByTherapistName != null;
     final base =
         isRecommended ? const Color(0xFF0EA5E9) : const Color(0xFFD97706);
-    final top = Color.lerp(base, Colors.white, 0.25)!;
-
+    // Mesma gramática dos nós principais: branco, fio fino, ícone colorido.
     return GestureDetector(
       onTap: onTap,
       child: Stack(
@@ -783,26 +947,21 @@ class _SupportNodeButton extends StatelessWidget {
           Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [top, base],
+              color: Colors.white.withValues(alpha: 0.88),
+              border: Border.all(
+                color: base.withValues(alpha: 0.26),
+                width: 1.4,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: base.withValues(alpha: 0.40),
-                  offset: const Offset(0, 4),
-                  blurRadius: 0,
-                ),
-                BoxShadow(
-                  color: AppColors.navy.withValues(alpha: 0.12),
-                  offset: const Offset(0, 7),
-                  blurRadius: 10,
+                  color: AppColors.navy.withValues(alpha: 0.06),
+                  offset: const Offset(0, 2),
+                  blurRadius: 8,
                 ),
               ],
             ),
             child: Center(
-              child: Icon(step.icon, size: 20, color: Colors.white),
+              child: Icon(step.icon, size: 25, color: base),
             ),
           ),
           if (isRecommended)
@@ -810,16 +969,23 @@ class _SupportNodeButton extends StatelessWidget {
               right: -2,
               bottom: -1,
               child: Container(
-                width: 16,
-                height: 16,
+                width: 15,
+                height: 15,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF0369A1),
+                  color: Colors.white,
                   shape: BoxShape.circle,
-                  border:
-                      Border.all(color: AppColors.background, width: 2.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.navy.withValues(alpha: 0.10),
+                      blurRadius: 4,
+                    ),
+                  ],
                 ),
-                child:
-                    const Icon(Icons.person_rounded, size: 9, color: Colors.white),
+                child: Icon(
+                  Icons.person_outline_rounded,
+                  size: 9,
+                  color: base,
+                ),
               ),
             ),
         ],
@@ -885,16 +1051,19 @@ class _SupportBranchPainter extends CustomPainter {
         ? supportCenterX - supportRadius
         : supportCenterX + supportRadius;
 
+    // Ramal discreto: fio fino e translúcido. É um desvio opcional da trilha,
+    // não deve competir com o caminho principal nem com os nós.
     final paint = Paint()
-      ..color = isRecommended
-          ? const Color(0xFF1D4ED8)
-          : const Color(0xFFD97706)
+      ..color = (isRecommended
+              ? const Color(0xFF1D4ED8)
+              : const Color(0xFFD97706))
+          .withValues(alpha: 0.34)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.0
+      ..strokeWidth = 1.4
       ..strokeCap = StrokeCap.round;
 
-    const dashLen = 5.0;
-    const gapLen = 3.5;
+    const dashLen = 3.0;
+    const gapLen = 4.0;
     final dx = goRight ? 1.0 : -1.0;
     var x = x1;
     while (goRight ? x < x2 : x > x2) {
@@ -921,8 +1090,8 @@ class _ProgressRingPainter extends CustomPainter {
     required this.fraction,
     required this.accent,
     required this.backgroundColor,
-    this.radius = 38.0,
-    this.strokeWidth = 4.5,
+    this.radius = 39.0,
+    this.strokeWidth = 2.5,
   });
 
   final double fraction;
@@ -937,34 +1106,32 @@ class _ProgressRingPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
 
-    // Stroke de fundo: mascara a trilha bézier na exata faixa radial do anel
-    // e forma o "track" da parte não preenchida. Usa stroke (não disco cheio)
-    // para não apagar a face do nó quando o painter renderiza acima dele.
-    // Largura ligeiramente maior (+ 1.5px) garante cobertura do traço de 6px
-    // da trilha principal.
+    final ringColor = fraction >= 1.0 ? AppColors.success : accent;
+
+    // Halo branco discreto: mascara a trilha que cruza a faixa radial sem
+    // virar um disco visível em volta do nó. Stroke (não disco cheio) para
+    // não apagar a face do nó.
     canvas.drawCircle(
       center,
       radius,
       Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = strokeWidth + 1.5
-        ..color = backgroundColor,
+        ..strokeWidth = strokeWidth + 2.5
+        ..color = backgroundColor.withValues(alpha: 0.30),
     );
 
-    if (fraction <= 0) {
-      _drawDashedCircle(
-        canvas,
-        center,
-        radius,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = strokeWidth
-          ..color = AppColors.borderStrong.withValues(alpha: 0.35),
-      );
-      return;
-    }
+    // Trilho do anel: fio da mesma cor em opacidade baixa, sempre visível —
+    // mesmo em 0% — para o círculo nunca parecer quebrado.
+    canvas.drawCircle(
+      center,
+      radius,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..color = ringColor.withValues(alpha: 0.16),
+    );
 
-    final ringColor = fraction >= 1.0 ? AppColors.success : accent;
+    if (fraction <= 0) return;
 
     // Arco de preenchimento — sentido horário a partir do topo.
     canvas.drawArc(
@@ -978,24 +1145,6 @@ class _ProgressRingPainter extends CustomPainter {
         ..strokeCap = StrokeCap.round
         ..color = ringColor,
     );
-  }
-
-  void _drawDashedCircle(
-      Canvas canvas, Offset center, double radius, Paint paint) {
-    final path = Path()
-      ..addOval(Rect.fromCircle(center: center, radius: radius));
-    const dashLen = 4.5;
-    const gapLen = 4.5;
-    for (final metric in path.computeMetrics()) {
-      var d = 0.0;
-      while (d < metric.length) {
-        canvas.drawPath(
-          metric.extractPath(d, math.min(d + dashLen, metric.length)),
-          paint,
-        );
-        d += dashLen + gapLen;
-      }
-    }
   }
 
   @override
@@ -1020,6 +1169,9 @@ class _TrailPathPainter extends CustomPainter {
     required this.nodeCenterY,
     required this.incomingSolid,
     required this.outgoingSolid,
+    required this.hasIncoming,
+    required this.hasOutgoing,
+    required this.gaps,
     required this.solidColor,
     required this.trackColor,
   }) : super(repaint: animate ? anim : null);
@@ -1033,6 +1185,13 @@ class _TrailPathPainter extends CustomPainter {
   final double nodeCenterY;
   final bool incomingSolid;
   final bool outgoingSolid;
+  final bool hasIncoming;
+  final bool hasOutgoing;
+
+  /// Áreas onde o caminho é interrompido (rótulos e divisores de fase), como
+  /// num mapa de metrô: a linha passa "por baixo" do texto sem cruzá-lo.
+  final List<Rect> gaps;
+
   final Color solidColor;
   final Color trackColor;
 
@@ -1045,65 +1204,150 @@ class _TrailPathPainter extends CustomPainter {
     final xx = exitX * w;
     final ny = nodeCenterY;
 
-    final incoming = Path()
-      ..moveTo(ex, 0)
-      ..cubicTo(ex, ny * 0.6, tx, ny * 0.4, tx, ny);
-    final outgoing = Path()
-      ..moveTo(tx, ny)
-      ..cubicTo(tx, ny + (h - ny) * 0.5, xx, ny + (h - ny) * 0.4, xx, h);
+    // Sem trecho de entrada no primeiro nó nem de saída no último: o caminho
+    // começa e termina nos nós, em vez de virar um toco cortado pela borda.
+    final incoming = hasIncoming
+        ? (Path()
+          ..moveTo(ex, 0)
+          ..cubicTo(ex, ny * 0.6, tx, ny * 0.4, tx, ny))
+        : null;
+    final outgoing = hasOutgoing
+        ? (Path()
+          ..moveTo(tx, ny)
+          ..cubicTo(tx, ny + (h - ny) * 0.5, xx, ny + (h - ny) * 0.4, xx, h))
+        : null;
 
-    _stroke(canvas, incoming, incomingSolid);
-    _stroke(canvas, outgoing, outgoingSolid);
+    if (incoming != null) _stroke(canvas, incoming, incomingSolid);
+    if (outgoing != null) _stroke(canvas, outgoing, outgoingSolid);
 
-    // Brilho de energia correndo pelo trecho já concluído (sólido).
-    if (animate && (incomingSolid || outgoingSolid)) {
-      final flow = Path();
-      if (incomingSolid) flow.addPath(incoming, Offset.zero);
-      if (outgoingSolid) {
-        flow.addPath(outgoing, Offset.zero);
+    if (!animate) return;
+
+    // Partículas subindo pelo trecho já concluído: sobem do fim para o começo,
+    // no sentido inverso ao da leitura, sugerindo o caminho de onde o paciente
+    // veio em vez de apontar para onde ir.
+    if (incoming != null && incomingSolid) _drawParticles(canvas, incoming);
+    if (outgoing != null && outgoingSolid) _drawParticles(canvas, outgoing);
+  }
+
+  // Halo branco largo que separa o caminho da atmosfera, depois a linha fina.
+  // O trecho percorrido recebe cor; o restante fica cinza com pontilhado fino
+  // por cima — progresso vira informação cromática, sem ornamento.
+  static const _halo = 15.0;
+  static const _line = 5.0;
+  static const _dot = Color(0xFFBFCAD8);
+
+  /// Quebra o traçado nos pontos em que entra numa área de folga, devolvendo
+  /// só os trechos visíveis. Amostra a cada 2px — resolução suficiente para
+  /// as curvas suaves da trilha.
+  List<Path> _visibleRuns(Path path) {
+    if (gaps.isEmpty) return [path];
+
+    const step = 2.0;
+    final runs = <Path>[];
+    for (final metric in path.computeMetrics()) {
+      double? runStart;
+      var d = 0.0;
+      while (d <= metric.length) {
+        final position = metric.getTangentForOffset(d)?.position;
+        final blocked =
+            position != null && gaps.any((rect) => rect.contains(position));
+        if (blocked) {
+          if (runStart != null && d - runStart > 1) {
+            runs.add(metric.extractPath(runStart, d));
+          }
+          runStart = null;
+        } else {
+          runStart ??= d;
+        }
+        d += step;
       }
-      _drawFlow(canvas, flow);
+      if (runStart != null && metric.length - runStart > 1) {
+        runs.add(metric.extractPath(runStart, metric.length));
+      }
     }
+    return runs;
   }
 
   void _stroke(Canvas canvas, Path path, bool solid) {
-    final paint = Paint()
+    final halo = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 6
+      ..strokeWidth = _halo
       ..strokeCap = StrokeCap.round
-      ..color = solid ? solidColor : trackColor;
+      ..color = Colors.white.withValues(alpha: 0.62);
+    final line = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _line
+      ..strokeCap = StrokeCap.round
+      ..color = solid ? solidColor : trackColor.withValues(alpha: 0.55);
 
-    if (solid) {
-      canvas.drawPath(path, paint);
-      return;
+    for (final run in _visibleRuns(path)) {
+      canvas.drawPath(run, halo);
+      canvas.drawPath(run, line);
     }
-    for (final metric in path.computeMetrics()) {
+
+    if (solid) return;
+
+    // Pontilhado do trecho pendente: estático de propósito. O único movimento
+    // do caminho são as partículas no trecho concluído — duas animações
+    // simultâneas brigariam entre si e com as auras do fundo.
+    const gap = 10.0;
+    final dots = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.6
+      ..strokeCap = StrokeCap.round
+      ..color = _dot.withValues(alpha: 0.85);
+    for (final metric in _visibleRuns(path)
+        .expand((run) => run.computeMetrics())) {
       var d = 0.0;
       while (d < metric.length) {
         canvas.drawPath(
-          metric.extractPath(d, math.min(d + 1.5, metric.length)),
-          paint,
+          metric.extractPath(d, math.min(d + 1, metric.length)),
+          dots,
         );
-        d += 11;
+        d += gap;
       }
     }
   }
 
-  void _drawFlow(Canvas canvas, Path path) {
-    final glow = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 6
-      ..strokeCap = StrokeCap.round
-      ..color = Colors.white.withValues(alpha: 0.85)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+  /// Partículas viajando pelo trecho concluído, do fim para o começo.
+  ///
+  /// Três por segmento, defasadas igualmente, cada uma com um halo difuso.
+  /// Aparecem e somem nas pontas do segmento para não piscar na emenda com o
+  /// segmento vizinho.
+  static const _particles = 3;
+  static const _fadeZone = 0.18;
 
-    const window = 22.0;
+  void _drawParticles(Canvas canvas, Path path) {
     for (final metric in path.computeMetrics()) {
-      final phase = (anim.value + flowOffset) % 1;
-      final start = phase * (metric.length + window) - window;
-      final a = start.clamp(0.0, metric.length);
-      final b = (start + window).clamp(0.0, metric.length);
-      if (b > a) canvas.drawPath(metric.extractPath(a, b), glow);
+      for (var i = 0; i < _particles; i++) {
+        final phase = (anim.value + flowOffset + i / _particles) % 1.0;
+        // (1 - phase): sobe, andando do fim do traço para o começo.
+        final tangent = metric.getTangentForOffset((1.0 - phase) * metric.length);
+        if (tangent == null) continue;
+
+        // Some junto com o traço nas áreas de folga.
+        if (gaps.any((rect) => rect.contains(tangent.position))) continue;
+
+        final fade =
+            (math.min(phase, 1.0 - phase) / _fadeZone).clamp(0.0, 1.0);
+        if (fade <= 0) continue;
+
+        // Levemente maior no meio do percurso do que nas pontas.
+        final r = 1.7 + 0.6 * math.sin(phase * math.pi);
+
+        canvas.drawCircle(
+          tangent.position,
+          r + 1.8,
+          Paint()
+            ..color = Colors.white.withValues(alpha: 0.24 * fade)
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2.2),
+        );
+        canvas.drawCircle(
+          tangent.position,
+          r,
+          Paint()..color = Colors.white.withValues(alpha: 0.92 * fade),
+        );
+      }
     }
   }
 
@@ -1115,6 +1359,9 @@ class _TrailPathPainter extends CustomPainter {
       old.nodeCenterY != nodeCenterY ||
       old.incomingSolid != incomingSolid ||
       old.outgoingSolid != outgoingSolid ||
+      old.hasIncoming != hasIncoming ||
+      old.hasOutgoing != hasOutgoing ||
+      !listEquals(old.gaps, gaps) ||
       old.animate != animate;
 }
 
@@ -1132,66 +1379,69 @@ typedef _NodeVisual = ({
   Color badgeColor,
 });
 
+/// Todos os nós são brancos: o que muda entre estados é o anel (fio de 1,4px),
+/// a cor do ícone e a opacidade. Nada de preenchimento saturado, relevo 3D ou
+/// brilho — a hierarquia vem do anel de progresso e do rótulo, não do volume.
 _NodeVisual _nodeVisual(JourneyStepAvailability availability, Color accent) {
   switch (availability) {
     case JourneyStepAvailability.completed:
       return (
-        fill: AppColors.success,
+        fill: Colors.white,
         useGradient: false,
-        gloss: true,
-        ring: AppColors.success,
-        ringWidth: 0,
-        icon: Colors.white,
-        base3d: Color.lerp(AppColors.success, Colors.black, 0.28)!,
-        badge: Icons.check_rounded,
+        gloss: false,
+        ring: AppColors.success.withValues(alpha: 0.32),
+        ringWidth: 1.4,
+        icon: AppColors.success,
+        base3d: Colors.transparent,
+        badge: null,
         badgeColor: AppColors.success,
       );
     case JourneyStepAvailability.inProgress:
       return (
-        fill: accent,
-        useGradient: true,
-        gloss: true,
-        ring: accent,
-        ringWidth: 0,
-        icon: Colors.white,
-        base3d: Color.lerp(accent, AppColors.navy, 0.45)!,
+        fill: Colors.white,
+        useGradient: false,
+        gloss: false,
+        ring: accent.withValues(alpha: 0.28),
+        ringWidth: 1.4,
+        icon: accent,
+        base3d: Colors.transparent,
         badge: null,
         badgeColor: accent,
       );
     case JourneyStepAvailability.available:
       return (
-        fill: AppColors.surface,
+        fill: Colors.white.withValues(alpha: 0.88),
         useGradient: false,
         gloss: false,
-        ring: accent,
-        ringWidth: 3,
-        icon: accent,
-        base3d: accent.withValues(alpha: 0.35),
+        ring: accent.withValues(alpha: 0.24),
+        ringWidth: 1.4,
+        icon: accent.withValues(alpha: 0.85),
+        base3d: Colors.transparent,
         badge: null,
         badgeColor: accent,
       );
     case JourneyStepAvailability.blocked:
       return (
-        fill: AppColors.disabledSurface,
+        fill: Colors.white.withValues(alpha: 0.70),
         useGradient: false,
         gloss: false,
-        ring: AppColors.borderStrong,
-        ringWidth: 2,
-        icon: AppColors.textMuted,
-        base3d: AppColors.borderStrong,
-        badge: Icons.lock_rounded,
+        ring: AppColors.borderStrong.withValues(alpha: 0.55),
+        ringWidth: 1.2,
+        icon: AppColors.textMuted.withValues(alpha: 0.75),
+        base3d: Colors.transparent,
+        badge: Icons.lock_outline_rounded,
         badgeColor: AppColors.textMuted,
       );
     case JourneyStepAvailability.inDevelopment:
       return (
-        fill: AppColors.surface,
+        fill: Colors.white.withValues(alpha: 0.70),
         useGradient: false,
         gloss: false,
-        ring: AppColors.borderStrong,
-        ringWidth: 2,
-        icon: AppColors.textMuted,
-        base3d: AppColors.borderStrong,
-        badge: Icons.schedule_rounded,
+        ring: AppColors.borderStrong.withValues(alpha: 0.55),
+        ringWidth: 1.2,
+        icon: AppColors.textMuted.withValues(alpha: 0.75),
+        base3d: Colors.transparent,
+        badge: Icons.schedule_outlined,
         badgeColor: AppColors.textMuted,
       );
   }

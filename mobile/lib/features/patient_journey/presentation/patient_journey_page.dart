@@ -12,6 +12,7 @@ import '../domain/journey_step.dart';
 import '../domain/journey_step_availability.dart';
 import '../providers/patient_journey_providers.dart';
 import 'patient_journey_navigation.dart';
+import 'widgets/journey_ambience.dart';
 import 'widgets/journey_trail.dart';
 
 class PatientJourneyPage extends ConsumerWidget {
@@ -32,25 +33,33 @@ class PatientJourneyPage extends ConsumerWidget {
             steps: stepsAsync.valueOrNull,
           ),
           Expanded(
-            child: AsyncStateBody<List<JourneyStep>>(
-              asyncValue: stepsAsync,
-              onRetry: () {
-                ref.invalidate(patientJourneyProgressProvider);
-                ref.invalidate(patientJourneyStepsProvider);
-              },
-              emptyMessage: 'Nenhum passo configurado na trilha.',
-              emptyIcon: Icons.route_outlined,
-              dataBuilder: (steps) => RefreshIndicator(
-                onRefresh: () async {
-                  ref.invalidate(patientJourneyProgressProvider);
-                  ref.invalidate(patientJourneyStepsProvider);
-                  await ref.read(patientJourneyStepsProvider.future);
-                },
-                child: JourneyTrail(
-                  steps: steps,
-                  onStepTap: (step) => navigateFromJourneyStep(context, step),
+            // A atmosfera fica fixa no viewport, atrás do scroll da trilha:
+            // as auras respiram no lugar em vez de acompanhar o conteúdo.
+            child: Stack(
+              children: [
+                const Positioned.fill(child: JourneyAmbience()),
+                AsyncStateBody<List<JourneyStep>>(
+                  asyncValue: stepsAsync,
+                  onRetry: () {
+                    ref.invalidate(patientJourneyProgressProvider);
+                    ref.invalidate(patientJourneyStepsProvider);
+                  },
+                  emptyMessage: 'Nenhum passo configurado na trilha.',
+                  emptyIcon: Icons.route_outlined,
+                  dataBuilder: (steps) => RefreshIndicator(
+                    onRefresh: () async {
+                      ref.invalidate(patientJourneyProgressProvider);
+                      ref.invalidate(patientJourneyStepsProvider);
+                      await ref.read(patientJourneyStepsProvider.future);
+                    },
+                    child: JourneyTrail(
+                      steps: steps,
+                      onStepTap: (step) =>
+                          navigateFromJourneyStep(context, step),
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
         ],

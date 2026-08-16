@@ -41,7 +41,14 @@ void main() {
     expect(byId[JourneyStepId.genogram]!.order, 2);
     expect(byId[JourneyStepId.timeline]!.order, 3);
     expect(byId[JourneyStepId.problems]!.order, 5);
-    expect(byId[JourneyStepId.dailyMonitor]!.order, 10);
+    // O check-in virou nó de apoio pendurado no monitor diário, então o
+    // monitor passou a vir antes dele na ordenação do fio principal.
+    expect(byId[JourneyStepId.dailyMonitor]!.order, 9);
+    expect(byId[JourneyStepId.checkIn]!.order, 10);
+    expect(
+      byId[JourneyStepId.checkIn]!.parentStepId,
+      JourneyStepId.dailyMonitor,
+    );
   });
 
   test('progress marks questionnaires completed when all active done', () {

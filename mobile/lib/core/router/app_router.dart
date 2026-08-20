@@ -31,6 +31,9 @@ import '../../features/mental_map/presentation/mental_map_route_helpers.dart';
 import '../../features/patient_infographic/presentation/patient_infographic_route_helpers.dart';
 import '../../features/patient_check_ins/presentation/patient_check_in_route_helpers.dart';
 import '../../features/patient_timeline/presentation/patient_timeline_route_helpers.dart';
+import '../../features/life_story/presentation/life_story_routes.dart';
+import '../../features/life_story/presentation/my_timeline_page.dart';
+import '../../features/life_story/presentation/timeline_event_flow_page.dart';
 import '../../features/patient_problems/presentation/patient_problem_route_helpers.dart';
 import '../../features/personality_reference/presentation/personality_reference_route_helpers.dart';
 import '../../features/therapy_goals/presentation/therapy_goal_route_helpers.dart';
@@ -196,6 +199,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, state) => AcceptPatientInvitationPage(
           token: state.uri.queryParameters['token'],
         ),
+      ),
+      // Minha História / Linha do Tempo (fluxo Conhecer, Tela 2) — novo fluxo
+      // unificado, em paralelo à tela antiga de timeline.
+      GoRoute(
+        path: LifeStoryRoutes.myHistory,
+        builder: (_, __) => const MyTimelinePage(),
+      ),
+      GoRoute(
+        path: LifeStoryRoutes.newEvent,
+        builder: (_, __) => const TimelineEventFlowPage(),
       ),
       ShellRoute(
         builder: (_, __, child) => AppNavShell(

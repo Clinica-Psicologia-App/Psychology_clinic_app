@@ -1,0 +1,10 @@
+/// Rotas do fluxo "Minha História / Linha do Tempo" (etapa Conhecer, Tela 2).
+///
+/// Nasce em paralelo à tela antiga de timeline — não a substitui ainda.
+abstract final class LifeStoryRoutes {
+  /// A trilha do paciente (resultado visual) e ponto de entrada.
+  static const myHistory = '/patient/my-history';
+
+  /// O fluxo em etapas para registrar um novo acontecimento.
+  static const newEvent = '/patient/my-history/new';
+}

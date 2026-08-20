@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../daily_monitors/presentation/daily_monitor_routes.dart';
 import '../../initial_assessment/presentation/initial_assessment_routes.dart';
+import '../../life_story/presentation/life_story_routes.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../questionnaires/presentation/questionnaire_routes.dart';
 import '../../mental_map/presentation/mental_map_routes.dart';
@@ -51,9 +52,9 @@ void navigateFromJourneyStep(BuildContext context, JourneyStep step) {
     case JourneyStepId.checkIn:
       context.push(PatientCheckInRoutes.patientList);
     case JourneyStepId.timeline:
-      // Repontado para a Tela 2 do fluxo Conhecer (Minha História), que
-      // estende a mesma linha do tempo com capítulos e crenças.
-      context.push(InitialAssessmentRoutes.patientHistory);
+      // Novo fluxo unificado "Minha História" (Tela 2). A tela antiga
+      // (InitialAssessmentRoutes.patientHistory) segue no código, aposentada.
+      context.push(LifeStoryRoutes.myHistory);
     case JourneyStepId.genogram:
       // Repontado para a Tela 3 do fluxo Conhecer (Minha Família), que
       // estende o genograma com a camada emocional.

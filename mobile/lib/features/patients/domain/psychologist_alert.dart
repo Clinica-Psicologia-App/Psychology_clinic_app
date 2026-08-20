@@ -2,6 +2,7 @@ enum PsychologistAlertKind {
   missingCheckin,
   expiringInvitation,
   staleQuestionnaire,
+  pendingResultsRelease,
 }
 
 class PsychologistAlert {
@@ -30,6 +31,8 @@ class PsychologistAlert {
         return 'Convite de $patientName expira em $daysCount dias';
       case PsychologistAlertKind.staleQuestionnaire:
         return '$patientName com questionário em andamento há $daysCount dias';
+      case PsychologistAlertKind.pendingResultsRelease:
+        return '$patientName com resultado pronto, aguardando liberação';
     }
   }
 
@@ -42,6 +45,8 @@ class PsychologistAlert {
         return 'Convite';
       case PsychologistAlertKind.staleQuestionnaire:
         return 'Questionário em andamento';
+      case PsychologistAlertKind.pendingResultsRelease:
+        return 'Resultado pendente de liberação';
     }
   }
 
@@ -59,13 +64,17 @@ class PsychologistAlert {
         return '$daysCount dias';
       case PsychologistAlertKind.staleQuestionnaire:
         return daysCount == 1 ? '1 dia' : '$daysCount dias';
+      case PsychologistAlertKind.pendingResultsRelease:
+        return daysCount == 1 ? '1 dia' : '$daysCount dias';
     }
   }
 
   static List<PsychologistAlert> fromRpcJson(Map<String, dynamic> json) {
     final alerts = <PsychologistAlert>[];
 
-    // Ordem de prioridade: convites (tempo-crítico) → questionários → check-ins
+    // Ordem de prioridade: convites (tempo-crítico) → resultado pronto (ação
+    // de 1 clique, some da lista assim que resolvido) → questionários em
+    // andamento → check-ins.
     for (final item in (json['expiring_invitations'] as List? ?? [])) {
       final j = Map<String, dynamic>.from(item as Map);
       alerts.add(PsychologistAlert(
@@ -73,6 +82,15 @@ class PsychologistAlert {
         patientName: j['patient_name'] as String,
         daysCount: (j['days_until_expiry'] as num).toInt(),
         invitationId: j['invitation_id'] as String?,
+      ));
+    }
+    for (final item in (json['pending_results_release'] as List? ?? [])) {
+      final j = Map<String, dynamic>.from(item as Map);
+      alerts.add(PsychologistAlert(
+        kind: PsychologistAlertKind.pendingResultsRelease,
+        patientName: j['patient_name'] as String,
+        daysCount: (j['days_waiting'] as num).toInt(),
+        patientId: j['patient_id'] as String?,
       ));
     }
     for (final item in (json['stale_questionnaires'] as List? ?? [])) {

@@ -15,10 +15,14 @@ class PatientListTile extends StatelessWidget {
     super.key,
     required this.patient,
     required this.onTap,
+    this.hasPendingResultsRelease = false,
   });
 
   final Patient patient;
   final VoidCallback onTap;
+
+  /// Questionário concluído, resultado ainda não liberado ao paciente.
+  final bool hasPendingResultsRelease;
 
   @override
   Widget build(BuildContext context) {
@@ -87,16 +91,33 @@ class PatientListTile extends StatelessWidget {
                             color: AppColors.textSecondary,
                           ),
                         ),
-                        if (status != null) ...[
+                        if (status != null || hasPendingResultsRelease) ...[
                           const SizedBox(height: AppSpacing.xs),
-                          StatusChip(
-                            label: status,
-                            tone: !patient.isActive
-                                ? AppStatusTone.warning
-                                : patient.accessStatus ==
-                                        PatientAccessStatus.active
-                                    ? AppStatusTone.success
-                                    : AppStatusTone.neutral,
+                          Wrap(
+                            spacing: AppSpacing.xs,
+                            runSpacing: AppSpacing.xxs,
+                            children: [
+                              if (status != null)
+                                StatusChip(
+                                  label: status,
+                                  tone: !patient.isActive
+                                      ? AppStatusTone.warning
+                                      : patient.accessStatus ==
+                                              PatientAccessStatus.active
+                                          ? AppStatusTone.success
+                                          : AppStatusTone.neutral,
+                                ),
+                              // Ação de 1 clique esquecível: o psicólogo pode
+                              // não notar que o dashboard tem um resultado
+                              // pronto sem entrar nele — o selo aparece já
+                              // na lista.
+                              if (hasPendingResultsRelease)
+                                const StatusChip(
+                                  label: 'Resultado pendente',
+                                  tone: AppStatusTone.success,
+                                  icon: Icons.fact_check_outlined,
+                                ),
+                            ],
                           ),
                         ],
                       ],

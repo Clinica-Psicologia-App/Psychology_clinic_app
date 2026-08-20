@@ -300,6 +300,22 @@ access_profile:profiles!patients_profile_id_fkey(is_active, avatar_type, avatar_
       throw mapToAppException(e);
     }
   }
+
+  /// IDs de todos os pacientes com questionário concluído aguardando
+  /// liberação — sem o corte de 3 itens que a RPC de alertas aplica, para
+  /// marcar o selo correto em cada card da lista.
+  Future<Set<String>> fetchPatientIdsPendingResultsRelease() async {
+    try {
+      final rows = await _client.rpc(
+        'get_patients_with_pending_results_release',
+      ) as List;
+      return rows
+          .map((row) => (row as Map)['patient_id'] as String)
+          .toSet();
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
 }
 
 Map<String, int> _countByProfile(List<dynamic> rows, String field) {

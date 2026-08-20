@@ -81,10 +81,62 @@ void main() {
         patientName: 'Roberto',
         daysCount: 9,
       );
+      const resultado = PsychologistAlert(
+        kind: PsychologistAlertKind.pendingResultsRelease,
+        patientName: 'Carla',
+        daysCount: 2,
+      );
 
       expect(checkin.subtitleLabel, 'Check-in');
       expect(convite.subtitleLabel, 'Convite');
       expect(questionario.subtitleLabel, 'Questionário em andamento');
+      expect(resultado.subtitleLabel, 'Resultado pendente de liberação');
+    });
+  });
+
+  group('PsychologistAlert.fromRpcJson — resultado pendente de liberação', () {
+    test('parseia pending_results_release e prioriza logo após convites', () {
+      final alerts = PsychologistAlert.fromRpcJson({
+        'expiring_invitations': [
+          {
+            'invitation_id': 'inv-1',
+            'patient_name': 'Ana',
+            'days_until_expiry': 1,
+          },
+        ],
+        'pending_results_release': [
+          {
+            'patient_id': 'pat-1',
+            'patient_name': 'Carla',
+            'days_waiting': 2,
+          },
+        ],
+        'stale_questionnaires': [
+          {
+            'patient_id': 'pat-2',
+            'patient_name': 'Roberto',
+            'days_waiting': 9,
+          },
+        ],
+        'missing_checkins': [],
+      });
+
+      expect(alerts.length, 3);
+      expect(alerts[0].kind, PsychologistAlertKind.expiringInvitation);
+      expect(alerts[1].kind, PsychologistAlertKind.pendingResultsRelease);
+      expect(alerts[1].patientName, 'Carla');
+      expect(alerts[1].patientId, 'pat-1');
+      expect(alerts[1].daysCount, 2);
+      expect(alerts[2].kind, PsychologistAlertKind.staleQuestionnaire);
+    });
+
+    test('chave ausente não quebra o parse (compatibilidade)', () {
+      final alerts = PsychologistAlert.fromRpcJson({
+        'expiring_invitations': [],
+        'stale_questionnaires': [],
+        'missing_checkins': [],
+      });
+      expect(alerts, isEmpty);
     });
   });
 

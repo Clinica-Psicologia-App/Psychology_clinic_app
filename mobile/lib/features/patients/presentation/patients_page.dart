@@ -41,6 +41,11 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
   Widget build(BuildContext context) {
     final listState = ref.watch(patientsListProvider);
     final profile = ref.watch(authControllerProvider).valueOrNull;
+    // Só o psicólogo libera resultados — a RPC é vazia para admin, mas evita
+    // a chamada à toa.
+    final pendingReleaseIds = widget.role == ProfileRole.psychologist
+        ? ref.watch(patientsPendingResultsReleaseProvider).valueOrNull
+        : null;
 
     return AppScaffold(
       title: 'Pacientes',
@@ -188,6 +193,9 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
                         delay: staggerDelay(index),
                         child: PatientListTile(
                           patient: patient,
+                          hasPendingResultsRelease:
+                              pendingReleaseIds?.contains(patient.id) ??
+                                  false,
                           onTap: () => context.push(
                             PatientRoutes.detail(widget.role, patient.id),
                           ),

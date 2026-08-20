@@ -51,6 +51,15 @@ final psychologistAlertsProvider =
   return ref.read(patientsRepositoryProvider).fetchAlerts();
 });
 
+/// IDs dos pacientes com resultado pendente de liberação — alimenta o selo
+/// na lista de pacientes, separado da Notificações (que trunca em 3).
+final patientsPendingResultsReleaseProvider =
+    FutureProvider<Set<String>>((ref) {
+  return ref
+      .read(patientsRepositoryProvider)
+      .fetchPatientIdsPendingResultsRelease();
+});
+
 final patientVitalsProvider =
     FutureProvider.family<PatientVitals?, String>((ref, patientId) {
   return ref.read(patientsRepositoryProvider).fetchVitals(patientId);

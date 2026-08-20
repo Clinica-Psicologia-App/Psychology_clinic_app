@@ -17,6 +17,7 @@ import '../../../shared/widgets/clinical_module_card.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../../clinic_entitlements/domain/clinic_feature_entitlement.dart';
 import '../../clinic_entitlements/providers/clinic_entitlements_providers.dart';
+import '../../clinical_dashboard/presentation/clinical_dashboard_routes.dart';
 import '../../daily_monitors/presentation/daily_monitor_routes.dart';
 import '../../mental_map/presentation/mental_map_routes.dart';
 import '../../patient_check_ins/presentation/patient_check_in_routes.dart';
@@ -529,6 +530,14 @@ class _AlertsPanelState extends State<_AlertsPanel> {
         fg: AppColors.info,
         bg: AppColors.infoContainer,
       );
+    case PsychologistAlertKind.pendingResultsRelease:
+      // Verde: é a única categoria cuja ação é positiva — o trabalho clínico
+      // já terminou, falta só o clique de liberar.
+      return (
+        icon: Icons.fact_check_outlined,
+        fg: AppColors.success,
+        bg: AppColors.successContainer,
+      );
   }
 }
 
@@ -641,6 +650,17 @@ class _AlertRow extends StatelessWidget {
         if (alert.patientId != null) {
           context.push(
             PatientRoutes.detail(ProfileRole.psychologist, alert.patientId!),
+          );
+        }
+      case PsychologistAlertKind.pendingResultsRelease:
+        // Leva direto ao Dashboard Clínico (onde fica o botão de liberar),
+        // não ao perfil geral do paciente — poupa um toque a mais.
+        if (alert.patientId != null) {
+          context.push(
+            ClinicalDashboardRoutes.staffList(
+              role: ProfileRole.psychologist,
+              patientId: alert.patientId!,
+            ),
           );
         }
     }

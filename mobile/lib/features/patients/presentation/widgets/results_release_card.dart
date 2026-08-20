@@ -23,6 +23,10 @@ class _ResultsReleaseCardState extends ConsumerState<ResultsReleaseCard> {
 
   Future<void> _toggle(bool release) async {
     if (_busy) return;
+    // Só a liberação exige confirmação — revogar é uma ação de segurança,
+    // não precisa de trava.
+    if (release && !await _confirmRelease(context)) return;
+    if (!mounted) return;
     setState(() => _busy = true);
     try {
       await ref.read(releaseResultsProvider.notifier).submit(
@@ -141,6 +145,184 @@ class _ResultsReleaseCardState extends ConsumerState<ResultsReleaseCard> {
     final dd = d.day.toString().padLeft(2, '0');
     final mm = d.month.toString().padLeft(2, '0');
     return '$dd/$mm/${d.year}';
+  }
+}
+
+/// Aviso compacto no topo do Dashboard Clínico: some assim que o psicólogo
+/// libera. Existe porque o card completo ([ResultsReleaseCard]) fica no fim
+/// da página — sem isso, é fácil terminar de revisar o caso e esquecer o
+/// último passo, que é só um clique.
+class PendingResultsReleaseBanner extends ConsumerStatefulWidget {
+  const PendingResultsReleaseBanner({
+    super.key,
+    required this.patientId,
+    required this.structuredResultCount,
+  });
+
+  final String patientId;
+  final int structuredResultCount;
+
+  @override
+  ConsumerState<PendingResultsReleaseBanner> createState() =>
+      _PendingResultsReleaseBannerState();
+}
+
+class _PendingResultsReleaseBannerState
+    extends ConsumerState<PendingResultsReleaseBanner> {
+  bool _busy = false;
+
+  Future<void> _release() async {
+    if (_busy) return;
+    if (!await _confirmRelease(context)) return;
+    if (!mounted) return;
+    setState(() => _busy = true);
+    try {
+      await ref.read(releaseResultsProvider.notifier).submit(
+            patientId: widget.patientId,
+            released: true,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Resultados liberados para o paciente.')),
+      );
+    } catch (e) {
+      if (mounted) showErrorBanner(context, e);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final patientAsync = ref.watch(patientDetailProvider(widget.patientId));
+    final released = patientAsync.valueOrNull?.resultsReleased ?? false;
+
+    if (released || widget.structuredResultCount == 0) {
+      return const SizedBox.shrink();
+    }
+
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      padding: const EdgeInsets.fromLTRB(14, 12, 10, 12),
+      decoration: BoxDecoration(
+        color: AppColors.warningContainer.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.fact_check_outlined,
+              color: AppColors.warning, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Resultado pronto, aguardando liberação',
+              style: theme.textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                color: AppColors.onWarningContainer,
+                height: 1.3,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          FilledButton(
+            onPressed: _busy ? null : _release,
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              minimumSize: const Size(0, 36),
+              backgroundColor: AppColors.warning,
+            ),
+            child: _busy
+                ? const _Spinner(light: true)
+                : const Text('Liberar'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Trava de liberação: exige confirmação explícita, não uma detecção
+/// automática de "revisão". Nenhum dado hoje distingue "0 esquemas ativados
+/// porque ninguém revisou" de "0 esquemas ativados porque não há nenhum
+/// acima do limiar" — então o sinal confiável é a própria ação deliberada do
+/// psicólogo no momento de liberar, não um rastro passivo no banco.
+Future<bool> _confirmRelease(BuildContext context) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => const _ReleaseConfirmationDialog(),
+  );
+  return confirmed ?? false;
+}
+
+class _ReleaseConfirmationDialog extends StatefulWidget {
+  const _ReleaseConfirmationDialog();
+
+  @override
+  State<_ReleaseConfirmationDialog> createState() =>
+      _ReleaseConfirmationDialogState();
+}
+
+class _ReleaseConfirmationDialogState
+    extends State<_ReleaseConfirmationDialog> {
+  bool _checked = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AlertDialog(
+      title: const Text('Liberar resultados?'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'O paciente passa a ver os resultados dos questionários e o '
+            'mapa mental.',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 16),
+          InkWell(
+            onTap: () => setState(() => _checked = !_checked),
+            borderRadius: BorderRadius.circular(8),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Checkbox(
+                  value: _checked,
+                  onChanged: (v) => setState(() => _checked = v ?? false),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 13),
+                    child: Text(
+                      'Confirmo que revisei as ativações do perfil '
+                      'esquemático deste paciente.',
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed:
+              _checked ? () => Navigator.of(context).pop(true) : null,
+          child: const Text('Confirmar liberação'),
+        ),
+      ],
+    );
   }
 }
 

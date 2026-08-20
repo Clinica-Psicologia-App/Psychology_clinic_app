@@ -159,6 +159,13 @@ class DashboardHomePage extends StatelessWidget {
           const SliverToBoxAdapter(
             child: ClinicalDashboardDisclaimerBanner(),
           ),
+          if (isStaff && patientId != null)
+            SliverToBoxAdapter(
+              child: PendingResultsReleaseBanner(
+                patientId: patientId!,
+                structuredResultCount: data.caseSummary.structuredResultCount,
+              ),
+            ),
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             sliver: SliverList(
@@ -222,6 +229,9 @@ class DashboardHomePage extends StatelessWidget {
                     }).toList(),
                   ),
                 // ── Liberação dos resultados ao paciente ─────────────────
+                // O aviso compacto já apareceu no topo da página; este card
+                // completo fica aqui embaixo para a ação em si — depois de o
+                // psicólogo já ter revisado o perfil consolidado acima.
                 if (isStaff && patientId != null)
                   ResultsReleaseCard(patientId: patientId!),
               ]),

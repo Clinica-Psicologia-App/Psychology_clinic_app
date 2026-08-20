@@ -196,6 +196,19 @@ List<JourneyStep> buildPatientJourneySteps(
     return 'Todos os problemas estão resolvidos ou arquivados.';
   }
 
+  // "Conhecendo você" tem um total real e fechado (24 campos nos Blocos
+  // 1–3), diferente das listas abertas abaixo — a fração vem pronta de
+  // InitialAssessment.completionFraction (calculada no repositório).
+  JourneyStepAvailability initialAssessmentStatus() {
+    if (p == null) return JourneyStepAvailability.available;
+    final f = p.initialAssessmentFraction;
+    if (f <= 0) return JourneyStepAvailability.available;
+    if (f >= 1.0) return JourneyStepAvailability.completed;
+    return JourneyStepAvailability.inProgress;
+  }
+
+  double? initialAssessmentFraction() => p?.initialAssessmentFraction ?? 0.0;
+
   JourneyStepAvailability checkInStatus() {
     if (p == null) return JourneyStepAvailability.available;
     return p.hasCheckInToday
@@ -210,10 +223,21 @@ List<JourneyStep> buildPatientJourneySteps(
         : 'Faça seu check-in de hoje.';
   }
 
+  // Genograma e linha da vida são listas abertas — sem um "total" natural
+  // como questionários (ativos/concluídos) têm. Usamos uma meta de
+  // referência para dar ao anel algo real para medir: cada pessoa/evento
+  // soma um passo em direção a 100%, em vez de um número fixo que não
+  // reagia à quantidade de dado preenchido.
+  const timelineTarget = 5;
+  const genogramTarget = 5;
+
   JourneyStepAvailability timelineStatus() {
     if (p == null) return JourneyStepAvailability.available;
     if (p.timelineEventCount == 0) {
       return JourneyStepAvailability.available;
+    }
+    if (p.timelineEventCount >= timelineTarget) {
+      return JourneyStepAvailability.completed;
     }
     return JourneyStepAvailability.inProgress;
   }
@@ -226,10 +250,19 @@ List<JourneyStep> buildPatientJourneySteps(
     return '${p.timelineEventCount} evento(s) na linha do tempo.';
   }
 
+  double? timelineFraction() {
+    if (p == null) return 0.0;
+    final raw = p.timelineEventCount / timelineTarget;
+    return raw > 1.0 ? 1.0 : raw;
+  }
+
   JourneyStepAvailability genogramStatus() {
     if (p == null) return JourneyStepAvailability.available;
     if (!p.hasGenogramContent) {
       return JourneyStepAvailability.available;
+    }
+    if (p.genogramPeopleCount >= genogramTarget) {
+      return JourneyStepAvailability.completed;
     }
     return JourneyStepAvailability.inProgress;
   }
@@ -240,6 +273,12 @@ List<JourneyStep> buildPatientJourneySteps(
       return 'Nenhuma pessoa no genograma ainda.';
     }
     return '${p.genogramPeopleCount} pessoa(s), ${p.genogramRelationshipCount} relação(ões).';
+  }
+
+  double? genogramFraction() {
+    if (p == null) return 0.0;
+    final raw = p.genogramPeopleCount / genogramTarget;
+    return raw > 1.0 ? 1.0 : raw;
   }
 
   JourneyStepAvailability mentalMapStatus() {
@@ -263,19 +302,12 @@ List<JourneyStep> buildPatientJourneySteps(
     return 'Visão integrada com dados já registrados.';
   }
 
-  // Deriva fração a partir da disponibilidade para passos sem dado contínuo.
-  double? fromAvail(JourneyStepAvailability av) => switch (av) {
-        JourneyStepAvailability.blocked ||
-        JourneyStepAvailability.inDevelopment =>
-          null,
-        JourneyStepAvailability.available => 0.0,
-        JourneyStepAvailability.inProgress => 0.6,
-        JourneyStepAvailability.completed => 1.0,
-      };
-
   double? questFraction() {
     if (!enabled('questionnaires')) return null;
-    if (p == null || p.activeQuestionnaireCount == 0) return 0.0;
+    if (p == null) return 0.0;
+    // Sem instrumento liberado = passo bloqueado: anel omitido, não 0%
+    // (0% diz "disponível, ainda não começou"; bloqueado é outra coisa).
+    if (p.activeQuestionnaireCount == 0) return null;
     return p.completedQuestionnaireCount / p.activeQuestionnaireCount;
   }
 
@@ -299,13 +331,14 @@ List<JourneyStep> buildPatientJourneySteps(
 
   return [
     // ── Fase 1 · Conhecer ────────────────────────────────────────────────────
-    const JourneyStep(
+    JourneyStep(
       id: JourneyStepId.initialAssessment,
       title: 'Conhecendo você',
       subtitle: 'Sua história atual e como está sua vida hoje.',
       icon: Icons.assignment_ind_outlined,
-      availability: JourneyStepAvailability.available,
+      availability: initialAssessmentStatus(),
       phase: JourneyPhase.conhecer,
+      progressFraction: initialAssessmentFraction(),
       order: 0,
     ),
     const JourneyStep(
@@ -320,17 +353,6 @@ List<JourneyStep> buildPatientJourneySteps(
       parentStepId: JourneyStepId.initialAssessment,
     ),
     JourneyStep(
-      id: JourneyStepId.genogram,
-      title: 'Genograma',
-      subtitle: 'Mapa das relações familiares e vínculos importantes.',
-      icon: Icons.family_restroom_outlined,
-      availability: genogramStatus(),
-      phase: JourneyPhase.conhecer,
-      progressHint: genogramHint(),
-      progressFraction: fromAvail(genogramStatus()),
-      order: 2,
-    ),
-    JourneyStep(
       id: JourneyStepId.timeline,
       title: 'Linha da vida',
       subtitle: 'Eventos importantes da sua história e da terapia.',
@@ -338,7 +360,20 @@ List<JourneyStep> buildPatientJourneySteps(
       availability: timelineStatus(),
       phase: JourneyPhase.conhecer,
       progressHint: timelineHint(),
-      progressFraction: fromAvail(timelineStatus()),
+      // Meta de referência (5 eventos = 100%) — ver timelineTarget.
+      progressFraction: timelineFraction(),
+      order: 2,
+    ),
+    JourneyStep(
+      id: JourneyStepId.genogram,
+      title: 'Genograma',
+      subtitle: 'Mapa das relações familiares e vínculos importantes.',
+      icon: Icons.family_restroom_outlined,
+      availability: genogramStatus(),
+      phase: JourneyPhase.conhecer,
+      progressHint: genogramHint(),
+      // Meta de referência (5 pessoas = 100%) — ver genogramTarget.
+      progressFraction: genogramFraction(),
       order: 3,
     ),
     // ── Fase 2 · Avaliar ─────────────────────────────────────────────────────

@@ -18,6 +18,7 @@ class PatientJourneyProgress {
     required this.dailyMonitorCount,
     required this.hasYsqStructuredResult,
     required this.hasYamiStructuredResult,
+    this.initialAssessmentFraction = 0.0,
   });
 
   final int activeQuestionnaireCount;
@@ -37,6 +38,10 @@ class PatientJourneyProgress {
   final int dailyMonitorCount;
   final bool hasYsqStructuredResult;
   final bool hasYamiStructuredResult;
+
+  /// Fração [0.0, 1.0] de campos preenchidos em "Conhecendo você" (Blocos
+  /// 1–3 da avaliação inicial). Ver [InitialAssessment.completionFraction].
+  final double initialAssessmentFraction;
 
   bool get hasClinicalDashboardData =>
       hasYsqStructuredResult || hasYamiStructuredResult;

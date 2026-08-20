@@ -3,6 +3,7 @@
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
 import '../../../core/supabase/supabase_bootstrap.dart';
+import '../../initial_assessment/data/initial_assessment_repository.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../questionnaires/data/questionnaires_repository.dart';
 import '../domain/patient_journey_progress.dart';
@@ -12,12 +13,16 @@ class PatientJourneyRepository {
   PatientJourneyRepository({
     SupabaseClient? client,
     QuestionnairesRepository? questionnairesRepository,
+    InitialAssessmentRepository? initialAssessmentRepository,
   })  : _client = client ?? SupabaseBootstrap.client,
         _questionnairesRepository = questionnairesRepository ??
-            QuestionnairesRepository(client: client);
+            QuestionnairesRepository(client: client),
+        _initialAssessmentRepository =
+            initialAssessmentRepository ?? InitialAssessmentRepository(client: client);
 
   final SupabaseClient _client;
   final QuestionnairesRepository _questionnairesRepository;
+  final InitialAssessmentRepository _initialAssessmentRepository;
 
   Future<String> getPatientIdForCurrentProfile() async {
     try {
@@ -174,6 +179,9 @@ class PatientJourneyRepository {
           .select('id')
           .eq('patient_id', patientId);
 
+      final initialAssessment =
+          await _initialAssessmentRepository.load(patientId);
+
       return PatientJourneyProgress(
         activeQuestionnaireCount: activeIds.length,
         completedQuestionnaireCount: completedQuestionnaireIds.length,
@@ -192,6 +200,7 @@ class PatientJourneyRepository {
         dailyMonitorCount: dailyMonitorCount,
         hasYsqStructuredResult: hasYsqStructuredResult,
         hasYamiStructuredResult: hasYamiStructuredResult,
+        initialAssessmentFraction: initialAssessment.completionFraction,
       );
     } catch (e) {
       throw mapToAppException(e);

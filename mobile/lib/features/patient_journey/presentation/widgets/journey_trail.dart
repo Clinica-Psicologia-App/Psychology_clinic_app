@@ -46,6 +46,7 @@ class _JourneyTrailState extends State<JourneyTrail>
   static const double _sway = 0.17;
 
   final Map<int, LayerLink> _links = {};
+  final Map<int, GlobalKey> _nodeKeys = {};
   late final AnimationController _anim;
   OverlayEntry? _popup;
   int? _openIndex;
@@ -63,6 +64,9 @@ class _JourneyTrailState extends State<JourneyTrail>
       index.isEven ? _centerX - _sway : _centerX + _sway;
 
   LayerLink _linkFor(int index) => _links.putIfAbsent(index, LayerLink.new);
+
+  GlobalKey _nodeKeyFor(int index) =>
+      _nodeKeys.putIfAbsent(index, GlobalKey.new);
 
   @override
   void dispose() {
@@ -88,6 +92,21 @@ class _JourneyTrailState extends State<JourneyTrail>
       return;
     }
     _removePopup();
+
+    // O balão abre para cima por padrão, mas isso deixa o card fora da tela
+    // quando o nó está perto do topo (ex.: o primeiro nó, logo abaixo do
+    // cabeçalho) — o toque parecia não fazer nada porque o botão "Começar"
+    // renderizava acima da viewport. Mede a posição real do nó e inverte
+    // para abrir por baixo quando não sobra espaço acima.
+    final nodeBox = _nodeKeys[index]?.currentContext?.findRenderObject()
+        as RenderBox?;
+    final nodeTopY = nodeBox?.localToGlobal(Offset.zero).dy ?? double.infinity;
+    // O balão pode passar de 200px de altura (título + descrição + dica de
+    // progresso + botão) — folga generosa é mais segura que apertada: abrir
+    // por baixo sem necessidade é inofensivo, cortar o balão não é.
+    const minSpaceAbove = 260.0;
+    final openBelow = nodeTopY < minSpaceAbove;
+
     final entry = OverlayEntry(
       builder: (context) => Stack(
         children: [
@@ -100,9 +119,11 @@ class _JourneyTrailState extends State<JourneyTrail>
           CompositedTransformFollower(
             link: _linkFor(index),
             showWhenUnlinked: false,
-            targetAnchor: Alignment.topCenter,
-            followerAnchor: Alignment.bottomCenter,
-            offset: const Offset(0, -12),
+            targetAnchor:
+                openBelow ? Alignment.bottomCenter : Alignment.topCenter,
+            followerAnchor:
+                openBelow ? Alignment.topCenter : Alignment.bottomCenter,
+            offset: Offset(0, openBelow ? 12 : -12),
             child: _StepBubble(
               step: step,
               onAction: () {
@@ -173,6 +194,7 @@ class _JourneyTrailState extends State<JourneyTrail>
               child: _TrailStop(
                 step: step,
                 link: _linkFor(index),
+                nodeKey: _nodeKeyFor(index),
                 anim: _anim,
                 animate: animate,
                 flowOffset: (index * 0.13) % 1,
@@ -206,6 +228,7 @@ class _TrailStop extends StatelessWidget {
   const _TrailStop({
     required this.step,
     required this.link,
+    required this.nodeKey,
     required this.anim,
     required this.animate,
     required this.flowOffset,
@@ -226,6 +249,7 @@ class _TrailStop extends StatelessWidget {
 
   final JourneyStep step;
   final LayerLink link;
+  final GlobalKey nodeKey;
   final Animation<double> anim;
   final bool animate;
   final double flowOffset;
@@ -351,23 +375,30 @@ class _TrailStop extends StatelessWidget {
             clipBehavior: Clip.none,
             children: [
               // Caminho contínuo — desenhado através da faixa da fase também.
+              //
+              // IgnorePointer: um CustomPaint sem hitTest() customizado
+              // absorve todo toque em toda a sua área por padrão. É puramente
+              // decorativo — sem isso, este Positioned.fill (cobre a
+              // _TrailStop inteira) fica "opaco" ao toque à toa.
               Positioned.fill(
-                child: CustomPaint(
-                  painter: _TrailPathPainter(
-                    anim: anim,
-                    animate: animate,
-                    flowOffset: flowOffset,
-                    entryX: entryX,
-                    thisX: thisX,
-                    exitX: exitX,
-                    nodeCenterY: nodeCenterY,
-                    incomingSolid: incomingSolid,
-                    outgoingSolid: outgoingSolid,
-                    hasIncoming: hasIncoming,
-                    hasOutgoing: hasOutgoing,
-                    gaps: gaps,
-                    solidColor: AppColors.turquoise,
-                    trackColor: AppColors.borderStrong,
+                child: IgnorePointer(
+                  child: CustomPaint(
+                    painter: _TrailPathPainter(
+                      anim: anim,
+                      animate: animate,
+                      flowOffset: flowOffset,
+                      entryX: entryX,
+                      thisX: thisX,
+                      exitX: exitX,
+                      nodeCenterY: nodeCenterY,
+                      incomingSolid: incomingSolid,
+                      outgoingSolid: outgoingSolid,
+                      hasIncoming: hasIncoming,
+                      hasOutgoing: hasOutgoing,
+                      gaps: gaps,
+                      solidColor: AppColors.turquoise,
+                      trackColor: AppColors.borderStrong,
+                    ),
                   ),
                 ),
               ),
@@ -394,6 +425,7 @@ class _TrailStop extends StatelessWidget {
                 width: _nodeSize,
                 height: _nodeSize,
                 child: CompositedTransformTarget(
+                  key: nodeKey,
                   link: link,
                   child: _TrailNode(
                     step: step,
@@ -413,16 +445,26 @@ class _TrailStop extends StatelessWidget {
               // ── Nós de apoio laterais ──────────────────────────────────────
               for (final support in supportNodes) ...[
                 // Ramal tracejado do nó de processo ao nó de apoio.
+                //
+                // IgnorePointer é essencial: um CustomPaint sem hitTest()
+                // customizado absorve QUALQUER toque em toda a sua área por
+                // padrão (RenderCustomPaint.hitTestSelf cai em `?? true`).
+                // Sem isso, este Positioned.fill — que cobre a _TrailStop
+                // inteira e vem DEPOIS do nó principal na pilha — rouba o
+                // toque de qualquer nó que tenha um nó de apoio ao lado
+                // (ex.: "Conhecendo você", com a Biblioteca de Psicoeducação).
                 Positioned.fill(
-                  child: CustomPaint(
-                    painter: _SupportBranchPainter(
-                      mainCenterX: nodeCenterX,
-                      supportCenterX: supportCenterX,
-                      atY: nodeCenterY,
-                      mainRadius: _nodeSize / 2,
-                      supportRadius: supportR,
-                      isRecommended:
-                          support.recommendedByTherapistName != null,
+                  child: IgnorePointer(
+                    child: CustomPaint(
+                      painter: _SupportBranchPainter(
+                        mainCenterX: nodeCenterX,
+                        supportCenterX: supportCenterX,
+                        atY: nodeCenterY,
+                        mainRadius: _nodeSize / 2,
+                        supportRadius: supportR,
+                        isRecommended:
+                            support.recommendedByTherapistName != null,
+                      ),
                     ),
                   ),
                 ),
@@ -508,12 +550,20 @@ class _NodeLabel extends StatelessWidget {
 
   /// Linha de estado sob o título. É ela que tira a sensação de tela vazia:
   /// o paciente lê o que falta em cada parada sem precisar tocar no nó.
+  ///
+  /// Só mostra porcentagem quando existe um total real por trás da fração
+  /// (questionários concluídos/ativos, objetivos, problemas resolvidos...).
+  /// Passos sem um "total" mensurável (genograma, linha da vida) não têm
+  /// [JourneyStep.progressFraction] — caem no [progressHint], que traz a
+  /// contagem real ("5 pessoa(s), 3 relação(ões)."), nunca um número
+  /// inventado.
   static String? statusOf(JourneyStep step) {
     final f = step.progressFraction;
     return switch (step.availability) {
       JourneyStepAvailability.completed => 'Concluído',
-      JourneyStepAvailability.inProgress =>
-        f != null ? '${(f * 100).round()}% concluído' : 'Em andamento',
+      JourneyStepAvailability.inProgress => f != null
+          ? '${(f * 100).round()}% concluído'
+          : step.progressHint ?? 'Em andamento',
       JourneyStepAvailability.available =>
         f != null && f > 0 ? '${(f * 100).round()}% concluído' : 'Não iniciado',
       JourneyStepAvailability.blocked => 'Bloqueado',
@@ -719,7 +769,15 @@ class _TrailNode extends StatelessWidget {
           )
         : circle(isCurrent ? 0.5 : 0);
 
-    return GestureDetector(onTap: onTap, child: node);
+    // behavior: opaque é essencial aqui — o filho é só um Container com
+    // decoração (sem InkWell/Material), que não reivindica o toque sozinho.
+    // Sem isso, o toque "atravessa" o nó inteiro e cai no CustomPaint do
+    // caminho por trás, e nada acontece visivelmente ao tocar.
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: node,
+    );
   }
 }
 
@@ -939,7 +997,10 @@ class _SupportNodeButton extends StatelessWidget {
     final base =
         isRecommended ? const Color(0xFF0EA5E9) : const Color(0xFFD97706);
     // Mesma gramática dos nós principais: branco, fio fino, ícone colorido.
+    // behavior: opaque pelo mesmo motivo do nó principal — sem isso, o
+    // Container decorado sozinho não reivindica o toque.
     return GestureDetector(
+      behavior: HitTestBehavior.opaque,
       onTap: onTap,
       child: Stack(
         clipBehavior: Clip.none,

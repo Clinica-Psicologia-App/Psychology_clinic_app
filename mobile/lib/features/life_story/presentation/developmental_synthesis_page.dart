@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/error_banner.dart';
+import '../domain/clinical_hypothesis.dart';
 import '../domain/family_context.dart';
 import '../domain/family_person.dart';
 import '../domain/genogram_relationship_enums.dart';
@@ -86,6 +88,7 @@ class DevelopmentalSynthesisPage extends ConsumerWidget {
               _blockPatterns(famContext),
               _blockMeanings(events),
               _blockPresentImpact(events),
+              _HypothesesSection(patientId: patientId),
             ],
           );
         },
@@ -498,6 +501,216 @@ class _PersonPill extends StatelessWidget {
             const SizedBox(width: 4),
             const Icon(Icons.chevron_right,
                 size: 16, color: AppColors.textMuted),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Hipóteses para Conceitualização (§43) — campos editáveis do terapeuta,
+/// abaixo da síntese. O app organiza, mas não preenche.
+class _HypothesesSection extends ConsumerWidget {
+  const _HypothesesSection({required this.patientId});
+  final String patientId;
+
+  Future<void> _add(
+      BuildContext context, WidgetRef ref, HypothesisKind kind) async {
+    final text = await _editSheet(context, title: kind.addLabel);
+    if (text == null || text.trim().isEmpty) return;
+    try {
+      await ref.read(saveHypothesisProvider.notifier).add(
+            patientId: patientId,
+            kind: kind,
+            body: text.trim(),
+          );
+    } catch (e) {
+      if (context.mounted) showErrorBanner(context, e);
+    }
+  }
+
+  Future<void> _openEntry(
+      BuildContext context, WidgetRef ref, ClinicalHypothesis h) async {
+    final result = await _editSheet(
+      context,
+      title: h.kind.addLabel,
+      initial: h.body,
+      allowDelete: true,
+    );
+    if (result == null) return;
+    try {
+      if (result == _deleteSentinel) {
+        await ref
+            .read(saveHypothesisProvider.notifier)
+            .remove(patientId: patientId, id: h.id);
+      } else if (result.trim().isNotEmpty) {
+        await ref
+            .read(saveHypothesisProvider.notifier)
+            .edit(patientId: patientId, id: h.id, body: result.trim());
+      }
+    } catch (e) {
+      if (context.mounted) showErrorBanner(context, e);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hypothesesAsync = ref.watch(hypothesesForPatientProvider(patientId));
+    final all = hypothesesAsync.asData?.value ?? const <ClinicalHypothesis>[];
+
+    return _Block(
+      number: 8,
+      title: 'Hipóteses para Conceitualização',
+      subtitle:
+          'Campos do terapeuta. O app organiza os dados, mas não preenche '
+          'hipóteses clínicas.',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final kind in kHypothesisKindsInOrder)
+                OutlinedButton.icon(
+                  onPressed: () => _add(context, ref, kind),
+                  icon: const Icon(Icons.add, size: 16),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.navy,
+                    side: const BorderSide(color: AppColors.border),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  label: Text(kind.addLabel,
+                      style: const TextStyle(fontSize: 12.5)),
+                ),
+            ],
+          ),
+          for (final kind in kHypothesisKindsInOrder)
+            if (all.where((h) => h.kind == kind).isNotEmpty) ...[
+              const SizedBox(height: 14),
+              _MiniLabel(kind.groupLabel),
+              const SizedBox(height: 6),
+              for (final h in all.where((h) => h.kind == kind))
+                _HypothesisCard(
+                  hypothesis: h,
+                  onTap: () => _openEntry(context, ref, h),
+                ),
+            ],
+        ],
+      ),
+    );
+  }
+}
+
+const _deleteSentinel = '__hypothesis_delete__';
+
+/// Folha de edição de uma hipótese. Devolve o texto, `_deleteSentinel` para
+/// remover, ou `null` se cancelado.
+Future<String?> _editSheet(
+  BuildContext context, {
+  required String title,
+  String initial = '',
+  bool allowDelete = false,
+}) {
+  final controller = TextEditingController(text: initial);
+  return showModalBottomSheet<String>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+    ),
+    builder: (sheetContext) {
+      final bottom = MediaQuery.viewInsetsOf(sheetContext).bottom;
+      return Padding(
+        padding: EdgeInsets.fromLTRB(18, 18, 18, 18 + bottom),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title,
+                style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.navy)),
+            const SizedBox(height: 4),
+            const Text('Campo privado — visível apenas para a equipe.',
+                style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+            const SizedBox(height: 14),
+            TextField(
+              controller: controller,
+              maxLines: 5,
+              autofocus: true,
+              decoration: const InputDecoration(
+                hintText: 'Escreva a hipótese...',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                if (allowDelete)
+                  TextButton.icon(
+                    onPressed: () =>
+                        Navigator.of(sheetContext).pop(_deleteSentinel),
+                    icon: const Icon(Icons.delete_outline, size: 18),
+                    style: TextButton.styleFrom(
+                        foregroundColor: AppColors.error),
+                    label: const Text('Remover'),
+                  ),
+                const Spacer(),
+                FilledButton(
+                  onPressed: () {
+                    final text = controller.text.trim();
+                    if (text.isEmpty) return;
+                    Navigator.of(sheetContext).pop(text);
+                  },
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.navy,
+                    minimumSize: const Size(120, 46),
+                  ),
+                  child: const Text('Salvar'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+class _HypothesisCard extends StatelessWidget {
+  const _HypothesisCard({required this.hypothesis, required this.onTap});
+  final ClinicalHypothesis hypothesis;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF7F5EF),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(color: const Color(0xFFE6E0D2)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Text(hypothesis.body,
+                  style: const TextStyle(
+                      fontSize: 13.5, color: AppColors.navy, height: 1.45)),
+            ),
+            const SizedBox(width: 8),
+            const Icon(Icons.edit_outlined, size: 16, color: AppColors.textMuted),
           ],
         ),
       ),

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/life_story_repository.dart';
+import '../domain/clinical_hypothesis.dart';
 import '../domain/family_context.dart';
 import '../domain/family_person.dart';
 import '../domain/life_story_enums.dart';
@@ -200,6 +201,65 @@ class SaveClinicalCommentNotifier extends AsyncNotifier<void> {
 final saveClinicalCommentProvider =
     AsyncNotifierProvider<SaveClinicalCommentNotifier, void>(
   SaveClinicalCommentNotifier.new,
+);
+
+/// Hipóteses de conceitualização de um paciente (§43), contexto do terapeuta.
+final hypothesesForPatientProvider =
+    FutureProvider.family<List<ClinicalHypothesis>, String>(
+        (ref, patientId) async {
+  return ref.read(lifeStoryRepositoryProvider).loadHypotheses(patientId);
+});
+
+/// Cria/edita/remove hipóteses e invalida a lista.
+class SaveHypothesisNotifier extends AsyncNotifier<void> {
+  @override
+  Future<void> build() async {}
+
+  Future<void> add({
+    required String patientId,
+    required HypothesisKind kind,
+    required String body,
+  }) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await ref.read(lifeStoryRepositoryProvider).addHypothesis(
+            patientId: patientId,
+            kind: kind,
+            body: body,
+          );
+      ref.invalidate(hypothesesForPatientProvider(patientId));
+    });
+  }
+
+  Future<void> edit({
+    required String patientId,
+    required String id,
+    required String body,
+  }) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await ref
+          .read(lifeStoryRepositoryProvider)
+          .updateHypothesis(id: id, body: body);
+      ref.invalidate(hypothesesForPatientProvider(patientId));
+    });
+  }
+
+  Future<void> remove({
+    required String patientId,
+    required String id,
+  }) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await ref.read(lifeStoryRepositoryProvider).deleteHypothesis(id);
+      ref.invalidate(hypothesesForPatientProvider(patientId));
+    });
+  }
+}
+
+final saveHypothesisProvider =
+    AsyncNotifierProvider<SaveHypothesisNotifier, void>(
+  SaveHypothesisNotifier.new,
 );
 
 /// Cria uma pessoa nova durante o fluxo e devolve o registro criado.

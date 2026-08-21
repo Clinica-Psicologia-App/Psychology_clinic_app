@@ -12,6 +12,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:terapia_esquema/features/life_story/domain/clinical_hypothesis.dart';
 import 'package:terapia_esquema/features/life_story/domain/life_story_enums.dart';
 import 'package:terapia_esquema/features/life_story/domain/life_timeline_event.dart';
 import 'package:terapia_esquema/features/life_story/domain/family_person.dart';
@@ -417,16 +418,39 @@ void main() {
       patternTraits: [PatternTrait.perfectionism],
       patternGenerations: [PatternGeneration.parentsUncles],
     );
+    const hypotheses = [
+      ClinicalHypothesis(
+        id: 'h1',
+        kind: HypothesisKind.emotionalNeed,
+        body: 'Necessidade de segurança e previsibilidade não atendida na '
+            'infância.',
+      ),
+      ClinicalHypothesis(
+        id: 'h2',
+        kind: HypothesisKind.schema,
+        body: 'Desconfiança/abuso; privação emocional.',
+      ),
+    ];
     await pump(tester, const DevelopmentalSynthesisPage(patientId: 'p'),
         overrides: [
           timelineForPatientProvider('p').overrideWith((ref) async => events),
           familyForPatientProvider('p').overrideWith((ref) async => family),
           familyContextForPatientProvider('p')
               .overrideWith((ref) async => famContext),
+          hypothesesForPatientProvider('p').overrideWith((ref) => hypotheses),
         ]);
+    await tester.pumpAndSettle();
     await capture(tester, 'life_story_sintese.png');
-    await tester.drag(find.byType(ListView), const Offset(0, -1400));
-    await tester.pump(const Duration(milliseconds: 200));
+    // A seção de hipóteses é construída preguiçosamente pelo ListView; rola até
+    // ela (o que a constrói) e deixa o provider assentar antes de conferir.
+    await tester.scrollUntilVisible(
+      find.text('Desconfiança/abuso; privação emocional.'),
+      300,
+      scrollable: find.byType(Scrollable),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Desconfiança/abuso; privação emocional.'),
+        findsOneWidget);
     await capture(tester, 'life_story_sintese_fim.png');
   });
 

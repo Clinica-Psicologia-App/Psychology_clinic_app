@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
 import '../../../core/supabase/supabase_bootstrap.dart';
+import '../domain/clinical_hypothesis.dart';
 import '../domain/family_context.dart';
 import '../domain/family_person.dart';
 import '../domain/life_story_enums.dart';
@@ -207,6 +208,65 @@ class LifeStoryRepository {
         },
         onConflict: 'person_id',
       );
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  /// Hipóteses de conceitualização do terapeuta (§43). Tabela
+  /// `clinical_hypotheses` — staff-only por RLS.
+  Future<List<ClinicalHypothesis>> loadHypotheses(String patientId) async {
+    try {
+      final rows = await _client
+          .from('clinical_hypotheses')
+          .select('id, kind, body')
+          .eq('patient_id', patientId)
+          .order('created_at');
+      return [
+        for (final row in rows as List)
+          ClinicalHypothesis.fromJson(Map<String, dynamic>.from(row)),
+      ];
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  Future<void> addHypothesis({
+    required String patientId,
+    required HypothesisKind kind,
+    required String body,
+  }) async {
+    try {
+      final clinicId = await _clinicIdFor(patientId);
+      final profileId = _client.auth.currentUser?.id;
+      await _client.from('clinical_hypotheses').insert({
+        'clinic_id': clinicId,
+        'patient_id': patientId,
+        'author_id': profileId,
+        'kind': kind.key,
+        'body': body.trim(),
+      });
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  Future<void> updateHypothesis({
+    required String id,
+    required String body,
+  }) async {
+    try {
+      await _client
+          .from('clinical_hypotheses')
+          .update({'body': body.trim()}).eq('id', id);
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  Future<void> deleteHypothesis(String id) async {
+    try {
+      await _client.from('clinical_hypotheses').delete().eq('id', id);
     } catch (e) {
       throw mapToAppException(e);
     }

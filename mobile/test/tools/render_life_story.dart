@@ -17,6 +17,7 @@ import 'package:terapia_esquema/features/life_story/domain/life_timeline_event.d
 import 'package:terapia_esquema/features/life_story/domain/family_person.dart';
 import 'package:terapia_esquema/features/life_story/domain/timeline_person.dart';
 import 'package:terapia_esquema/features/life_story/presentation/deepen_event_flow_page.dart';
+import 'package:terapia_esquema/features/life_story/presentation/deepen_relationship_flow_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/my_family_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/my_timeline_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/timeline_event_flow_page.dart';
@@ -191,5 +192,21 @@ void main() {
       myFamilyProvider.overrideWith((ref) async => _family),
     ]);
     await capture(tester, 'life_story_familia.png');
+  });
+
+  testWidgets('relação — como era', (tester) async {
+    await pump(tester, DeepenRelationshipFlowPage(person: _family[0]));
+    await tester.tap(find.text('Avançar')); // papel → como era
+    await tester.pump(const Duration(milliseconds: 200));
+    await capture(tester, 'life_story_relacao_comoera.png');
+  });
+
+  testWidgets('relação — o que recebi', (tester) async {
+    await pump(tester, DeepenRelationshipFlowPage(person: _family[0]));
+    for (var i = 0; i < 3; i++) {
+      await tester.tap(find.text('Avançar'));
+      await tester.pump(const Duration(milliseconds: 120));
+    }
+    await capture(tester, 'life_story_relacao_recebi.png');
   });
 }

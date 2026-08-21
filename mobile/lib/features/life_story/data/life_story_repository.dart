@@ -119,10 +119,7 @@ class LifeStoryRepository {
     try {
       final rows = await _client
           .from('genogram_people')
-          .select(
-            'id, full_name, relationship_to_patient, gender, age_approx, '
-            'deceased_status, death_age, timeline_event_people(count)',
-          )
+          .select('*, timeline_event_people(count)')
           .eq('patient_id', patientId)
           .order('created_at');
 
@@ -249,8 +246,7 @@ class LifeStoryRepository {
             'filled_by_role': 'patient',
             ...person.toRow(),
           })
-          .select('id, full_name, relationship_to_patient, gender, '
-              'age_approx, deceased_status, death_age')
+          .select('*')
           .single();
       return FamilyPerson.fromJson(Map<String, dynamic>.from(row));
     } catch (e) {

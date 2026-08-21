@@ -8,6 +8,7 @@ import '../../../shared/widgets/error_banner.dart';
 import '../domain/family_person.dart';
 import '../domain/life_story_enums.dart';
 import '../providers/life_story_providers.dart';
+import 'life_story_routes.dart';
 import 'widgets/flow_ui.dart';
 
 /// Tela 3 "Minha Família" — lista das pessoas da história do paciente, com a
@@ -192,15 +193,22 @@ class _PersonCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         border: Border.all(color: AppColors.border),
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
-        children: [
-          CircleAvatar(
+      child: InkWell(
+        onTap: () => context.push(
+          LifeStoryRoutes.deepenRelationship,
+          extra: person,
+        ),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              CircleAvatar(
             radius: 20,
             backgroundColor: const Color(0xFFDDE7F7),
             child: Text(person.initials,
@@ -245,7 +253,9 @@ class _PersonCard extends StatelessWidget {
               ],
             ),
           ),
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }

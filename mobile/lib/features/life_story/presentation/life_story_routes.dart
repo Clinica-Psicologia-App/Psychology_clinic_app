@@ -13,4 +13,7 @@ abstract final class LifeStoryRoutes {
 
   /// Tela 3 — Minha Família (Genograma).
   static const myFamily = '/patient/my-family';
+
+  /// "Aprofundar a relação" com uma pessoa — recebe a pessoa via `extra`.
+  static const deepenRelationship = '/patient/my-family/deepen';
 }

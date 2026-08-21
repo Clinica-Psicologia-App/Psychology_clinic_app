@@ -74,6 +74,14 @@ final familyContextForPatientProvider =
   return ref.read(lifeStoryRepositoryProvider).loadFamilyContext(patientId);
 });
 
+/// Acontecimentos da Linha do Tempo de um paciente específico — contexto do
+/// terapeuta (§42, síntese). RLS libera a leitura via `user_can_access_patient`.
+final timelineForPatientProvider =
+    FutureProvider.family<List<LifeTimelineEvent>, String>(
+        (ref, patientId) async {
+  return ref.read(lifeStoryRepositoryProvider).loadTimeline(patientId);
+});
+
 /// Cria/atualiza uma pessoa da família e invalida os caches.
 class SaveFamilyPersonNotifier extends AsyncNotifier<void> {
   @override

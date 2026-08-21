@@ -20,6 +20,8 @@ import 'package:terapia_esquema/features/life_story/domain/family_context.dart';
 import 'package:terapia_esquema/features/life_story/presentation/deepen_event_flow_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/deepen_relationship_flow_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/family_context_flow_page.dart';
+import 'package:terapia_esquema/features/life_story/domain/life_story_deepen_enums.dart';
+import 'package:terapia_esquema/features/life_story/presentation/developmental_synthesis_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/genogram_panel_page.dart';
 import 'package:terapia_esquema/features/life_story/domain/genogram_relationship_enums.dart';
 import 'package:terapia_esquema/features/life_story/presentation/my_family_page.dart';
@@ -370,6 +372,62 @@ void main() {
     await tester.drag(find.byType(ListView), const Offset(0, -1600));
     await tester.pump(const Duration(milliseconds: 200));
     await capture(tester, 'life_story_painel_genograma_fim.png');
+  });
+
+  testWidgets('síntese desenvolvimental — terapeuta', (tester) async {
+    const events = [
+      LifeTimelineEvent(
+        id: '1',
+        patientId: 'p',
+        title: 'Separação dos meus pais',
+        lifeChapter: LifeChapter.childhood,
+        ageAtEvent: 8,
+        eventRecurrence: EventRecurrence.once,
+        needs: [EmotionalNeed.safety, EmotionalNeed.presence],
+        meaning: 'Aprendi que não podia contar com os outros.',
+        presentAreas: [PresentArea.relationships, PresentArea.emotions],
+      ),
+      LifeTimelineEvent(
+        id: '2',
+        patientId: 'p',
+        title: 'Anos de cobrança na escola',
+        lifeChapter: LifeChapter.adolescence,
+        ageFrom: 12,
+        ageTo: 16,
+        eventRecurrence: EventRecurrence.prolonged,
+        needs: [EmotionalNeed.acceptance],
+        presentAreas: [PresentArea.selfView],
+      ),
+    ];
+    const family = [
+      FamilyPerson(
+        id: 'a',
+        fullName: 'Maria',
+        patientId: 'p',
+        role: RelationshipRole.mother,
+        caregiverRole: CaregiverRole.important,
+        receivedNeeds: [RelationalNeed.affection, RelationalNeed.protection],
+        wishedMoreNeeds: [RelationalNeed.freedomToBe],
+      ),
+    ];
+    const famContext = FamilyContext(
+      climateTraits: [ClimateTrait.manyCriticisms, ClimateTrait.muchControl],
+      climateNote: 'Ninguém falava sobre sentimentos.',
+      hasPatterns: HasPatterns.yes,
+      patternTraits: [PatternTrait.perfectionism],
+      patternGenerations: [PatternGeneration.parentsUncles],
+    );
+    await pump(tester, const DevelopmentalSynthesisPage(patientId: 'p'),
+        overrides: [
+          timelineForPatientProvider('p').overrideWith((ref) async => events),
+          familyForPatientProvider('p').overrideWith((ref) async => family),
+          familyContextForPatientProvider('p')
+              .overrideWith((ref) async => famContext),
+        ]);
+    await capture(tester, 'life_story_sintese.png');
+    await tester.drag(find.byType(ListView), const Offset(0, -1400));
+    await tester.pump(const Duration(milliseconds: 200));
+    await capture(tester, 'life_story_sintese_fim.png');
   });
 
   testWidgets('família — clima', (tester) async {

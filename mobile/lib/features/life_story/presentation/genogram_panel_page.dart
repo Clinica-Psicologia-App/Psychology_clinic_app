@@ -81,6 +81,21 @@ class GenogramPanelPage extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
             children: [
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: FilledButton.icon(
+                  onPressed: () => context.push(
+                    LifeStoryRoutes.developmentalSynthesis,
+                    extra: patientId,
+                  ),
+                  icon: const Icon(Icons.auto_stories_outlined, size: 18),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: AppColors.navy,
+                    minimumSize: const Size.fromHeight(48),
+                  ),
+                  label: const Text('Síntese Desenvolvimental'),
+                ),
+              ),
               _StructureBlock(people: people, patientId: patientId),
               if (caregivers.isNotEmpty)
                 _FiguresBlock(people: caregivers, patientId: patientId),

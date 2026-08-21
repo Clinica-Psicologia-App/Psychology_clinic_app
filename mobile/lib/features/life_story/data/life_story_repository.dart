@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
 import '../../../core/supabase/supabase_bootstrap.dart';
+import '../domain/family_person.dart';
 import '../domain/life_story_enums.dart';
 import '../domain/life_timeline_event.dart';
 import '../domain/timeline_person.dart';
@@ -112,6 +113,31 @@ class LifeStoryRepository {
     }
   }
 
+  /// Pessoas da família (Tela 3) — dados estruturais completos + contagem de
+  /// acontecimentos em que aparecem (§19 "aparece em N momentos").
+  Future<List<FamilyPerson>> loadFamily(String patientId) async {
+    try {
+      final rows = await _client
+          .from('genogram_people')
+          .select(
+            'id, full_name, relationship_to_patient, gender, age_approx, '
+            'deceased_status, death_age, timeline_event_people(count)',
+          )
+          .eq('patient_id', patientId)
+          .order('created_at');
+
+      return [
+        for (final row in rows as List)
+          FamilyPerson.fromJson({
+            ...Map<String, dynamic>.from(row),
+            'event_count': _embeddedCount(row['timeline_event_people']),
+          }),
+      ];
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
   // ── Escrita ──────────────────────────────────────────────────────────────
 
   /// Cria um acontecimento e liga as pessoas que participaram (junção).
@@ -200,6 +226,48 @@ class LifeStoryRepository {
           .single();
 
       return TimelinePerson.fromJson(Map<String, dynamic>.from(row));
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  /// Cria uma pessoa da família com os dados estruturais completos (§20).
+  Future<FamilyPerson> createFamilyPerson({
+    required String patientId,
+    required FamilyPerson person,
+  }) async {
+    try {
+      final clinicId = await _clinicIdFor(patientId);
+      final profileId = _client.auth.currentUser?.id;
+      final row = await _client
+          .from('genogram_people')
+          .insert({
+            'clinic_id': clinicId,
+            'patient_id': patientId,
+            'created_by': profileId,
+            'filled_by_profile_id': profileId,
+            'filled_by_role': 'patient',
+            ...person.toRow(),
+          })
+          .select('id, full_name, relationship_to_patient, gender, '
+              'age_approx, deceased_status, death_age')
+          .single();
+      return FamilyPerson.fromJson(Map<String, dynamic>.from(row));
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  /// Atualiza os dados estruturais de uma pessoa da família.
+  Future<void> updateFamilyPerson({
+    required String personId,
+    required FamilyPerson person,
+  }) async {
+    try {
+      await _client
+          .from('genogram_people')
+          .update(person.toRow())
+          .eq('id', personId);
     } catch (e) {
       throw mapToAppException(e);
     }

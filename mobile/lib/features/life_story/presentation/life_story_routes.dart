@@ -10,4 +10,7 @@ abstract final class LifeStoryRoutes {
 
   /// "Aprofundar este momento" — recebe o evento via `extra`.
   static const deepen = '/patient/my-history/deepen';
+
+  /// Tela 3 — Minha Família (Genograma).
+  static const myFamily = '/patient/my-family';
 }

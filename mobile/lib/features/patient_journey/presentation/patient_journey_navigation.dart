@@ -56,9 +56,9 @@ void navigateFromJourneyStep(BuildContext context, JourneyStep step) {
       // (InitialAssessmentRoutes.patientHistory) segue no código, aposentada.
       context.push(LifeStoryRoutes.myHistory);
     case JourneyStepId.genogram:
-      // Repontado para a Tela 3 do fluxo Conhecer (Minha Família), que
-      // estende o genograma com a camada emocional.
-      context.push(InitialAssessmentRoutes.patientFamily);
+      // Novo fluxo unificado "Minha Família" (Tela 3). A tela antiga
+      // (InitialAssessmentRoutes.patientFamily) segue no código, aposentada.
+      context.push(LifeStoryRoutes.myFamily);
     case JourneyStepId.mentalMap:
       context.push(MentalMapRoutes.patientList);
   }

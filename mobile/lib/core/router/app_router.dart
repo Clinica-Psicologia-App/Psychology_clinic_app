@@ -34,6 +34,7 @@ import '../../features/patient_timeline/presentation/patient_timeline_route_help
 import '../../features/life_story/domain/life_timeline_event.dart';
 import '../../features/life_story/presentation/deepen_event_flow_page.dart';
 import '../../features/life_story/presentation/life_story_routes.dart';
+import '../../features/life_story/presentation/my_family_page.dart';
 import '../../features/life_story/presentation/my_timeline_page.dart';
 import '../../features/life_story/presentation/timeline_event_flow_page.dart';
 import '../../features/patient_problems/presentation/patient_problem_route_helpers.dart';
@@ -216,6 +217,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: LifeStoryRoutes.deepen,
         builder: (_, state) =>
             DeepenEventFlowPage(event: state.extra as LifeTimelineEvent),
+      ),
+      GoRoute(
+        path: LifeStoryRoutes.myFamily,
+        builder: (_, __) => const MyFamilyPage(),
       ),
       ShellRoute(
         builder: (_, __, child) => AppNavShell(

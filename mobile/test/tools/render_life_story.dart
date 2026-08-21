@@ -14,8 +14,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:terapia_esquema/features/life_story/domain/life_story_enums.dart';
 import 'package:terapia_esquema/features/life_story/domain/life_timeline_event.dart';
+import 'package:terapia_esquema/features/life_story/domain/family_person.dart';
 import 'package:terapia_esquema/features/life_story/domain/timeline_person.dart';
 import 'package:terapia_esquema/features/life_story/presentation/deepen_event_flow_page.dart';
+import 'package:terapia_esquema/features/life_story/presentation/my_family_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/my_timeline_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/timeline_event_flow_page.dart';
 import 'package:terapia_esquema/features/life_story/providers/life_story_providers.dart';
@@ -51,6 +53,24 @@ const _people = [
   TimelinePerson(id: 'a', fullName: 'Maria', role: RelationshipRole.mother),
   TimelinePerson(id: 'b', fullName: 'João', role: RelationshipRole.father),
   TimelinePerson(id: 'c', fullName: 'Ana', role: RelationshipRole.sister),
+];
+
+const _family = [
+  FamilyPerson(
+      id: 'a',
+      fullName: 'Maria',
+      role: RelationshipRole.mother,
+      eventCount: 4),
+  FamilyPerson(
+      id: 'b',
+      fullName: 'João',
+      role: RelationshipRole.father,
+      eventCount: 3),
+  FamilyPerson(
+      id: 'c',
+      fullName: 'Ana',
+      role: RelationshipRole.sister,
+      eventCount: 2),
 ];
 
 void main() {
@@ -164,5 +184,12 @@ void main() {
       await tester.pump(const Duration(milliseconds: 120));
     }
     await capture(tester, 'life_story_aprofundar_hoje.png');
+  });
+
+  testWidgets('minha família — lista', (tester) async {
+    await pump(tester, const MyFamilyPage(), overrides: [
+      myFamilyProvider.overrideWith((ref) async => _family),
+    ]);
+    await capture(tester, 'life_story_familia.png');
   });
 }

@@ -216,30 +216,20 @@ class _StructureBlock extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(12),
-            margin: const EdgeInsets.only(bottom: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF6F7F9),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: AppColors.border),
+          OutlinedButton.icon(
+            onPressed: () => context.push(
+              LifeStoryRoutes.genogramDiagram,
+              extra: patientId,
             ),
-            child: const Row(
-              children: [
-                Icon(Icons.account_tree_outlined,
-                    size: 18, color: AppColors.textMuted),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text('Genograma gráfico completo — em desenvolvimento.',
-                      style: TextStyle(
-                          fontSize: 12.5,
-                          color: AppColors.textSecondary,
-                          fontStyle: FontStyle.italic)),
-                ),
-              ],
+            icon: const Icon(Icons.account_tree_outlined, size: 18),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.navy,
+              side: const BorderSide(color: AppColors.border),
+              minimumSize: const Size.fromHeight(44),
             ),
+            label: const Text('Ver genograma gráfico'),
           ),
+          const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,

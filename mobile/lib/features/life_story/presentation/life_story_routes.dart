@@ -24,6 +24,9 @@ abstract final class LifeStoryRoutes {
   /// Painel do terapeuta — Genograma (§41); recebe o `patientId` via `extra`.
   static const genogramPanel = '/psychologist/genogram';
 
+  /// Genograma gráfico (§36–38); recebe o `patientId` via `extra`.
+  static const genogramDiagram = '/psychologist/genogram/diagram';
+
   /// Síntese Desenvolvimental (§42) — integra Telas 2 e 3; `patientId` via
   /// `extra`.
   static const developmentalSynthesis = '/psychologist/synthesis';

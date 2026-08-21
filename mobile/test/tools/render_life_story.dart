@@ -24,6 +24,7 @@ import 'package:terapia_esquema/features/life_story/presentation/family_context_
 import 'package:terapia_esquema/features/life_story/domain/life_story_deepen_enums.dart';
 import 'package:terapia_esquema/features/life_story/presentation/developmental_synthesis_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/genogram_panel_page.dart';
+import 'package:terapia_esquema/features/life_story/presentation/widgets/genogram_diagram.dart';
 import 'package:terapia_esquema/features/life_story/domain/genogram_relationship_enums.dart';
 import 'package:terapia_esquema/features/life_story/presentation/my_family_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/person_card_page.dart';
@@ -452,6 +453,73 @@ void main() {
     expect(find.text('Desconfiança/abuso; privação emocional.'),
         findsOneWidget);
     await capture(tester, 'life_story_sintese_fim.png');
+  });
+
+  testWidgets('genograma gráfico — estrutura e relações', (tester) async {
+    const fam = [
+      FamilyPerson(
+          id: 'gf',
+          fullName: 'Antônio',
+          role: RelationshipRole.grandfather,
+          deceasedStatus: DeceasedStatus.yes),
+      FamilyPerson(
+          id: 'gm', fullName: 'Cecília', role: RelationshipRole.grandmother),
+      FamilyPerson(
+          id: 'f',
+          fullName: 'João',
+          role: RelationshipRole.father,
+          closeness: 3,
+          conflict: 2,
+          bondType: BondType.distant),
+      FamilyPerson(
+          id: 'm',
+          fullName: 'Maria',
+          role: RelationshipRole.mother,
+          caregiverRole: CaregiverRole.important,
+          closeness: 8,
+          conflict: 2,
+          bondType: BondType.closeAffectionate),
+      FamilyPerson(
+          id: 'b',
+          fullName: 'Pedro',
+          role: RelationshipRole.brother,
+          closeness: 4,
+          conflict: 7,
+          bondType: BondType.conflictual),
+      FamilyPerson(
+          id: 'd', fullName: 'Lia', role: RelationshipRole.daughter),
+    ];
+
+    Future<void> renderDiagram(bool bonds, bool caregivers, String file) async {
+      tester.view.physicalSize = const Size(420, 720);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.reset);
+      await tester.pumpWidget(
+        MaterialApp(
+          debugShowCheckedModeBanner: false,
+          home: Scaffold(
+            body: RepaintBoundary(
+              child: Center(
+                child: SizedBox(
+                  width: 420,
+                  height: 700,
+                  child: GenogramDiagram(
+                    people: fam,
+                    showBonds: bonds,
+                    highlightCaregivers: caregivers,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+      await capture(tester, file);
+    }
+
+    await renderDiagram(false, false, 'life_story_genograma_estrutura.png');
+    await renderDiagram(true, true, 'life_story_genograma_relacoes.png');
   });
 
   testWidgets('família — clima', (tester) async {

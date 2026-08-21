@@ -38,6 +38,7 @@ import '../../features/life_story/presentation/deepen_event_flow_page.dart';
 import '../../features/life_story/presentation/deepen_relationship_flow_page.dart';
 import '../../features/life_story/presentation/family_context_flow_page.dart';
 import '../../features/life_story/presentation/developmental_synthesis_page.dart';
+import '../../features/life_story/presentation/genogram_diagram_page.dart';
 import '../../features/life_story/presentation/genogram_panel_page.dart';
 import '../../features/life_story/presentation/life_story_routes.dart';
 import '../../features/life_story/presentation/my_family_page.dart';
@@ -244,6 +245,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: LifeStoryRoutes.genogramPanel,
         builder: (_, state) =>
             GenogramPanelPage(patientId: state.extra as String),
+      ),
+      GoRoute(
+        path: LifeStoryRoutes.genogramDiagram,
+        builder: (_, state) =>
+            GenogramDiagramPage(patientId: state.extra as String),
       ),
       GoRoute(
         path: LifeStoryRoutes.developmentalSynthesis,

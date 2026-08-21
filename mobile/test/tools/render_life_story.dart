@@ -23,6 +23,7 @@ import 'package:terapia_esquema/features/life_story/presentation/family_context_
 import 'package:terapia_esquema/features/life_story/domain/genogram_relationship_enums.dart';
 import 'package:terapia_esquema/features/life_story/presentation/my_family_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/person_card_page.dart';
+import 'package:terapia_esquema/features/life_story/presentation/person_clinical_card_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/my_timeline_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/timeline_event_flow_page.dart';
 import 'package:terapia_esquema/features/life_story/providers/life_story_providers.dart';
@@ -269,6 +270,34 @@ void main() {
   testWidgets('cartão da pessoa — sem camada emocional', (tester) async {
     await pump(tester, PersonCardPage(person: _family[2]));
     await capture(tester, 'life_story_cartao_vazio.png');
+  });
+
+  testWidgets('cartão terapeuta — síntese', (tester) async {
+    const person = FamilyPerson(
+      id: 'a',
+      fullName: 'Maria',
+      role: RelationshipRole.mother,
+      ageApprox: 62,
+      deceasedStatus: DeceasedStatus.no,
+      eventCount: 4,
+      caregiverRole: CaregiverRole.important,
+      closeness: 7,
+      conflict: 6,
+      bondType: BondType.ambivalent,
+      feltInRelationship: [
+        FeltInRelationship.loved,
+        FeltInRelationship.controlled,
+        FeltInRelationship.criticized,
+      ],
+      receivedNeeds: [RelationalNeed.affection, RelationalNeed.protection],
+      wishedMoreNeeds: [
+        RelationalNeed.freedomToBe,
+        RelationalNeed.understanding,
+      ],
+      currentRelationship: CurrentRelationship.close,
+    );
+    await pump(tester, const PersonClinicalCardPage(person: person));
+    await capture(tester, 'life_story_cartao_terapeuta.png');
   });
 
   testWidgets('família — clima', (tester) async {

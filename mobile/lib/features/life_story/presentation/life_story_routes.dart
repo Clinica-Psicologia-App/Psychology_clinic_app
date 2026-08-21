@@ -21,6 +21,10 @@ abstract final class LifeStoryRoutes {
   /// `extra`.
   static const personMoments = '/patient/my-family/person/moments';
 
+  /// Cartão da pessoa — visão do terapeuta (§40, só leitura); pessoa via
+  /// `extra`.
+  static const therapistPersonCard = '/psychologist/genogram/person';
+
   /// "Aprofundar a relação" com uma pessoa — recebe a pessoa via `extra`.
   static const deepenRelationship = '/patient/my-family/deepen';
 

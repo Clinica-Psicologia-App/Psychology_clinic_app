@@ -146,6 +146,40 @@ final updateTimelineEventProvider =
   UpdateTimelineEventNotifier.new,
 );
 
+/// Comentário clínico do terapeuta sobre uma pessoa (§40), por `personId`.
+/// Staff-only: leitura devolve `null` quando não há nota (ou sem acesso).
+final personClinicalCommentProvider =
+    FutureProvider.family<String?, String>((ref, personId) async {
+  return ref.read(lifeStoryRepositoryProvider).loadClinicalComment(personId);
+});
+
+/// Salva/atualiza o comentário clínico de uma pessoa e invalida o cache.
+class SaveClinicalCommentNotifier extends AsyncNotifier<void> {
+  @override
+  Future<void> build() async {}
+
+  Future<void> submit({
+    required String patientId,
+    required String personId,
+    required String comment,
+  }) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await ref.read(lifeStoryRepositoryProvider).saveClinicalComment(
+            patientId: patientId,
+            personId: personId,
+            comment: comment,
+          );
+      ref.invalidate(personClinicalCommentProvider(personId));
+    });
+  }
+}
+
+final saveClinicalCommentProvider =
+    AsyncNotifierProvider<SaveClinicalCommentNotifier, void>(
+  SaveClinicalCommentNotifier.new,
+);
+
 /// Cria uma pessoa nova durante o fluxo e devolve o registro criado.
 class CreatePersonNotifier extends AsyncNotifier<void> {
   @override

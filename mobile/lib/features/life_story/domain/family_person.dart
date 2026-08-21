@@ -62,6 +62,7 @@ class FamilyPerson {
   const FamilyPerson({
     required this.id,
     required this.fullName,
+    this.patientId,
     this.role,
     this.gender,
     this.ageApprox,
@@ -84,6 +85,11 @@ class FamilyPerson {
 
   final String id;
   final String fullName;
+
+  /// Paciente dono do registro. Necessário no contexto do terapeuta (§40) —
+  /// ex.: anexar um comentário clínico. Ausente quando a pessoa é montada só
+  /// para exibição.
+  final String? patientId;
   final RelationshipRole? role;
   final PersonGender? gender;
   final int? ageApprox;
@@ -139,6 +145,7 @@ class FamilyPerson {
     return FamilyPerson(
       id: json['id'] as String,
       fullName: json['full_name'] as String,
+      patientId: json['patient_id'] as String?,
       role: relationshipRoleFromKey(json['relationship_to_patient'] as String?),
       gender: personGenderFromKey(json['gender'] as String?),
       ageApprox: (json['age_approx'] as num?)?.toInt(),

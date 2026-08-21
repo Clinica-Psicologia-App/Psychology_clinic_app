@@ -176,6 +176,42 @@ class LifeStoryRepository {
     }
   }
 
+  /// Comentário clínico do terapeuta sobre uma pessoa (§40). Tabela
+  /// `genogram_person_notes` — staff-only por RLS; o paciente nunca a lê.
+  Future<String?> loadClinicalComment(String personId) async {
+    try {
+      final row = await _client
+          .from('genogram_person_notes')
+          .select('clinical_comment')
+          .eq('person_id', personId)
+          .maybeSingle();
+      return row?['clinical_comment'] as String?;
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  Future<void> saveClinicalComment({
+    required String patientId,
+    required String personId,
+    required String comment,
+  }) async {
+    try {
+      final profileId = _client.auth.currentUser?.id;
+      await _client.from('genogram_person_notes').upsert(
+        {
+          'patient_id': patientId,
+          'person_id': personId,
+          'clinical_comment': comment.trim(),
+          'updated_by_profile_id': profileId,
+        },
+        onConflict: 'person_id',
+      );
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
   // ── Escrita ──────────────────────────────────────────────────────────────
 
   /// Cria um acontecimento e liga as pessoas que participaram (junção).

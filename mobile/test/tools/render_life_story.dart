@@ -276,6 +276,7 @@ void main() {
     const person = FamilyPerson(
       id: 'a',
       fullName: 'Maria',
+      patientId: 'p',
       role: RelationshipRole.mother,
       ageApprox: 62,
       deceasedStatus: DeceasedStatus.no,
@@ -296,8 +297,17 @@ void main() {
       ],
       currentRelationship: CurrentRelationship.close,
     );
-    await pump(tester, const PersonClinicalCardPage(person: person));
+    await pump(tester, const PersonClinicalCardPage(person: person), overrides: [
+      personClinicalCommentProvider('a').overrideWith((ref) async =>
+          'Sentia-se amada, porém frequentemente controlada e criticada. '
+          'Padrão de cuidado ambivalente; explorar autonomia.'),
+    ]);
     await capture(tester, 'life_story_cartao_terapeuta.png');
+    // Rola até o fim para conferir Relação atual, Linha do Tempo e o
+    // comentário clínico (campo privado).
+    await tester.drag(find.byType(ListView), const Offset(0, -1400));
+    await tester.pump(const Duration(milliseconds: 200));
+    await capture(tester, 'life_story_cartao_terapeuta_fim.png');
   });
 
   testWidgets('família — clima', (tester) async {

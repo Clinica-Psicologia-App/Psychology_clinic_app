@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/error_banner.dart';
 import '../domain/family_person.dart';
 import '../domain/genogram_relationship_enums.dart';
 import '../domain/life_story_enums.dart';
+import '../providers/life_story_providers.dart';
 import 'life_story_routes.dart';
 
 /// Cartão da pessoa — visão do terapeuta (spec §40). Síntese só-leitura do que
@@ -16,13 +19,13 @@ import 'life_story_routes.dart';
 /// não têm origem no fluxo atual do paciente (Etapas 5 e 6 foram retiradas), por
 /// isso não aparecem. Os comentários clínicos (campo privado) entram numa etapa
 /// seguinte, com armazenamento restrito à equipe.
-class PersonClinicalCardPage extends StatelessWidget {
+class PersonClinicalCardPage extends ConsumerWidget {
   const PersonClinicalCardPage({super.key, required this.person});
 
   final FamilyPerson person;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -163,6 +166,7 @@ class PersonClinicalCardPage extends StatelessWidget {
                 ],
               ),
             ),
+          _ClinicalCommentSection(person: person),
         ],
       ),
     );
@@ -180,6 +184,139 @@ class PersonClinicalCardPage extends StatelessWidget {
       case null:
         return 'Não informado';
     }
+  }
+}
+
+/// Comentários clínicos (§40) — campo PRIVADO da equipe. Um comentário por
+/// pessoa, editável. Só aparece/salva quando há `patientId` (contexto real do
+/// terapeuta).
+class _ClinicalCommentSection extends ConsumerWidget {
+  const _ClinicalCommentSection({required this.person});
+  final FamilyPerson person;
+
+  Future<void> _edit(
+      BuildContext context, WidgetRef ref, String? current) async {
+    final patientId = person.patientId;
+    if (patientId == null) return;
+    final controller = TextEditingController(text: current ?? '');
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (sheetContext) {
+        final bottom = MediaQuery.viewInsetsOf(sheetContext).bottom;
+        return Padding(
+          padding: EdgeInsets.fromLTRB(18, 18, 18, 18 + bottom),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Comentário clínico',
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.navy)),
+              const SizedBox(height: 4),
+              const Text('Campo privado — visível apenas para a equipe.',
+                  style:
+                      TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+              const SizedBox(height: 14),
+              TextField(
+                controller: controller,
+                maxLines: 5,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: 'Observação sobre esta figura...',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: () async {
+                  final text = controller.text.trim();
+                  if (text.isEmpty) return;
+                  try {
+                    await ref
+                        .read(saveClinicalCommentProvider.notifier)
+                        .submit(
+                          patientId: patientId,
+                          personId: person.id,
+                          comment: text,
+                        );
+                    if (sheetContext.mounted) Navigator.of(sheetContext).pop(true);
+                  } catch (e) {
+                    if (sheetContext.mounted) showErrorBanner(sheetContext, e);
+                  }
+                },
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.navy,
+                  minimumSize: const Size.fromHeight(48),
+                ),
+                child: const Text('Salvar'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    if (saved == true && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Comentário salvo.')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final commentAsync = person.patientId == null
+        ? const AsyncValue<String?>.data(null)
+        : ref.watch(personClinicalCommentProvider(person.id));
+    final comment = commentAsync.asData?.value;
+    final hasComment = (comment ?? '').trim().isNotEmpty;
+
+    return _Section(
+      title: 'Comentários clínicos',
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Campo privado — visível apenas para a equipe.',
+              style: TextStyle(
+                  fontSize: 11.5,
+                  fontStyle: FontStyle.italic,
+                  color: AppColors.textMuted)),
+          const SizedBox(height: 10),
+          if (hasComment)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF7F5EF),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: const Color(0xFFE6E0D2)),
+              ),
+              child: Text(comment!.trim(),
+                  style: const TextStyle(
+                      fontSize: 13.5, color: AppColors.navy, height: 1.45)),
+            ),
+          if (person.patientId != null) ...[
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: () => _edit(context, ref, comment),
+                icon: Icon(hasComment ? Icons.edit_outlined : Icons.add,
+                    size: 18),
+                label:
+                    Text(hasComment ? 'Editar observação' : 'Adicionar observação'),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
   }
 }
 

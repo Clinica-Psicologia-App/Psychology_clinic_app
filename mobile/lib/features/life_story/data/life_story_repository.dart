@@ -158,6 +158,22 @@ class LifeStoryRepository {
     }
   }
 
+  /// Atualiza os campos de um acontecimento já existente (usado pelo
+  /// "Aprofundar este momento"). Não mexe nas pessoas ligadas.
+  Future<void> updateEvent({
+    required String eventId,
+    required LifeTimelineEvent event,
+  }) async {
+    try {
+      await _client
+          .from('patient_timeline_events')
+          .update(event.toRow())
+          .eq('id', eventId);
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
   /// Cria uma pessoa nova (identificação mínima) em `genogram_people`.
   /// O mesmo registro é reaproveitado pelo Genograma.
   Future<TimelinePerson> createPerson({

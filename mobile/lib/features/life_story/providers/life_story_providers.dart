@@ -54,6 +54,30 @@ final createTimelineEventProvider =
   CreateTimelineEventNotifier.new,
 );
 
+/// Salva os campos de "aprofundar" sobre um acontecimento existente.
+class UpdateTimelineEventNotifier extends AsyncNotifier<void> {
+  @override
+  Future<void> build() async {}
+
+  Future<void> submit({
+    required String eventId,
+    required LifeTimelineEvent event,
+  }) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await ref
+          .read(lifeStoryRepositoryProvider)
+          .updateEvent(eventId: eventId, event: event);
+      ref.invalidate(myTimelineProvider);
+    });
+  }
+}
+
+final updateTimelineEventProvider =
+    AsyncNotifierProvider<UpdateTimelineEventNotifier, void>(
+  UpdateTimelineEventNotifier.new,
+);
+
 /// Cria uma pessoa nova durante o fluxo e devolve o registro criado.
 class CreatePersonNotifier extends AsyncNotifier<void> {
   @override

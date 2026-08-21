@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../domain/life_story_deepen_enums.dart';
 import '../domain/life_story_enums.dart';
 import '../domain/life_timeline_event.dart';
 import '../providers/life_story_providers.dart';
@@ -205,28 +206,32 @@ class _EventNode extends StatelessWidget {
           Expanded(
             child: Padding(
               padding: const EdgeInsets.only(bottom: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (_ageLabel.isNotEmpty)
-                    Text(_ageLabel,
+              child: InkWell(
+                onTap: () => _showEventDetail(context, event),
+                borderRadius: BorderRadius.circular(8),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (_ageLabel.isNotEmpty)
+                      Text(_ageLabel,
+                          style: const TextStyle(
+                              color: AppColors.turquoise,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 12)),
+                    const SizedBox(height: 2),
+                    Text(event.title,
                         style: const TextStyle(
-                            color: AppColors.turquoise,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 12)),
-                  const SizedBox(height: 2),
-                  Text(event.title,
-                      style: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.navy)),
-                  if (emotions.isNotEmpty) ...[
-                    const SizedBox(height: 3),
-                    Text(emotions,
-                        style: const TextStyle(
-                            fontSize: 12.5, color: AppColors.textSecondary)),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.navy)),
+                    if (emotions.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Text(emotions,
+                          style: const TextStyle(
+                              fontSize: 12.5, color: AppColors.textSecondary)),
+                    ],
                   ],
-                ],
+                ),
               ),
             ),
           ),
@@ -264,3 +269,102 @@ class _TodayNode extends StatelessWidget {
     );
   }
 }
+
+/// Relato completo do acontecimento (spec §15 — "abrir o relato completo"),
+/// com acesso ao "Aprofundar este momento".
+void _showEventDetail(BuildContext context, LifeTimelineEvent event) {
+  final ageLabel = event.agePrecision?.name == 'approximate'
+      ? (event.lifeChapter?.label ?? 'Idade aproximada')
+      : (event.ageAtEvent != null
+          ? '${event.ageAtEvent} anos'
+          : (event.lifeChapter?.label ?? ''));
+
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.white,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+    ),
+    builder: (sheetContext) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (ageLabel.isNotEmpty)
+              Text(ageLabel,
+                  style: const TextStyle(
+                      color: AppColors.turquoise,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13)),
+            const SizedBox(height: 2),
+            Text(event.title,
+                style: const TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.navy)),
+            const SizedBox(height: 12),
+            if ((event.description ?? '').trim().isNotEmpty) ...[
+              Text(event.description!.trim(),
+                  style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
+                      height: 1.5)),
+              const SizedBox(height: 14),
+            ],
+            if (event.emotions.isNotEmpty)
+              _detailRow('Emoções',
+                  event.emotions.map((e) => e.label).join(' · ')),
+            if (event.categories.isNotEmpty)
+              _detailRow('Área da vida',
+                  event.categories.map((c) => c.label).join(' · ')),
+            if (event.needs.isNotEmpty)
+              _detailRow('Do que precisava',
+                  event.needs.map((n) => n.label).join(' · ')),
+            if ((event.meaning ?? '').trim().isNotEmpty)
+              _detailRow('Significado', event.meaning!.trim()),
+            if (event.stillInfluences != null)
+              _detailRow('Ainda influencia', event.stillInfluences!.label),
+            const SizedBox(height: 18),
+            FilledButton.icon(
+              onPressed: () {
+                Navigator.of(sheetContext).pop();
+                context.push(LifeStoryRoutes.deepen, extra: event);
+              },
+              icon: Icon(
+                  event.hasDeepenData ? Icons.edit_outlined : Icons.add,
+                  size: 18),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.turquoise,
+                minimumSize: const Size.fromHeight(48),
+              ),
+              label: Text(event.hasDeepenData
+                  ? 'Editar aprofundamento'
+                  : 'Aprofundar este momento'),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+Widget _detailRow(String label, String value) => Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label.toUpperCase(),
+              style: const TextStyle(
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textMuted,
+                  letterSpacing: 0.5)),
+          const SizedBox(height: 2),
+          Text(value,
+              style: const TextStyle(fontSize: 13.5, color: AppColors.navy)),
+        ],
+      ),
+    );

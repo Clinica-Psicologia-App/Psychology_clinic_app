@@ -31,6 +31,8 @@ import '../../features/mental_map/presentation/mental_map_route_helpers.dart';
 import '../../features/patient_infographic/presentation/patient_infographic_route_helpers.dart';
 import '../../features/patient_check_ins/presentation/patient_check_in_route_helpers.dart';
 import '../../features/patient_timeline/presentation/patient_timeline_route_helpers.dart';
+import '../../features/life_story/domain/life_timeline_event.dart';
+import '../../features/life_story/presentation/deepen_event_flow_page.dart';
 import '../../features/life_story/presentation/life_story_routes.dart';
 import '../../features/life_story/presentation/my_timeline_page.dart';
 import '../../features/life_story/presentation/timeline_event_flow_page.dart';
@@ -209,6 +211,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: LifeStoryRoutes.newEvent,
         builder: (_, __) => const TimelineEventFlowPage(),
+      ),
+      GoRoute(
+        path: LifeStoryRoutes.deepen,
+        builder: (_, state) =>
+            DeepenEventFlowPage(event: state.extra as LifeTimelineEvent),
       ),
       ShellRoute(
         builder: (_, __, child) => AppNavShell(

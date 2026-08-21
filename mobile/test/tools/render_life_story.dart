@@ -15,6 +15,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:terapia_esquema/features/life_story/domain/life_story_enums.dart';
 import 'package:terapia_esquema/features/life_story/domain/life_timeline_event.dart';
 import 'package:terapia_esquema/features/life_story/domain/timeline_person.dart';
+import 'package:terapia_esquema/features/life_story/presentation/deepen_event_flow_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/my_timeline_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/timeline_event_flow_page.dart';
 import 'package:terapia_esquema/features/life_story/providers/life_story_providers.dart';
@@ -145,5 +146,23 @@ void main() {
     await tester.tap(find.text('Avançar'));
     await tester.pump(const Duration(milliseconds: 200));
     await capture(tester, 'life_story_etapa_sentiu.png');
+  });
+
+  testWidgets('aprofundar — do que precisava', (tester) async {
+    await pump(tester, DeepenEventFlowPage(event: _events[1]));
+    await tester.tap(find.text('Avançar')); // evento/período → área
+    await tester.pump();
+    await tester.tap(find.text('Avançar')); // área → do que precisava
+    await tester.pump(const Duration(milliseconds: 200));
+    await capture(tester, 'life_story_aprofundar_precisava.png');
+  });
+
+  testWidgets('aprofundar — e hoje', (tester) async {
+    await pump(tester, DeepenEventFlowPage(event: _events[1]));
+    for (var i = 0; i < 4; i++) {
+      await tester.tap(find.text('Avançar'));
+      await tester.pump(const Duration(milliseconds: 120));
+    }
+    await capture(tester, 'life_story_aprofundar_hoje.png');
   });
 }

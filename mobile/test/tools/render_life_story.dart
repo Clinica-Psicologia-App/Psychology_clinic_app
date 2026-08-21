@@ -16,8 +16,10 @@ import 'package:terapia_esquema/features/life_story/domain/life_story_enums.dart
 import 'package:terapia_esquema/features/life_story/domain/life_timeline_event.dart';
 import 'package:terapia_esquema/features/life_story/domain/family_person.dart';
 import 'package:terapia_esquema/features/life_story/domain/timeline_person.dart';
+import 'package:terapia_esquema/features/life_story/domain/family_context.dart';
 import 'package:terapia_esquema/features/life_story/presentation/deepen_event_flow_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/deepen_relationship_flow_page.dart';
+import 'package:terapia_esquema/features/life_story/presentation/family_context_flow_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/my_family_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/my_timeline_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/timeline_event_flow_page.dart';
@@ -208,5 +210,21 @@ void main() {
       await tester.pump(const Duration(milliseconds: 120));
     }
     await capture(tester, 'life_story_relacao_recebi.png');
+  });
+
+  testWidgets('família — clima', (tester) async {
+    await pump(tester, const FamilyContextFlowPage(context: FamilyContext()));
+    await capture(tester, 'life_story_clima.png');
+  });
+
+  testWidgets('família — padrões', (tester) async {
+    await pump(
+      tester,
+      const FamilyContextFlowPage(
+          context: FamilyContext(hasPatterns: HasPatterns.yes)),
+    );
+    await tester.tap(find.text('Avançar')); // clima → padrões
+    await tester.pump(const Duration(milliseconds: 200));
+    await capture(tester, 'life_story_padroes.png');
   });
 }

@@ -31,10 +31,12 @@ import '../../features/mental_map/presentation/mental_map_route_helpers.dart';
 import '../../features/patient_infographic/presentation/patient_infographic_route_helpers.dart';
 import '../../features/patient_check_ins/presentation/patient_check_in_route_helpers.dart';
 import '../../features/patient_timeline/presentation/patient_timeline_route_helpers.dart';
+import '../../features/life_story/domain/family_context.dart';
 import '../../features/life_story/domain/family_person.dart';
 import '../../features/life_story/domain/life_timeline_event.dart';
 import '../../features/life_story/presentation/deepen_event_flow_page.dart';
 import '../../features/life_story/presentation/deepen_relationship_flow_page.dart';
+import '../../features/life_story/presentation/family_context_flow_page.dart';
 import '../../features/life_story/presentation/life_story_routes.dart';
 import '../../features/life_story/presentation/my_family_page.dart';
 import '../../features/life_story/presentation/my_timeline_page.dart';
@@ -228,6 +230,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: LifeStoryRoutes.deepenRelationship,
         builder: (_, state) =>
             DeepenRelationshipFlowPage(person: state.extra as FamilyPerson),
+      ),
+      GoRoute(
+        path: LifeStoryRoutes.familyContext,
+        builder: (_, state) =>
+            FamilyContextFlowPage(context: state.extra as FamilyContext),
       ),
       ShellRoute(
         builder: (_, __, child) => AppNavShell(

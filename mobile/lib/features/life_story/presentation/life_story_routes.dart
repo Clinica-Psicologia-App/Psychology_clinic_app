@@ -16,4 +16,7 @@ abstract final class LifeStoryRoutes {
 
   /// "Aprofundar a relação" com uma pessoa — recebe a pessoa via `extra`.
   static const deepenRelationship = '/patient/my-family/deepen';
+
+  /// Clima e padrões familiares — recebe o contexto atual via `extra`.
+  static const familyContext = '/patient/my-family/context';
 }

@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
 import '../../../core/supabase/supabase_bootstrap.dart';
+import '../domain/family_context.dart';
 import '../domain/family_person.dart';
 import '../domain/life_story_enums.dart';
 import '../domain/life_timeline_event.dart';
@@ -130,6 +131,46 @@ class LifeStoryRepository {
             'event_count': _embeddedCount(row['timeline_event_people']),
           }),
       ];
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  /// Clima e padrões familiares (Tela 3, §32–33) — colunas novas em
+  /// patient_family_context.
+  Future<FamilyContext> loadFamilyContext(String patientId) async {
+    try {
+      final row = await _client
+          .from('patient_family_context')
+          .select(
+            'climate_traits, climate_note, has_patterns, pattern_traits, '
+            'pattern_generations, patterns_note',
+          )
+          .eq('patient_id', patientId)
+          .maybeSingle();
+      return row == null
+          ? const FamilyContext()
+          : FamilyContext.fromJson(Map<String, dynamic>.from(row));
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  Future<void> saveFamilyContext({
+    required String patientId,
+    required FamilyContext context,
+  }) async {
+    try {
+      final profileId = _client.auth.currentUser?.id;
+      await _client.from('patient_family_context').upsert(
+        {
+          'patient_id': patientId,
+          'filled_by_profile_id': profileId,
+          'filled_by_role': 'patient',
+          ...context.toRow(),
+        },
+        onConflict: 'patient_id',
+      );
     } catch (e) {
       throw mapToAppException(e);
     }

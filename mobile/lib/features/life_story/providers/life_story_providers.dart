@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/life_story_repository.dart';
+import '../domain/family_context.dart';
 import '../domain/family_person.dart';
 import '../domain/life_story_enums.dart';
 import '../domain/life_timeline_event.dart';
@@ -25,6 +26,33 @@ final myTimelinePeopleProvider =
   final patientId = await ref.watch(lifeStoryPatientIdProvider.future);
   return ref.read(lifeStoryRepositoryProvider).loadPeople(patientId);
 });
+
+/// Clima e padrões da família (Tela 3, §32–33).
+final myFamilyContextProvider = FutureProvider<FamilyContext>((ref) async {
+  final patientId = await ref.watch(lifeStoryPatientIdProvider.future);
+  return ref.read(lifeStoryRepositoryProvider).loadFamilyContext(patientId);
+});
+
+class SaveFamilyContextNotifier extends AsyncNotifier<void> {
+  @override
+  Future<void> build() async {}
+
+  Future<void> submit(FamilyContext context) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      final patientId = await ref.read(lifeStoryPatientIdProvider.future);
+      await ref
+          .read(lifeStoryRepositoryProvider)
+          .saveFamilyContext(patientId: patientId, context: context);
+      ref.invalidate(myFamilyContextProvider);
+    });
+  }
+}
+
+final saveFamilyContextProvider =
+    AsyncNotifierProvider<SaveFamilyContextNotifier, void>(
+  SaveFamilyContextNotifier.new,
+);
 
 /// Pessoas da família (Tela 3), com contagem de acontecimentos.
 final myFamilyProvider = FutureProvider<List<FamilyPerson>>((ref) async {

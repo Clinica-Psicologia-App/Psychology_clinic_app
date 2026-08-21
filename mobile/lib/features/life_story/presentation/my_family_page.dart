@@ -85,7 +85,17 @@ class MyFamilyPage extends ConsumerWidget {
               ),
               data: (people) => people.isEmpty
                   ? _FamilyInvite(onStart: () => _openAddPerson(context, ref))
-                  : _FamilyList(people: people),
+                  : _FamilyList(
+                      people: people,
+                      onOpenContext: () async {
+                        final ctx = await ref
+                            .read(myFamilyContextProvider.future);
+                        if (context.mounted) {
+                          context.push(LifeStoryRoutes.familyContext,
+                              extra: ctx);
+                        }
+                      },
+                    ),
             ),
           ),
         ],
@@ -161,8 +171,9 @@ class _FamilyInvite extends StatelessWidget {
 
 /// Lista das pessoas identificadas (spec §19).
 class _FamilyList extends StatelessWidget {
-  const _FamilyList({required this.people});
+  const _FamilyList({required this.people, required this.onOpenContext});
   final List<FamilyPerson> people;
+  final VoidCallback onOpenContext;
 
   @override
   Widget build(BuildContext context) {
@@ -180,7 +191,45 @@ class _FamilyList extends StatelessWidget {
             ),
           ),
         for (final p in people) _PersonCard(person: p),
+        const SizedBox(height: 8),
+        _ContextCard(onTap: onOpenContext),
       ],
+    );
+  }
+}
+
+/// Atalho para o clima e os padrões da família (§32–33).
+class _ContextCard extends StatelessWidget {
+  const _ContextCard({required this.onTap});
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF2FBFA),
+          border: Border.all(color: AppColors.turquoise.withValues(alpha: 0.4)),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.home_outlined, color: AppColors.turquoise),
+            SizedBox(width: 12),
+            Expanded(
+              child: Text('O clima e os padrões da minha família',
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.navy)),
+            ),
+            Icon(Icons.chevron_right, color: AppColors.turquoise),
+          ],
+        ),
+      ),
     );
   }
 }

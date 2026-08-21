@@ -20,7 +20,9 @@ import 'package:terapia_esquema/features/life_story/domain/family_context.dart';
 import 'package:terapia_esquema/features/life_story/presentation/deepen_event_flow_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/deepen_relationship_flow_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/family_context_flow_page.dart';
+import 'package:terapia_esquema/features/life_story/domain/genogram_relationship_enums.dart';
 import 'package:terapia_esquema/features/life_story/presentation/my_family_page.dart';
+import 'package:terapia_esquema/features/life_story/presentation/person_card_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/my_timeline_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/timeline_event_flow_page.dart';
 import 'package:terapia_esquema/features/life_story/providers/life_story_providers.dart';
@@ -210,6 +212,26 @@ void main() {
       await tester.pump(const Duration(milliseconds: 120));
     }
     await capture(tester, 'life_story_relacao_recebi.png');
+  });
+
+  testWidgets('cartão da pessoa — com dados', (tester) async {
+    const person = FamilyPerson(
+      id: 'a',
+      fullName: 'Maria',
+      role: RelationshipRole.mother,
+      eventCount: 4,
+      bondType: BondType.ambivalent,
+      closeness: 5,
+      receivedNeeds: [RelationalNeed.affection, RelationalNeed.protection],
+      wishedMoreNeeds: [RelationalNeed.freedomToBe, RelationalNeed.understanding],
+    );
+    await pump(tester, const PersonCardPage(person: person));
+    await capture(tester, 'life_story_cartao_pessoa.png');
+  });
+
+  testWidgets('cartão da pessoa — sem camada emocional', (tester) async {
+    await pump(tester, PersonCardPage(person: _family[2]));
+    await capture(tester, 'life_story_cartao_vazio.png');
   });
 
   testWidgets('família — clima', (tester) async {

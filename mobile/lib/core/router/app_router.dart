@@ -39,6 +39,7 @@ import '../../features/life_story/presentation/deepen_relationship_flow_page.dar
 import '../../features/life_story/presentation/family_context_flow_page.dart';
 import '../../features/life_story/presentation/life_story_routes.dart';
 import '../../features/life_story/presentation/my_family_page.dart';
+import '../../features/life_story/presentation/person_card_page.dart';
 import '../../features/life_story/presentation/my_timeline_page.dart';
 import '../../features/life_story/presentation/timeline_event_flow_page.dart';
 import '../../features/patient_problems/presentation/patient_problem_route_helpers.dart';
@@ -225,6 +226,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: LifeStoryRoutes.myFamily,
         builder: (_, __) => const MyFamilyPage(),
+      ),
+      GoRoute(
+        path: LifeStoryRoutes.personCard,
+        builder: (_, state) =>
+            PersonCardPage(person: state.extra as FamilyPerson),
       ),
       GoRoute(
         path: LifeStoryRoutes.deepenRelationship,

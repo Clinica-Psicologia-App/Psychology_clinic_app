@@ -249,7 +249,7 @@ class _PersonCard extends StatelessWidget {
       ),
       child: InkWell(
         onTap: () => context.push(
-          LifeStoryRoutes.deepenRelationship,
+          LifeStoryRoutes.personCard,
           extra: person,
         ),
         borderRadius: BorderRadius.circular(12),

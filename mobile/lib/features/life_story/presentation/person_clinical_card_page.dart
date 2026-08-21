@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/error_banner.dart';
@@ -8,7 +7,6 @@ import '../domain/family_person.dart';
 import '../domain/genogram_relationship_enums.dart';
 import '../domain/life_story_enums.dart';
 import '../providers/life_story_providers.dart';
-import 'life_story_routes.dart';
 
 /// Cartão da pessoa — visão do terapeuta (spec §40). Síntese só-leitura do que
 /// o paciente registrou sobre essa figura: estrutura, papel de cuidado, vínculo
@@ -143,27 +141,14 @@ class PersonClinicalCardPage extends ConsumerWidget {
           if (person.eventCount > 0)
             _Section(
               title: 'Linha do Tempo',
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      person.eventCount == 1
-                          ? '1 acontecimento relacionado'
-                          : '${person.eventCount} acontecimentos relacionados',
-                      style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.navy),
-                    ),
-                  ),
-                  TextButton(
-                    onPressed: () => context.push(
-                      LifeStoryRoutes.personMoments,
-                      extra: person,
-                    ),
-                    child: const Text('Ver acontecimentos'),
-                  ),
-                ],
+              child: Text(
+                person.eventCount == 1
+                    ? '1 acontecimento relacionado'
+                    : '${person.eventCount} acontecimentos relacionados',
+                style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.navy),
               ),
             ),
           _ClinicalCommentSection(person: person),

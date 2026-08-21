@@ -21,6 +21,9 @@ abstract final class LifeStoryRoutes {
   /// `extra`.
   static const personMoments = '/patient/my-family/person/moments';
 
+  /// Painel do terapeuta — Genograma (§41); recebe o `patientId` via `extra`.
+  static const genogramPanel = '/psychologist/genogram';
+
   /// Cartão da pessoa — visão do terapeuta (§40, só leitura); pessoa via
   /// `extra`.
   static const therapistPersonCard = '/psychologist/genogram/person';

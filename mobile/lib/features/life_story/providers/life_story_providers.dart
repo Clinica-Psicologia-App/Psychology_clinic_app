@@ -60,6 +60,20 @@ final myFamilyProvider = FutureProvider<List<FamilyPerson>>((ref) async {
   return ref.read(lifeStoryRepositoryProvider).loadFamily(patientId);
 });
 
+/// Pessoas da família de um paciente específico — usado no contexto do
+/// terapeuta (§41, painel do genograma). RLS libera a leitura via
+/// `user_can_access_patient`.
+final familyForPatientProvider =
+    FutureProvider.family<List<FamilyPerson>, String>((ref, patientId) async {
+  return ref.read(lifeStoryRepositoryProvider).loadFamily(patientId);
+});
+
+/// Clima e padrões da família de um paciente específico (contexto do terapeuta).
+final familyContextForPatientProvider =
+    FutureProvider.family<FamilyContext, String>((ref, patientId) async {
+  return ref.read(lifeStoryRepositoryProvider).loadFamilyContext(patientId);
+});
+
 /// Cria/atualiza uma pessoa da família e invalida os caches.
 class SaveFamilyPersonNotifier extends AsyncNotifier<void> {
   @override

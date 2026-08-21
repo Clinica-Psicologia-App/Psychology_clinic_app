@@ -13,6 +13,7 @@ import '../../../shared/widgets/error_banner.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../clinical_reports/presentation/clinical_report_routes.dart';
+import '../../life_story/presentation/life_story_routes.dart';
 import '../../patient_check_ins/presentation/patient_check_in_routes.dart';
 import '../../patient_invitations/domain/patient_invitation_draft.dart';
 import '../../profile/domain/profile_role.dart';
@@ -217,6 +218,21 @@ class _PatientDetailsBody extends StatelessWidget {
                     role: role,
                     patientId: patient.id,
                   ),
+                ),
+                icon: const Icon(Icons.arrow_forward_rounded),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AppInfoCard(
+              icon: Icons.account_tree_outlined,
+              title: 'Genograma',
+              body:
+                  'Veja a família, os vínculos e os padrões que o paciente registrou.',
+              action: IconButton(
+                tooltip: 'Abrir genograma',
+                onPressed: () => context.push(
+                  LifeStoryRoutes.genogramPanel,
+                  extra: patient.id,
                 ),
                 icon: const Icon(Icons.arrow_forward_rounded),
               ),

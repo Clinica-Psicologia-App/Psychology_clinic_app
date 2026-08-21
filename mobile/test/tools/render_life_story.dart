@@ -20,6 +20,7 @@ import 'package:terapia_esquema/features/life_story/domain/family_context.dart';
 import 'package:terapia_esquema/features/life_story/presentation/deepen_event_flow_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/deepen_relationship_flow_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/family_context_flow_page.dart';
+import 'package:terapia_esquema/features/life_story/presentation/genogram_panel_page.dart';
 import 'package:terapia_esquema/features/life_story/domain/genogram_relationship_enums.dart';
 import 'package:terapia_esquema/features/life_story/presentation/my_family_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/person_card_page.dart';
@@ -308,6 +309,67 @@ void main() {
     await tester.drag(find.byType(ListView), const Offset(0, -1400));
     await tester.pump(const Duration(milliseconds: 200));
     await capture(tester, 'life_story_cartao_terapeuta_fim.png');
+  });
+
+  testWidgets('painel do genograma — terapeuta', (tester) async {
+    const family = [
+      FamilyPerson(
+        id: 'a',
+        fullName: 'Maria',
+        patientId: 'p',
+        role: RelationshipRole.mother,
+        eventCount: 4,
+        caregiverRole: CaregiverRole.important,
+        closeness: 7,
+        conflict: 6,
+        bondType: BondType.ambivalent,
+        receivedNeeds: [RelationalNeed.affection, RelationalNeed.protection],
+        wishedMoreNeeds: [
+          RelationalNeed.freedomToBe,
+          RelationalNeed.understanding,
+        ],
+        currentRelationship: CurrentRelationship.close,
+      ),
+      FamilyPerson(
+        id: 'b',
+        fullName: 'João',
+        patientId: 'p',
+        role: RelationshipRole.father,
+        eventCount: 2,
+        caregiverRole: CaregiverRole.partial,
+        closeness: 3,
+        conflict: 4,
+        bondType: BondType.distant,
+        receivedNeeds: [RelationalNeed.stability],
+        wishedMoreNeeds: [RelationalNeed.presence],
+      ),
+    ];
+    const famContext = FamilyContext(
+      climateTraits: [
+        ClimateTrait.showedAffection,
+        ClimateTrait.manyCriticisms,
+        ClimateTrait.muchControl,
+      ],
+      climateNote: 'Todos se gostavam, mas ninguém falava sobre sentimentos.',
+      hasPatterns: HasPatterns.yes,
+      patternTraits: [
+        PatternTrait.perfectionism,
+        PatternTrait.hardToTalkFeelings,
+      ],
+      patternGenerations: [
+        PatternGeneration.parentsUncles,
+        PatternGeneration.grandparents,
+      ],
+    );
+    await pump(tester, const GenogramPanelPage(patientId: 'p'), overrides: [
+      familyForPatientProvider('p').overrideWith((ref) async => family),
+      familyContextForPatientProvider('p')
+          .overrideWith((ref) async => famContext),
+    ]);
+    await capture(tester, 'life_story_painel_genograma.png');
+    await tester.drag(find.byType(ListView), const Offset(0, -1600));
+    await tester.pump(const Duration(milliseconds: 200));
+    await capture(tester, 'life_story_painel_genograma_fim.png');
   });
 
   testWidgets('família — clima', (tester) async {

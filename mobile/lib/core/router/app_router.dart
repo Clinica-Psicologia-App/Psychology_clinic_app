@@ -37,6 +37,7 @@ import '../../features/life_story/domain/life_timeline_event.dart';
 import '../../features/life_story/presentation/deepen_event_flow_page.dart';
 import '../../features/life_story/presentation/deepen_relationship_flow_page.dart';
 import '../../features/life_story/presentation/family_context_flow_page.dart';
+import '../../features/life_story/presentation/genogram_panel_page.dart';
 import '../../features/life_story/presentation/life_story_routes.dart';
 import '../../features/life_story/presentation/my_family_page.dart';
 import '../../features/life_story/presentation/person_card_page.dart';
@@ -237,6 +238,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: LifeStoryRoutes.personMoments,
         builder: (_, state) =>
             MyTimelinePage(person: state.extra as FamilyPerson),
+      ),
+      GoRoute(
+        path: LifeStoryRoutes.genogramPanel,
+        builder: (_, state) =>
+            GenogramPanelPage(patientId: state.extra as String),
       ),
       GoRoute(
         path: LifeStoryRoutes.therapistPersonCard,

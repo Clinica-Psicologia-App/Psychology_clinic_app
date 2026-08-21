@@ -17,6 +17,10 @@ abstract final class LifeStoryRoutes {
   /// Cartão da pessoa (§39, só leitura) — recebe a pessoa via `extra`.
   static const personCard = '/patient/my-family/person';
 
+  /// "Ver momentos" (§39) — Linha do Tempo filtrada por pessoa; pessoa via
+  /// `extra`.
+  static const personMoments = '/patient/my-family/person/moments';
+
   /// "Aprofundar a relação" com uma pessoa — recebe a pessoa via `extra`.
   static const deepenRelationship = '/patient/my-family/deepen';
 

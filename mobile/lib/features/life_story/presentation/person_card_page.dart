@@ -69,8 +69,7 @@ class PersonCardPage extends StatelessWidget {
                       textColor: const Color(0xFF9A6516),
                     ),
                   ),
-                if (person.eventCount > 0)
-                  _MomentsBlock(count: person.eventCount),
+                if (person.eventCount > 0) _MomentsBlock(person: person),
                 const SizedBox(height: 20),
                 if (hasData)
                   OutlinedButton.icon(
@@ -369,8 +368,10 @@ class _Chips extends StatelessWidget {
 }
 
 class _MomentsBlock extends StatelessWidget {
-  const _MomentsBlock({required this.count});
-  final int count;
+  const _MomentsBlock({required this.person});
+  final FamilyPerson person;
+
+  int get count => person.eventCount;
 
   @override
   Widget build(BuildContext context) {
@@ -417,7 +418,10 @@ class _MomentsBlock extends StatelessWidget {
             ),
           ),
           TextButton(
-            onPressed: () => context.push(LifeStoryRoutes.myHistory),
+            onPressed: () => context.push(
+              LifeStoryRoutes.personMoments,
+              extra: person,
+            ),
             child: const Text('Ver momentos'),
           ),
         ],

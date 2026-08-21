@@ -214,6 +214,43 @@ void main() {
     await capture(tester, 'life_story_relacao_recebi.png');
   });
 
+  testWidgets('ver momentos — filtrado por pessoa', (tester) async {
+    // Eventos com peopleIds; só os da Maria ('a') aparecem.
+    const eventsWithPeople = [
+      LifeTimelineEvent(
+        id: '1',
+        patientId: 'p',
+        title: 'Nasceu minha irmã',
+        lifeChapter: LifeChapter.childhood,
+        ageAtEvent: 5,
+        emotions: [TimelineEmotion.happy],
+        peopleIds: ['a'],
+      ),
+      LifeTimelineEvent(
+        id: '2',
+        patientId: 'p',
+        title: 'Separação dos meus pais',
+        lifeChapter: LifeChapter.childhood,
+        ageAtEvent: 8,
+        emotions: [TimelineEmotion.sad, TimelineEmotion.afraid],
+        peopleIds: ['a', 'b'],
+      ),
+      LifeTimelineEvent(
+        id: '3',
+        patientId: 'p',
+        title: 'Entrei na faculdade',
+        lifeChapter: LifeChapter.adulthood,
+        ageAtEvent: 18,
+        emotions: [TimelineEmotion.happy, TimelineEmotion.proud],
+        peopleIds: ['b'],
+      ),
+    ];
+    await pump(tester, MyTimelinePage(person: _family[0]), overrides: [
+      myTimelineProvider.overrideWith((ref) async => eventsWithPeople),
+    ]);
+    await capture(tester, 'life_story_ver_momentos.png');
+  });
+
   testWidgets('cartão da pessoa — com dados', (tester) async {
     const person = FamilyPerson(
       id: 'a',

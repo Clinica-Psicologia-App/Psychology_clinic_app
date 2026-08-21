@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../domain/family_person.dart';
 import '../domain/life_story_deepen_enums.dart';
 import '../domain/life_story_enums.dart';
 import '../domain/life_timeline_event.dart';
@@ -11,8 +12,16 @@ import 'life_story_routes.dart';
 
 /// Resultado visual da Linha do Tempo — trilha vertical (spec §15).
 /// Quando vazia, mostra o convite de abertura (spec §3).
+///
+/// Com [person] preenchida, vira "Momentos com a pessoa" (§39, "Ver
+/// momentos"): mesma trilha, filtrada aos acontecimentos ligados àquela
+/// pessoa pela junção `timeline_event_people`.
 class MyTimelinePage extends ConsumerWidget {
-  const MyTimelinePage({super.key});
+  const MyTimelinePage({super.key, this.person});
+
+  final FamilyPerson? person;
+
+  bool get _filtered => person != null;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -22,12 +31,14 @@ class MyTimelinePage extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      floatingActionButton: FloatingActionButton.extended(
-        backgroundColor: AppColors.turquoise,
-        onPressed: () => context.push(LifeStoryRoutes.newEvent),
-        icon: const Icon(Icons.add),
-        label: const Text('Adicionar acontecimento'),
-      ),
+      floatingActionButton: _filtered
+          ? null
+          : FloatingActionButton.extended(
+              backgroundColor: AppColors.turquoise,
+              onPressed: () => context.push(LifeStoryRoutes.newEvent),
+              icon: const Icon(Icons.add),
+              label: const Text('Adicionar acontecimento'),
+            ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -57,7 +68,7 @@ class MyTimelinePage extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 10),
-                Text('Minha História',
+                Text(_filtered ? 'Momentos com ${person!.fullName}' : 'Minha História',
                     style: theme.textTheme.titleMedium?.copyWith(
                         color: Colors.white, fontWeight: FontWeight.w700)),
               ],
@@ -84,10 +95,21 @@ class MyTimelinePage extends ConsumerWidget {
                   ),
                 ),
               ),
-              data: (events) => events.isEmpty
-                  ? _EmptyInvite(
-                      onStart: () => context.push(LifeStoryRoutes.newEvent))
-                  : _TimelineTrail(events: events),
+              data: (events) {
+                final shown = _filtered
+                    ? events
+                        .where((e) => e.peopleIds.contains(person!.id))
+                        .toList()
+                    : events;
+                if (shown.isEmpty) {
+                  return _filtered
+                      ? _NoMomentsForPerson(name: person!.fullName)
+                      : _EmptyInvite(
+                          onStart: () =>
+                              context.push(LifeStoryRoutes.newEvent));
+                }
+                return _TimelineTrail(events: shown, showToday: !_filtered);
+              },
             ),
           ),
         ],
@@ -147,21 +169,53 @@ class _EmptyInvite extends StatelessWidget {
 
 /// Trilha vertical dos acontecimentos (spec §15).
 class _TimelineTrail extends StatelessWidget {
-  const _TimelineTrail({required this.events});
+  const _TimelineTrail({required this.events, this.showToday = true});
   final List<LifeTimelineEvent> events;
+  final bool showToday;
 
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 96),
-      itemCount: events.length + 1,
+      itemCount: events.length + (showToday ? 1 : 0),
       itemBuilder: (context, i) {
-        if (i == events.length) return const _TodayNode();
+        if (showToday && i == events.length) return const _TodayNode();
         return _EventNode(
           event: events[i],
           isFirst: i == 0,
         );
       },
+    );
+  }
+}
+
+/// Estado vazio quando uma pessoa ainda não tem acontecimentos ligados.
+class _NoMomentsForPerson extends StatelessWidget {
+  const _NoMomentsForPerson({required this.name});
+  final String name;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.timeline_outlined,
+                size: 44, color: AppColors.turquoise),
+            const SizedBox(height: 16),
+            Text(
+              'Ainda não há momentos da sua história ligados a $name.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                  fontSize: 15,
+                  color: AppColors.textSecondary,
+                  height: 1.4),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

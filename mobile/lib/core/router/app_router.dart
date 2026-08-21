@@ -233,6 +233,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             PersonCardPage(person: state.extra as FamilyPerson),
       ),
       GoRoute(
+        path: LifeStoryRoutes.personMoments,
+        builder: (_, state) =>
+            MyTimelinePage(person: state.extra as FamilyPerson),
+      ),
+      GoRoute(
         path: LifeStoryRoutes.deepenRelationship,
         builder: (_, state) =>
             DeepenRelationshipFlowPage(person: state.extra as FamilyPerson),

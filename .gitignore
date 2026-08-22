@@ -25,3 +25,7 @@ supabase/.temp/
 .env
 .env.*
 !.env.example
+
+# Dumps de produção (contêm dados reais/PII — nunca versionar)
+backup_prod_*.sql
+*.dump

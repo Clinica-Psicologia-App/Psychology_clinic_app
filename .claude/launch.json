@@ -38,6 +38,21 @@
       "runtimeExecutable": "supabase",
       "runtimeArgs": ["start"],
       "port": 54321
+    },
+    {
+      "name": "web-conhecer",
+      "cwd": "mobile",
+      "runtimeExecutable": "flutter",
+      "runtimeArgs": [
+        "run",
+        "-d",
+        "web-server",
+        "--web-port",
+        "8888",
+        "--dart-define-from-file=env.local.json",
+        "--dart-define=SHOW_TEST_ACCOUNTS=true"
+      ],
+      "port": 8888
     }
   ]
 }

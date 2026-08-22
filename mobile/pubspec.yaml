@@ -24,6 +24,7 @@ dependencies:
   share_plus: ^10.1.4
   cached_network_image: ^3.4.1
   flutter_svg: ^2.3.0
+  video_player: ^2.9.2
 
 dev_dependencies:
   flutter_test:
@@ -44,3 +45,4 @@ flutter:
   assets:
     - assets/branding/
     - assets/greeting/
+    - assets/intro/

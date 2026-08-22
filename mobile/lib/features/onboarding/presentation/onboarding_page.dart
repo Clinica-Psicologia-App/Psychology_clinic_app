@@ -9,6 +9,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/brand_constellation.dart';
 import '../../../shared/widgets/esquema_core_logo.dart';
 import '../providers/onboarding_providers.dart';
+import 'intro_video_view.dart';
 
 class _OnboardingSlide {
   const _OnboardingSlide({
@@ -80,6 +81,10 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage>
   double _page = 0;
   int _index = 0;
 
+  /// Vídeo de introdução (abertura). Enquanto false, mostra o vídeo em tela
+  /// cheia; ao terminar ou "Pular", revela os slides.
+  bool _introDone = false;
+
   /// Flutuação ambiente compartilhada por todos os artworks (±6px, 3.8s).
   late final AnimationController _float;
 
@@ -127,6 +132,14 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage>
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    if (!_introDone) {
+      return IntroVideoView(
+        onDone: () {
+          if (mounted) setState(() => _introDone = true);
+        },
+      );
+    }
 
     return Scaffold(
       body: DecoratedBox(

@@ -9,6 +9,7 @@ import '../../../shared/widgets/app_page_header.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
+import '../../../shared/widgets/error_banner.dart';
 import '../../patients/providers/patients_providers.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/questionnaire.dart';
@@ -68,6 +69,14 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
                   .valueOrNull ??
               {};
 
+          final isStaff = widget.role != ProfileRole.patient;
+          final releasedIds = isStaff
+              ? (ref
+                      .watch(patientAssignmentIdsProvider(patientId))
+                      .valueOrNull ??
+                  const <String>{})
+              : const <String>{};
+
           final staffPatientHeader = widget.patientId != null
               ? ref.watch(patientDetailProvider(patientId))
               : null;
@@ -107,12 +116,15 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
                   }
 
                   if (index == 1) {
-                    return const Padding(
-                      padding: EdgeInsets.only(bottom: AppSpacing.sm),
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                       child: AppSectionHeader(
-                        title: 'Instrumentos disponíveis',
-                        subtitle:
-                            'Abra um questionário para revisar orientações e iniciar a resposta.',
+                        title: isStaff
+                            ? 'Liberar instrumentos'
+                            : 'Instrumentos disponíveis',
+                        subtitle: isStaff
+                            ? 'Libere para o paciente os instrumentos que ele poderá responder. Só o que for liberado aparece para ele.'
+                            : 'Abra um questionário para revisar orientações e iniciar a resposta.',
                       ),
                     );
                   }
@@ -126,10 +138,17 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
                     child: QuestionnaireListTile(
                       questionnaire: q,
                       enabled: canApply,
-                      showStaffDetails: widget.role != ProfileRole.patient,
+                      showStaffDetails: isStaff,
                       patientStatus: statusMap[q.id],
                       onTap: canApply
                           ? () => _onQuestionnaireTap(q, patientId)
+                          : null,
+                      footer: isStaff
+                          ? _ReleaseToggle(
+                              patientId: patientId,
+                              questionnaireId: q.id,
+                              released: releasedIds.contains(q.id),
+                            )
                           : null,
                     ),
                   );
@@ -158,6 +177,78 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
     if (mounted) {
       ref.invalidate(questionnairePatientStatusProvider(patientId));
     }
+  }
+}
+
+/// Controle de liberação por paciente (visão do psicólogo): libera/revoga a
+/// atribuição do questionário. Só o que estiver "Liberado" aparece para o
+/// paciente responder.
+class _ReleaseToggle extends ConsumerStatefulWidget {
+  const _ReleaseToggle({
+    required this.patientId,
+    required this.questionnaireId,
+    required this.released,
+  });
+
+  final String patientId;
+  final String questionnaireId;
+  final bool released;
+
+  @override
+  ConsumerState<_ReleaseToggle> createState() => _ReleaseToggleState();
+}
+
+class _ReleaseToggleState extends ConsumerState<_ReleaseToggle> {
+  bool _busy = false;
+
+  Future<void> _toggle() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      await ref.read(assignQuestionnaireProvider.notifier).setReleased(
+            patientId: widget.patientId,
+            questionnaireId: widget.questionnaireId,
+            released: !widget.released,
+          );
+    } catch (e) {
+      if (mounted) showErrorBanner(context, e);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final spinner = const SizedBox(
+      width: 16,
+      height: 16,
+      child: CircularProgressIndicator(strokeWidth: 2),
+    );
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: widget.released
+          ? FilledButton.tonalIcon(
+              onPressed: _busy ? null : _toggle,
+              icon: _busy
+                  ? spinner
+                  : const Icon(Icons.check_circle, size: 18),
+              label: const Text('Liberado'),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.successContainer,
+                foregroundColor: AppColors.onSuccessContainer,
+                visualDensity: VisualDensity.compact,
+              ),
+            )
+          : OutlinedButton.icon(
+              onPressed: _busy ? null : _toggle,
+              icon: _busy ? spinner : const Icon(Icons.add, size: 18),
+              label: const Text('Liberar'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.blue,
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
+    );
   }
 }
 

@@ -103,6 +103,51 @@ final questionnairePatientStatusProvider =
       .getPatientResponseStatuses(patientId);
 });
 
+/// IDs dos questionários liberados (atribuição ativa) para um paciente.
+final patientAssignmentIdsProvider =
+    FutureProvider.family<Set<String>, String>((ref, patientId) {
+  return ref
+      .read(questionnairesRepositoryProvider)
+      .listActiveAssignmentQuestionnaireIds(patientId);
+});
+
+/// Libera/revoga um questionário para um paciente e atualiza os caches.
+class AssignQuestionnaireNotifier extends AsyncNotifier<void> {
+  @override
+  Future<void> build() async {}
+
+  Future<void> setReleased({
+    required String patientId,
+    required String questionnaireId,
+    required bool released,
+    String? message,
+  }) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      final repo = ref.read(questionnairesRepositoryProvider);
+      if (released) {
+        await repo.assignQuestionnaire(
+          patientId: patientId,
+          questionnaireId: questionnaireId,
+          message: message,
+        );
+      } else {
+        await repo.cancelPatientAssignment(
+          patientId: patientId,
+          questionnaireId: questionnaireId,
+        );
+      }
+      ref.invalidate(patientAssignmentIdsProvider(patientId));
+      ref.invalidate(questionnairePatientStatusProvider(patientId));
+    });
+  }
+}
+
+final assignQuestionnaireProvider =
+    AsyncNotifierProvider<AssignQuestionnaireNotifier, void>(
+  AssignQuestionnaireNotifier.new,
+);
+
 final startQuestionnaireProvider = AsyncNotifierProvider.family<
     StartQuestionnaireNotifier, void, StartQuestionnaireArgs>(
   StartQuestionnaireNotifier.new,

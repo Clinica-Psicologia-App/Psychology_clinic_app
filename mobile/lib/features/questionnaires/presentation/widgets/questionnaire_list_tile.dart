@@ -16,6 +16,7 @@ class QuestionnaireListTile extends StatelessWidget {
     this.enabled = true,
     this.showStaffDetails = false,
     this.patientStatus,
+    this.footer,
   });
 
   final Questionnaire questionnaire;
@@ -23,6 +24,10 @@ class QuestionnaireListTile extends StatelessWidget {
   final bool enabled;
   final bool showStaffDetails;
   final QuestionnairePatientStatus? patientStatus;
+
+  /// Rodapé opcional dentro do card (ex.: controle de liberação na visão do
+  /// psicólogo).
+  final Widget? footer;
 
   Color _headerColor() {
     if (!enabled) return AppColors.disabledSurface;
@@ -214,6 +219,13 @@ class QuestionnaireListTile extends StatelessWidget {
                     ],
                   ],
                 ),
+              ),
+
+            // ── rodapé opcional (ex.: liberação) ─────────────────
+            if (footer != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+                child: footer,
               ),
           ],
         ),

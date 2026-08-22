@@ -51,15 +51,12 @@ class QuestionnairesRepository {
             fallbackToAllWhenUnavailable: true,
           );
         case ProfileRole.patient:
-          final professionalId = await _getResponsiblePsychologistId(patientId);
-          final enabledIds = await _listEnabledQuestionnaireIdsForProfessional(
-            professionalId,
-          );
-          return _filterCatalogByAccess(
-            catalog,
-            enabledIds: enabledIds,
-            fallbackToAllWhenUnavailable: true,
-          );
+          // O paciente só vê o que o psicólogo liberou PARA ELE (atribuições
+          // ativas). Sem liberação, a lista fica vazia — nada "vaza" dos
+          // grants admin→psicólogo direto para o paciente.
+          final assignedIds =
+              await listActiveAssignmentQuestionnaireIds(patientId);
+          return catalog.where((q) => assignedIds.contains(q.id)).toList();
       }
     } on PostgrestException catch (e) {
       throw mapToAppException(e);
@@ -567,23 +564,6 @@ class QuestionnairesRepository {
     return clinicId;
   }
 
-  Future<String> _getResponsiblePsychologistId(String patientId) async {
-    final row = await _client
-        .from('patients')
-        .select('responsible_psychologist_id')
-        .eq('id', patientId)
-        .maybeSingle();
-
-    final professionalId = row?['responsible_psychologist_id'] as String?;
-    if (professionalId == null) {
-      throw AppException(
-        code: AppExceptionCodes.notFound,
-        message: 'Psicólogo responsável não encontrado para este paciente.',
-      );
-    }
-    return professionalId;
-  }
-
   Future<Set<String>?> _listEnabledQuestionnaireIdsForProfessional(
     String professionalId,
   ) async {
@@ -634,6 +614,66 @@ class QuestionnairesRepository {
       );
 
       return QuestionnaireSession.fromStartResponse(data, patientId);
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  // ── Liberação de questionários por paciente (atribuições) ─────────────────
+
+  /// IDs dos questionários com atribuição ATIVA (não cancelada) para o paciente.
+  /// RLS: staff lê dos pacientes que acessa; paciente lê as próprias.
+  Future<Set<String>> listActiveAssignmentQuestionnaireIds(
+      String patientId) async {
+    try {
+      final rows = await _client
+          .from('patient_questionnaire_assignments')
+          .select('questionnaire_id')
+          .eq('patient_id', patientId)
+          .isFilter('cancelled_at', null);
+      return {
+        for (final row in rows as List) row['questionnaire_id'] as String,
+      };
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  /// Libera (atribui) um questionário para um paciente. Valida acesso do
+  /// psicólogo na edge (`assign-questionnaire`).
+  Future<void> assignQuestionnaire({
+    required String patientId,
+    required String questionnaireId,
+    String? message,
+  }) async {
+    try {
+      await _edgeApi.invoke(
+        'assign-questionnaire',
+        body: {
+          'patient_id': patientId,
+          'questionnaire_id': questionnaireId,
+          if (message != null && message.trim().isNotEmpty)
+            'message': message.trim(),
+        },
+      );
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  /// Revoga a liberação: marca a(s) atribuição(ões) ativa(s) como cancelada(s).
+  /// RLS restringe a staff dos pacientes que acessa.
+  Future<void> cancelPatientAssignment({
+    required String patientId,
+    required String questionnaireId,
+  }) async {
+    try {
+      await _client
+          .from('patient_questionnaire_assignments')
+          .update({'cancelled_at': DateTime.now().toUtc().toIso8601String()})
+          .eq('patient_id', patientId)
+          .eq('questionnaire_id', questionnaireId)
+          .isFilter('cancelled_at', null);
     } catch (e) {
       throw mapToAppException(e);
     }

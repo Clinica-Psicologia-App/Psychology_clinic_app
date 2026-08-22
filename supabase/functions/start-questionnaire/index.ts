@@ -63,21 +63,33 @@ serve(async (req) => {
         );
       }
 
-      // Verify assignment belongs to this patient when provided
-      if (assignmentId) {
-        const { data: assignment } = await client
-          .from("patient_questionnaire_assignments")
-          .select("id, patient_id")
-          .eq("id", assignmentId)
-          .maybeSingle();
+      // O paciente só pode iniciar questionários LIBERADOS para ele pelo
+      // psicólogo (atribuição ativa, não cancelada). Sem liberação → 403.
+      // Uma atribuição ativa é única por (paciente, questionário).
+      const { data: activeAssignment } = await client
+        .from("patient_questionnaire_assignments")
+        .select("id, patient_id")
+        .eq("patient_id", ownPatient.id)
+        .eq("questionnaire_id", questionnaireId)
+        .is("cancelled_at", null)
+        .maybeSingle();
 
-        if (!assignment || assignment.patient_id !== ownPatient.id) {
-          throw new AppError(
-            "FORBIDDEN",
-            "Assignment not found or does not belong to this patient",
-            403,
-          );
-        }
+      if (!activeAssignment) {
+        throw new AppError(
+          "FORBIDDEN",
+          "Questionnaire not released for this patient",
+          403,
+          { questionnaire_id: questionnaireId },
+        );
+      }
+
+      // Se um assignment_id específico foi enviado, precisa ser o deste paciente.
+      if (assignmentId && activeAssignment.id !== assignmentId) {
+        throw new AppError(
+          "FORBIDDEN",
+          "Assignment not found or does not belong to this patient",
+          403,
+        );
       }
     }
 

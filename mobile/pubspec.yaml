@@ -36,8 +36,10 @@ flutter_launcher_icons:
   android: true
   ios: true
   image_path: assets/branding/esquema_core_icon.png
-  adaptive_icon_background: assets/branding/esquema_core_icon_bg.png
-  adaptive_icon_foreground: assets/branding/esquema_core_icon_foreground.png
+  # Ícone oficial da marca (cérebro em rede) sobre fundo branco, como no guia
+  # (painel "ÍCONE DO APP"). Foreground e legado usam o mesmo desenho.
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: assets/branding/esquema_core_icon.png
   remove_alpha_ios: true
 
 flutter:

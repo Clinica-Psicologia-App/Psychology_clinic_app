@@ -278,8 +278,8 @@ class _PsychologistWorkspace extends ConsumerWidget {
         ),
         const SizedBox(height: AppSpacing.xl),
         const AppSectionHeader(
-          title: 'Avaliação e instrumentos',
-          subtitle: 'Questionários, liberações e resultados.',
+          title: 'Avaliação e recursos',
+          subtitle: 'Questionários, liberações, resultados e materiais.',
           accentColor: _WorkspaceAccents.assessment,
         ),
         const SizedBox(height: AppSpacing.sm),
@@ -318,37 +318,11 @@ class _PsychologistWorkspace extends ConsumerWidget {
                   extra: PatientSelectionIntent.results,
                 ),
               ),
-            ],
-          ),
-        ),
-        const SizedBox(height: AppSpacing.xl),
-        const AppSectionHeader(
-          title: 'Raciocínio clínico',
-          subtitle: 'Formulação de caso e materiais terapêuticos.',
-          accentColor: _WorkspaceAccents.clinical,
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        MotionReveal(
-          delay: const Duration(milliseconds: 200),
-          child: ResponsiveGrid(
-            mediumColumns: 2,
-            expandedColumns: 3,
-            children: [
-              ClinicalModuleCard(
-                icon: Icons.psychology_alt_outlined,
-                title: 'Formulação clínica',
-                subtitle: 'Mapa mental, linha do tempo, genograma e metas',
-                accentColor: _WorkspaceAccents.clinical,
-                onTap: () => context.push(
-                  PatientRoutes.list(ProfileRole.psychologist),
-                  extra: PatientSelectionIntent.formulation,
-                ),
-              ),
               ClinicalModuleCard(
                 icon: Icons.library_books_outlined,
                 title: 'Recursos terapêuticos',
                 subtitle: 'Materiais e exercícios por paciente',
-                accentColor: _WorkspaceAccents.clinical,
+                accentColor: _WorkspaceAccents.assessment,
                 onTap: () => context.push(
                   PatientRoutes.list(ProfileRole.psychologist),
                   extra: PatientSelectionIntent.therapyResources,

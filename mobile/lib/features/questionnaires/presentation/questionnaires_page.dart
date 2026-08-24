@@ -113,32 +113,39 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) =>
           _dashError(() => ref.invalidate(staffClinicalDashboardProvider(ctx))),
-      data: (data) => RefreshIndicator(
-        onRefresh: () async =>
-            ref.invalidate(staffClinicalDashboardProvider(ctx)),
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.xxxl),
-          children: [
-            PendingResultsReleaseBanner(
-              patientId: patientId,
-              structuredResultCount: data.caseSummary.structuredResultCount,
+      data: (data) {
+        final sections = <Widget>[
+          PendingResultsReleaseBanner(
+            patientId: patientId,
+            structuredResultCount: data.caseSummary.structuredResultCount,
+          ),
+          ClinicalExecutiveHeader(summary: data.caseSummary),
+          ClinicalDashboardCalloutsSection(callouts: data.callouts),
+          ClinicalPriorityGrid(summary: data.caseSummary),
+          ClinicalRecentSignalsCard(summary: data.caseSummary),
+          if (data.hasConsolidatedSchemas)
+            ConsolidatedSchemaProfileCard(
+              data: data,
+              isStaff: true,
+              onActivationChanged: () =>
+                  ref.invalidate(staffClinicalDashboardProvider(ctx)),
             ),
-            ClinicalExecutiveHeader(summary: data.caseSummary),
-            ClinicalDashboardCalloutsSection(callouts: data.callouts),
-            ClinicalPriorityGrid(summary: data.caseSummary),
-            ClinicalRecentSignalsCard(summary: data.caseSummary),
-            if (data.hasConsolidatedSchemas)
-              ConsolidatedSchemaProfileCard(
-                data: data,
-                isStaff: true,
-                onActivationChanged: () =>
-                    ref.invalidate(staffClinicalDashboardProvider(ctx)),
-              ),
-            ResultsReleaseCard(patientId: patientId),
-          ],
-        ),
-      ),
+          ResultsReleaseCard(patientId: patientId),
+        ];
+        return RefreshIndicator(
+          onRefresh: () async =>
+              ref.invalidate(staffClinicalDashboardProvider(ctx)),
+          child: ListView.builder(
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.xxxl),
+            itemCount: sections.length,
+            itemBuilder: (context, i) => MotionReveal(
+              delay: staggerDelay(i),
+              child: sections[i],
+            ),
+          ),
+        );
+      },
     );
   }
 

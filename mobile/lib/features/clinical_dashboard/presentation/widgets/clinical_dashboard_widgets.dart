@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_gradients.dart';
 import '../../../../shared/widgets/clinical_kpi_chip.dart';
 import '../../../../shared/widgets/homologation_ui.dart';
 import 'clinical_dashboard_shared_widgets.dart';
@@ -619,12 +620,14 @@ class _SummaryChip extends StatelessWidget {
     required this.label,
     required this.value,
     this.icon,
+    this.accentColor,
     this.animateFromZero = true,
   });
 
   final String label;
   final String value;
   final IconData? icon;
+  final Color? accentColor;
   final bool animateFromZero;
 
   @override
@@ -633,6 +636,7 @@ class _SummaryChip extends StatelessWidget {
       label: label,
       value: value,
       icon: icon,
+      accentColor: accentColor,
       animateFromZero: animateFromZero && int.tryParse(value) != null,
     );
   }
@@ -726,26 +730,57 @@ class ClinicalExecutiveHeader extends StatelessWidget {
 
     return ClayCard(
       margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              summary.patientName,
-              style: theme.textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // ── Faixa da marca: avatar + nome + última atualização ──────────
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: const BoxDecoration(gradient: AppGradients.brand),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: Colors.white.withValues(alpha: 0.92),
+                  child: Text(
+                    _initials(summary.patientName),
+                    style: const TextStyle(
+                      color: AppColors.navy,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        summary.patientName,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Última atualização: $latestUpdateLabel',
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.85),
+                          fontSize: 12.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 6),
-            Text(
-              'Última atualização clínica: $latestUpdateLabel',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Wrap(
+          ),
+          // ── Indicadores (KPIs) com acento por métrica ───────────────────
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Wrap(
               spacing: 10,
               runSpacing: 10,
               children: [
@@ -753,29 +788,47 @@ class ClinicalExecutiveHeader extends StatelessWidget {
                   label: 'Problemas ativos',
                   value: '${summary.openProblemsCount}',
                   icon: Icons.report_problem_outlined,
+                  accentColor: AppColors.warning,
                 ),
                 _SummaryChip(
                   label: 'Objetivos ativos',
                   value: '${summary.activeGoalsCount}',
                   icon: Icons.flag_outlined,
+                  accentColor: AppColors.success,
                 ),
                 _SummaryChip(
                   label: 'Resultados',
                   value: '${summary.structuredResultCount}',
                   icon: Icons.analytics_outlined,
+                  accentColor: AppColors.blue,
                 ),
                 _SummaryChip(
                   label: 'Último check-in',
                   value: checkInLabel,
                   icon: Icons.monitor_heart_outlined,
+                  accentColor: AppColors.turquoise,
                   animateFromZero: false,
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
+  }
+
+  static String _initials(String name) {
+    final parts = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((p) => p.isNotEmpty)
+        .toList();
+    if (parts.isEmpty) return '?';
+    if (parts.length == 1) {
+      return parts.first.substring(0, 1).toUpperCase();
+    }
+    return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
+        .toUpperCase();
   }
 }
 

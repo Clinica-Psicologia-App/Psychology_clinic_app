@@ -34,6 +34,7 @@ class AppCanopyHeader extends StatelessWidget {
     required this.watermarkIcon,
     this.onProfileTap,
     this.footer,
+    this.trailingAction,
   });
 
   final UserProfile profile;
@@ -46,6 +47,7 @@ class AppCanopyHeader extends StatelessWidget {
   final String areaLabel;
   final IconData watermarkIcon;
   final VoidCallback? onProfileTap;
+  final Widget? trailingAction;
 
   /// Cartão opcional que "flutua" sobre a base do gradiente (ex.: o resumo da
   /// carteira do psicólogo). Fica meio dentro do canopy, meio no conteúdo —
@@ -124,7 +126,10 @@ class AppCanopyHeader extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              _WordmarkRow(areaLabel: areaLabel),
+              _WordmarkRow(
+                areaLabel: areaLabel,
+                trailingAction: trailingAction,
+              ),
               const SizedBox(height: AppSpacing.lg),
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -212,9 +217,13 @@ class AppCanopyHeader extends StatelessWidget {
 }
 
 class _WordmarkRow extends StatelessWidget {
-  const _WordmarkRow({required this.areaLabel});
+  const _WordmarkRow({
+    required this.areaLabel,
+    this.trailingAction,
+  });
 
   final String areaLabel;
+  final Widget? trailingAction;
 
   @override
   Widget build(BuildContext context) {
@@ -244,22 +253,37 @@ class _WordmarkRow extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         Flexible(
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              areaLabel,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.95),
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.3,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Flexible(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.16),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Text(
+                    areaLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.95),
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ),
               ),
-            ),
+              if (trailingAction != null) ...[
+                const SizedBox(width: AppSpacing.xs),
+                trailingAction!,
+              ],
+            ],
           ),
         ),
       ],

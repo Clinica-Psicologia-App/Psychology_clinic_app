@@ -17,6 +17,9 @@ import '../../../shared/widgets/clinical_module_card.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../../clinic_entitlements/domain/clinic_feature_entitlement.dart';
 import '../../clinic_entitlements/providers/clinic_entitlements_providers.dart';
+import '../../coach/domain/coach_step.dart';
+import '../../coach/domain/coach_tour.dart';
+import '../../coach/providers/coach_providers.dart';
 import '../../daily_monitors/presentation/daily_monitor_routes.dart';
 import '../../mental_map/presentation/mental_map_routes.dart';
 import '../../patient_check_ins/presentation/patient_check_in_routes.dart';
@@ -94,7 +97,7 @@ class RoleHomeShell extends ConsumerWidget {
   }
 }
 
-class _HomeBody extends StatelessWidget {
+class _HomeBody extends ConsumerStatefulWidget {
   const _HomeBody({
     required this.profile,
     required this.role,
@@ -106,12 +109,81 @@ class _HomeBody extends StatelessWidget {
   final AsyncValue<ClinicFeatureEntitlements> entitlementsAsync;
 
   @override
+  ConsumerState<_HomeBody> createState() => _HomeBodyState();
+}
+
+class _HomeBodyState extends ConsumerState<_HomeBody> {
+  final _headerSummaryKey = GlobalKey();
+  final _patientsCardKey = GlobalKey();
+  final _assessmentSectionKey = GlobalKey();
+  bool _autoTourRequested = false;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startAutoTour());
+  }
+
+  Future<void> _startAutoTour() async {
+    if (!mounted ||
+        _autoTourRequested ||
+        widget.role != ProfileRole.psychologist) {
+      return;
+    }
+    _autoTourRequested = true;
+    await ref
+        .read(coachControllerProvider.notifier)
+        .startTour(context, _psychologistHomeTour());
+  }
+
+  Future<void> _replayTour() async {
+    await ref.read(coachControllerProvider.notifier).startTour(
+          context,
+          _psychologistHomeTour(),
+          force: true,
+        );
+  }
+
+  CoachTour _psychologistHomeTour() {
+    return CoachTour(
+      id: 'tour_home_psicologo',
+      steps: [
+        CoachStep(
+          id: 'boas-vindas',
+          text:
+              'Este resumo mostra sua carteira ativa, convites pendentes e instrumentos em uso.',
+          pose: MascotPose.wave,
+          targetKey: _headerSummaryKey,
+        ),
+        CoachStep(
+          id: 'pacientes',
+          text:
+              'Comece por Pacientes para abrir detalhes clinicos, plano de cuidado e acompanhamento.',
+          pose: MascotPose.point,
+          targetKey: _patientsCardKey,
+        ),
+        CoachStep(
+          id: 'avaliacao-recursos',
+          text:
+              'Aqui ficam questionarios, resultados e recursos terapeuticos para apoiar suas decisoes.',
+          pose: MascotPose.celebrate,
+          targetKey: _assessmentSectionKey,
+        ),
+      ],
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     // Canopy full-bleed no topo (ele reserva o inset da status bar); o
     // conteúdo flui abaixo, com a largura máxima responsiva de sempre.
-    final header = role == ProfileRole.patient
-        ? _PatientGreetingHeader(profile: profile)
-        : _ProfileHeader(profile: profile);
+    final header = widget.role == ProfileRole.patient
+        ? _PatientGreetingHeader(profile: widget.profile)
+        : _ProfileHeader(
+            profile: widget.profile,
+            summaryKey: _headerSummaryKey,
+            onHelpTap: _replayTour,
+          );
 
     return ListView(
       padding: EdgeInsets.zero,
@@ -128,9 +200,12 @@ class _HomeBody extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (role == ProfileRole.psychologist)
-                  const _PsychologistWorkspace(),
-                if (role == ProfileRole.patient) ...[
+                if (widget.role == ProfileRole.psychologist)
+                  _PsychologistWorkspace(
+                    patientsCardKey: _patientsCardKey,
+                    assessmentSectionKey: _assessmentSectionKey,
+                  ),
+                if (widget.role == ProfileRole.patient) ...[
                   const MotionReveal(
                     delay: Duration(milliseconds: 60),
                     child: _PatientNextStep(),
@@ -222,7 +297,13 @@ class _HomeBody extends StatelessWidget {
 }
 
 class _PsychologistWorkspace extends ConsumerWidget {
-  const _PsychologistWorkspace();
+  const _PsychologistWorkspace({
+    required this.patientsCardKey,
+    required this.assessmentSectionKey,
+  });
+
+  final GlobalKey patientsCardKey;
+  final GlobalKey assessmentSectionKey;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -245,13 +326,16 @@ class _PsychologistWorkspace extends ConsumerWidget {
             mediumColumns: 2,
             expandedColumns: 3,
             children: [
-              ClinicalModuleCard(
-                icon: Icons.people_outline,
-                title: 'Pacientes',
-                subtitle: 'Carteira clínica, detalhes e plano de cuidado',
-                accentColor: _WorkspaceAccents.management,
-                onTap: () => context.push(
-                  PatientRoutes.list(ProfileRole.psychologist),
+              KeyedSubtree(
+                key: patientsCardKey,
+                child: ClinicalModuleCard(
+                  icon: Icons.people_outline,
+                  title: 'Pacientes',
+                  subtitle: 'Carteira clínica, detalhes e plano de cuidado',
+                  accentColor: _WorkspaceAccents.management,
+                  onTap: () => context.push(
+                    PatientRoutes.list(ProfileRole.psychologist),
+                  ),
                 ),
               ),
               ClinicalModuleCard(
@@ -276,10 +360,13 @@ class _PsychologistWorkspace extends ConsumerWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.xl),
-        const AppSectionHeader(
-          title: 'Avaliação e recursos',
-          subtitle: 'Questionários, liberações, resultados e materiais.',
-          accentColor: _WorkspaceAccents.assessment,
+        KeyedSubtree(
+          key: assessmentSectionKey,
+          child: const AppSectionHeader(
+            title: 'Avaliação e recursos',
+            subtitle: 'Questionários, liberações, resultados e materiais.',
+            accentColor: _WorkspaceAccents.assessment,
+          ),
         ),
         const SizedBox(height: AppSpacing.sm),
         MotionReveal(
@@ -1160,9 +1247,15 @@ class _WorkspaceMetricCell extends StatelessWidget {
 /// que repetia o subtítulo da AppBar e gastava a área mais nobre da tela com
 /// informação que o profissional já sabe sobre si mesmo.
 class _ProfileHeader extends ConsumerWidget {
-  const _ProfileHeader({required this.profile});
+  const _ProfileHeader({
+    required this.profile,
+    required this.summaryKey,
+    required this.onHelpTap,
+  });
 
   final UserProfile profile;
+  final GlobalKey summaryKey;
+  final VoidCallback onHelpTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -1189,38 +1282,48 @@ class _ProfileHeader extends ConsumerWidget {
       ),
       watermarkIcon: Icons.psychology_alt_outlined,
       onProfileTap: () => context.push(ProfileRoutes.me),
+      trailingAction: IconButton(
+        tooltip: 'Rever tutorial',
+        onPressed: onHelpTap,
+        icon: const Icon(Icons.help_outline_rounded),
+        color: Colors.white,
+      ),
       // Resumo da carteira flutuando sobre a base do canopy — o antigo bloco
       // "Central de trabalho", promovido ao cabeçalho.
-      footer: _WorkspaceSummary(
-        metrics: [
-          _WorkspaceMetric(
-            icon: Icons.people_outline,
-            label: 'Pacientes',
-            value: activePatients,
-            accent: _WorkspaceAccents.management,
-            onTap: () => context.push(
-              PatientRoutes.list(ProfileRole.psychologist),
+      footer: KeyedSubtree(
+        key: summaryKey,
+        child: _WorkspaceSummary(
+          metrics: [
+            _WorkspaceMetric(
+              icon: Icons.people_outline,
+              label: 'Pacientes',
+              value: activePatients,
+              accent: _WorkspaceAccents.management,
+              onTap: () => context.push(
+                PatientRoutes.list(ProfileRole.psychologist),
+              ),
             ),
-          ),
-          _WorkspaceMetric(
-            icon: Icons.mark_email_unread_outlined,
-            label: 'Convites',
-            value: pendingInvitations,
-            accent: pendingInvitations > 0
-                ? AppColors.warning
-                : _WorkspaceAccents.management,
-            onTap: () => context.push(
-              PatientInvitationRoutes.list(ProfileRole.psychologist),
+            _WorkspaceMetric(
+              icon: Icons.mark_email_unread_outlined,
+              label: 'Convites',
+              value: pendingInvitations,
+              accent: pendingInvitations > 0
+                  ? AppColors.warning
+                  : _WorkspaceAccents.management,
+              onTap: () => context.push(
+                PatientInvitationRoutes.list(ProfileRole.psychologist),
+              ),
             ),
-          ),
-          _WorkspaceMetric(
-            icon: Icons.assignment_outlined,
-            label: 'Questionários',
-            value: questionnaires.length,
-            accent: _WorkspaceAccents.assessment,
-            onTap: () => context.push(QuestionnaireRoutes.psychologistCatalog),
-          ),
-        ],
+            _WorkspaceMetric(
+              icon: Icons.assignment_outlined,
+              label: 'Questionários',
+              value: questionnaires.length,
+              accent: _WorkspaceAccents.assessment,
+              onTap: () =>
+                  context.push(QuestionnaireRoutes.psychologistCatalog),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -38,6 +38,15 @@ abstract final class QuestionnaireRoutes {
     return '${list(role: role, patientId: patientId)}/intro';
   }
 
+  /// Dashboard clínico individual de um instrumento (recebe o questionário via
+  /// `extra`). Só faz sentido no contexto do psicólogo, por paciente.
+  static String instrumentDashboard({
+    required ProfileRole role,
+    String? patientId,
+  }) {
+    return '${list(role: role, patientId: patientId)}/dashboard';
+  }
+
   static String answer({
     required ProfileRole role,
     String? patientId,

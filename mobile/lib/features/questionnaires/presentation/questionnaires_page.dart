@@ -10,6 +10,9 @@ import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../../shared/widgets/error_banner.dart';
+import '../../clinical_dashboard/domain/clinical_dashboard_data.dart';
+import '../../clinical_dashboard/presentation/widgets/clinical_dashboard_widgets.dart';
+import '../../clinical_dashboard/providers/clinical_dashboard_providers.dart';
 import '../../patients/providers/patients_providers.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/questionnaire.dart';
@@ -107,10 +110,22 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
                   if (index == 0) {
                     return Padding(
                       padding: const EdgeInsets.only(bottom: AppSpacing.xl),
-                      child: _QuestionnairesHeader(
-                        role: widget.role,
-                        staffPatientHeader: staffPatientHeader,
-                        availableCount: items.length,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _QuestionnairesHeader(
+                            role: widget.role,
+                            staffPatientHeader: staffPatientHeader,
+                            availableCount: items.length,
+                          ),
+                          if (isStaff) ...[
+                            const SizedBox(height: AppSpacing.lg),
+                            _ConsolidatedDashboardBlock(
+                              role: widget.role,
+                              patientId: patientId,
+                            ),
+                          ],
+                        ],
                       ),
                     );
                   }
@@ -120,10 +135,10 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
                       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                       child: AppSectionHeader(
                         title: isStaff
-                            ? 'Liberar instrumentos'
+                            ? 'Esquemas do paciente'
                             : 'Instrumentos disponíveis',
                         subtitle: isStaff
-                            ? 'Libere para o paciente os instrumentos que ele poderá responder. Só o que for liberado aparece para ele.'
+                            ? 'Toque em um esquema para ver o dashboard individual. Use "Liberar" para o paciente poder responder.'
                             : 'Abra um questionário para revisar orientações e iniciar a resposta.',
                       ),
                     );
@@ -137,10 +152,10 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
                     delay: staggerDelay(index - 2),
                     child: QuestionnaireListTile(
                       questionnaire: q,
-                      enabled: canApply,
+                      enabled: isStaff || canApply,
                       showStaffDetails: isStaff,
                       patientStatus: statusMap[q.id],
-                      onTap: canApply
+                      onTap: (isStaff || canApply)
                           ? () => _onQuestionnaireTap(q, patientId)
                           : null,
                       footer: isStaff
@@ -163,6 +178,23 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
 
   Future<void> _onQuestionnaireTap(
       Questionnaire questionnaire, String patientId) async {
+    // Psicólogo: clicar abre o dashboard individual do instrumento (de onde
+    // ele também aplica). Paciente: abre a introdução para responder.
+    if (widget.role != ProfileRole.patient) {
+      await context.push(
+        QuestionnaireRoutes.instrumentDashboard(
+          role: widget.role,
+          patientId: widget.patientId ?? _resolvedPatientId,
+        ),
+        extra: questionnaire,
+      );
+      if (mounted) {
+        ref.invalidate(questionnairePatientStatusProvider(patientId));
+        ref.invalidate(patientAssignmentIdsProvider(patientId));
+      }
+      return;
+    }
+
     await context.push(
       QuestionnaireRoutes.intro(
         role: widget.role,
@@ -248,6 +280,55 @@ class _ReleaseToggleState extends ConsumerState<_ReleaseToggle> {
                 visualDensity: VisualDensity.compact,
               ),
             ),
+    );
+  }
+}
+
+/// Panorama consolidado (visão do psicólogo) no topo da tela de esquemas —
+/// o conteúdo que antes vivia na dashboard clínica isolada.
+class _ConsolidatedDashboardBlock extends ConsumerWidget {
+  const _ConsolidatedDashboardBlock({
+    required this.role,
+    required this.patientId,
+  });
+
+  final ProfileRole role;
+  final String patientId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ctx =
+        StaffClinicalDashboardContext(role: role, patientId: patientId);
+    final async = ref.watch(staffClinicalDashboardProvider(ctx));
+
+    return async.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        child: LinearProgressIndicator(),
+      ),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (ClinicalDashboardData data) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const AppSectionHeader(
+              title: 'Panorama clínico',
+              subtitle:
+                  'Visão consolidada dos esquemas e sinais recentes deste paciente.',
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            ClinicalExecutiveHeader(summary: data.caseSummary),
+            ClinicalRecentSignalsCard(summary: data.caseSummary),
+            if (data.hasConsolidatedSchemas)
+              ConsolidatedSchemaProfileCard(
+                data: data,
+                isStaff: true,
+                onActivationChanged: () =>
+                    ref.invalidate(staffClinicalDashboardProvider(ctx)),
+              ),
+          ],
+        );
+      },
     );
   }
 }

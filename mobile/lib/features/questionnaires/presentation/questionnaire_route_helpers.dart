@@ -5,6 +5,7 @@ import '../../profile/domain/profile_role.dart';
 import '../domain/finish_questionnaire_result.dart';
 import '../domain/questionnaire_session.dart';
 import '../domain/questionnaire.dart';
+import 'patient_instrument_dashboard_page.dart';
 import 'questionnaire_answer_page.dart';
 import 'questionnaire_intro_page.dart';
 import 'questionnaire_success_page.dart';
@@ -41,6 +42,24 @@ List<RouteBase> questionnaireRoutesFor({
               staffPatientId: nestedPatient
                   ? state.pathParameters[patientIdPathParam]
                   : null,
+            );
+          },
+        ),
+        GoRoute(
+          path: 'dashboard',
+          builder: (context, state) {
+            final extra = state.extra;
+            final pid = nestedPatient
+                ? state.pathParameters[patientIdPathParam]
+                : null;
+            if (extra is! Questionnaire || pid == null) {
+              return const _InvalidSessionPage(
+                  message: 'Instrumento indisponível.');
+            }
+            return PatientInstrumentDashboardPage(
+              role: role,
+              patientId: pid,
+              questionnaire: extra,
             );
           },
         ),

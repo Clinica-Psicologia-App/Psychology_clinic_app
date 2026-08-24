@@ -10,11 +10,12 @@ import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../../shared/widgets/error_banner.dart';
-import '../../clinical_dashboard/domain/clinical_dashboard_data.dart';
 import '../../clinical_dashboard/presentation/widgets/clinical_dashboard_widgets.dart';
 import '../../clinical_dashboard/providers/clinical_dashboard_providers.dart';
+import '../../patients/presentation/widgets/results_release_card.dart';
 import '../../patients/providers/patients_providers.dart';
 import '../../profile/domain/profile_role.dart';
+import '../../results/presentation/result_routes.dart';
 import '../domain/questionnaire.dart';
 import '../providers/questionnaires_providers.dart';
 import 'questionnaire_route_helpers.dart';
@@ -47,7 +48,6 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
   Widget build(BuildContext context) {
     final patientIdAsync =
         ref.watch(questionnairePatientIdProvider(_listContext));
-    final listAsync = ref.watch(questionnairesListProvider(_listContext));
 
     final title = widget.role == ProfileRole.patient
         ? 'Questionários'
@@ -66,112 +66,229 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
         ),
         data: (patientId) {
           _resolvedPatientId = patientId;
-
-          final statusMap = ref
-                  .watch(questionnairePatientStatusProvider(patientId))
-                  .valueOrNull ??
-              {};
-
-          final isStaff = widget.role != ProfileRole.patient;
-          final releasedIds = isStaff
-              ? (ref
-                      .watch(patientAssignmentIdsProvider(patientId))
-                      .valueOrNull ??
-                  const <String>{})
-              : const <String>{};
-
-          final staffPatientHeader = widget.patientId != null
-              ? ref.watch(patientDetailProvider(patientId))
-              : null;
-
-          return AsyncStateBody<List<Questionnaire>>(
-            asyncValue: listAsync,
-            onRetry: () =>
-                ref.invalidate(questionnairesListProvider(_listContext)),
-            emptyMessage: 'Nenhum questionário disponível no momento.',
-            emptyIcon: Icons.assignment_outlined,
-            dataBuilder: (items) => RefreshIndicator(
-              onRefresh: () async {
-                ref.invalidate(questionnairesListProvider(_listContext));
-                ref.invalidate(questionnairePatientStatusProvider(patientId));
-                await ref.read(
-                  questionnairesListProvider(_listContext).future,
-                );
-              },
-              child: ListView.builder(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  AppSpacing.md,
-                  AppSpacing.md,
-                  AppSpacing.xxxl,
-                ),
-                itemCount: items.length + 2,
-                itemBuilder: (context, index) {
-                  if (index == 0) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: AppSpacing.xl),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          _QuestionnairesHeader(
-                            role: widget.role,
-                            staffPatientHeader: staffPatientHeader,
-                            availableCount: items.length,
-                          ),
-                          if (isStaff) ...[
-                            const SizedBox(height: AppSpacing.lg),
-                            _ConsolidatedDashboardBlock(
-                              role: widget.role,
-                              patientId: patientId,
-                            ),
-                          ],
-                        ],
-                      ),
-                    );
-                  }
-
-                  if (index == 1) {
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                      child: AppSectionHeader(
-                        title: isStaff
-                            ? 'Esquemas do paciente'
-                            : 'Instrumentos disponíveis',
-                        subtitle: isStaff
-                            ? 'Toque em um esquema para ver o dashboard individual. Use "Liberar" para o paciente poder responder.'
-                            : 'Abra um questionário para revisar orientações e iniciar a resposta.',
-                      ),
-                    );
-                  }
-
-                  final q = items[index - 2];
-                  final canApply = q.canStart(
-                    allowUnvalidated: EnvConfig.allowsUnvalidatedInstruments,
-                  );
-                  return MotionReveal(
-                    delay: staggerDelay(index - 2),
-                    child: QuestionnaireListTile(
-                      questionnaire: q,
-                      enabled: isStaff || canApply,
-                      showStaffDetails: isStaff,
-                      patientStatus: statusMap[q.id],
-                      onTap: (isStaff || canApply)
-                          ? () => _onQuestionnaireTap(q, patientId)
-                          : null,
-                      footer: isStaff
-                          ? _ReleaseToggle(
-                              patientId: patientId,
-                              questionnaireId: q.id,
-                              released: releasedIds.contains(q.id),
-                            )
-                          : null,
-                    ),
-                  );
-                },
-              ),
-            ),
-          );
+          return widget.role == ProfileRole.patient
+              ? _buildInstrumentsList(patientId, includeHeader: true)
+              : _buildStaffTabs(patientId);
         },
+      ),
+    );
+  }
+
+  // ── Visão do psicólogo: abas Panorama · Esquemas · Histórico ──────────────
+  Widget _buildStaffTabs(String patientId) {
+    return DefaultTabController(
+      length: 3,
+      child: Column(
+        children: [
+          Material(
+            color: Theme.of(context).colorScheme.surface,
+            child: const TabBar(
+              tabs: [
+                Tab(text: 'Panorama'),
+                Tab(text: 'Esquemas'),
+                Tab(text: 'Histórico'),
+              ],
+            ),
+          ),
+          Expanded(
+            child: TabBarView(
+              children: [
+                _buildPanorama(patientId),
+                _buildInstrumentsList(patientId, includeHeader: false),
+                _buildHistorico(patientId),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Panorama = a antiga dashboard clínica consolidada + liberação de resultados.
+  Widget _buildPanorama(String patientId) {
+    final ctx =
+        StaffClinicalDashboardContext(role: widget.role, patientId: patientId);
+    final async = ref.watch(staffClinicalDashboardProvider(ctx));
+    return async.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) =>
+          _dashError(() => ref.invalidate(staffClinicalDashboardProvider(ctx))),
+      data: (data) => RefreshIndicator(
+        onRefresh: () async =>
+            ref.invalidate(staffClinicalDashboardProvider(ctx)),
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.xxxl),
+          children: [
+            PendingResultsReleaseBanner(
+              patientId: patientId,
+              structuredResultCount: data.caseSummary.structuredResultCount,
+            ),
+            ClinicalExecutiveHeader(summary: data.caseSummary),
+            ClinicalDashboardCalloutsSection(callouts: data.callouts),
+            ClinicalPriorityGrid(summary: data.caseSummary),
+            ClinicalRecentSignalsCard(summary: data.caseSummary),
+            if (data.hasConsolidatedSchemas)
+              ConsolidatedSchemaProfileCard(
+                data: data,
+                isStaff: true,
+                onActivationChanged: () =>
+                    ref.invalidate(staffClinicalDashboardProvider(ctx)),
+              ),
+            ResultsReleaseCard(patientId: patientId),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Histórico = as últimas aplicações estruturadas concluídas.
+  Widget _buildHistorico(String patientId) {
+    final ctx =
+        StaffClinicalDashboardContext(role: widget.role, patientId: patientId);
+    final async = ref.watch(staffClinicalDashboardProvider(ctx));
+    final loc = MaterialLocalizations.of(context);
+    return async.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (e, _) =>
+          _dashError(() => ref.invalidate(staffClinicalDashboardProvider(ctx))),
+      data: (data) => ListView(
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.xxxl),
+        children: [
+          ClinicalDashboardHistoryCard(
+            historyTiles: data.history.map((entry) {
+              return ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: Icon(
+                  entry.hasResults
+                      ? Icons.check_circle_outline
+                      : Icons.hourglass_empty,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                title: Text(entry.questionnaireName),
+                subtitle: Text([
+                  entry.questionnaireCode,
+                  if (entry.completedAt != null)
+                    loc.formatFullDate(entry.completedAt!.toLocal()),
+                  entry.hasResults ? 'Com resultados' : 'Sem resultados',
+                ].join(' · ')),
+                trailing: IconButton(
+                  icon: const Icon(Icons.chevron_right),
+                  tooltip: 'Ver resposta',
+                  onPressed: () => context.push(
+                    ResultRoutes.detail(
+                      role: widget.role,
+                      patientId: patientId,
+                      responseId: entry.responseId,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _dashError(VoidCallback onRetry) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Não foi possível carregar o painel.'),
+              const SizedBox(height: AppSpacing.md),
+              OutlinedButton(
+                  onPressed: onRetry, child: const Text('Tentar de novo')),
+            ],
+          ),
+        ),
+      );
+
+  // ── Lista de instrumentos (esquemas) — paciente ou aba "Esquemas" ─────────
+  Widget _buildInstrumentsList(String patientId,
+      {required bool includeHeader}) {
+    final listAsync = ref.watch(questionnairesListProvider(_listContext));
+    final statusMap = ref
+            .watch(questionnairePatientStatusProvider(patientId))
+            .valueOrNull ??
+        {};
+    final isStaff = widget.role != ProfileRole.patient;
+    final releasedIds = isStaff
+        ? (ref.watch(patientAssignmentIdsProvider(patientId)).valueOrNull ??
+            const <String>{})
+        : const <String>{};
+    final staffPatientHeader = widget.patientId != null
+        ? ref.watch(patientDetailProvider(patientId))
+        : null;
+
+    return AsyncStateBody<List<Questionnaire>>(
+      asyncValue: listAsync,
+      onRetry: () => ref.invalidate(questionnairesListProvider(_listContext)),
+      emptyMessage: isStaff
+          ? 'Nenhum instrumento habilitado para você.'
+          : 'Nenhum questionário disponível no momento.',
+      emptyIcon: Icons.assignment_outlined,
+      dataBuilder: (items) => RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(questionnairesListProvider(_listContext));
+          ref.invalidate(questionnairePatientStatusProvider(patientId));
+          if (isStaff) ref.invalidate(patientAssignmentIdsProvider(patientId));
+          await ref.read(questionnairesListProvider(_listContext).future);
+        },
+        child: ListView.builder(
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.xxxl),
+          itemCount: items.length + 1,
+          itemBuilder: (context, index) {
+            if (index == 0) {
+              if (!isStaff && includeHeader) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.xl),
+                  child: _QuestionnairesHeader(
+                    role: widget.role,
+                    staffPatientHeader: staffPatientHeader,
+                    availableCount: items.length,
+                  ),
+                );
+              }
+              return const Padding(
+                padding: EdgeInsets.only(bottom: AppSpacing.sm),
+                child: AppSectionHeader(
+                  title: 'Esquemas do paciente',
+                  subtitle:
+                      'Toque em um esquema para ver o dashboard individual. Use "Liberar" para o paciente poder responder.',
+                ),
+              );
+            }
+
+            final q = items[index - 1];
+            final canApply = q.canStart(
+              allowUnvalidated: EnvConfig.allowsUnvalidatedInstruments,
+            );
+            return MotionReveal(
+              delay: staggerDelay(index - 1),
+              child: QuestionnaireListTile(
+                questionnaire: q,
+                enabled: isStaff || canApply,
+                showStaffDetails: isStaff,
+                patientStatus: statusMap[q.id],
+                onTap: (isStaff || canApply)
+                    ? () => _onQuestionnaireTap(q, patientId)
+                    : null,
+                footer: isStaff
+                    ? _ReleaseToggle(
+                        patientId: patientId,
+                        questionnaireId: q.id,
+                        released: releasedIds.contains(q.id),
+                      )
+                    : null,
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -280,55 +397,6 @@ class _ReleaseToggleState extends ConsumerState<_ReleaseToggle> {
                 visualDensity: VisualDensity.compact,
               ),
             ),
-    );
-  }
-}
-
-/// Panorama consolidado (visão do psicólogo) no topo da tela de esquemas —
-/// o conteúdo que antes vivia na dashboard clínica isolada.
-class _ConsolidatedDashboardBlock extends ConsumerWidget {
-  const _ConsolidatedDashboardBlock({
-    required this.role,
-    required this.patientId,
-  });
-
-  final ProfileRole role;
-  final String patientId;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final ctx =
-        StaffClinicalDashboardContext(role: role, patientId: patientId);
-    final async = ref.watch(staffClinicalDashboardProvider(ctx));
-
-    return async.when(
-      loading: () => const Padding(
-        padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
-        child: LinearProgressIndicator(),
-      ),
-      error: (_, __) => const SizedBox.shrink(),
-      data: (ClinicalDashboardData data) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const AppSectionHeader(
-              title: 'Panorama clínico',
-              subtitle:
-                  'Visão consolidada dos esquemas e sinais recentes deste paciente.',
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            ClinicalExecutiveHeader(summary: data.caseSummary),
-            ClinicalRecentSignalsCard(summary: data.caseSummary),
-            if (data.hasConsolidatedSchemas)
-              ConsolidatedSchemaProfileCard(
-                data: data,
-                isStaff: true,
-                onActivationChanged: () =>
-                    ref.invalidate(staffClinicalDashboardProvider(ctx)),
-              ),
-          ],
-        );
-      },
     );
   }
 }

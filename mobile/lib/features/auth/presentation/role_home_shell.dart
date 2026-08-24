@@ -17,7 +17,6 @@ import '../../../shared/widgets/clinical_module_card.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../../clinic_entitlements/domain/clinic_feature_entitlement.dart';
 import '../../clinic_entitlements/providers/clinic_entitlements_providers.dart';
-import '../../clinical_dashboard/presentation/clinical_dashboard_routes.dart';
 import '../../daily_monitors/presentation/daily_monitor_routes.dart';
 import '../../mental_map/presentation/mental_map_routes.dart';
 import '../../patient_check_ins/presentation/patient_check_in_routes.dart';
@@ -627,11 +626,11 @@ class _AlertRow extends StatelessWidget {
           );
         }
       case PsychologistAlertKind.pendingResultsRelease:
-        // Leva direto ao Dashboard Clínico (onde fica o botão de liberar),
-        // não ao perfil geral do paciente — poupa um toque a mais.
+        // Leva à tela de Questionários do paciente (aba Panorama), onde agora
+        // vive o botão de liberar resultados — poupa um toque a mais.
         if (alert.patientId != null) {
           context.push(
-            ClinicalDashboardRoutes.staffList(
+            QuestionnaireRoutes.list(
               role: ProfileRole.psychologist,
               patientId: alert.patientId!,
             ),

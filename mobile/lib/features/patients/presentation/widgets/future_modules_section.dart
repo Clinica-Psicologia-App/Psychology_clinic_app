@@ -8,7 +8,6 @@ import '../../../../shared/widgets/app_motion.dart';
 import '../../../../shared/widgets/module_grid_card.dart';
 import '../../../clinic_entitlements/domain/clinic_feature_entitlement.dart';
 import '../../../clinic_entitlements/providers/clinic_entitlements_providers.dart';
-import '../../../clinical_dashboard/presentation/clinical_dashboard_routes.dart';
 import '../../../daily_monitors/presentation/daily_monitor_routes.dart';
 import '../../../initial_assessment/presentation/initial_assessment_routes.dart';
 import '../../../mental_map/presentation/mental_map_routes.dart';
@@ -225,24 +224,6 @@ class FutureModulesSection extends ConsumerWidget {
               'reports',
               () => context.push(
                 ResultRoutes.list(role: role, patientId: patientId),
-              ),
-            ),
-          ),
-          _ModuleSpec(
-            icon: Icons.bar_chart_outlined,
-            title: 'Síntese',
-            subtitle: gatedSubtitle(
-              featureKey: 'reports',
-              subtitle: 'Dashboard gráfico integrado.',
-            ),
-            accentColor: AppColors.moduleDashboard,
-            onTap: gatedTap(
-              'reports',
-              () => context.push(
-                ClinicalDashboardRoutes.staffList(
-                  role: role,
-                  patientId: patientId,
-                ),
               ),
             ),
           ),

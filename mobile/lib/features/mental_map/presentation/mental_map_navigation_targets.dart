@@ -22,7 +22,9 @@ abstract final class MentalMapNavigationTargets {
     if (patientId == null) {
       throw ArgumentError('patientId obrigatório para staff');
     }
-    return ClinicalDashboardRoutes.staffList(role: role, patientId: patientId);
+    // Psicólogo: o painel consolidado agora vive na tela de Questionários
+    // (aba Panorama), não mais numa dashboard isolada.
+    return QuestionnaireRoutes.list(role: role, patientId: patientId);
   }
 
   static String? questionnaireResults({

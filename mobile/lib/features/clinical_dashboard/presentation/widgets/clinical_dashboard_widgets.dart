@@ -800,40 +800,58 @@ class ClinicalPriorityGrid extends StatelessWidget {
         const SizedBox(height: 12),
         LayoutBuilder(
           builder: (context, constraints) {
-            final width = constraints.maxWidth;
-            final crossAxisCount = width >= 560 ? 2 : 1;
-            return GridView.count(
-              crossAxisCount: crossAxisCount,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
-              childAspectRatio: crossAxisCount == 2 ? 1.35 : 1.15,
+            final cards = <Widget>[
+              _PriorityMiniCard(
+                title: 'Top esquemas YSQ',
+                icon: Icons.psychology_outlined,
+                rows: summary.topSchemas,
+                emptyMessage: 'Sem YSQ concluído',
+              ),
+              _PriorityMiniCard(
+                title: 'Top modos YAMI',
+                icon: Icons.self_improvement_outlined,
+                rows: summary.topModes,
+                emptyMessage: 'Sem YAMI concluído',
+              ),
+              _PriorityMiniCard(
+                title: 'Estilos de apego',
+                icon: Icons.favorite_border,
+                rows: summary.topAttachment,
+                emptyMessage: 'Sem apego concluído',
+              ),
+              _PriorityMiniCard(
+                title: 'Enfrentamento',
+                icon: Icons.shield_outlined,
+                rows: summary.topCoping,
+                emptyMessage: 'Sem YCI/YRAI concluído',
+              ),
+            ];
+
+            // Cards dimensionam pela altura do conteúdo (evita overflow). Em
+            // telas largas, duas colunas; caso contrário, uma.
+            if (constraints.maxWidth < 560) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: cards,
+              );
+            }
+            return Column(
               children: [
-                _PriorityMiniCard(
-                  title: 'Top esquemas YSQ',
-                  icon: Icons.psychology_outlined,
-                  rows: summary.topSchemas,
-                  emptyMessage: 'Sem YSQ concluído',
-                ),
-                _PriorityMiniCard(
-                  title: 'Top modos YAMI',
-                  icon: Icons.self_improvement_outlined,
-                  rows: summary.topModes,
-                  emptyMessage: 'Sem YAMI concluído',
-                ),
-                _PriorityMiniCard(
-                  title: 'Estilos de apego',
-                  icon: Icons.favorite_border,
-                  rows: summary.topAttachment,
-                  emptyMessage: 'Sem apego concluído',
-                ),
-                _PriorityMiniCard(
-                  title: 'Enfrentamento',
-                  icon: Icons.shield_outlined,
-                  rows: summary.topCoping,
-                  emptyMessage: 'Sem YCI/YRAI concluído',
-                ),
+                for (var i = 0; i < cards.length; i += 2)
+                  IntrinsicHeight(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Expanded(child: cards[i]),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: i + 1 < cards.length
+                              ? cards[i + 1]
+                              : const SizedBox(),
+                        ),
+                      ],
+                    ),
+                  ),
               ],
             );
           },
@@ -865,10 +883,12 @@ class _PriorityMiniCard extends StatelessWidget {
         : rows.map((row) => row.score).reduce((a, b) => a > b ? a : b);
 
     return ClayCard(
+      margin: const EdgeInsets.only(bottom: 12),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Row(
               children: [
@@ -886,33 +906,30 @@ class _PriorityMiniCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             if (rows.isEmpty)
-              Expanded(
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    emptyMessage,
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  emptyMessage,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               )
             else
-              Expanded(
-                child: Column(
-                  children: rows
-                      .take(3)
-                      .map(
-                        (row) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: HorizontalScoreBar(
-                            row: row,
-                            maxScore: maxScore,
-                          ),
+              Column(
+                mainAxisSize: MainAxisSize.min,
+                children: rows
+                    .take(3)
+                    .map(
+                      (row) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: HorizontalScoreBar(
+                          row: row,
+                          maxScore: maxScore,
                         ),
-                      )
-                      .toList(),
-                ),
+                      ),
+                    )
+                    .toList(),
               ),
           ],
         ),

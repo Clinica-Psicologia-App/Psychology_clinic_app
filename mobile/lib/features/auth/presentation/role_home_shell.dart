@@ -234,11 +234,9 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
         header,
         ResponsiveContent(
           child: Padding(
-            padding: EdgeInsets.fromLTRB(
+            padding: const EdgeInsets.fromLTRB(
               0,
-              widget.role == ProfileRole.psychologist
-                  ? AppSpacing.xs
-                  : AppSpacing.lg,
+              AppSpacing.lg,
               0,
               AppSpacing.xl,
             ),
@@ -360,7 +358,6 @@ class _PsychologistWorkspace extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const _WeekStrip(),
         // O resumo da carteira ("Central de trabalho") agora flutua no canopy
         // (ver _ProfileHeader.footer); aqui fica só o painel de notificações e
         // os grupos de módulos.
@@ -1200,44 +1197,6 @@ class _WorkspaceMetric {
   final VoidCallback onTap;
 }
 
-/// Resumo da carteira em um painel único de colunas iguais.
-///
-/// Antes eram três cartões soltos num `Wrap`: no celular cabiam dois na
-/// primeira linha e o terceiro ficava órfão embaixo, com um vazio ao lado.
-/// Como painel único, as três colunas dividem a largura por igual em
-/// qualquer tela e os números se comparam lado a lado.
-class _WorkspaceSummary extends StatelessWidget {
-  const _WorkspaceSummary({required this.metrics});
-
-  final List<_WorkspaceMetric> metrics;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClayCard(
-      shape: RoundedRectangleBorder(borderRadius: AppRadius.xlAll),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-        // Altura fixa nas divisórias em vez de `CrossAxisAlignment.stretch`:
-        // dentro de um ListView a altura do Row é ilimitada, e esticar filhos
-        // nesse contexto quebra o layout da tela inteira.
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            for (var i = 0; i < metrics.length; i++) ...[
-              if (i > 0)
-                Container(
-                  width: 1,
-                  height: 56,
-                  color: AppColors.border,
-                ),
-              Expanded(child: _WorkspaceMetricCell(metric: metrics[i])),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _WorkspaceMetricCell extends StatelessWidget {
   const _WorkspaceMetricCell({required this.metric});
@@ -1348,11 +1307,13 @@ class _ProfileHeader extends ConsumerWidget {
         icon: const Icon(Icons.help_outline_rounded),
         color: Colors.white,
       ),
-      // Resumo da carteira flutuando sobre a base do canopy — o antigo bloco
-      // "Central de trabalho", promovido ao cabeçalho.
+      // Stats + faixa semanal num único ClayCard que flutua sobre o canopy.
+      // Unificados aqui para não ter gap entre os dois (o Transform.translate
+      // -28px do AppCanopyHeader cria um deslocamento que não pode ser
+      // compensado por padding externo).
       footer: KeyedSubtree(
         key: summaryKey,
-        child: _WorkspaceSummary(
+        child: _PsychologistSummaryFooter(
           metrics: [
             _WorkspaceMetric(
               icon: Icons.people_outline,
@@ -1415,15 +1376,23 @@ class _ProfileHeader extends ConsumerWidget {
 }
 
 // ---------------------------------------------------------------------------
-// Faixa semanal — 7 dias da semana com o dia atual destacado em navy
+// Footer unificado do psicólogo: stats + faixa semanal num único ClayCard
 // ---------------------------------------------------------------------------
 
-class _WeekStrip extends StatelessWidget {
-  const _WeekStrip();
+/// Stats (Pacientes / Convites / Questionários) e faixa semanal num único
+/// ClayCard que flutua sobre o canopy via Transform.translate do
+/// AppCanopyHeader. Unificados para não haver gap visual entre os dois blocos.
+class _PsychologistSummaryFooter extends StatelessWidget {
+  const _PsychologistSummaryFooter({required this.metrics});
+
+  final List<_WorkspaceMetric> metrics;
 
   // Iniciais em português: S=Segunda, T=Terça, Q=Quarta, Q=Quinta,
   // S=Sexta, S=Sábado, D=Domingo (segunda-feira é dia 1 no Dart)
   static const _labels = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
+
+  static bool _sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
 
   @override
   Widget build(BuildContext context) {
@@ -1431,33 +1400,49 @@ class _WeekStrip extends StatelessWidget {
     final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
     final days = List.generate(7, (i) => startOfWeek.add(Duration(days: i)));
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: ClayCard(
-        shape: RoundedRectangleBorder(borderRadius: AppRadius.xlAll),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm,
-            vertical: AppSpacing.md,
+    return ClayCard(
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.xlAll),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Linha de stats
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                for (var i = 0; i < metrics.length; i++) ...[
+                  if (i > 0)
+                    Container(width: 1, height: 56, color: AppColors.border),
+                  Expanded(child: _WorkspaceMetricCell(metric: metrics[i])),
+                ],
+              ],
+            ),
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              for (var i = 0; i < 7; i++)
-                _DayCell(
-                  label: _labels[i],
-                  day: days[i],
-                  isToday: _sameDay(days[i], now),
-                ),
-            ],
+          // Divisória
+          const Divider(height: 1, thickness: 0.5, color: AppColors.border),
+          // Faixa semanal
+          Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.sm,
+              vertical: AppSpacing.sm,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                for (var i = 0; i < 7; i++)
+                  _DayCell(
+                    label: _labels[i],
+                    day: days[i],
+                    isToday: _sameDay(days[i], now),
+                  ),
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
-
-  static bool _sameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
 }
 
 class _DayCell extends StatelessWidget {

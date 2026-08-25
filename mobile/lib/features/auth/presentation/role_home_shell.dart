@@ -234,9 +234,11 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
         header,
         ResponsiveContent(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(
+            padding: EdgeInsets.fromLTRB(
               0,
-              AppSpacing.lg,
+              widget.role == ProfileRole.psychologist
+                  ? AppSpacing.xs
+                  : AppSpacing.lg,
               0,
               AppSpacing.xl,
             ),
@@ -1430,7 +1432,7 @@ class _WeekStrip extends StatelessWidget {
     final days = List.generate(7, (i) => startOfWeek.add(Duration(days: i)));
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: ClayCard(
         shape: RoundedRectangleBorder(borderRadius: AppRadius.xlAll),
         child: Padding(

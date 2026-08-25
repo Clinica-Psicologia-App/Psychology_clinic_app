@@ -116,6 +116,9 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
   final _headerSummaryKey = GlobalKey();
   final _patientsCardKey = GlobalKey();
   final _assessmentSectionKey = GlobalKey();
+  final _patientNextStepKey = GlobalKey();
+  final _patientSpacesKey = GlobalKey();
+  final _patientPlanKey = GlobalKey();
   bool _autoTourRequested = false;
 
   @override
@@ -124,24 +127,60 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _startAutoTour());
   }
 
-  Future<void> _startAutoTour() async {
-    if (!mounted ||
-        _autoTourRequested ||
-        widget.role != ProfileRole.psychologist) {
-      return;
+  CoachTour? _homeTour() {
+    switch (widget.role) {
+      case ProfileRole.psychologist:
+        return _psychologistHomeTour();
+      case ProfileRole.patient:
+        return _patientHomeTour();
+      case ProfileRole.platformAdmin:
+        return null;
     }
+  }
+
+  Future<void> _startAutoTour() async {
+    if (!mounted || _autoTourRequested) return;
+    final tour = _homeTour();
+    if (tour == null) return;
     _autoTourRequested = true;
-    await ref
-        .read(coachControllerProvider.notifier)
-        .startTour(context, _psychologistHomeTour());
+    await ref.read(coachControllerProvider.notifier).startTour(context, tour);
   }
 
   Future<void> _replayTour() async {
-    await ref.read(coachControllerProvider.notifier).startTour(
-          context,
-          _psychologistHomeTour(),
-          force: true,
-        );
+    final tour = _homeTour();
+    if (tour == null) return;
+    await ref
+        .read(coachControllerProvider.notifier)
+        .startTour(context, tour, force: true);
+  }
+
+  CoachTour _patientHomeTour() {
+    return CoachTour(
+      id: 'tour_home_paciente',
+      steps: [
+        CoachStep(
+          id: 'ola',
+          text:
+              'Oi! Eu sou o guia do EsquemaCore. Vou te mostrar seu espaço rapidinho.',
+          pose: MascotPose.wave,
+          targetKey: _patientNextStepKey,
+        ),
+        CoachStep(
+          id: 'plano',
+          text:
+              'Aqui você continua seu acompanhamento de onde parou: questionários, monitor diário e seus recursos.',
+          pose: MascotPose.point,
+          targetKey: _patientPlanKey,
+        ),
+        CoachStep(
+          id: 'espacos',
+          text:
+              'E por aqui você explora o mapa mental, a biblioteca e o monitor diário. Fico por perto se precisar. 🙂',
+          pose: MascotPose.celebrate,
+          targetKey: _patientSpacesKey,
+        ),
+      ],
+    );
   }
 
   CoachTour _psychologistHomeTour() {
@@ -178,7 +217,10 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
     // Canopy full-bleed no topo (ele reserva o inset da status bar); o
     // conteúdo flui abaixo, com a largura máxima responsiva de sempre.
     final header = widget.role == ProfileRole.patient
-        ? _PatientGreetingHeader(profile: widget.profile)
+        ? _PatientGreetingHeader(
+            profile: widget.profile,
+            onHelpTap: _replayTour,
+          )
         : _ProfileHeader(
             profile: widget.profile,
             summaryKey: _headerSummaryKey,
@@ -206,9 +248,12 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                     assessmentSectionKey: _assessmentSectionKey,
                   ),
                 if (widget.role == ProfileRole.patient) ...[
-                  const MotionReveal(
-                    delay: Duration(milliseconds: 60),
-                    child: _PatientNextStep(),
+                  MotionReveal(
+                    delay: const Duration(milliseconds: 60),
+                    child: KeyedSubtree(
+                      key: _patientNextStepKey,
+                      child: const _PatientNextStep(),
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.xl),
                   const AppSectionHeader(
@@ -235,6 +280,7 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                     // nesta sessão para o resumo do profissional. Em telas largas
                     // os 3 cabem numa linha só.
                     child: ResponsiveGrid(
+                      key: _patientSpacesKey,
                       compactColumns: 1,
                       mediumColumns: 3,
                       expandedColumns: 3,
@@ -277,6 +323,7 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                   MotionReveal(
                     delay: const Duration(milliseconds: 180),
                     child: ClinicalModuleCard(
+                      key: _patientPlanKey,
                       icon: Icons.route_outlined,
                       title: 'Meu plano terapêutico',
                       subtitle:
@@ -730,9 +777,10 @@ class _AlertRow extends StatelessWidget {
 /// Cabeçalho acolhedor da home do paciente: saudação pelo nome e
 /// período do dia, no lugar do cartão de perfil institucional.
 class _PatientGreetingHeader extends StatelessWidget {
-  const _PatientGreetingHeader({required this.profile});
+  const _PatientGreetingHeader({required this.profile, this.onHelpTap});
 
   final UserProfile profile;
+  final VoidCallback? onHelpTap;
 
   @override
   Widget build(BuildContext context) {
@@ -745,6 +793,14 @@ class _PatientGreetingHeader extends StatelessWidget {
       contextLine: 'Que bom te ver por aqui. Este é o seu espaço de cuidado.',
       watermarkIcon: Icons.spa_outlined,
       onProfileTap: () => context.push(ProfileRoutes.me),
+      trailingAction: onHelpTap == null
+          ? null
+          : IconButton(
+              tooltip: 'Rever tutorial',
+              onPressed: onHelpTap,
+              icon: const Icon(Icons.help_outline_rounded),
+              color: Colors.white,
+            ),
     );
   }
 }

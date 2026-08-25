@@ -358,6 +358,7 @@ class _PsychologistWorkspace extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        const _WeekStrip(),
         // O resumo da carteira ("Central de trabalho") agora flutua no canopy
         // (ver _ProfileHeader.footer); aqui fica só o painel de notificações e
         // os grupos de módulos.
@@ -1408,5 +1409,99 @@ class _ProfileHeader extends ConsumerWidget {
         ? '1 paciente na sua carteira'
         : '$patientCount pacientes na sua carteira';
     return '$label. Tudo em dia por aqui.';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Faixa semanal — 7 dias da semana com o dia atual destacado em navy
+// ---------------------------------------------------------------------------
+
+class _WeekStrip extends StatelessWidget {
+  const _WeekStrip();
+
+  // Iniciais em português: S=Segunda, T=Terça, Q=Quarta, Q=Quinta,
+  // S=Sexta, S=Sábado, D=Domingo (segunda-feira é dia 1 no Dart)
+  static const _labels = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
+
+  @override
+  Widget build(BuildContext context) {
+    final now = DateTime.now();
+    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+    final days = List.generate(7, (i) => startOfWeek.add(Duration(days: i)));
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+      child: ClayCard(
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.xlAll),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.md,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              for (var i = 0; i < 7; i++)
+                _DayCell(
+                  label: _labels[i],
+                  day: days[i],
+                  isToday: _sameDay(days[i], now),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  static bool _sameDay(DateTime a, DateTime b) =>
+      a.year == b.year && a.month == b.month && a.day == b.day;
+}
+
+class _DayCell extends StatelessWidget {
+  const _DayCell({
+    required this.label,
+    required this.day,
+    required this.isToday,
+  });
+
+  final String label;
+  final DateTime day;
+  final bool isToday;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      width: 36,
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      decoration: BoxDecoration(
+        color: isToday ? AppColors.navy : Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: isToday ? Colors.white60 : AppColors.textMuted,
+              fontWeight: FontWeight.w700,
+              fontSize: 10,
+              letterSpacing: 0.3,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '${day.day}',
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: isToday ? Colors.white : AppColors.navy,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }

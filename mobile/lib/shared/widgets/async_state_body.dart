@@ -6,7 +6,7 @@ import '../../core/errors/error_mapper.dart';
 import '../../core/theme/app_animations.dart';
 import '../../core/theme/app_spacing.dart';
 import 'app_empty_state.dart';
-import 'loading_skeleton.dart';
+import 'brand_loading.dart';
 import 'app_motion.dart';
 
 /// Corpo reutilizável para listas com loading, erro, vazio e conteúdo.
@@ -34,7 +34,7 @@ class AsyncStateBody<T> extends StatelessWidget {
       loading: () => (
         'loading',
         useSkeleton
-            ? const LoadingSkeletonList()
+            ? const BrandLoader()
             : const Center(child: CircularProgressIndicator()),
       ),
       error: (error, _) => (

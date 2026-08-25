@@ -35,8 +35,8 @@ void main() {
       ProviderScope(
         overrides: [
           // Sem `async`: resolve no mesmo frame, sem passar pelo estado de
-          // loading do AsyncStateBody (LoadingSkeletonList, que assume
-          // altura generosa e não é o alvo deste teste).
+          // loading do AsyncStateBody (BrandLoader animado, que não é o alvo
+          // deste teste).
           libraryCatalogProvider.overrideWith((ref, filter) => [work]),
           librarySchemasProvider.overrideWith((ref) => const []),
           indicateWorkProvider.overrideWith(() => notifier),

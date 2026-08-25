@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../coach/domain/coach_step.dart';
+import '../../coach/domain/coach_tour.dart';
+import '../../coach/providers/coach_providers.dart';
 import '../domain/family_person.dart';
 import '../domain/life_story_deepen_enums.dart';
 import '../domain/life_story_enums.dart';
@@ -16,24 +19,77 @@ import 'life_story_routes.dart';
 /// Com [person] preenchida, vira "Momentos com a pessoa" (§39, "Ver
 /// momentos"): mesma trilha, filtrada aos acontecimentos ligados àquela
 /// pessoa pela junção `timeline_event_people`.
-class MyTimelinePage extends ConsumerWidget {
+class MyTimelinePage extends ConsumerStatefulWidget {
   const MyTimelinePage({super.key, this.person});
 
   final FamilyPerson? person;
 
-  bool get _filtered => person != null;
+  @override
+  ConsumerState<MyTimelinePage> createState() => _MyTimelinePageState();
+}
+
+class _MyTimelinePageState extends ConsumerState<MyTimelinePage> {
+  final _fabKey = GlobalKey();
+  final _titleKey = GlobalKey();
+  bool _tourRequested = false;
+
+  FamilyPerson? get person => widget.person;
+  bool get _filtered => widget.person != null;
+
+  CoachTour _tour() => CoachTour(
+        id: 'tour_linha_do_tempo',
+        steps: [
+          CoachStep(
+            id: 'oque',
+            text:
+                'Esta é a sua Linha do Tempo — os momentos que marcaram a sua '
+                'história, dos primeiros anos até hoje.',
+            pose: MascotPose.wave,
+            targetKey: _titleKey,
+          ),
+          CoachStep(
+            id: 'adicionar',
+            text:
+                'Toque em "Adicionar acontecimento" para registrar um momento '
+                'importante. Um de cada vez, no seu ritmo.',
+            pose: MascotPose.point,
+            targetKey: _fabKey,
+          ),
+          const CoachStep(
+            id: 'pessoas',
+            text:
+                'Cada momento pode se ligar às pessoas da sua família. Assim a '
+                'sua história e o seu genograma conversam. Vamos começar? 🙂',
+            pose: MascotPose.celebrate,
+          ),
+        ],
+      );
+
+  Future<void> _startTour({bool force = false}) async {
+    if (!mounted) return;
+    await ref
+        .read(coachControllerProvider.notifier)
+        .startTour(context, _tour(), force: force);
+  }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final timelineAsync = ref.watch(myTimelineProvider);
     final theme = Theme.of(context);
     final topInset = MediaQuery.paddingOf(context).top;
+
+    // Auto-start só na trilha principal (não na visão filtrada por pessoa).
+    if (!_filtered && !_tourRequested) {
+      _tourRequested = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _startTour());
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
       floatingActionButton: _filtered
           ? null
           : FloatingActionButton.extended(
+              key: _fabKey,
               backgroundColor: AppColors.turquoise,
               onPressed: () => context.push(LifeStoryRoutes.newEvent),
               icon: const Icon(Icons.add),
@@ -68,9 +124,23 @@ class MyTimelinePage extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 10),
-                Text(_filtered ? 'Momentos com ${person!.fullName}' : 'Minha História',
+                Expanded(
+                  child: Text(
+                    _filtered
+                        ? 'Momentos com ${person!.fullName}'
+                        : 'Minha História',
+                    key: _titleKey,
                     style: theme.textTheme.titleMedium?.copyWith(
-                        color: Colors.white, fontWeight: FontWeight.w700)),
+                        color: Colors.white, fontWeight: FontWeight.w700),
+                  ),
+                ),
+                if (!_filtered)
+                  IconButton(
+                    tooltip: 'Rever tutorial',
+                    onPressed: () => _startTour(force: true),
+                    icon: const Icon(Icons.help_outline_rounded,
+                        color: Colors.white),
+                  ),
               ],
             ),
           ),

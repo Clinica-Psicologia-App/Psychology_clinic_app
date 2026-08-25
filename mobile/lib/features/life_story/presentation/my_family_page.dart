@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/error_banner.dart';
+import '../../coach/domain/coach_step.dart';
+import '../../coach/domain/coach_tour.dart';
+import '../../coach/providers/coach_providers.dart';
 import '../domain/family_person.dart';
 import '../domain/life_story_enums.dart';
 import '../providers/life_story_providers.dart';
@@ -14,14 +17,64 @@ import 'widgets/flow_ui.dart';
 /// Tela 3 "Minha Família" — lista das pessoas da história do paciente, com a
 /// integração à Linha do Tempo ("aparece em N momentos"). Textos literais da
 /// spec (§18–20). A camada emocional e o genograma gráfico vêm depois.
-class MyFamilyPage extends ConsumerWidget {
+class MyFamilyPage extends ConsumerStatefulWidget {
   const MyFamilyPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MyFamilyPage> createState() => _MyFamilyPageState();
+}
+
+class _MyFamilyPageState extends ConsumerState<MyFamilyPage> {
+  final _fabKey = GlobalKey();
+  final _titleKey = GlobalKey();
+  bool _tourRequested = false;
+
+  CoachTour _tour() => CoachTour(
+        id: 'tour_minha_familia',
+        steps: [
+          CoachStep(
+            id: 'oque',
+            text:
+                'Aqui você reúne as pessoas importantes da sua história — a sua '
+                'família e quem marcou a sua vida.',
+            pose: MascotPose.wave,
+            targetKey: _titleKey,
+          ),
+          CoachStep(
+            id: 'adicionar',
+            text:
+                'Use "Adicionar pessoa" para incluir cada uma, com o parentesco '
+                'e um pouco sobre a relação de vocês.',
+            pose: MascotPose.point,
+            targetKey: _fabKey,
+          ),
+          const CoachStep(
+            id: 'ligacao',
+            text:
+                'Quem já apareceu na sua Linha do Tempo também aparece aqui. '
+                'Toque numa pessoa para conhecer e completar a história dela. 🙂',
+            pose: MascotPose.celebrate,
+          ),
+        ],
+      );
+
+  Future<void> _startTour({bool force = false}) async {
+    if (!mounted) return;
+    await ref
+        .read(coachControllerProvider.notifier)
+        .startTour(context, _tour(), force: force);
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final familyAsync = ref.watch(myFamilyProvider);
     final theme = Theme.of(context);
     final topInset = MediaQuery.paddingOf(context).top;
+
+    if (!_tourRequested) {
+      _tourRequested = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _startTour());
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -29,6 +82,7 @@ class MyFamilyPage extends ConsumerWidget {
         data: (people) => people.isEmpty
             ? null
             : FloatingActionButton.extended(
+                key: _fabKey,
                 backgroundColor: AppColors.turquoise,
                 onPressed: () => _openAddPerson(context, ref),
                 icon: const Icon(Icons.person_add_alt),
@@ -65,9 +119,18 @@ class MyFamilyPage extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(width: 10),
-                Text('Minha Família',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                        color: Colors.white, fontWeight: FontWeight.w700)),
+                Expanded(
+                  child: Text('Minha Família',
+                      key: _titleKey,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                          color: Colors.white, fontWeight: FontWeight.w700)),
+                ),
+                IconButton(
+                  tooltip: 'Rever tutorial',
+                  onPressed: () => _startTour(force: true),
+                  icon: const Icon(Icons.help_outline_rounded,
+                      color: Colors.white),
+                ),
               ],
             ),
           ),

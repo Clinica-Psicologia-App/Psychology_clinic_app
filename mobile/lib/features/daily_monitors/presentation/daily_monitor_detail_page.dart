@@ -10,6 +10,7 @@ import '../../profile/domain/profile_role.dart';
 import '../providers/daily_monitors_providers.dart';
 import 'daily_monitor_routes.dart';
 import 'widgets/daily_monitor_widgets.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class DailyMonitorDetailPage extends ConsumerWidget {
   const DailyMonitorDetailPage({
@@ -43,7 +44,7 @@ class DailyMonitorDetailPage extends ConsumerWidget {
         ),
       ],
       body: monitorAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const BrandLoader(),
         error: (_, __) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,

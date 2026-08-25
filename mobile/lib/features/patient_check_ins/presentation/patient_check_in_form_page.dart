@@ -14,6 +14,7 @@ import '../domain/patient_check_in.dart';
 import '../domain/patient_check_in_input.dart';
 import '../providers/patient_check_ins_providers.dart';
 import 'widgets/patient_check_in_widgets.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class PatientCheckInFormPage extends ConsumerStatefulWidget {
   const PatientCheckInFormPage({super.key, this.checkInId});
@@ -139,7 +140,7 @@ class _PatientCheckInFormPageState
         loading: () => const AppScaffold(
           title: 'Carregando...',
           accent: AppColors.turquoise,
-          body: Center(child: CircularProgressIndicator()),
+          body: BrandLoader(),
         ),
         error: (_, __) => AppScaffold(
           title: 'Erro',

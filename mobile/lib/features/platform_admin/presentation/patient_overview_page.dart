@@ -12,6 +12,7 @@ import '../../profile/domain/profile_role.dart';
 import '../../profile/presentation/widgets/user_avatar.dart';
 import '../../user_management/domain/clinic_user.dart';
 import '../../user_management/providers/user_management_providers.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class PatientOverviewPage extends ConsumerWidget {
   const PatientOverviewPage({super.key});
@@ -24,7 +25,7 @@ class PatientOverviewPage extends ConsumerWidget {
       title: 'Distribuição de Pacientes',
       accent: AppColors.blue,
       body: usersAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const BrandLoader(),
         error: (e, _) => Center(
           child: Text(
             'Erro ao carregar dados.',

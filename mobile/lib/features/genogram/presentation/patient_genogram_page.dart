@@ -16,6 +16,7 @@ import '../domain/genogram_data.dart';
 import '../providers/genogram_providers.dart';
 import 'genogram_routes.dart';
 import 'widgets/genogram_widgets.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class PatientGenogramPage extends ConsumerWidget {
   const PatientGenogramPage({super.key});
@@ -320,7 +321,7 @@ class _FamilyPatternsCardState extends ConsumerState<FamilyPatternsCard> {
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: patternsAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const BrandLoader(),
           error: (error, _) => Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

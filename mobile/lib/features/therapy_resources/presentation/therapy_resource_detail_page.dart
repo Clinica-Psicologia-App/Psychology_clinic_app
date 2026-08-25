@@ -15,6 +15,7 @@ import '../providers/therapy_resources_providers.dart';
 import 'therapy_resource_routes.dart';
 import 'utils/open_resource_url.dart';
 import 'widgets/therapy_resource_widgets.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class TherapyResourceDetailPage extends ConsumerStatefulWidget {
   const TherapyResourceDetailPage({
@@ -96,7 +97,7 @@ class _TherapyResourceDetailPageState
       title: 'Meu recurso',
       accent: AppColors.purple,
       body: accessAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const BrandLoader(),
         error: (_, __) => _errorBody(() => ref.invalidate(
               resourceAccessDetailProvider(accessId),
             )),
@@ -142,7 +143,7 @@ class _TherapyResourceDetailPageState
         ),
       ],
       body: resourceAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const BrandLoader(),
         error: (_, __) => const Center(child: Text('Erro ao carregar.')),
         data: (resource) {
           if (resource == null) {

@@ -12,6 +12,7 @@ import '../domain/life_story_enums.dart';
 import '../domain/life_timeline_event.dart';
 import '../providers/life_story_providers.dart';
 import 'life_story_routes.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 /// Resultado visual da Linha do Tempo — trilha vertical (spec §15).
 /// Quando vazia, mostra o convite de abertura (spec §3).
@@ -147,7 +148,7 @@ class _MyTimelinePageState extends ConsumerState<MyTimelinePage> {
           Expanded(
             child: timelineAsync.when(
               loading: () =>
-                  const Center(child: CircularProgressIndicator()),
+                  const BrandLoader(),
               error: (e, _) => Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24),

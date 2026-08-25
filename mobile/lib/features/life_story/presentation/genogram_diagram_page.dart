@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../providers/life_story_providers.dart';
 import 'widgets/genogram_diagram.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 /// Resultado visual — Genograma gráfico (spec §36–38). Mostra a estrutura
 /// familiar em gerações, com camadas ligáveis: relações emocionais (camada 2)
@@ -35,7 +36,7 @@ class _GenogramDiagramPageState extends ConsumerState<GenogramDiagramPage> {
             style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
       ),
       body: familyAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const BrandLoader(),
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),

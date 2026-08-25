@@ -9,6 +9,7 @@ import '../domain/life_story_enums.dart';
 import '../domain/life_timeline_event.dart';
 import '../domain/timeline_person.dart';
 import '../providers/life_story_providers.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 /// Fluxo em etapas para registrar um acontecimento — núcleo do Conhecer.
 /// Textos e opções literais do documento da cliente (spec §3–9, §13).
@@ -272,7 +273,7 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
         peopleAsync.when(
           loading: () => const Padding(
             padding: EdgeInsets.all(20),
-            child: Center(child: CircularProgressIndicator()),
+            child: BrandLoader(),
           ),
           error: (e, _) => _hint('Não foi possível carregar as pessoas.'),
           data: (people) => Column(

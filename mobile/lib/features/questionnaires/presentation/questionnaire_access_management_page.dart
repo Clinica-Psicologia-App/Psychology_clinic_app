@@ -18,6 +18,7 @@ import '../domain/questionnaire_access_item.dart';
 import '../domain/questionnaire_professional_option.dart';
 import '../domain/questionnaire_question.dart';
 import '../providers/questionnaires_providers.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class QuestionnaireAccessManagementPage extends ConsumerStatefulWidget {
   const QuestionnaireAccessManagementPage({super.key});
@@ -368,7 +369,7 @@ class _QuestionnaireAccessTab extends ConsumerWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         staffAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const BrandLoader(),
           error: (_, __) => const Text(
             'Não foi possível carregar os psicólogos.',
           ),

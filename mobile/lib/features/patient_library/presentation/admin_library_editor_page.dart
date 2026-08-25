@@ -13,6 +13,7 @@ import '../../../shared/widgets/responsive_content.dart';
 import '../domain/library_work_full.dart';
 import '../providers/admin_library_providers.dart';
 import 'widgets/library_cover.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 /// Editor de obra do catálogo (criar ou editar). Cobre metadados, a camada
 /// clínica (só do staff) e a camada do paciente.
@@ -304,7 +305,7 @@ class _AdminLibraryEditorPageState
           ),
       ],
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const BrandLoader()
           : _loadError != null
               ? Center(child: Text(_loadError!))
               : ResponsiveContent(

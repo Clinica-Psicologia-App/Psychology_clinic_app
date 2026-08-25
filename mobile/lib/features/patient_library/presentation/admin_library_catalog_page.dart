@@ -11,6 +11,7 @@ import '../data/admin_library_repository.dart';
 import '../providers/admin_library_providers.dart';
 import 'admin_library_routes.dart';
 import 'widgets/library_cover.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 /// Curadoria do catálogo da Biblioteca (admin): lista todas as obras, controla
 /// a publicação (liberação para os psicólogos) e leva ao editor.
@@ -72,7 +73,7 @@ class _AdminLibraryCatalogPageState
             ),
             Expanded(
               child: listAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
+                loading: () => const BrandLoader(),
                 error: (error, _) => _Error(
                   message: _message(error),
                   onRetry: () => ref.invalidate(adminLibraryListProvider),

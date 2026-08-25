@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../domain/psychoeducation_module.dart';
 import '../providers/psychoeducation_providers.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 /// Leitor de um módulo de psicoeducação: apresentação → cards → fechamento,
 /// numa jornada paginada.
@@ -39,7 +40,7 @@ class _PsychoeducationModulePageState
 
     if (async.isLoading) {
       return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+        body: BrandLoader(),
       );
     }
     if (module == null) {

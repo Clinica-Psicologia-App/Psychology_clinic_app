@@ -14,6 +14,7 @@ import '../../auth/providers/auth_providers.dart';
 import '../domain/daily_monitor.dart';
 import '../domain/daily_monitor_input.dart';
 import '../providers/daily_monitors_providers.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class CreateDailyMonitorPage extends ConsumerStatefulWidget {
   const CreateDailyMonitorPage({super.key, this.monitorId});
@@ -142,7 +143,7 @@ class _CreateDailyMonitorPageState
         loading: () => const AppScaffold(
           title: 'Editar registro',
           accent: AppColors.cyan,
-          body: Center(child: CircularProgressIndicator()),
+          body: BrandLoader(),
         ),
         error: (_, __) => AppScaffold(
           title: 'Editar registro',

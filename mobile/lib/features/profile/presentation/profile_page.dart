@@ -16,6 +16,7 @@ import '../providers/profile_providers.dart';
 import 'profile_routes.dart';
 import 'widgets/user_avatar.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 /// Tela "Meu perfil" — dados do usuário autenticado, foto e acessos.
 /// Compartilhada pelos três papéis (admin, psicólogo e paciente).
@@ -28,7 +29,7 @@ class ProfilePage extends ConsumerWidget {
 
     return AppCanopyScaffold(
       body: async.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const BrandLoader(),
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),

@@ -16,6 +16,7 @@ import '../domain/genogram_gender.dart';
 import '../domain/genogram_person.dart';
 import '../domain/genogram_person_input.dart';
 import '../providers/genogram_providers.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class GenogramPersonFormPage extends ConsumerStatefulWidget {
   const GenogramPersonFormPage({
@@ -154,7 +155,7 @@ class _GenogramPersonFormPageState
         loading: () => const AppScaffold(
           title: 'Carregando...',
           accent: AppColors.blue,
-          body: Center(child: CircularProgressIndicator()),
+          body: BrandLoader(),
         ),
         error: (_, __) => AppScaffold(
           title: 'Erro',

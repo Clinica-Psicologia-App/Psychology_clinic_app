@@ -15,6 +15,7 @@ import '../domain/therapy_resource.dart';
 import '../domain/therapy_resource_input.dart';
 import '../domain/therapy_resource_type.dart';
 import '../providers/therapy_resources_providers.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class TherapyResourceFormPage extends ConsumerStatefulWidget {
   const TherapyResourceFormPage({
@@ -127,7 +128,7 @@ class _TherapyResourceFormPageState
         loading: () => const AppScaffold(
           title: 'Carregando',
           accent: AppColors.purple,
-          body: Center(child: CircularProgressIndicator()),
+          body: BrandLoader(),
         ),
         error: (_, __) => AppScaffold(
           title: 'Material',

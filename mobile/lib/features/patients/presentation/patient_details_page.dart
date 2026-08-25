@@ -29,6 +29,7 @@ import '../providers/patients_providers.dart';
 import 'patient_routes.dart';
 import 'widgets/future_modules_section.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class PatientDetailsPage extends ConsumerStatefulWidget {
   const PatientDetailsPage({
@@ -119,7 +120,7 @@ class _PatientDetailsPageState extends ConsumerState<PatientDetailsPage> {
             ]
           : null,
       body: asyncPatient.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const BrandLoader(),
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),

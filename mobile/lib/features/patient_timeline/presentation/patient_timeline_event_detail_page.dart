@@ -9,6 +9,7 @@ import '../../profile/domain/profile_role.dart';
 import '../providers/patient_timeline_providers.dart';
 import 'patient_timeline_routes.dart';
 import 'widgets/patient_timeline_widgets.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class PatientTimelineEventDetailPage extends ConsumerWidget {
   const PatientTimelineEventDetailPage({
@@ -38,7 +39,7 @@ class PatientTimelineEventDetailPage extends ConsumerWidget {
         ),
       ],
       body: eventAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const BrandLoader(),
         error: (_, __) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,

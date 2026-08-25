@@ -14,6 +14,7 @@ import '../domain/patient_problem_status.dart';
 import '../providers/patient_problems_providers.dart';
 import 'patient_problem_routes.dart';
 import 'widgets/patient_problem_widgets.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class PatientProblemDetailPage extends ConsumerWidget {
   const PatientProblemDetailPage({
@@ -43,7 +44,7 @@ class PatientProblemDetailPage extends ConsumerWidget {
         ),
       ],
       body: problemAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const BrandLoader(),
         error: (_, __) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,

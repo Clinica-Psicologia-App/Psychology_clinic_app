@@ -14,6 +14,7 @@ import 'initial_assessment_history_page.dart';
 import 'initial_assessment_history_therapist_page.dart';
 import 'initial_assessment_patient_page.dart';
 import 'initial_assessment_therapist_page.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 List<RouteBase> patientInitialAssessmentRoutes() {
   return [
@@ -79,7 +80,7 @@ class _MyInitialAssessmentEntry extends ConsumerWidget {
       loading: () => const AppScaffold(
         title: 'Como você está hoje?',
         accent: AppColors.turquoise,
-        body: Center(child: CircularProgressIndicator()),
+        body: BrandLoader(),
       ),
       error: (_, __) => const AppScaffold(
         title: 'Como você está hoje?',
@@ -113,7 +114,7 @@ class _MyHistoryEntry extends ConsumerWidget {
       loading: () => const AppScaffold(
         title: 'Minha História',
         accent: AppColors.turquoise,
-        body: Center(child: CircularProgressIndicator()),
+        body: BrandLoader(),
       ),
       error: (_, __) => const AppScaffold(
         title: 'Minha História',
@@ -147,7 +148,7 @@ class _MyFamilyEntry extends ConsumerWidget {
       loading: () => const AppScaffold(
         title: 'Minha Família',
         accent: AppColors.turquoise,
-        body: Center(child: CircularProgressIndicator()),
+        body: BrandLoader(),
       ),
       error: (_, __) => const AppScaffold(
         title: 'Minha Família',

@@ -15,6 +15,7 @@ import '../../profile/domain/profile_role.dart';
 import '../domain/patient_timeline_event.dart';
 import '../domain/patient_timeline_event_input.dart';
 import '../providers/patient_timeline_providers.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class PatientTimelineEventFormPage extends ConsumerStatefulWidget {
   const PatientTimelineEventFormPage({
@@ -195,7 +196,7 @@ class _PatientTimelineEventFormPageState
         loading: () => const AppScaffold(
           title: 'Carregando...',
           accent: AppColors.cyan,
-          body: Center(child: CircularProgressIndicator()),
+          body: BrandLoader(),
         ),
         error: (_, __) => AppScaffold(
           title: 'Erro',

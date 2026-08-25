@@ -12,6 +12,7 @@ import '../../patients/providers/patients_providers.dart';
 import '../../profile/domain/profile_role.dart';
 import '../providers/therapy_resources_providers.dart';
 import 'widgets/therapy_resource_widgets.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class AssignResourceToPatientPage extends ConsumerStatefulWidget {
   const AssignResourceToPatientPage({
@@ -49,7 +50,7 @@ class _AssignResourceToPatientPageState
       title: 'Liberar recurso',
       accent: AppColors.purple,
       body: resourceAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const BrandLoader(),
         error: (_, __) => const Center(child: Text('Recurso não encontrado.')),
         data: (resource) {
           if (resource == null) {

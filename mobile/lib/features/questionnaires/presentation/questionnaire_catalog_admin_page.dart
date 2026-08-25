@@ -10,6 +10,7 @@ import '../domain/questionnaire_catalog_admin.dart';
 import '../providers/questionnaire_catalog_admin_providers.dart';
 import 'questionnaire_routes.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class QuestionnaireCatalogAdminPage extends ConsumerWidget {
   const QuestionnaireCatalogAdminPage({super.key});
@@ -36,7 +37,7 @@ class QuestionnaireCatalogAdminPage extends ConsumerWidget {
       ),
       body: ResponsiveContent(
         child: catalog.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const BrandLoader(),
           error: (error, _) => _CatalogError(
             message: _message(error),
             onRetry: () =>

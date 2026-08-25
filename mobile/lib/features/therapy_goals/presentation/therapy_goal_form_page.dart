@@ -15,6 +15,7 @@ import '../domain/therapy_goal.dart';
 import '../domain/therapy_goal_input.dart';
 import '../domain/therapy_goal_status.dart';
 import '../providers/therapy_goals_providers.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class TherapyGoalFormPage extends ConsumerStatefulWidget {
   const TherapyGoalFormPage({
@@ -147,7 +148,7 @@ class _TherapyGoalFormPageState extends ConsumerState<TherapyGoalFormPage> {
         loading: () => const AppScaffold(
           title: 'Carregando...',
           accent: AppColors.turquoise,
-          body: Center(child: CircularProgressIndicator()),
+          body: BrandLoader(),
         ),
         error: (_, __) => AppScaffold(
           title: 'Erro',

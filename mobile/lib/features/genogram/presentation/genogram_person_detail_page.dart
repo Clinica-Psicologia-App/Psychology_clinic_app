@@ -14,6 +14,7 @@ import '../domain/genogram_person.dart';
 import '../providers/genogram_providers.dart';
 import 'genogram_routes.dart';
 import 'widgets/genogram_widgets.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class GenogramPersonDetailPage extends ConsumerWidget {
   const GenogramPersonDetailPage({
@@ -35,7 +36,7 @@ class GenogramPersonDetailPage extends ConsumerWidget {
       title: 'Pessoa',
       accent: AppColors.blue,
       body: personAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const BrandLoader(),
         error: (_, __) => Center(
           child: FilledButton(
             onPressed: () =>
@@ -102,7 +103,7 @@ class _PersonDetailBody extends ConsumerWidget {
           );
 
     return genogramAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const BrandLoader(),
       error: (_, __) => const Center(child: Text('Erro ao carregar relações.')),
       data: (data) => _buildContent(context, data),
     );

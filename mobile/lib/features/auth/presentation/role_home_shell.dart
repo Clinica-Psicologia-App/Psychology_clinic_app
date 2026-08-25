@@ -43,6 +43,7 @@ import '../../therapy_goals/presentation/therapy_goal_routes.dart';
 import '../../therapy_goals/providers/therapy_goals_providers.dart';
 import '../../therapy_resources/presentation/therapy_resource_routes.dart';
 import '../providers/auth_providers.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 /// Acentos por finalidade no workspace (máximo três famílias de cor).
 abstract final class _WorkspaceAccents {
@@ -75,7 +76,7 @@ class RoleHomeShell extends ConsumerWidget {
 
     return AppCanopyScaffold(
       body: authState.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const BrandLoader(),
         error: (e, _) => Center(
           child: Text(
             e is AppException ? userMessageFor(e) : 'Erro ao carregar perfil.',

@@ -23,6 +23,7 @@ import '../../results/presentation/result_routes.dart';
 import '../domain/questionnaire.dart';
 import 'questionnaire_route_helpers.dart';
 import 'questionnaire_routes.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 /// Dashboard clínico individual de um instrumento, no contexto de um paciente
 /// (visão do psicólogo). Mostra a leitura por esquema daquele instrumento e o
@@ -101,7 +102,7 @@ class PatientInstrumentDashboardPage extends ConsumerWidget {
             dashAsync.when(
               loading: () => const Padding(
                 padding: EdgeInsets.only(top: 48),
-                child: Center(child: CircularProgressIndicator()),
+                child: BrandLoader(),
               ),
               error: (e, _) => _ErrorRetry(
                 onRetry: () => ref.invalidate(

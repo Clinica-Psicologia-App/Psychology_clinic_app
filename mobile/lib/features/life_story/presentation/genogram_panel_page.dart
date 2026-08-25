@@ -9,6 +9,7 @@ import '../domain/genogram_relationship_enums.dart';
 import '../domain/life_story_enums.dart';
 import '../providers/life_story_providers.dart';
 import 'life_story_routes.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 /// Painel do terapeuta — Genograma (spec §41). Reúne, para uma pessoa/paciente,
 /// os blocos de síntese do que o paciente registrou na Tela 3, e é o ponto de
@@ -52,7 +53,7 @@ class GenogramPanelPage extends ConsumerWidget {
             style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
       ),
       body: familyAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const BrandLoader(),
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),

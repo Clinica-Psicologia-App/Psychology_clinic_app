@@ -6,6 +6,7 @@ import '../../profile/domain/profile_role.dart';
 import '../../questionnaires/providers/questionnaires_providers.dart';
 import 'patient_result_details_page.dart';
 import 'patient_results_page.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 List<RouteBase> resultsRoutesFor({required ProfileRole role}) {
   return [
@@ -59,7 +60,7 @@ class _PatientOwnResultsPage extends ConsumerWidget {
         ref.watch(questionnairePatientIdProvider(_patientCtx));
     return patientIdAsync.when(
       loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
+          const Scaffold(body: BrandLoader()),
       error: (e, _) => const Scaffold(
         body: Center(child: Text('Não foi possível identificar o paciente.')),
       ),
@@ -82,7 +83,7 @@ class _PatientOwnResultDetailsPage extends ConsumerWidget {
         ref.watch(questionnairePatientIdProvider(_patientCtx));
     return patientIdAsync.when(
       loading: () =>
-          const Scaffold(body: Center(child: CircularProgressIndicator())),
+          const Scaffold(body: BrandLoader()),
       error: (e, _) => const Scaffold(
         body: Center(child: Text('Não foi possível identificar o paciente.')),
       ),

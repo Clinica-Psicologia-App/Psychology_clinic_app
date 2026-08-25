@@ -8,6 +8,7 @@ import '../../profile/domain/profile_role.dart';
 import '../../results/presentation/result_routes.dart';
 import '../providers/clinical_dashboard_providers.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class ClinicalDashboardComparePage extends ConsumerWidget {
   const ClinicalDashboardComparePage({
@@ -30,7 +31,7 @@ class ClinicalDashboardComparePage extends ConsumerWidget {
       title: 'Histórico comparativo',
       accent: AppColors.navy,
       body: dataAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const BrandLoader(),
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),

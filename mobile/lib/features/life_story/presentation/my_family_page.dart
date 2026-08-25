@@ -13,6 +13,7 @@ import '../domain/life_story_enums.dart';
 import '../providers/life_story_providers.dart';
 import 'life_story_routes.dart';
 import 'widgets/flow_ui.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 /// Tela 3 "Minha Família" — lista das pessoas da história do paciente, com a
 /// integração à Linha do Tempo ("aparece em N momentos"). Textos literais da
@@ -136,7 +137,7 @@ class _MyFamilyPageState extends ConsumerState<MyFamilyPage> {
           ),
           Expanded(
             child: familyAsync.when(
-              loading: () => const Center(child: CircularProgressIndicator()),
+              loading: () => const BrandLoader(),
               error: (e, _) => Center(
                 child: Padding(
                   padding: const EdgeInsets.all(24),

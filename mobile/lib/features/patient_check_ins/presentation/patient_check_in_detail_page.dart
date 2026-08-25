@@ -11,6 +11,7 @@ import '../../profile/domain/profile_role.dart';
 import '../providers/patient_check_ins_providers.dart';
 import 'patient_check_in_routes.dart';
 import 'widgets/patient_check_in_widgets.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class PatientCheckInDetailPage extends ConsumerWidget {
   const PatientCheckInDetailPage({
@@ -43,7 +44,7 @@ class PatientCheckInDetailPage extends ConsumerWidget {
         ),
       ],
       body: checkInAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const BrandLoader(),
         error: (_, __) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,

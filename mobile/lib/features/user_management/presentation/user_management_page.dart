@@ -23,6 +23,7 @@ import '../domain/clinic_user.dart';
 import '../domain/create_clinic_user_request.dart';
 import '../providers/user_management_providers.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class UserManagementPage extends ConsumerWidget {
   const UserManagementPage({super.key});
@@ -47,7 +48,7 @@ class UserManagementPage extends ConsumerWidget {
         ),
       ],
       body: usersState.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const BrandLoader(),
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),

@@ -13,6 +13,7 @@ import '../domain/life_story_enums.dart';
 import '../domain/life_timeline_event.dart';
 import '../providers/life_story_providers.dart';
 import 'life_story_routes.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 /// Síntese Desenvolvimental — integração das Telas 2 e 3 (spec §42). Organiza
 /// os dados coletados em SETE blocos. Não produz conceitualização automática:
@@ -62,7 +63,7 @@ class DevelopmentalSynthesisPage extends ConsumerWidget {
             style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
       ),
       body: timelineAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const BrandLoader(),
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),

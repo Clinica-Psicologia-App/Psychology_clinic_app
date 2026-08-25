@@ -13,6 +13,7 @@ import '../domain/questionnaire_session.dart';
 import '../providers/questionnaire_catalog_admin_providers.dart';
 import 'questionnaire_routes.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class QuestionnaireCatalogEditorPage extends ConsumerStatefulWidget {
   const QuestionnaireCatalogEditorPage({super.key, this.questionnaireId});
@@ -70,7 +71,7 @@ class _QuestionnaireCatalogEditorPageState
       accent: AppColors.blue,
       subtitle: 'Rascunho, perguntas e publicação',
       body: detailAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const BrandLoader(),
         error: (error, _) => Center(child: Text(_message(error))),
         data: (detail) {
           if (detail != null && _loadedId != id) _load(detail);

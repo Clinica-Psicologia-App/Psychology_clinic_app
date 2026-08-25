@@ -10,6 +10,7 @@ import '../../../shared/widgets/responsive_content.dart';
 import '../data/admin_psychoeducation_repository.dart';
 import '../providers/psychoeducation_providers.dart';
 import 'psychoeducation_routes.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 /// Curadoria dos módulos de psicoeducação (admin): lista, publica e edita.
 class AdminPsychoeducationCatalogPage extends ConsumerWidget {
@@ -37,7 +38,7 @@ class AdminPsychoeducationCatalogPage extends ConsumerWidget {
       ),
       body: ResponsiveContent(
         child: async.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const BrandLoader(),
           error: (e, _) => _Error(
             message: _message(e),
             onRetry: () => ref.invalidate(adminPsychoListProvider),

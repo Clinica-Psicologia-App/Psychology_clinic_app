@@ -11,6 +11,7 @@ import '../../profile/domain/profile_role.dart';
 import '../domain/genogram_relationship_type.dart';
 import '../providers/genogram_providers.dart';
 import 'genogram_routes.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class GenogramRelationshipDetailPage extends ConsumerWidget {
   const GenogramRelationshipDetailPage({
@@ -44,7 +45,7 @@ class GenogramRelationshipDetailPage extends ConsumerWidget {
       title: 'Relação',
       accent: AppColors.blue,
       body: relAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const BrandLoader(),
         error: (_, __) => Center(
           child: FilledButton(
             onPressed: () => ref.invalidate(
@@ -59,7 +60,7 @@ class GenogramRelationshipDetailPage extends ConsumerWidget {
           }
 
           return genogramAsync.when(
-            loading: () => const Center(child: CircularProgressIndicator()),
+            loading: () => const BrandLoader(),
             error: (_, __) =>
                 const Center(child: Text('Erro ao carregar nomes.')),
             data: (data) {

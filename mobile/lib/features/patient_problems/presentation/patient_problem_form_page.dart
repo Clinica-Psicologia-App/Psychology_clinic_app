@@ -16,6 +16,7 @@ import '../domain/patient_problem.dart';
 import '../domain/patient_problem_input.dart';
 import '../domain/patient_problem_status.dart';
 import '../providers/patient_problems_providers.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class PatientProblemFormPage extends ConsumerStatefulWidget {
   const PatientProblemFormPage({
@@ -164,7 +165,7 @@ class _PatientProblemFormPageState
         loading: () => const AppScaffold(
           title: 'Carregando...',
           accent: AppColors.warning,
-          body: Center(child: CircularProgressIndicator()),
+          body: BrandLoader(),
         ),
         error: (_, __) => AppScaffold(
           title: 'Erro',

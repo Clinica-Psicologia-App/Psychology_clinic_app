@@ -12,6 +12,7 @@ import '../../profile/domain/profile_role.dart';
 import '../providers/therapy_resources_providers.dart';
 import 'therapy_resource_routes.dart';
 import 'widgets/therapy_resource_widgets.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class TherapyResourcesPage extends ConsumerWidget {
   const TherapyResourcesPage({
@@ -53,7 +54,7 @@ class TherapyResourcesPage extends ConsumerWidget {
         ),
       ],
       body: bundleAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const BrandLoader(),
         error: (e, _) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,

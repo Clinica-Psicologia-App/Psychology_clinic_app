@@ -10,6 +10,7 @@ import '../../../shared/widgets/clay_card.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../domain/psychoeducation_module.dart';
 import '../providers/psychoeducation_providers.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 /// Editor de módulo de psicoeducação (criar ou editar): metadados + cards.
 class AdminPsychoeducationEditorPage extends ConsumerStatefulWidget {
@@ -205,7 +206,7 @@ class _AdminPsychoeducationEditorPageState
           ),
       ],
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const BrandLoader()
           : _loadError != null
               ? Center(child: Text(_loadError!))
               : ResponsiveContent(

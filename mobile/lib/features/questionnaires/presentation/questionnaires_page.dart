@@ -24,6 +24,7 @@ import '../providers/questionnaires_providers.dart';
 import 'questionnaire_route_helpers.dart';
 import 'questionnaire_routes.dart';
 import 'widgets/questionnaire_list_tile.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class QuestionnairesPage extends ConsumerStatefulWidget {
   const QuestionnairesPage({
@@ -104,7 +105,7 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
             ]
           : null,
       body: patientIdAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const BrandLoader(),
         error: (e, _) => const Center(
           child: Padding(
             padding: EdgeInsets.all(24),
@@ -163,7 +164,7 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
         StaffClinicalDashboardContext(role: widget.role, patientId: patientId);
     final async = ref.watch(staffClinicalDashboardProvider(ctx));
     return async.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const BrandLoader(),
       error: (e, _) =>
           _dashError(() => ref.invalidate(staffClinicalDashboardProvider(ctx))),
       data: (data) {
@@ -209,7 +210,7 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
     final async = ref.watch(staffClinicalDashboardProvider(ctx));
     final loc = MaterialLocalizations.of(context);
     return async.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const BrandLoader(),
       error: (e, _) =>
           _dashError(() => ref.invalidate(staffClinicalDashboardProvider(ctx))),
       data: (data) => ListView(

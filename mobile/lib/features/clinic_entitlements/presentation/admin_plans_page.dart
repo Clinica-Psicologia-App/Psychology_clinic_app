@@ -11,6 +11,7 @@ import '../../clinics/domain/clinic_summary.dart';
 import '../../clinics/providers/clinics_providers.dart';
 import '../data/admin_entitlements_repository.dart';
 import '../providers/admin_entitlements_providers.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 /// Permissões de módulo por clínica (platform_admin): libera módulos aos
 /// psicólogos independentemente do plano comercial.
@@ -36,7 +37,7 @@ class AdminPlansPage extends ConsumerWidget {
       ],
       body: ResponsiveContent(
         child: clinicsAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
+          loading: () => const BrandLoader(),
           error: (e, _) => Center(
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.xl),
@@ -105,7 +106,7 @@ class _ClinicTile extends ConsumerWidget {
             entAsync.when(
               loading: () => const Padding(
                 padding: EdgeInsets.all(AppSpacing.md),
-                child: Center(child: CircularProgressIndicator()),
+                child: BrandLoader(),
               ),
               error: (e, _) => Padding(
                 padding: const EdgeInsets.all(AppSpacing.md),

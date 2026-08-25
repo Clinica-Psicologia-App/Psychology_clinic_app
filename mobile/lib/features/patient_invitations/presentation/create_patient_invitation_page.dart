@@ -19,6 +19,7 @@ import '../../profile/domain/profile_role.dart';
 import '../domain/create_patient_invitation_request.dart';
 import '../domain/patient_invitation_draft.dart';
 import '../providers/patient_invitations_providers.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class CreatePatientInvitationPage extends ConsumerStatefulWidget {
   const CreatePatientInvitationPage({
@@ -155,7 +156,7 @@ class _CreatePatientInvitationPageState
               if (_isAdmin)
                 psychologistsAsync.when(
                   loading: () =>
-                      const Center(child: CircularProgressIndicator()),
+                      const BrandLoader(),
                   error: (_, __) => const Text(
                     'Não foi possível carregar os psicólogos.',
                   ),

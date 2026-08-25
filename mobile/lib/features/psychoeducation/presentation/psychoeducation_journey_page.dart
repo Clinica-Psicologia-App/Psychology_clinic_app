@@ -10,6 +10,7 @@ import '../../../shared/widgets/clay_card.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../domain/psychoeducation_module.dart';
 import '../providers/psychoeducation_providers.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 /// Jornada de psicoeducação: módulos organizados por etapa
 /// (Conhecer · Compreender · Transformar).
@@ -40,7 +41,7 @@ class PsychoeducationJourneyPage extends ConsumerWidget {
           ? 'Os módulos que os pacientes veem'
           : 'Uma jornada para entender e transformar seus padrões',
       body: async.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const BrandLoader(),
         error: (e, _) => _Error(
           message: _message(e),
           onRetry: () => ref.invalidate(psychoeducationJourneyProvider),

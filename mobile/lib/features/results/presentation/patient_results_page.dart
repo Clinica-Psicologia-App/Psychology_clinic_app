@@ -18,6 +18,7 @@ import '../providers/results_providers.dart';
 import 'result_routes.dart';
 import 'widgets/response_summary_tile.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class PatientResultsPage extends ConsumerWidget {
   const PatientResultsPage({
@@ -219,7 +220,7 @@ class _ResponsesByQuestionnaireSection extends ConsumerWidget {
             listAsync.when(
               loading: () => const Padding(
                 padding: EdgeInsets.all(16),
-                child: Center(child: CircularProgressIndicator()),
+                child: BrandLoader(),
               ),
               error: (e, _) => Padding(
                 padding: const EdgeInsets.all(16),

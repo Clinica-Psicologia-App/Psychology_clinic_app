@@ -21,6 +21,7 @@ import 'widgets/schema_ativados_card.dart';
 import 'widgets/schema_bar_chart_section.dart';
 import 'widgets/scoring_demo_section.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class PatientResultDetailsPage extends ConsumerWidget {
   const PatientResultDetailsPage({
@@ -54,7 +55,7 @@ class PatientResultDetailsPage extends ConsumerWidget {
         ),
       ],
       body: detailAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const BrandLoader(),
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),

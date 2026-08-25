@@ -14,6 +14,7 @@ import '../domain/therapy_goal_status.dart';
 import '../providers/therapy_goals_providers.dart';
 import 'therapy_goal_routes.dart';
 import 'widgets/therapy_goal_widgets.dart';
+import '../../../shared/widgets/brand_loading.dart';
 
 class TherapyGoalDetailPage extends ConsumerWidget {
   const TherapyGoalDetailPage({
@@ -44,7 +45,7 @@ class TherapyGoalDetailPage extends ConsumerWidget {
         ),
       ],
       body: goalAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
+        loading: () => const BrandLoader(),
         error: (e, _) => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,

@@ -12,6 +12,9 @@ import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/status_chip.dart';
+import '../../coach/domain/coach_step.dart';
+import '../../coach/domain/coach_tour.dart';
+import '../../coach/providers/coach_providers.dart';
 import '../../clinical_reports/presentation/clinical_report_routes.dart';
 import '../../life_story/presentation/life_story_routes.dart';
 import '../../patient_check_ins/presentation/patient_check_in_routes.dart';
@@ -27,7 +30,7 @@ import 'patient_routes.dart';
 import 'widgets/future_modules_section.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
-class PatientDetailsPage extends ConsumerWidget {
+class PatientDetailsPage extends ConsumerStatefulWidget {
   const PatientDetailsPage({
     super.key,
     required this.patientId,
@@ -38,12 +41,83 @@ class PatientDetailsPage extends ConsumerWidget {
   final ProfileRole role;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final asyncPatient = ref.watch(patientDetailProvider(patientId));
+  ConsumerState<PatientDetailsPage> createState() => _PatientDetailsPageState();
+}
+
+class _PatientDetailsPageState extends ConsumerState<PatientDetailsPage> {
+  final _reportKey = GlobalKey();
+  final _genogramKey = GlobalKey();
+  final _vitalsKey = GlobalKey();
+  bool _tourRequested = false;
+
+  bool get _tourEnabled => widget.role == ProfileRole.psychologist;
+
+  CoachTour _tour() => CoachTour(
+        id: 'tour_ficha_paciente',
+        steps: [
+          const CoachStep(
+            id: 'intro',
+            text:
+                'Esta é a ficha completa do paciente. Deixa eu te mostrar os '
+                'atalhos clínicos principais.',
+            pose: MascotPose.wave,
+          ),
+          CoachStep(
+            id: 'relatorio',
+            text:
+                'Gere aqui um relatório clínico em PDF, com as seções revisadas '
+                'por você antes de compartilhar.',
+            pose: MascotPose.point,
+            targetKey: _reportKey,
+          ),
+          CoachStep(
+            id: 'genograma',
+            text:
+                'Abra o Genograma para ver a família, os vínculos e os padrões '
+                'que o paciente registrou.',
+            pose: MascotPose.point,
+            targetKey: _genogramKey,
+          ),
+          CoachStep(
+            id: 'resumo',
+            text:
+                'O Resumo rápido mostra último check-in, metas ativas e '
+                'questionários. Toque em cada número para ir direto ao módulo. 🙂',
+            pose: MascotPose.celebrate,
+            targetKey: _vitalsKey,
+          ),
+        ],
+      );
+
+  Future<void> _startTour({bool force = false}) async {
+    if (!mounted) return;
+    await ref
+        .read(coachControllerProvider.notifier)
+        .startTour(context, _tour(), force: force);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final asyncPatient = ref.watch(patientDetailProvider(widget.patientId));
+
+    if (_tourEnabled && !_tourRequested && asyncPatient.hasValue &&
+        asyncPatient.value != null) {
+      _tourRequested = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _startTour());
+    }
 
     return AppScaffold(
       title: 'Paciente',
       accent: AppColors.blue,
+      actions: _tourEnabled
+          ? [
+              IconButton(
+                tooltip: 'Rever tutorial',
+                onPressed: () => _startTour(force: true),
+                icon: const Icon(Icons.help_outline_rounded),
+              ),
+            ]
+          : null,
       body: asyncPatient.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => Center(
@@ -56,7 +130,7 @@ class PatientDetailsPage extends ConsumerWidget {
                 const SizedBox(height: 16),
                 FilledButton(
                   onPressed: () =>
-                      ref.invalidate(patientDetailProvider(patientId)),
+                      ref.invalidate(patientDetailProvider(widget.patientId)),
                   child: const Text('Tentar novamente'),
                 ),
               ],
@@ -67,7 +141,13 @@ class PatientDetailsPage extends ConsumerWidget {
           if (patient == null) {
             return const Center(child: Text('Paciente não encontrado.'));
           }
-          return _PatientDetailsBody(patient: patient, role: role);
+          return _PatientDetailsBody(
+            patient: patient,
+            role: widget.role,
+            reportKey: _reportKey,
+            genogramKey: _genogramKey,
+            vitalsKey: _vitalsKey,
+          );
         },
       ),
     );
@@ -78,10 +158,16 @@ class _PatientDetailsBody extends StatelessWidget {
   const _PatientDetailsBody({
     required this.patient,
     required this.role,
+    this.reportKey,
+    this.genogramKey,
+    this.vitalsKey,
   });
 
   final Patient patient;
   final ProfileRole role;
+  final Key? reportKey;
+  final Key? genogramKey;
+  final Key? vitalsKey;
 
   @override
   Widget build(BuildContext context) {
@@ -207,6 +293,7 @@ class _PatientDetailsBody extends StatelessWidget {
           ],
           if (role != ProfileRole.platformAdmin) ...[
             AppInfoCard(
+              key: reportKey,
               icon: Icons.picture_as_pdf_outlined,
               title: 'Relatório clínico',
               body: 'Gere um PDF supervisionado com as seções clínicas.',
@@ -224,6 +311,7 @@ class _PatientDetailsBody extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.md),
             AppInfoCard(
+              key: genogramKey,
               icon: Icons.account_tree_outlined,
               title: 'Genograma',
               body:
@@ -238,7 +326,8 @@ class _PatientDetailsBody extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            _PatientVitalsSummary(role: role, patient: patient),
+            _PatientVitalsSummary(
+                key: vitalsKey, role: role, patient: patient),
             const SizedBox(height: AppSpacing.xl),
             FutureModulesSection(
               role: role,
@@ -378,7 +467,8 @@ class _PatientHeader extends StatelessWidget {
 /// antes de entrar nos módulos: último check-in, metas ativas e
 /// questionários em andamento. Cada coluna é tappable.
 class _PatientVitalsSummary extends ConsumerWidget {
-  const _PatientVitalsSummary({required this.role, required this.patient});
+  const _PatientVitalsSummary(
+      {super.key, required this.role, required this.patient});
 
   final ProfileRole role;
   final Patient patient;

@@ -27,6 +27,10 @@ class _SplashPageState extends ConsumerState<SplashPage>
   /// uma volta completa a cada 48s, sem reverter.
   late final AnimationController _drift;
 
+  /// Faixa de luz ("atividade neural") que percorre o cérebro em loop,
+  /// recortada na forma do desenho — dá vida ao ícone durante a espera.
+  late final AnimationController _shimmer;
+
   late final Animation<double> _markScale;
   late final Animation<double> _markFade;
   late final Animation<double> _glow;
@@ -47,6 +51,10 @@ class _SplashPageState extends ConsumerState<SplashPage>
     _drift = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 48000),
+    )..repeat();
+    _shimmer = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2600),
     )..repeat();
 
     _markScale = Tween<double>(begin: 0.82, end: 1).animate(
@@ -90,6 +98,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
     _intro.dispose();
     _breathe.dispose();
     _drift.dispose();
+    _shimmer.dispose();
     super.dispose();
   }
 
@@ -114,6 +123,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
                       intro: _intro,
                       breathe: _breathe,
                       drift: _drift,
+                      shimmer: _shimmer,
                       markScale: _markScale,
                       markFade: _markFade,
                       glow: _glow,
@@ -125,6 +135,7 @@ class _SplashPageState extends ConsumerState<SplashPage>
                       intro: _intro,
                       breathe: _breathe,
                       drift: _drift,
+                      shimmer: _shimmer,
                       markScale: _markScale,
                       markFade: _markFade,
                       glow: _glow,
@@ -187,6 +198,7 @@ class _SplashContent extends StatelessWidget {
     required this.intro,
     required this.breathe,
     required this.drift,
+    required this.shimmer,
     required this.markScale,
     required this.markFade,
     required this.glow,
@@ -198,6 +210,7 @@ class _SplashContent extends StatelessWidget {
   final Animation<double> intro;
   final Animation<double> breathe;
   final Animation<double> drift;
+  final Animation<double> shimmer;
   final Animation<double> markScale;
   final Animation<double> markFade;
   final Animation<double> glow;
@@ -236,7 +249,7 @@ class _SplashContent extends StatelessWidget {
     }
 
     return AnimatedBuilder(
-      animation: Listenable.merge([intro, breathe, drift]),
+      animation: Listenable.merge([intro, breathe, drift, shimmer]),
       builder: (context, _) {
         return Column(
           mainAxisSize: MainAxisSize.min,
@@ -249,6 +262,7 @@ class _SplashContent extends StatelessWidget {
                   glow: glow.value,
                   breathe: breathe.value,
                   drift: drift.value,
+                  shimmer: shimmer.value,
                 ),
               ),
             ),
@@ -295,6 +309,7 @@ class _BrandMark extends StatelessWidget {
     required this.glow,
     required this.breathe,
     this.drift = 0,
+    this.shimmer,
   });
 
   /// 0..1 — intensidade do halo de entrada.
@@ -305,6 +320,10 @@ class _BrandMark extends StatelessWidget {
 
   /// 0..1 — ciclo de deriva rotacional (0 = estático).
   final double drift;
+
+  /// 0..1 — posição da faixa de luz neural. `null` = sem shimmer
+  /// (reduce-motion), o cérebro fica em repouso.
+  final double? shimmer;
 
   @override
   Widget build(BuildContext context) {
@@ -330,10 +349,47 @@ class _BrandMark extends StatelessWidget {
           ),
           Transform.scale(
             scale: pulse,
-            child: const EsquemaCoreLogo(size: 96),
+            child: _NeuralBrain(size: 96, shimmer: shimmer),
           ),
         ],
       ),
+    );
+  }
+}
+
+/// O mark oficial com uma faixa de luz diagonal que o percorre em loop,
+/// recortada na silhueta do cérebro (ShaderMask sobre os pixels opacos).
+class _NeuralBrain extends StatelessWidget {
+  const _NeuralBrain({required this.size, this.shimmer});
+
+  final double size;
+  final double? shimmer;
+
+  @override
+  Widget build(BuildContext context) {
+    const logo = EsquemaCoreLogo(size: 96);
+    final t = shimmer;
+    if (t == null) return logo;
+
+    // A faixa viaja de fora a fora (-0.3 → 1.3) para não "piscar" nas bordas.
+    final pos = -0.3 + t * 1.6;
+    return ShaderMask(
+      blendMode: BlendMode.srcATop,
+      shaderCallback: (rect) => LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: const [
+          Colors.transparent,
+          Color(0x73FFFFFF),
+          Colors.transparent,
+        ],
+        stops: [
+          (pos - 0.16).clamp(0.0, 1.0),
+          pos.clamp(0.0, 1.0),
+          (pos + 0.16).clamp(0.0, 1.0),
+        ],
+      ).createShader(rect),
+      child: logo,
     );
   }
 }

@@ -103,26 +103,46 @@ class _ShimmerBoxState extends State<_ShimmerBox>
       );
     }
 
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Container(
-          height: widget.height,
-          width: widget.width,
-          decoration: BoxDecoration(
-            borderRadius: widget.borderRadius,
-            gradient: LinearGradient(
-              begin: Alignment(-1 + _controller.value * 2, 0),
-              end: Alignment(1 + _controller.value * 2, 0),
-              colors: const [
-                AppColors.surfaceMuted,
-                AppColors.surface,
-                AppColors.surfaceMuted,
-              ],
+    // Faixa de luz diagonal que percorre o bloco em loop — a mesma linguagem
+    // do brilho "neural" da splash, aplicada a qualquer skeleton de loading.
+    return ClipRRect(
+      borderRadius: widget.borderRadius,
+      child: SizedBox(
+        height: widget.height,
+        width: widget.width,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            const ColoredBox(color: AppColors.surfaceMuted),
+            AnimatedBuilder(
+              animation: _controller,
+              builder: (context, _) {
+                // A faixa viaja de fora a fora (-0.25 → 1.25) para não piscar
+                // nas bordas do bloco.
+                final pos = -0.25 + _controller.value * 1.5;
+                return DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: const [
+                        Color(0x00FFFFFF),
+                        Color(0x99FFFFFF),
+                        Color(0x00FFFFFF),
+                      ],
+                      stops: [
+                        (pos - 0.18).clamp(0.0, 1.0),
+                        pos.clamp(0.0, 1.0),
+                        (pos + 0.18).clamp(0.0, 1.0),
+                      ],
+                    ),
+                  ),
+                );
+              },
             ),
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 }

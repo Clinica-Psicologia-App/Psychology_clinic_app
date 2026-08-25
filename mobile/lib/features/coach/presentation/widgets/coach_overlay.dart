@@ -167,12 +167,19 @@ class _CoachPanel extends StatelessWidget {
     final step = tour.steps[index];
     final mascotSize = MediaQuery.sizeOf(context).width < 360 ? 74.0 : 92.0;
     final animate = AppAnimations.shouldAnimate(context);
-    final mascot = GestureDetector(
-      onTap: () => mascotKey.currentState?.animateReact(),
-      child: MascotWidget(
-        key: mascotKey,
-        pose: step.pose,
-        size: mascotSize,
+    // SizedBox garante largura/altura finitas ao mascote mesmo dentro do Row
+    // (filho não-flex recebe constraint de largura infinita) e durante a
+    // transição do AnimatedSwitcher.
+    final mascot = SizedBox(
+      width: mascotSize,
+      height: mascotSize,
+      child: GestureDetector(
+        onTap: () => mascotKey.currentState?.animateReact(),
+        child: MascotWidget(
+          key: mascotKey,
+          pose: step.pose,
+          size: mascotSize,
+        ),
       ),
     );
     final bubble = SpeechBubble(
@@ -184,7 +191,22 @@ class _CoachPanel extends StatelessWidget {
       total: tour.steps.length,
     );
 
-    final content = LayoutBuilder(
+    // O mascote é PERSISTENTE (uma única instância com a GlobalKey; troca de
+    // pose sozinho via didUpdateWidget). Só o balão faz cross-fade entre os
+    // passos — assim não há GlobalKey duplicada durante a transição.
+    final animatedBubble = !animate
+        ? bubble
+        : AnimatedSwitcher(
+            duration: AppAnimations.standard,
+            switchInCurve: AppAnimations.enterCurve,
+            switchOutCurve: AppAnimations.exitCurve,
+            child: KeyedSubtree(
+              key: ValueKey('${tour.id}-$index'),
+              child: bubble,
+            ),
+          );
+
+    return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth < 360) {
           return Column(
@@ -192,7 +214,7 @@ class _CoachPanel extends StatelessWidget {
             children: [
               mascot,
               const SizedBox(height: AppSpacing.sm),
-              bubble,
+              animatedBubble,
             ],
           );
         }
@@ -201,21 +223,10 @@ class _CoachPanel extends StatelessWidget {
           children: [
             mascot,
             const SizedBox(width: AppSpacing.sm),
-            Expanded(child: bubble),
+            Expanded(child: animatedBubble),
           ],
         );
       },
-    );
-
-    if (!animate) return content;
-    return AnimatedSwitcher(
-      duration: AppAnimations.standard,
-      switchInCurve: AppAnimations.enterCurve,
-      switchOutCurve: AppAnimations.exitCurve,
-      child: KeyedSubtree(
-        key: ValueKey('${tour.id}-$index'),
-        child: content,
-      ),
     );
   }
 }

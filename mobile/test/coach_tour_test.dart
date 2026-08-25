@@ -15,16 +15,20 @@ void main() {
     await tester.pumpWidget(_TestApp(store: store, tour: tour));
     await tester.tap(find.text('Iniciar'));
     await tester.pump();
+    // Conclui o cross-fade de entrada do balão antes de interagir.
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('Primeiro passo'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('coach_next_button')));
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('Segundo passo'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('coach_next_button')));
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text('Segundo passo'), findsNothing);
     expect(store.markSeenCount, 1);

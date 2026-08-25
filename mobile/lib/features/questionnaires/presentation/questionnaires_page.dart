@@ -12,6 +12,9 @@ import '../../../shared/widgets/async_state_body.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../clinical_dashboard/presentation/widgets/clinical_dashboard_widgets.dart';
 import '../../clinical_dashboard/providers/clinical_dashboard_providers.dart';
+import '../../coach/domain/coach_step.dart';
+import '../../coach/domain/coach_tour.dart';
+import '../../coach/providers/coach_providers.dart';
 import '../../patients/presentation/widgets/results_release_card.dart';
 import '../../patients/providers/patients_providers.dart';
 import '../../profile/domain/profile_role.dart';
@@ -38,11 +41,46 @@ class QuestionnairesPage extends ConsumerStatefulWidget {
 
 class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
   String? _resolvedPatientId;
+  final _tabBarKey = GlobalKey();
+  bool _tourRequested = false;
 
   QuestionnaireListContext get _listContext => QuestionnaireListContext(
         role: widget.role,
         patientId: widget.patientId,
       );
+
+  CoachTour _esquemasTour() => CoachTour(
+        id: 'tour_esquemas_paciente',
+        steps: [
+          CoachStep(
+            id: 'abas',
+            text:
+                'Esta é a central clínica do paciente, organizada em três abas.',
+            pose: MascotPose.wave,
+            targetKey: _tabBarKey,
+          ),
+          CoachStep(
+            id: 'o-que-tem',
+            text:
+                'Panorama traz a visão geral; Esquemas, os instrumentos; Histórico, as aplicações concluídas.',
+            pose: MascotPose.point,
+            targetKey: _tabBarKey,
+          ),
+          const CoachStep(
+            id: 'liberar-dashboard',
+            text:
+                'Na aba Esquemas você libera um instrumento para o paciente e toca nele para ver o dashboard individual. Bom trabalho!',
+            pose: MascotPose.celebrate,
+          ),
+        ],
+      );
+
+  Future<void> _startTour({bool force = false}) async {
+    if (!mounted) return;
+    await ref
+        .read(coachControllerProvider.notifier)
+        .startTour(context, _esquemasTour(), force: force);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,6 +94,15 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
     return AppScaffold(
       title: title,
       accent: AppColors.blue,
+      actions: widget.role != ProfileRole.patient
+          ? [
+              IconButton(
+                icon: const Icon(Icons.help_outline),
+                tooltip: 'Rever tutorial',
+                onPressed: () => _startTour(force: true),
+              ),
+            ]
+          : null,
       body: patientIdAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => const Center(
@@ -66,6 +113,11 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
         ),
         data: (patientId) {
           _resolvedPatientId = patientId;
+          if (widget.role != ProfileRole.patient && !_tourRequested) {
+            _tourRequested = true;
+            WidgetsBinding.instance
+                .addPostFrameCallback((_) => _startTour());
+          }
           return widget.role == ProfileRole.patient
               ? _buildInstrumentsList(patientId, includeHeader: true)
               : _buildStaffTabs(patientId);
@@ -81,6 +133,7 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
       child: Column(
         children: [
           Material(
+            key: _tabBarKey,
             color: Theme.of(context).colorScheme.surface,
             child: const TabBar(
               tabs: [

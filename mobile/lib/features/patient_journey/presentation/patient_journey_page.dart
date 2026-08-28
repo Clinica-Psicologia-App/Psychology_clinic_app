@@ -399,7 +399,7 @@ void _showLegend(BuildContext context) {
               Text(
                 'Legenda da trilha',
                 style: theme.textTheme.titleMedium?.copyWith(
-                  color: AppColors.navy,
+                  color: theme.colorScheme.onSurface,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -407,7 +407,7 @@ void _showLegend(BuildContext context) {
               Text(
                 'O que cada estado das paradas significa.',
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
@@ -425,7 +425,7 @@ void _showLegend(BuildContext context) {
                       Text(
                         description,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
+                          color: theme.colorScheme.onSurfaceVariant,
                           height: 1.3,
                         ),
                       ),

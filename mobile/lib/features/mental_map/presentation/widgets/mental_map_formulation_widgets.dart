@@ -461,7 +461,7 @@ class _MentalMapProgressScoreRow extends StatelessWidget {
               Text(
                 highlight.displayScore,
                 style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                      color: AppColors.navy,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w700,
                     ),
               ),

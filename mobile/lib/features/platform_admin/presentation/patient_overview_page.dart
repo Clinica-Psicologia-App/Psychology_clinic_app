@@ -116,7 +116,7 @@ class _SummaryHeader extends StatelessWidget {
     final theme = Theme.of(context);
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: AppRadius.xlAll,
         boxShadow: AppShadows.card,
       ),
@@ -160,14 +160,14 @@ class _SummaryHeader extends StatelessWidget {
                       Text(
                         'Visão geral da clínica',
                         style: theme.textTheme.titleSmall?.copyWith(
-                          color: AppColors.navy,
+                          color: theme.colorScheme.onSurface,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       Text(
                         '$psychologistCount psicólogo${psychologistCount != 1 ? 's' : ''} cadastrado${psychologistCount != 1 ? 's' : ''}',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.textMuted,
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -251,7 +251,7 @@ class _StatCell extends StatelessWidget {
                   Text(
                     label,
                     style: theme.textTheme.labelSmall?.copyWith(
-                      color: AppColors.textMuted,
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -298,7 +298,7 @@ class _PsychologistPatientCard extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: AppRadius.lgAll,
         boxShadow: AppShadows.soft,
       ),
@@ -326,7 +326,7 @@ class _PsychologistPatientCard extends StatelessWidget {
                       Text(
                         user.fullName,
                         style: theme.textTheme.titleSmall?.copyWith(
-                          color: AppColors.navy,
+                          color: theme.colorScheme.onSurface,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -334,7 +334,7 @@ class _PsychologistPatientCard extends StatelessWidget {
                         Text(
                           'CRP ${user.crp}',
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: AppColors.textMuted,
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                     ],
@@ -446,7 +446,7 @@ class _CountChip extends StatelessWidget {
                   Text(
                     label,
                     style: theme.textTheme.labelSmall?.copyWith(
-                      color: AppColors.textMuted,
+                      color: theme.colorScheme.onSurfaceVariant,
                       fontSize: 10,
                     ),
                   ),
@@ -483,7 +483,7 @@ class _SlotBar extends StatelessWidget {
             Text(
               'Capacidade',
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppColors.textMuted,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
             ),
             Text(

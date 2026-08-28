@@ -108,7 +108,7 @@ class TherapyGoalListTile extends StatelessWidget {
                     Text(
                       goal.title,
                       style: theme.textTheme.titleSmall?.copyWith(
-                        color: AppColors.navy,
+                        color: theme.colorScheme.onSurface,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -119,7 +119,7 @@ class TherapyGoalListTile extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.textMuted,
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -129,9 +129,9 @@ class TherapyGoalListTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(
+              Icon(
                 Icons.chevron_right,
-                color: AppColors.textMuted,
+                color: theme.colorScheme.onSurfaceVariant,
                 size: 20,
               ),
             ],

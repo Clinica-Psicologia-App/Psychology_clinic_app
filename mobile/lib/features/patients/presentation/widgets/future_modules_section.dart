@@ -475,14 +475,14 @@ class _GroupHeader extends StatelessWidget {
               Text(
                 group.title,
                 style: textTheme.titleMedium?.copyWith(
-                  color: AppColors.navy,
+                  color: Theme.of(context).colorScheme.onSurface,
                   fontWeight: FontWeight.w700,
                 ),
               ),
               Text(
                 group.subtitle,
                 style: textTheme.bodySmall?.copyWith(
-                  color: AppColors.textMuted,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ],

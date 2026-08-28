@@ -32,7 +32,7 @@ class StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = _styleFor(tone);
+    final style = _styleFor(tone, Theme.of(context));
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.sm,
@@ -83,6 +83,7 @@ class StatusChip extends StatelessWidget {
 
 ({Color background, Color foreground, Color border}) _styleFor(
   AppStatusTone tone,
+  ThemeData theme,
 ) {
   return switch (tone) {
     AppStatusTone.available => (
@@ -101,9 +102,9 @@ class StatusChip extends StatelessWidget {
         border: AppColors.success.withValues(alpha: 0.2),
       ),
     AppStatusTone.development => (
-        background: AppColors.disabledSurface,
-        foreground: AppColors.textMuted,
-        border: AppColors.border,
+        background: theme.colorScheme.surface,
+        foreground: theme.colorScheme.onSurfaceVariant,
+        border: theme.colorScheme.outline,
       ),
     AppStatusTone.blocked => (
         background: AppColors.errorContainer,
@@ -131,9 +132,9 @@ class StatusChip extends StatelessWidget {
         border: AppColors.info.withValues(alpha: 0.2),
       ),
     AppStatusTone.neutral => (
-        background: AppColors.surfaceMuted,
-        foreground: AppColors.textSecondary,
-        border: AppColors.border,
+        background: theme.colorScheme.surfaceContainerLow,
+        foreground: theme.colorScheme.onSurfaceVariant,
+        border: theme.colorScheme.outline,
       ),
   };
 }

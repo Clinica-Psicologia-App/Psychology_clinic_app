@@ -63,7 +63,7 @@ class ClinicalModuleCard extends StatelessWidget {
                         title,
                         style: theme.textTheme.titleMedium?.copyWith(
                           color: enabled
-                              ? AppColors.textPrimary
+                              ? theme.colorScheme.onSurface
                               : AppColors.disabled,
                           fontWeight: FontWeight.w700,
                         ),
@@ -73,7 +73,7 @@ class ClinicalModuleCard extends StatelessWidget {
                         subtitle,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: enabled
-                              ? AppColors.textSecondary
+                              ? theme.colorScheme.onSurfaceVariant
                               : AppColors.disabled,
                           height: 1.4,
                         ),

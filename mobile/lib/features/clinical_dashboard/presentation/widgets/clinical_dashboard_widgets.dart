@@ -1466,13 +1466,13 @@ class ConsolidatedSchemaProfileCard extends ConsumerWidget {
                         'Perfil Esquemático Consolidado',
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: AppColors.navy,
+                          color: theme.colorScheme.onSurface,
                         ),
                       ),
                       Text(
                         'Agrupado por domínio · ordem clínica',
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: AppColors.textMuted,
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -1624,7 +1624,7 @@ class _DomainSection extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodySmall?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: AppColors.navy,
+                            color: theme.colorScheme.onSurface,
                             height: 1.25,
                           ),
                         ),
@@ -1635,7 +1635,7 @@ class _DomainSection extends StatelessWidget {
                           domain.coreNeed,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.labelSmall?.copyWith(
-                            color: AppColors.textMuted,
+                            color: theme.colorScheme.onSurfaceVariant,
                             height: 1.25,
                           ),
                         ),
@@ -1648,7 +1648,7 @@ class _DomainSection extends StatelessWidget {
                         domain.activationLabel,
                         style: theme.textTheme.labelSmall?.copyWith(
                           color:
-                              domain.hasActivated ? color : AppColors.textMuted,
+                              domain.hasActivated ? color : theme.colorScheme.onSurfaceVariant,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -1702,10 +1702,10 @@ class _ModeSection extends StatelessWidget {
             padding: const EdgeInsets.only(top: 2, bottom: 9),
             child: Row(
               children: [
-                const Icon(
+                Icon(
                   Icons.theater_comedy_outlined,
                   size: 15,
-                  color: AppColors.textSecondary,
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
                 const SizedBox(width: 7),
                 Expanded(
@@ -1713,14 +1713,14 @@ class _ModeSection extends StatelessWidget {
                     'Modos esquemáticos',
                     style: theme.textTheme.bodySmall?.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: AppColors.navy,
+                      color: theme.colorScheme.onSurface,
                     ),
                   ),
                 ),
                 Text(
                   '${modes.activatedCount} de ${modes.rows.length} ativados',
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: AppColors.textMuted,
+                    color: theme.colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1780,7 +1780,7 @@ class _SchemaBarRow extends ConsumerWidget {
             child: Text(
               schema.name,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: activated ? AppColors.navy : AppColors.textMuted,
+                color: activated ? theme.colorScheme.onSurface : theme.colorScheme.onSurfaceVariant,
                 fontWeight: activated ? FontWeight.w600 : FontWeight.w400,
                 height: 1.25,
               ),
@@ -1804,7 +1804,7 @@ class _SchemaBarRow extends ConsumerWidget {
               schema.score.toStringAsFixed(1),
               textAlign: TextAlign.right,
               style: theme.textTheme.labelSmall?.copyWith(
-                color: activated ? color : AppColors.textMuted,
+                color: activated ? color : theme.colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w700,
                 fontFeatures: const [FontFeature.tabularFigures()],
               ),
@@ -1848,6 +1848,7 @@ class _ThresholdBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return SizedBox(
       height: 9,
       child: LayoutBuilder(
@@ -1859,7 +1860,7 @@ class _ThresholdBar extends StatelessWidget {
               Positioned.fill(
                 child: DecoratedBox(
                   decoration: BoxDecoration(
-                    color: AppColors.surfaceTint,
+                    color: theme.colorScheme.surfaceContainerLow,
                     borderRadius: BorderRadius.circular(999),
                   ),
                 ),
@@ -1882,8 +1883,8 @@ class _ThresholdBar extends StatelessWidget {
                 top: -2,
                 bottom: -2,
                 width: 1.4,
-                child: const DecoratedBox(
-                  decoration: BoxDecoration(color: AppColors.textSecondary),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(color: theme.colorScheme.onSurfaceVariant),
                 ),
               ),
             ],
@@ -2016,7 +2017,7 @@ class _ConsolidatedActivationSheetState
           Text(
             'Score: ${widget.schema.score.toStringAsFixed(2)}',
             style: theme.textTheme.bodySmall?.copyWith(
-              color: AppColors.textMuted,
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
           if (widget.schema.instrumentName != null) ...[
@@ -2024,7 +2025,7 @@ class _ConsolidatedActivationSheetState
             Text(
               widget.schema.instrumentName!,
               style: theme.textTheme.bodySmall?.copyWith(
-                color: AppColors.textMuted,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
           ],
@@ -2169,7 +2170,7 @@ class _LegendItem extends StatelessWidget {
         Text(
           label,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: AppColors.textMuted,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
         ),
       ],

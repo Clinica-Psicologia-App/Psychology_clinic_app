@@ -219,7 +219,7 @@ class _TimelineEventEditorState extends ConsumerState<_TimelineEventEditor> {
                 'Depois de viver essas experiências, o que você passou a pensar '
                 'sobre você mesmo(a)?',
                 style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: AppColors.textSecondary),
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
               const SizedBox(height: 4),
               for (final belief in kTimelineBeliefsInOrder)
@@ -294,7 +294,7 @@ class _TimelineEventEditorState extends ConsumerState<_TimelineEventEditor> {
               child: Text(
                 'Qual foi o impacto emocional?',
                 style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: AppColors.textSecondary),
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
             ),
             Text(

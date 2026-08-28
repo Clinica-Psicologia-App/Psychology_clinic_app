@@ -397,7 +397,7 @@ class _TrailStop extends StatelessWidget {
                       hasOutgoing: hasOutgoing,
                       gaps: gaps,
                       solidColor: AppColors.turquoise,
-                      trackColor: AppColors.borderStrong,
+                      trackColor: Theme.of(context).colorScheme.outline,
                     ),
                   ),
                 ),
@@ -525,7 +525,7 @@ class _TrailStop extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                           color: support.recommendedByTherapistName != null
                               ? const Color(0xFF1D4ED8)
-                              : AppColors.textSecondary,
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                   ),
                 ),
@@ -602,7 +602,7 @@ class _NodeLabel extends StatelessWidget {
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
           style: titleStyle(theme)?.copyWith(
-            color: dimmed ? AppColors.textMuted : AppColors.textPrimary,
+            color: dimmed ? theme.colorScheme.onSurfaceVariant : theme.colorScheme.onSurface,
           ),
         ),
         if (status != null) ...[
@@ -615,7 +615,7 @@ class _NodeLabel extends StatelessWidget {
             style: statusStyle(theme)?.copyWith(
               color: isCurrent
                   ? _accentForStep(step)
-                  : AppColors.textMuted.withValues(alpha: 0.9),
+                  : theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.9),
             ),
           ),
         ],
@@ -643,8 +643,9 @@ class _TrailNode extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final accent = _accentForStep(step);
-    final visual = _nodeVisual(step.availability, accent);
+    final visual = _nodeVisual(step.availability, accent, theme);
 
     Widget circle(double pulse) {
       // Volume vem de luz coerente, não de degrau de cor: a face é uma esfera
@@ -671,14 +672,14 @@ class _TrailNode extends StatelessWidget {
           boxShadow: [
             // Sombra de contato: curta, escura, logo abaixo do nó.
             BoxShadow(
-              color: AppColors.navy.withValues(alpha: 0.13 + 0.05 * lift),
+              color: theme.colorScheme.shadow.withValues(alpha: 0.13 + 0.05 * lift),
               offset: Offset(0, 2 + 1 * lift),
               blurRadius: 3 + 2 * lift,
             ),
             // Sombra de projeção: longa e difusa, deslocada para a direita
             // porque a luz vem do alto-esquerdo.
             BoxShadow(
-              color: AppColors.navy.withValues(alpha: 0.10 + 0.05 * lift),
+              color: theme.colorScheme.shadow.withValues(alpha: 0.10 + 0.05 * lift),
               offset: Offset(1.5, 7 + 3 * lift),
               blurRadius: 14 + 8 * lift,
             ),
@@ -746,7 +747,7 @@ class _TrailNode extends StatelessWidget {
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.navy.withValues(alpha: 0.10),
+                        color: theme.colorScheme.shadow.withValues(alpha: 0.10),
                         blurRadius: 4,
                       ),
                     ],
@@ -804,7 +805,7 @@ class _StepBubble extends StatelessWidget {
           children: [
             Container(
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: theme.colorScheme.surface,
                 borderRadius: AppRadius.xlAll,
                 boxShadow: AppShadows.elevated,
               ),
@@ -816,7 +817,7 @@ class _StepBubble extends StatelessWidget {
                   Text(
                     step.title,
                     style: theme.textTheme.titleSmall?.copyWith(
-                      color: AppColors.navy,
+                      color: theme.colorScheme.onSurface,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -824,7 +825,7 @@ class _StepBubble extends StatelessWidget {
                   Text(
                     step.subtitle,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
+                      color: theme.colorScheme.onSurfaceVariant,
                       height: 1.35,
                     ),
                   ),
@@ -839,7 +840,7 @@ class _StepBubble extends StatelessWidget {
                           child: Text(
                             step.progressHint!,
                             style: theme.textTheme.labelSmall?.copyWith(
-                              color: AppColors.textSecondary,
+                              color: theme.colorScheme.onSurfaceVariant,
                               height: 1.3,
                             ),
                           ),
@@ -881,7 +882,7 @@ class _StepBubble extends StatelessWidget {
                   width: 16,
                   height: 16,
                   decoration: BoxDecoration(
-                    color: AppColors.surface,
+                    color: theme.colorScheme.surface,
                     borderRadius: BorderRadius.circular(3),
                   ),
                 ),
@@ -964,10 +965,11 @@ class _HereTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.navy.withValues(alpha: 0.90),
+        color: theme.colorScheme.shadow.withValues(alpha: 0.90),
         borderRadius: BorderRadius.circular(11),
       ),
       child: Text(
@@ -993,6 +995,7 @@ class _SupportNodeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final isRecommended = step.recommendedByTherapistName != null;
     final base =
         isRecommended ? const Color(0xFF0EA5E9) : const Color(0xFFD97706);
@@ -1015,7 +1018,7 @@ class _SupportNodeButton extends StatelessWidget {
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.navy.withValues(alpha: 0.06),
+                  color: theme.colorScheme.shadow.withValues(alpha: 0.06),
                   offset: const Offset(0, 2),
                   blurRadius: 8,
                 ),
@@ -1037,7 +1040,7 @@ class _SupportNodeButton extends StatelessWidget {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.navy.withValues(alpha: 0.10),
+                      color: theme.colorScheme.shadow.withValues(alpha: 0.10),
                       blurRadius: 4,
                     ),
                   ],
@@ -1443,7 +1446,7 @@ typedef _NodeVisual = ({
 /// Todos os nós são brancos: o que muda entre estados é o anel (fio de 1,4px),
 /// a cor do ícone e a opacidade. Nada de preenchimento saturado, relevo 3D ou
 /// brilho — a hierarquia vem do anel de progresso e do rótulo, não do volume.
-_NodeVisual _nodeVisual(JourneyStepAvailability availability, Color accent) {
+_NodeVisual _nodeVisual(JourneyStepAvailability availability, Color accent, ThemeData theme) {
   switch (availability) {
     case JourneyStepAvailability.completed:
       return (
@@ -1486,24 +1489,24 @@ _NodeVisual _nodeVisual(JourneyStepAvailability availability, Color accent) {
         fill: Colors.white.withValues(alpha: 0.70),
         useGradient: false,
         gloss: false,
-        ring: AppColors.borderStrong.withValues(alpha: 0.55),
+        ring: theme.colorScheme.outline.withValues(alpha: 0.55),
         ringWidth: 1.2,
-        icon: AppColors.textMuted.withValues(alpha: 0.75),
+        icon: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.75),
         base3d: Colors.transparent,
         badge: Icons.lock_outline_rounded,
-        badgeColor: AppColors.textMuted,
+        badgeColor: theme.colorScheme.onSurfaceVariant,
       );
     case JourneyStepAvailability.inDevelopment:
       return (
         fill: Colors.white.withValues(alpha: 0.70),
         useGradient: false,
         gloss: false,
-        ring: AppColors.borderStrong.withValues(alpha: 0.55),
+        ring: theme.colorScheme.outline.withValues(alpha: 0.55),
         ringWidth: 1.2,
-        icon: AppColors.textMuted.withValues(alpha: 0.75),
+        icon: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.75),
         base3d: Colors.transparent,
         badge: Icons.schedule_outlined,
-        badgeColor: AppColors.textMuted,
+        badgeColor: theme.colorScheme.onSurfaceVariant,
       );
   }
 }

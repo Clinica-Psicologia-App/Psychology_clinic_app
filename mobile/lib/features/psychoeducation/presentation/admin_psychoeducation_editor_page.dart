@@ -286,7 +286,9 @@ class _AdminPsychoeducationEditorPageState
             style: Theme.of(context)
                 .textTheme
                 .titleSmall
-                ?.copyWith(fontWeight: FontWeight.w700, color: AppColors.navy)),
+                ?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.onSurface)),
       );
 
   Widget _card(List<Widget> children) => ClayCard(
@@ -379,7 +381,7 @@ class _AdminPsychoeducationEditorPageState
             style: Theme.of(context)
                 .textTheme
                 .labelLarge
-                ?.copyWith(color: AppColors.textSecondary)),
+                ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
         const SizedBox(height: 6),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -522,7 +524,8 @@ class _CardEditor extends StatelessWidget {
               children: [
                 Text('Card ${index + 1}',
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w800, color: AppColors.navy)),
+                        fontWeight: FontWeight.w800,
+                        color: Theme.of(context).colorScheme.onSurface)),
                 const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.remove_circle_outline),

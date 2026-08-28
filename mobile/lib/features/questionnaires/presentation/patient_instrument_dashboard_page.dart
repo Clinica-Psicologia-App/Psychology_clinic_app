@@ -218,22 +218,22 @@ class _WaitingForDataState extends State<_WaitingForData>
             else
               icon,
             const SizedBox(height: AppSpacing.md),
-            const Text(
+            Text(
               'Aguardando dados',
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                color: AppColors.navy,
+                color: Theme.of(context).colorScheme.onSurface,
               ),
             ),
             const SizedBox(height: AppSpacing.xs),
-            const Text(
+            Text(
               'O paciente ainda não respondeu este instrumento. Assim que '
               'houver uma resposta, o dashboard aparece aqui.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13.5,
-                color: AppColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
                 height: 1.5,
               ),
             ),
@@ -256,10 +256,10 @@ class _GenericResultCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
+            Text(
               'Este instrumento não tem um painel de esquemas dedicado, mas já '
               'há uma resposta registrada.',
-              style: TextStyle(fontSize: 13.5, color: AppColors.textSecondary),
+              style: TextStyle(fontSize: 13.5, color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
             const SizedBox(height: AppSpacing.md),
             OutlinedButton.icon(

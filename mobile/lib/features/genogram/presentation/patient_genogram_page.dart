@@ -329,7 +329,7 @@ class _FamilyPatternsCardState extends ConsumerState<FamilyPatternsCard> {
                 'Padrões familiares',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: AppColors.navy,
+                      color: Theme.of(context).colorScheme.onSurface,
                     ),
               ),
               const SizedBox(height: AppSpacing.xs),
@@ -355,7 +355,7 @@ class _FamilyPatternsCardState extends ConsumerState<FamilyPatternsCard> {
                   'Ao olhar para sua família, você percebe que alguns temas se repetem?',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: AppColors.navy,
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                 ),
                 const SizedBox(height: AppSpacing.xs),

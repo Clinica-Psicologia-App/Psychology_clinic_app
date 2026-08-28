@@ -44,7 +44,7 @@ class InitialAssessmentHistoryPage extends ConsumerWidget {
               'percorrer alguns momentos da sua vida para compreender como ela '
               'foi sendo construída.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                     height: 1.4,
                   ),
             ),
@@ -166,10 +166,11 @@ class _EventCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   if (entry.isSensitive)
-                    const Padding(
-                      padding: EdgeInsets.only(right: 6, top: 2),
+                    Padding(
+                      padding: const EdgeInsets.only(right: 6, top: 2),
                       child: Icon(Icons.lock_outline,
-                          size: 15, color: AppColors.textMuted),
+                          size: 15,
+                          color: theme.colorScheme.onSurfaceVariant),
                     ),
                   Expanded(
                     child: Text(
@@ -182,7 +183,7 @@ class _EventCard extends StatelessWidget {
                     Text(
                       '${entry.ageAtEvent} anos',
                       style: theme.textTheme.labelSmall
-                          ?.copyWith(color: AppColors.textSecondary),
+                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                     ),
                 ],
               ),

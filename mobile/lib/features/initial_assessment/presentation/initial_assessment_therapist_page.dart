@@ -212,7 +212,7 @@ class _InitialAssessmentTherapistPageState
                     step: 'Bloco 1',
                     title: 'Dados do Paciente',
                     icon: Icons.person_outline,
-                    accent: AppColors.navy,
+                    accent: Theme.of(context).colorScheme.primary,
                     subtitle:
                         'Informações gerais preenchidas pelo paciente + sua nota clínica.',
                   ),
@@ -223,7 +223,7 @@ class _InitialAssessmentTherapistPageState
                     title: 'Nota clínica inicial',
                     icon: Icons.lock_outline,
                     children: [
-                      _field(_observations, 'Observações iniciais',
+                      _field(context, _observations, 'Observações iniciais',
                           hint: 'Visível apenas para você', privateNote: true),
                     ],
                   ),
@@ -244,12 +244,12 @@ class _InitialAssessmentTherapistPageState
                     title: 'Sua leitura clínica',
                     icon: Icons.edit_note_outlined,
                     children: [
-                      _field(_complaint, 'Queixa principal'),
-                      _field(_problem, 'Problema atual'),
-                      _field(_factors, 'Fatores precipitantes'),
-                      _field(_goals, 'Objetivos do paciente'),
-                      _field(_motivation, 'Motivação'),
-                      _field(_initialHypotheses, 'Hipóteses iniciais'),
+                      _field(context, _complaint, 'Queixa principal'),
+                      _field(context, _problem, 'Problema atual'),
+                      _field(context, _factors, 'Fatores precipitantes'),
+                      _field(context, _goals, 'Objetivos do paciente'),
+                      _field(context, _motivation, 'Motivação'),
+                      _field(context, _initialHypotheses, 'Hipóteses iniciais'),
                     ],
                   ),
 
@@ -304,10 +304,10 @@ class _InitialAssessmentTherapistPageState
                     title: 'Impressão geral',
                     icon: Icons.visibility_outlined,
                     children: [
-                      _field(_temperament, 'Temperamento observado'),
-                      _field(_bond, 'Vínculo terapêutico'),
-                      _field(_resources, 'Recursos'),
-                      _field(_vulnerabilities, 'Vulnerabilidades'),
+                      _field(context, _temperament, 'Temperamento observado'),
+                      _field(context, _bond, 'Vínculo terapêutico'),
+                      _field(context, _resources, 'Recursos'),
+                      _field(context, _vulnerabilities, 'Vulnerabilidades'),
                     ],
                   ),
                   _group(
@@ -315,9 +315,9 @@ class _InitialAssessmentTherapistPageState
                     title: 'Perspectiva diagnóstica',
                     icon: Icons.biotech_outlined,
                     children: [
-                      _field(_dxHypotheses, 'Hipóteses'),
-                      _field(_prevDx, 'Diagnósticos prévios'),
-                      _field(_diffDx, 'Diagnóstico diferencial'),
+                      _field(context, _dxHypotheses, 'Hipóteses'),
+                      _field(context, _prevDx, 'Diagnósticos prévios'),
+                      _field(context, _diffDx, 'Diagnóstico diferencial'),
                     ],
                   ),
                   _group(
@@ -331,9 +331,9 @@ class _InitialAssessmentTherapistPageState
                     title: 'Hipóteses de esquemas',
                     icon: Icons.schema_outlined,
                     children: [
-                      _field(_schemaHypothesesText, 'Hipóteses de esquemas'),
-                      _field(_modeHypothesesText, 'Hipóteses de modos'),
-                      _field(_emotionalNeedsText,
+                      _field(context, _schemaHypothesesText, 'Hipóteses de esquemas'),
+                      _field(context, _modeHypothesesText, 'Hipóteses de modos'),
+                      _field(context, _emotionalNeedsText,
                           'Necessidades emocionais percebidas'),
                     ],
                   ),
@@ -342,7 +342,7 @@ class _InitialAssessmentTherapistPageState
                     title: 'Prioridades terapêuticas',
                     icon: Icons.flag_outlined,
                     children: [
-                      _field(_priorities, 'Prioridades terapêuticas'),
+                      _field(context, _priorities, 'Prioridades terapêuticas'),
                     ],
                   ),
 
@@ -356,6 +356,7 @@ class _InitialAssessmentTherapistPageState
                     subtitle: 'Linha do tempo e genograma emocional.',
                   ),
                   _navCard(
+                    context: context,
                     icon: Icons.timeline_outlined,
                     title: 'Linha do Tempo',
                     subtitle: 'História de vida, eventos e crenças formadas.',
@@ -367,6 +368,7 @@ class _InitialAssessmentTherapistPageState
                     ),
                   ),
                   _navCard(
+                    context: context,
                     icon: Icons.family_restroom_outlined,
                     title: 'Genograma emocional',
                     subtitle:
@@ -447,14 +449,15 @@ class _InitialAssessmentTherapistPageState
                   child: Text(group.label,
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: AppColors.navy,
+                        color: theme.colorScheme.onSurface,
                       )),
                 ),
               ],
             ),
             const SizedBox(height: 10),
             for (var i = 0; i < areas.length; i++) ...[
-              if (i > 0) const Divider(height: 20, color: AppColors.border),
+              if (i > 0)
+                Divider(height: 20, color: theme.colorScheme.outline),
               _areaRow(context, data, areas[i]),
             ],
           ],
@@ -496,7 +499,7 @@ class _InitialAssessmentTherapistPageState
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
               decoration: BoxDecoration(
-                color: AppColors.surfaceTint,
+                color: theme.colorScheme.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(10),
                 border: const Border(
                   left: BorderSide(color: AppColors.cyan, width: 2.5),
@@ -504,7 +507,7 @@ class _InitialAssessmentTherapistPageState
               ),
               child: Text('"${a.guidedAnswer}"',
                   style: theme.textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
+                      color: theme.colorScheme.onSurfaceVariant,
                       fontStyle: FontStyle.italic,
                       height: 1.4)),
             ),
@@ -514,7 +517,7 @@ class _InitialAssessmentTherapistPageState
           controller: _comments[area],
           minLines: 1,
           maxLines: 3,
-          decoration: _fieldDecoration('Comentário clínico'),
+          decoration: _fieldDecoration(context, 'Comentário clínico'),
         ),
       ],
     );
@@ -608,14 +611,14 @@ class _InitialAssessmentTherapistPageState
                 Text(title,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w800,
-                      color: AppColors.navy,
+                      color: theme.colorScheme.onSurface,
                       height: 1.15,
                     )),
                 if (subtitle != null) ...[
                   const SizedBox(height: 2),
                   Text(subtitle,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.textMuted,
+                        color: theme.colorScheme.onSurfaceVariant,
                         height: 1.3,
                       )),
                 ],
@@ -650,7 +653,7 @@ class _InitialAssessmentTherapistPageState
                   child: Text(title,
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: AppColors.navy,
+                        color: theme.colorScheme.onSurface,
                       )),
                 ),
               ],
@@ -664,12 +667,14 @@ class _InitialAssessmentTherapistPageState
   }
 
   Widget _navCard({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
     required VoidCallback onTap,
     Color accent = AppColors.cyan,
   }) {
+    final theme = Theme.of(context);
     return ClayCard(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
@@ -684,21 +689,25 @@ class _InitialAssessmentTherapistPageState
           child: Icon(icon, color: accent, size: 20),
         ),
         title: Text(title,
-            style: const TextStyle(
-                fontWeight: FontWeight.w700, color: AppColors.navy)),
+            style: TextStyle(
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.onSurface)),
         subtitle: Text(subtitle),
-        trailing: const Icon(Icons.chevron_right, color: AppColors.textMuted),
+        trailing: Icon(Icons.chevron_right,
+            color: theme.colorScheme.onSurfaceVariant),
         onTap: onTap,
       ),
     );
   }
 
-  InputDecoration _fieldDecoration(String label, {String? hint}) {
+  InputDecoration _fieldDecoration(BuildContext context, String label,
+      {String? hint}) {
+    final theme = Theme.of(context);
     return InputDecoration(
       labelText: label,
       hintText: hint,
       filled: true,
-      fillColor: AppColors.surfaceTint,
+      fillColor: theme.colorScheme.surfaceContainerLow,
       isDense: true,
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
       border: OutlineInputBorder(
@@ -707,7 +716,7 @@ class _InitialAssessmentTherapistPageState
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
-        borderSide: const BorderSide(color: AppColors.border),
+        borderSide: BorderSide(color: theme.colorScheme.outline),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(12),
@@ -717,11 +726,13 @@ class _InitialAssessmentTherapistPageState
   }
 
   Widget _field(
+    BuildContext context,
     TextEditingController controller,
     String label, {
     String? hint,
     bool privateNote = false,
   }) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(
@@ -732,20 +743,20 @@ class _InitialAssessmentTherapistPageState
             minLines: 1,
             maxLines: 4,
             textInputAction: TextInputAction.newline,
-            decoration: _fieldDecoration(label, hint: hint),
+            decoration: _fieldDecoration(context, label, hint: hint),
           ),
           if (privateNote)
-            const Padding(
-              padding: EdgeInsets.only(top: 4, left: 4),
+            Padding(
+              padding: const EdgeInsets.only(top: 4, left: 4),
               child: Row(
                 children: [
                   Icon(Icons.lock_outline,
-                      size: 12, color: AppColors.textMuted),
-                  SizedBox(width: 4),
+                      size: 12, color: theme.colorScheme.onSurfaceVariant),
+                  const SizedBox(width: 4),
                   Text('Só você vê este campo',
                       style: TextStyle(
                         fontSize: 11,
-                        color: AppColors.textMuted,
+                        color: theme.colorScheme.onSurfaceVariant,
                       )),
                 ],
               ),
@@ -860,10 +871,10 @@ class _PatientBasicsCard extends StatelessWidget {
                       Text('Dados do paciente',
                           style: theme.textTheme.labelMedium?.copyWith(
                               fontWeight: FontWeight.w800,
-                              color: AppColors.navy)),
+                              color: theme.colorScheme.onSurface)),
                       Text('Preenchidos na ficha',
                           style: theme.textTheme.labelSmall
-                              ?.copyWith(color: AppColors.textMuted)),
+                              ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                     ],
                   ),
                 ),
@@ -873,7 +884,8 @@ class _PatientBasicsCard extends StatelessWidget {
             for (var i = 0; i < rows.length; i++) ...[
               if (i > 0)
                 Divider(
-                    height: 14, color: AppColors.navy.withValues(alpha: 0.08)),
+                    height: 14,
+                    color: theme.colorScheme.primary.withValues(alpha: 0.08)),
               _InfoRow(label: rows[i].$1, value: rows[i].$2!),
             ],
             if (extraRows.isNotEmpty) ...[
@@ -881,10 +893,11 @@ class _PatientBasicsCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
                 decoration: BoxDecoration(
-                  color: AppColors.surfaceTint,
+                  color: theme.colorScheme.surfaceContainerLow,
                   borderRadius: BorderRadius.circular(10),
-                  border: const Border(
-                    left: BorderSide(color: AppColors.navy, width: 2.5),
+                  border: Border(
+                    left: BorderSide(
+                        color: theme.colorScheme.primary, width: 2.5),
                   ),
                 ),
                 child: Column(
@@ -892,7 +905,7 @@ class _PatientBasicsCard extends StatelessWidget {
                   children: [
                     Text('Dados complementares',
                         style: theme.textTheme.labelSmall?.copyWith(
-                          color: AppColors.navy,
+                          color: theme.colorScheme.onSurface,
                           fontWeight: FontWeight.w700,
                           letterSpacing: 0.3,
                         )),
@@ -901,7 +914,8 @@ class _PatientBasicsCard extends StatelessWidget {
                       if (i > 0)
                         Divider(
                             height: 12,
-                            color: AppColors.navy.withValues(alpha: 0.08)),
+                            color: theme.colorScheme.primary
+                                .withValues(alpha: 0.08)),
                       _InfoRow(label: extraRows[i].$1, value: extraRows[i].$2!),
                     ],
                   ],
@@ -932,7 +946,7 @@ class _InfoRow extends StatelessWidget {
           child: Text(
             label.toUpperCase(),
             style: theme.textTheme.labelSmall?.copyWith(
-              color: AppColors.textMuted,
+              color: theme.colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w700,
               letterSpacing: 0.4,
               fontSize: 10,
@@ -944,7 +958,7 @@ class _InfoRow extends StatelessWidget {
           child: Text(
             value,
             style: theme.textTheme.bodySmall?.copyWith(
-              color: AppColors.navy,
+              color: theme.colorScheme.onSurface,
               height: 1.35,
             ),
           ),
@@ -976,7 +990,7 @@ class _PatientIntakeCard extends StatelessWidget {
 
     return ClayCard(
       margin: const EdgeInsets.only(bottom: 16),
-      color: AppColors.surfaceTintBlue,
+      color: theme.colorScheme.surfaceContainerLow,
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -1005,7 +1019,7 @@ class _PatientIntakeCard extends StatelessWidget {
                               color: AppColors.cyan)),
                       Text('Na avaliação inicial',
                           style: theme.textTheme.labelSmall
-                              ?.copyWith(color: AppColors.textMuted)),
+                              ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                     ],
                   ),
                 ),
@@ -1021,7 +1035,7 @@ class _PatientIntakeCard extends StatelessWidget {
                 children: [
                   Text(rows[i].$1.toUpperCase(),
                       style: theme.textTheme.labelSmall?.copyWith(
-                        color: AppColors.textMuted,
+                        color: theme.colorScheme.onSurfaceVariant,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.4,
                         fontSize: 10,
@@ -1029,7 +1043,7 @@ class _PatientIntakeCard extends StatelessWidget {
                   const SizedBox(height: 3),
                   Text(rows[i].$2!,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: AppColors.navy,
+                        color: theme.colorScheme.onSurface,
                         height: 1.35,
                       )),
                 ],

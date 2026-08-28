@@ -66,7 +66,7 @@ class _StaffLibraryCatalogPageState
                 hintText: 'Buscar por título…',
                 prefixIcon: const Icon(Icons.search),
                 filled: true,
-                fillColor: AppColors.surfaceTint,
+                fillColor: Theme.of(context).colorScheme.surfaceContainerLow,
                 isDense: true,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -223,7 +223,7 @@ class _WorkTile extends StatelessWidget {
                                 ?.copyWith(fontWeight: FontWeight.w700)),
                         Text(meta,
                             style: theme.textTheme.bodySmall
-                                ?.copyWith(color: AppColors.textMuted)),
+                                ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                         if (work.primarySchema != null) ...[
                           const SizedBox(height: 6),
                           Wrap(
@@ -242,7 +242,8 @@ class _WorkTile extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 4),
-                  const Icon(Icons.chevron_right, color: AppColors.textMuted),
+                  Icon(Icons.chevron_right,
+                      color: theme.colorScheme.onSurfaceVariant),
                 ],
               ),
             ),

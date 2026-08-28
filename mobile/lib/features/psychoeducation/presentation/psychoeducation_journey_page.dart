@@ -119,11 +119,11 @@ class _StageSection extends StatelessWidget {
           padding: const EdgeInsets.only(top: AppSpacing.md, bottom: 2),
           child: Text(stage.label,
               style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w800, color: AppColors.navy)),
+                  fontWeight: FontWeight.w800, color: theme.colorScheme.onSurface)),
         ),
         Text(stage.subtitle,
             style: theme.textTheme.bodySmall
-                ?.copyWith(color: AppColors.textMuted)),
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
         const SizedBox(height: AppSpacing.sm),
         for (final m in modules) ...[
           _ModuleCard(module: m, moduleRouteBuilder: moduleRouteBuilder),
@@ -183,7 +183,7 @@ class _ModuleCard extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodySmall
-                            ?.copyWith(color: AppColors.textMuted),
+                            ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                       ),
                     ],
                     if (module.cards.isNotEmpty) ...[
@@ -197,7 +197,7 @@ class _ModuleCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.textMuted),
+              Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
             ],
           ),
         ),
@@ -210,18 +210,20 @@ class _Empty extends StatelessWidget {
   const _Empty({required this.staffView});
   final bool staffView;
   @override
-  Widget build(BuildContext context) => Center(
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.xxl),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Icon(Icons.auto_stories_outlined,
-                size: 56, color: AppColors.textMuted),
+            Icon(Icons.auto_stories_outlined,
+                size: 56, color: theme.colorScheme.onSurfaceVariant),
             const SizedBox(height: AppSpacing.md),
             Text(
                 staffView
                     ? 'Nenhum módulo publicado ainda'
                     : 'Sua Biblioteca está a caminho',
-                style: Theme.of(context)
+                style: theme
                     .textTheme
                     .titleMedium
                     ?.copyWith(fontWeight: FontWeight.w700)),
@@ -236,6 +238,7 @@ class _Empty extends StatelessWidget {
           ]),
         ),
       );
+  }
 }
 
 class _Error extends StatelessWidget {

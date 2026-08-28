@@ -45,7 +45,7 @@ class ActionSurface extends StatelessWidget {
         opacity: enabled ? 1 : 0.62,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: Theme.of(context).colorScheme.surface,
             borderRadius: radius,
             boxShadow: AppShadows.card,
           ),
@@ -111,7 +111,7 @@ class ActionSurface extends StatelessWidget {
                                       child: Text(
                                         title,
                                         style: textTheme.titleMedium?.copyWith(
-                                          color: AppColors.navy,
+                                          color: Theme.of(context).colorScheme.onSurface,
                                           fontWeight: FontWeight.w700,
                                           height: 1.15,
                                         ),
@@ -134,7 +134,7 @@ class ActionSurface extends StatelessWidget {
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                   style: textTheme.bodySmall?.copyWith(
-                                    color: AppColors.textSecondary,
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                                     height: 1.35,
                                   ),
                                 ),

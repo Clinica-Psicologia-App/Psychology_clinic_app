@@ -441,7 +441,7 @@ class _DeleteClinicDialogState extends State<_DeleteClinicDialog> {
           Text(
             'Digite exatamente o nome da clínica para confirmar:',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
           ),
           const SizedBox(height: AppSpacing.xs),
@@ -528,7 +528,7 @@ class _CreateClinicSheetState extends State<_CreateClinicSheet> {
         child: ConstrainedBox(
           constraints: BoxConstraints(maxHeight: availableHeight * 0.92),
           child: Material(
-            color: AppColors.surface,
+            color: Theme.of(context).colorScheme.surface,
             elevation: 18,
             shadowColor: AppColors.navy.withValues(alpha: 0.18),
             borderRadius: const BorderRadius.vertical(
@@ -555,7 +555,7 @@ class _CreateClinicSheetState extends State<_CreateClinicSheet> {
                           width: 32,
                           height: 4,
                           decoration: BoxDecoration(
-                            color: AppColors.textMuted.withValues(alpha: 0.55),
+                            color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.55),
                             borderRadius: BorderRadius.circular(999),
                           ),
                         ),
@@ -573,7 +573,7 @@ class _CreateClinicSheetState extends State<_CreateClinicSheet> {
                         'Cadastre uma clínica ou consultório com equipe. '
                         'Para psicólogos autônomos, use "Novo usuário" e selecione "Profissional individual".',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppColors.textSecondary,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                       ),
                       const SizedBox(height: AppSpacing.lg),

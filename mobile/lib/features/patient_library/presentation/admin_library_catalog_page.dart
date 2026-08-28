@@ -61,7 +61,7 @@ class _AdminLibraryCatalogPageState
                   hintText: 'Buscar por título…',
                   prefixIcon: const Icon(Icons.search),
                   filled: true,
-                  fillColor: AppColors.surfaceTint,
+                  fillColor: Theme.of(context).colorScheme.surfaceContainerLow,
                   isDense: true,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -159,7 +159,7 @@ class _WorkCard extends ConsumerWidget {
                     const SizedBox(height: 2),
                     Text(meta,
                         style: theme.textTheme.bodySmall
-                            ?.copyWith(color: AppColors.textMuted)),
+                            ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                     const SizedBox(height: AppSpacing.sm),
                     Row(
                       children: [
@@ -172,7 +172,7 @@ class _WorkCard extends ConsumerWidget {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.labelSmall
-                                  ?.copyWith(color: AppColors.textSecondary),
+                                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                             ),
                           ),
                         ],
@@ -221,8 +221,9 @@ class _PublishSwitch extends ConsumerWidget {
         Text(
           work.isPublished ? 'Publicada' : 'Oculta',
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color:
-                    work.isPublished ? AppColors.success : AppColors.textMuted,
+                color: work.isPublished
+                    ? AppColors.success
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w700,
               ),
         ),
@@ -237,7 +238,9 @@ class _StatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = published ? AppColors.success : AppColors.textMuted;
+    final color = published
+        ? AppColors.success
+        : Theme.of(context).colorScheme.onSurfaceVariant;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(

@@ -102,6 +102,7 @@ class _ConsolidatedResultsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final isStaff = role != ProfileRole.patient;
     final activated = data.activatedSchemas.length;
     final total = data.consolidatedSchemas.length;
@@ -143,24 +144,24 @@ class _ConsolidatedResultsView extends StatelessWidget {
             onActivationChanged: onActivationChanged,
           )
         else
-          const ClayCard(
+          ClayCard(
             child: Padding(
-              padding: EdgeInsets.all(24),
+              padding: const EdgeInsets.all(24),
               child: Column(
                 children: [
                   Icon(Icons.analytics_outlined,
-                      size: 40, color: AppColors.textMuted),
-                  SizedBox(height: 12),
-                  Text(
+                      size: 40, color: theme.colorScheme.onSurfaceVariant),
+                  const SizedBox(height: 12),
+                  const Text(
                     'Ainda não há resultados consolidados.',
                     textAlign: TextAlign.center,
                   ),
-                  SizedBox(height: 4),
+                  const SizedBox(height: 4),
                   Text(
                     'Assim que um questionário for concluído com resultados, '
                     'o perfil aparecerá aqui.',
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12),
                   ),
                 ],
               ),
@@ -213,7 +214,7 @@ class _ResponsesByQuestionnaireSection extends ConsumerWidget {
           subtitle: Text(
             'Abrir cada resposta e ver o detalhe',
             style: theme.textTheme.bodySmall?.copyWith(
-              color: AppColors.textMuted,
+              color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
           children: [
@@ -238,7 +239,7 @@ class _ResponsesByQuestionnaireSection extends ConsumerWidget {
                     child: Text(
                       'Nenhuma resposta registrada.',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.textMuted,
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                   );

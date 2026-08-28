@@ -106,7 +106,7 @@ class _InitialAssessmentFamilyTherapistPageState
                         'Nenhuma pessoa registrada ainda. Você pode adicioná-las '
                         'pelo paciente.',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppColors.textSecondary,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                       ),
                     ),
@@ -250,7 +250,7 @@ class _InitialAssessmentFamilyTherapistPageState
       padding: const EdgeInsets.only(top: 2),
       child: Text(parts.join(' · '),
           style: theme.textTheme.labelSmall
-              ?.copyWith(color: AppColors.textSecondary)),
+              ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
     );
   }
 
@@ -267,7 +267,7 @@ class _InitialAssessmentFamilyTherapistPageState
             ),
             TextSpan(
               text: values.join(', '),
-              style: const TextStyle(color: AppColors.textSecondary),
+              style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
             ),
           ],
         ),

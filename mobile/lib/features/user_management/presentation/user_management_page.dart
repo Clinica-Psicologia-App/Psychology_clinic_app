@@ -472,6 +472,7 @@ class _ClinicGroupCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final active = group.users.where((user) => user.isActive).length;
     final accent = group.isPersonal ? AppColors.purple : AppColors.blue;
 
@@ -479,9 +480,9 @@ class _ClinicGroupCard extends StatelessWidget {
       borderRadius: AppRadius.xlAll,
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: theme.colorScheme.surface,
           borderRadius: AppRadius.xlAll,
-          border: Border.all(color: AppColors.border),
+          border: Border.all(color: theme.colorScheme.outline),
           boxShadow: AppShadows.soft,
         ),
         child: Column(
@@ -587,9 +588,10 @@ class _UserRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final isCompact = AppBreakpoints.isCompact(context);
     final accent = switch (user.role) {
-      ProfileRole.platformAdmin => AppColors.navy,
+      ProfileRole.platformAdmin => theme.colorScheme.primary,
       ProfileRole.psychologist => AppColors.blue,
       ProfileRole.patient => AppColors.disabled,
     };
@@ -643,7 +645,7 @@ class _UserRow extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                 ),
                 const SizedBox(height: AppSpacing.xxs),
@@ -761,7 +763,9 @@ class _TinyStatusChip extends StatelessWidget {
       child: Text(
         label,
         style: Theme.of(context).textTheme.labelSmall?.copyWith(
-              color: color == AppColors.disabled ? AppColors.textMuted : color,
+              color: color == AppColors.disabled
+                  ? Theme.of(context).colorScheme.onSurfaceVariant
+                  : color,
               fontWeight: FontWeight.w700,
               height: 1,
             ),
@@ -780,9 +784,9 @@ class _EmptyUsersCard extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.xl),
         child: Column(
           children: [
-            const Icon(
+            Icon(
               Icons.people_alt_outlined,
-              color: AppColors.textMuted,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               size: 42,
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -857,7 +861,7 @@ class _PsychologistAccessDialogState extends State<_PsychologistAccessDialog> {
           Text(
             '$usedSlots paciente(s)/convite(s) já ocupam vagas.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
           ),
           const SizedBox(height: AppSpacing.md),
@@ -958,7 +962,7 @@ class _CreateUserSheetState extends ConsumerState<_CreateUserSheet> {
         child: ConstrainedBox(
           constraints: BoxConstraints(maxHeight: availableHeight * 0.92),
           child: Material(
-            color: AppColors.surface,
+            color: Theme.of(context).colorScheme.surface,
             elevation: 18,
             shadowColor: AppColors.navy.withValues(alpha: 0.18),
             borderRadius: const BorderRadius.vertical(
@@ -985,7 +989,7 @@ class _CreateUserSheetState extends ConsumerState<_CreateUserSheet> {
                           width: 32,
                           height: 4,
                           decoration: BoxDecoration(
-                            color: AppColors.textMuted.withValues(alpha: 0.55),
+                            color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.55),
                             borderRadius: BorderRadius.circular(999),
                           ),
                         ),
@@ -1002,7 +1006,7 @@ class _CreateUserSheetState extends ConsumerState<_CreateUserSheet> {
                       Text(
                         'Escolha a clínica e crie o acesso do psicólogo.',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppColors.textSecondary,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                       ),
                       const SizedBox(height: AppSpacing.lg),
@@ -1148,7 +1152,7 @@ class _RolePicker extends StatelessWidget {
         Text(
           'Papel',
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: AppColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
         ),
         const SizedBox(height: AppSpacing.xs),
@@ -1193,7 +1197,7 @@ class _ClinicTypePicker extends StatelessWidget {
         Text(
           'Tipo de vínculo',
           style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: AppColors.textSecondary,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
         ),
         const SizedBox(height: AppSpacing.xs),
@@ -1221,7 +1225,7 @@ class _ClinicTypePicker extends StatelessWidget {
           Text(
             'Uma clínica individual será criada automaticamente com o nome do profissional.',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
           ),
         ],

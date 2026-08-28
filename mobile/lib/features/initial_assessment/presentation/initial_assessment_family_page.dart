@@ -102,7 +102,7 @@ class _InitialAssessmentFamilyPageState
                 'Agora vamos conhecer as pessoas que fizeram parte da sua '
                 'história e como eram suas relações com elas.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       height: 1.4,
                     ),
               ),
@@ -216,8 +216,8 @@ class _PersonCard extends StatelessWidget {
                             ?.copyWith(fontWeight: FontWeight.w600)),
                   ),
                   if (person.isDeceased)
-                    const Icon(Icons.local_florist_outlined,
-                        size: 15, color: AppColors.textMuted),
+                    Icon(Icons.local_florist_outlined,
+                        size: 15, color: theme.colorScheme.onSurfaceVariant),
                 ],
               ),
               if (meta.isNotEmpty)
@@ -225,7 +225,7 @@ class _PersonCard extends StatelessWidget {
                   padding: const EdgeInsets.only(top: 2),
                   child: Text(meta.join(' · '),
                       style: theme.textTheme.labelSmall
-                          ?.copyWith(color: AppColors.textSecondary)),
+                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                 ),
             ],
           ),

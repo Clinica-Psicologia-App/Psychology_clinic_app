@@ -1291,19 +1291,24 @@ class AvatarArtwork extends StatelessWidget {
     super.key,
     required this.config,
     this.size = 44,
+    this.borderRadius,
   });
 
   final AvatarConfig config;
   final double size;
+  final BorderRadius? borderRadius;
 
   @override
   Widget build(BuildContext context) {
-    return ClipOval(
-      child: CustomPaint(
-        size: Size.square(size),
-        painter: AvatarPainter(config),
-        isComplex: true,
-      ),
+    final paint = CustomPaint(
+      size: Size.square(size),
+      painter: AvatarPainter(config),
+      isComplex: true,
     );
+    final br = borderRadius;
+    if (br != null) {
+      return ClipRRect(borderRadius: br, child: paint);
+    }
+    return ClipOval(child: paint);
   }
 }

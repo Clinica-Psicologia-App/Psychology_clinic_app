@@ -85,7 +85,7 @@ class ClinicalRecordListTile extends StatelessWidget {
                           maxLines: 3,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -103,7 +103,7 @@ class ClinicalRecordListTile extends StatelessWidget {
                   const SizedBox(width: AppSpacing.xs),
                   trailing!,
                 ] else if (onTap != null)
-                  const Icon(Icons.chevron_right, color: AppColors.textMuted),
+                  Icon(Icons.chevron_right, color: theme.colorScheme.onSurfaceVariant),
               ],
             ),
           ),

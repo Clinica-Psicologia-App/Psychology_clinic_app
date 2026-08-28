@@ -51,6 +51,7 @@ class _PsychoeducationModulePageState
     }
 
     final color = module.color;
+    final theme = Theme.of(context);
     // Páginas: apresentação + cards + (fechamento, se houver).
     final pages = <Widget>[
       _IntroPage(module: module),
@@ -67,10 +68,10 @@ class _PsychoeducationModulePageState
     final total = pages.length;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
-        foregroundColor: AppColors.navy,
+        foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
         title: Text(module.title,
             style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
@@ -159,12 +160,12 @@ class _IntroPage extends StatelessWidget {
           const SizedBox(height: 4),
           Text(module.title,
               style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w800, color: AppColors.navy)),
+                  fontWeight: FontWeight.w800, color: theme.colorScheme.onSurface)),
           if (module.presentation != null) ...[
             const SizedBox(height: AppSpacing.md),
             Text(module.presentation!,
                 style: theme.textTheme.bodyLarge
-                    ?.copyWith(color: AppColors.textSecondary, height: 1.5)),
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant, height: 1.5)),
           ],
         ],
       ),
@@ -199,12 +200,12 @@ class _CardPage extends StatelessWidget {
           const SizedBox(height: 6),
           Text(card.title,
               style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w800, color: AppColors.navy)),
+                  fontWeight: FontWeight.w800, color: theme.colorScheme.onSurface)),
           if (card.patientText != null) ...[
             const SizedBox(height: AppSpacing.md),
             Text(card.patientText!,
                 style: theme.textTheme.bodyLarge
-                    ?.copyWith(color: AppColors.textSecondary, height: 1.5)),
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant, height: 1.5)),
           ],
           if (card.reflection != null)
             _Box(
@@ -262,7 +263,7 @@ class _Box extends StatelessWidget {
           const SizedBox(height: 6),
           Text(text,
               style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: AppColors.textSecondary, height: 1.45)),
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant, height: 1.45)),
         ],
       ),
     );
@@ -288,7 +289,7 @@ class _ClosingPage extends StatelessWidget {
             Text(text,
                 textAlign: TextAlign.center,
                 style: theme.textTheme.titleMedium?.copyWith(
-                    color: AppColors.navy,
+                    color: theme.colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
                     height: 1.5)),
           ],

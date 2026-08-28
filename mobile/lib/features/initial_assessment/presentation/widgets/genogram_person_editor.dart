@@ -353,7 +353,7 @@ class _GenogramPersonEditorState extends ConsumerState<_GenogramPersonEditor> {
             style: Theme.of(context)
                 .textTheme
                 .bodyMedium
-                ?.copyWith(color: AppColors.textSecondary)),
+                ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
       );
 
   Widget _presenceRow(ThemeData theme) {

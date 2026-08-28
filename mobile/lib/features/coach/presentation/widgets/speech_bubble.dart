@@ -48,7 +48,7 @@ class SpeechBubble extends StatelessWidget {
               text,
               key: const ValueKey('coach_bubble_text'),
               style: theme.textTheme.bodyMedium?.copyWith(
-                color: AppColors.textPrimary,
+                color: theme.colorScheme.onSurface,
                 height: 1.45,
                 fontWeight: FontWeight.w600,
               ),

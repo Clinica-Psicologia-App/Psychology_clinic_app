@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_animations.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_shadows.dart';
 import '../../core/theme/app_spacing.dart';
@@ -137,7 +136,7 @@ class _HomeGreetingHeaderState extends State<HomeGreetingHeader>
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [AppColors.surface, accent.withValues(alpha: 0.10)],
+            colors: [theme.colorScheme.surface, accent.withValues(alpha: 0.10)],
           ),
           borderRadius: AppRadius.xlAll,
           border: Border.all(color: accent.withValues(alpha: 0.16)),
@@ -169,7 +168,7 @@ class _HomeGreetingHeaderState extends State<HomeGreetingHeader>
                       child: Container(
                         padding: const EdgeInsets.all(3),
                         decoration: BoxDecoration(
-                          color: AppColors.surface,
+                          color: theme.colorScheme.surface,
                           shape: BoxShape.circle,
                           boxShadow: AppShadows.clay(accent),
                         ),
@@ -209,7 +208,7 @@ class _HomeGreetingHeaderState extends State<HomeGreetingHeader>
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.headlineMedium?.copyWith(
-                              color: AppColors.navy,
+                              color: theme.colorScheme.onSurface,
                               fontWeight: FontWeight.w800,
                               height: 1.05,
                             ),
@@ -221,7 +220,7 @@ class _HomeGreetingHeaderState extends State<HomeGreetingHeader>
                           Text(
                             widget.contextLine,
                             style: theme.textTheme.bodyMedium?.copyWith(
-                              color: AppColors.textSecondary,
+                              color: theme.colorScheme.onSurfaceVariant,
                               height: 1.35,
                             ),
                           ),

@@ -475,7 +475,7 @@ class _CategoryResultCard extends StatelessWidget {
                 result.professionalNote!,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       fontStyle: FontStyle.italic,
-                      color: AppColors.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
               ),
             ],

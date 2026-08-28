@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_shadows.dart';
 
@@ -42,11 +41,15 @@ class ClayCard extends StatelessWidget {
     final side = shape?.side;
     final hasBorder = side != null && side != BorderSide.none;
 
+    final surfaceColor = color ??
+        Theme.of(context).cardTheme.color ??
+        Theme.of(context).colorScheme.surface;
+
     return Container(
       margin: margin,
       clipBehavior: clipBehavior,
       decoration: BoxDecoration(
-        color: color ?? AppColors.surface,
+        color: surfaceColor,
         borderRadius: borderRadius,
         border: hasBorder ? Border.fromBorderSide(side) : null,
         boxShadow: AppShadows.clay(accentColor),

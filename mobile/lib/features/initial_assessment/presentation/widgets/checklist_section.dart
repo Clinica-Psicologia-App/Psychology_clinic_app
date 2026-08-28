@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import '../../domain/assessment_catalog_item.dart';
 
 /// Seção de checklist multi-seleção sobre um catálogo (esquemas, modos ou
@@ -36,7 +35,7 @@ class ChecklistSection extends StatelessWidget {
           Text(
             'Catálogo indisponível.',
             style: theme.textTheme.bodySmall
-                ?.copyWith(color: AppColors.textSecondary),
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           )
         else
           ...items.map(
@@ -52,7 +51,7 @@ class ChecklistSection extends StatelessWidget {
                   : Text(
                       item.description!,
                       style: theme.textTheme.bodySmall
-                          ?.copyWith(color: AppColors.textSecondary),
+                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                     ),
             ),
           ),

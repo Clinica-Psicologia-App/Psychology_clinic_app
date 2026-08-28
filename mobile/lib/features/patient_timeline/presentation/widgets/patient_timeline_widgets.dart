@@ -94,7 +94,7 @@ class PatientTimelineEventTile extends StatelessWidget {
                                     event.title,
                                     style:
                                         theme.textTheme.titleMedium?.copyWith(
-                                      color: AppColors.navy,
+                                      color: theme.colorScheme.onSurface,
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
@@ -102,10 +102,10 @@ class PatientTimelineEventTile extends StatelessWidget {
                               ),
                             ),
                             const SizedBox(width: AppSpacing.sm),
-                            const Icon(
+                            Icon(
                               Icons.arrow_forward_rounded,
                               size: 20,
-                              color: AppColors.textMuted,
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ],
                         ),
@@ -141,7 +141,7 @@ class PatientTimelineEventTile extends StatelessWidget {
                           Text(
                             event.subtitleLine!,
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondary,
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -165,7 +165,7 @@ class PatientTimelineEventTile extends StatelessWidget {
                             maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondary,
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -445,7 +445,7 @@ class _ClinicalDetailSection extends StatelessWidget {
             Text(
               title,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: AppColors.navy,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
                   ),
             ),

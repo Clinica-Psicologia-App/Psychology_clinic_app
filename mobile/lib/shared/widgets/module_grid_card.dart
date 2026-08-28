@@ -45,7 +45,7 @@ class ModuleGridCard extends StatelessWidget {
             borderRadius: radius,
             child: Ink(
               decoration: BoxDecoration(
-                color: AppColors.surface,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: radius,
                 boxShadow: AppShadows.card,
               ),
@@ -83,7 +83,7 @@ class ModuleGridCard extends StatelessWidget {
                         Icon(
                           Icons.lock_outline_rounded,
                           size: 16,
-                          color: AppColors.textMuted.withValues(alpha: 0.7),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
                         ),
                     ],
                   ),
@@ -93,7 +93,7 @@ class ModuleGridCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: textTheme.titleSmall?.copyWith(
-                      color: AppColors.navy,
+                      color: Theme.of(context).colorScheme.onSurface,
                       fontWeight: FontWeight.w700,
                       height: 1.15,
                     ),
@@ -104,7 +104,7 @@ class ModuleGridCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: textTheme.bodySmall?.copyWith(
-                      color: AppColors.textMuted,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                       fontSize: 11.5,
                       height: 1.3,
                     ),

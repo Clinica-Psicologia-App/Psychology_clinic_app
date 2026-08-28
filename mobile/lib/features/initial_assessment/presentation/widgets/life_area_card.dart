@@ -62,7 +62,7 @@ class LifeAreaCard extends StatelessWidget {
                       Text(
                         area.description,
                         style: theme.textTheme.bodySmall
-                            ?.copyWith(color: AppColors.textSecondary),
+                            ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                       ),
                     ],
                   ),
@@ -92,7 +92,7 @@ class LifeAreaCard extends StatelessWidget {
               children: [
                 Text('Satisfação',
                     style: theme.textTheme.labelMedium
-                        ?.copyWith(color: AppColors.textSecondary)),
+                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
                 Expanded(
                   child: Slider(
                     value: (score ?? 5).toDouble(),
@@ -165,7 +165,7 @@ class _SufferingRow extends StatelessWidget {
               child: Text(
                 'Isso tem causado sofrimento?',
                 style: theme.textTheme.bodySmall
-                    ?.copyWith(color: AppColors.textSecondary),
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
               ),
             ),
             if (enabled)

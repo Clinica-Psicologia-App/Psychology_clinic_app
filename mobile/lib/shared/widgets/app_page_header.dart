@@ -38,7 +38,7 @@ class AppPageHeader extends StatelessWidget {
     return MotionReveal(
       child: Container(
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: theme.colorScheme.surface,
           borderRadius: AppRadius.xlAll,
           boxShadow: AppShadows.clay(),
         ),
@@ -64,7 +64,7 @@ class AppPageHeader extends StatelessWidget {
                         title,
                         style: theme.textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: AppColors.navy,
+                          color: theme.colorScheme.onSurface,
                         ),
                       ),
                       if (subtitle != null && subtitle!.isNotEmpty) ...[
@@ -72,7 +72,7 @@ class AppPageHeader extends StatelessWidget {
                         Text(
                           subtitle!,
                           style: theme.textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textSecondary,
+                            color: theme.colorScheme.onSurfaceVariant,
                             height: 1.45,
                           ),
                         ),
@@ -180,7 +180,7 @@ class AppSectionHeader extends StatelessWidget {
                     child: Text(
                       title,
                       style: theme.textTheme.titleMedium?.copyWith(
-                        color: AppColors.navy,
+                        color: theme.colorScheme.onSurface,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -192,7 +192,7 @@ class AppSectionHeader extends StatelessWidget {
                 Text(
                   subtitle!,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
@@ -228,8 +228,8 @@ class AppInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final style = _infoStyle(tone);
     final theme = Theme.of(context);
+    final style = _infoStyle(tone, theme);
 
     return Container(
       decoration: BoxDecoration(
@@ -260,7 +260,7 @@ class AppInfoCard extends StatelessWidget {
                 Text(
                   title,
                   style: theme.textTheme.titleSmall?.copyWith(
-                    color: AppColors.navy,
+                    color: theme.colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -269,7 +269,7 @@ class AppInfoCard extends StatelessWidget {
                   Text(
                     body!,
                     style: theme.textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
+                      color: theme.colorScheme.onSurfaceVariant,
                       height: 1.45,
                     ),
                   ),
@@ -322,6 +322,7 @@ class _HeaderIcon extends StatelessWidget {
 
 ({Color background, Color foreground, Color border}) _infoStyle(
   AppInfoCardTone tone,
+  ThemeData theme,
 ) {
   return switch (tone) {
     AppInfoCardTone.info => (
@@ -345,9 +346,9 @@ class _HeaderIcon extends StatelessWidget {
         border: AppColors.error.withValues(alpha: 0.2),
       ),
     AppInfoCardTone.neutral => (
-        background: AppColors.surface,
+        background: theme.colorScheme.surface,
         foreground: AppColors.cyan,
-        border: AppColors.border,
+        border: theme.colorScheme.outline,
       ),
   };
 }

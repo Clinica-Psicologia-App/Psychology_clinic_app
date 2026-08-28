@@ -11,7 +11,6 @@ import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../../shared/widgets/app_scaffold.dart';
-import '../../../shared/widgets/status_chip.dart';
 import '../../coach/domain/coach_step.dart';
 import '../../coach/domain/coach_tour.dart';
 import '../../coach/providers/coach_providers.dart';
@@ -107,20 +106,9 @@ class _PatientDetailsPageState extends ConsumerState<PatientDetailsPage> {
       WidgetsBinding.instance.addPostFrameCallback((_) => _startTour());
     }
 
-    return AppScaffold(
-      title: 'Paciente',
-      accent: AppColors.blue,
-      actions: _tourEnabled
-          ? [
-              IconButton(
-                tooltip: 'Rever tutorial',
-                onPressed: () => _startTour(force: true),
-                icon: const Icon(Icons.help_outline_rounded),
-              ),
-            ]
-          : null,
+    return AppCanopyScaffold(
       body: asyncPatient.when(
-        loading: () => const BrandLoader(),
+        loading: () => const Center(child: BrandLoader()),
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -148,6 +136,7 @@ class _PatientDetailsPageState extends ConsumerState<PatientDetailsPage> {
             reportKey: _reportKey,
             genogramKey: _genogramKey,
             vitalsKey: _vitalsKey,
+            onTourTap: _tourEnabled ? () => _startTour(force: true) : null,
           );
         },
       ),
@@ -162,6 +151,7 @@ class _PatientDetailsBody extends StatelessWidget {
     this.reportKey,
     this.genogramKey,
     this.vitalsKey,
+    this.onTourTap,
   });
 
   final Patient patient;
@@ -169,27 +159,36 @@ class _PatientDetailsBody extends StatelessWidget {
   final Key? reportKey;
   final Key? genogramKey;
   final Key? vitalsKey;
+  final VoidCallback? onTourTap;
 
   @override
   Widget build(BuildContext context) {
     final dateFormat = MaterialLocalizations.of(context);
+    final canEdit = role == ProfileRole.psychologist ||
+        role == ProfileRole.platformAdmin;
 
     return MotionReveal(
-      child: ListView(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        children: [
-          _PatientHeader(
-            patient: patient,
-            role: role,
-            onEdit: role == ProfileRole.psychologist ||
-                    role == ProfileRole.platformAdmin
-                ? () => context.push(
-                      PatientRoutes.edit(role, patient.id),
-                      extra: patient,
-                    )
-                : null,
+      child: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(
+            child: _PatientHeroHeader(
+              patient: patient,
+              role: role,
+              onBack: () => context.pop(),
+              onEdit: canEdit
+                  ? () => context.push(
+                        PatientRoutes.edit(role, patient.id),
+                        extra: patient,
+                      )
+                  : null,
+              onTourTap: onTourTap,
+            ),
           ),
-          const SizedBox(height: AppSpacing.md),
+          SliverPadding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            sliver: SliverList(
+              delegate: SliverChildListDelegate([
           _DetailsSectionCard(
             title: 'Dados do paciente',
             subtitle:
@@ -340,6 +339,9 @@ class _PatientDetailsBody extends StatelessWidget {
             _PatientDeleteCard(patient: patient),
             const SizedBox(height: AppSpacing.md),
           ],
+              ]),
+            ),
+          ),
         ],
       ),
     );
@@ -375,78 +377,21 @@ class _PatientDetailsBody extends StatelessWidget {
   }
 }
 
-class _PatientHeader extends StatelessWidget {
-  const _PatientHeader({
+class _PatientHeroHeader extends StatelessWidget {
+  const _PatientHeroHeader({
     required this.patient,
     required this.role,
+    required this.onBack,
     this.onEdit,
+    this.onTourTap,
   });
 
   final Patient patient;
   final ProfileRole role;
+  final VoidCallback onBack;
   final VoidCallback? onEdit;
+  final VoidCallback? onTourTap;
 
-  @override
-  Widget build(BuildContext context) {
-    final statusTone =
-        patient.isActive ? AppStatusTone.success : AppStatusTone.error;
-    final accessLabel = patient.accessStatus?.label;
-
-    return AppPageHeader(
-      leading: UserAvatar.parts(
-        fullName: patient.fullName,
-        initials: _initialsOf(patient.fullName),
-        role: ProfileRole.patient,
-        avatarType: patient.avatarType,
-        photoUrl: patient.photoUrl,
-        avatarConfig: patient.avatarConfig,
-        size: 60,
-      ),
-      title: patient.fullName,
-      subtitle: _subtitle,
-      metadata: [
-        StatusChip(
-          label: patient.isActive ? 'Cadastro ativo' : 'Cadastro inativo',
-          tone: statusTone,
-          icon: patient.isActive
-              ? Icons.check_circle_outline
-              : Icons.person_off_outlined,
-        ),
-        if (accessLabel != null && accessLabel.trim().isNotEmpty)
-          StatusChip(
-            label: accessLabel,
-            tone: patient.accessStatus == PatientAccessStatus.active
-                ? AppStatusTone.success
-                : AppStatusTone.neutral,
-            icon: Icons.phone_iphone_outlined,
-          ),
-        if (patient.responsiblePsychologistName != null &&
-            patient.responsiblePsychologistName!.trim().isNotEmpty)
-          StatusChip(
-            label: patient.responsiblePsychologistName!,
-            tone: AppStatusTone.info,
-            icon: Icons.psychology_alt_outlined,
-          ),
-      ],
-      primaryAction: onEdit != null
-          ? FilledButton.icon(
-              onPressed: onEdit,
-              icon: const Icon(Icons.edit_outlined),
-              label: const Text('Editar paciente'),
-            )
-          : null,
-    );
-  }
-
-  String? get _subtitle {
-    if (role == ProfileRole.platformAdmin) {
-      return 'Visão administrativa do cadastro, status e histórico preservado.';
-    }
-    return 'Resumo operacional do paciente e acesso aos módulos clínicos.';
-  }
-
-  /// Iniciais (1–2 letras) para o fallback do avatar, seguindo a mesma regra
-  /// de UserProfile.initials.
   static String _initialsOf(String fullName) {
     final parts = fullName
         .trim()
@@ -457,6 +402,344 @@ class _PatientHeader extends StatelessWidget {
     if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
     return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
         .toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final topInset = MediaQuery.paddingOf(context).top;
+    final accessLabel = patient.accessStatus?.label;
+
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        color: Color(0xFF0A3A5E),
+      ),
+      child: Stack(
+        children: [
+          // Luz ambiente radial — canto superior direito
+          Positioned(
+            right: -30,
+            top: -20,
+            child: Container(
+              width: 200,
+              height: 200,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [Color(0x5500B2A9), Colors.transparent],
+                ),
+              ),
+            ),
+          ),
+          // Luz ambiente radial — canto inferior esquerdo
+          Positioned(
+            left: -40,
+            bottom: 30,
+            child: Container(
+              width: 160,
+              height: 160,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [Color(0x443D3F8F), Colors.transparent],
+                ),
+              ),
+            ),
+          ),
+          // Anel geométrico decorativo
+          Positioned(
+            right: -18,
+            top: topInset + 30,
+            child: Container(
+              width: 110,
+              height: 110,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: Colors.white.withValues(alpha: 0.05),
+                  width: 24,
+                ),
+              ),
+            ),
+          ),
+
+          // Conteúdo principal
+          Padding(
+            padding: EdgeInsets.fromLTRB(0, topInset, 0, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Nav row
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.sm, AppSpacing.xs, AppSpacing.sm, 0),
+                  child: Row(
+                    children: [
+                      _NavBtn(
+                        icon: Icons.arrow_back_ios_new_rounded,
+                        onTap: onBack,
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Expanded(
+                        child: Text(
+                          'FICHA DO PACIENTE',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.6),
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 1.0,
+                          ),
+                        ),
+                      ),
+                      if (onTourTap != null)
+                        _NavBtn(icon: Icons.help_outline_rounded, onTap: onTourTap!),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: AppSpacing.md),
+
+                // Avatar + info row
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      // Avatar arredondado com borda
+                      Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(18),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.3),
+                            width: 2.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.3),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6),
+                            ),
+                          ],
+                        ),
+                        child: UserAvatar.parts(
+                          fullName: patient.fullName,
+                          initials: _initialsOf(patient.fullName),
+                          role: ProfileRole.patient,
+                          avatarType: patient.avatarType,
+                          photoUrl: patient.photoUrl,
+                          avatarConfig: patient.avatarConfig,
+                          size: 72,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      ),
+
+                      const SizedBox(width: AppSpacing.md),
+
+                      // Info
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              patient.isActive ? 'PACIENTE ATIVO' : 'PACIENTE INATIVO',
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: patient.isActive
+                                    ? const Color(0xFF00D4C9)
+                                    : Colors.white.withValues(alpha: 0.5),
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.0,
+                                fontSize: 9,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              patient.fullName,
+                              style: theme.textTheme.headlineSmall?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                                height: 1.1,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Wrap(
+                              spacing: 5,
+                              runSpacing: 4,
+                              children: [
+                                if (accessLabel != null &&
+                                    accessLabel.trim().isNotEmpty)
+                                  _HeroChip(
+                                    label: accessLabel,
+                                    isGreen: patient.accessStatus ==
+                                        PatientAccessStatus.active,
+                                  ),
+                                if (patient.responsiblePsychologistName != null &&
+                                    patient.responsiblePsychologistName!
+                                        .trim()
+                                        .isNotEmpty)
+                                  _HeroChip(
+                                    label: patient.responsiblePsychologistName!,
+                                  ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: AppSpacing.md),
+
+                // Action bar
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  child: Row(
+                    children: [
+                      if (onEdit != null) ...[
+                        Expanded(
+                          child: _HeroActionBtn(
+                            label: 'Editar paciente',
+                            icon: Icons.edit_outlined,
+                            solid: true,
+                            onTap: onEdit!,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                      ],
+                      Expanded(
+                        child: _HeroActionBtn(
+                          label: 'Histórico',
+                          icon: Icons.history_rounded,
+                          onTap: () {},
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: AppSpacing.md),
+
+                // Arredondado na base para transição para o conteúdo
+                Container(
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceContainerLow,
+                    borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(20),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _NavBtn extends StatelessWidget {
+  const _NavBtn({required this.icon, required this.onTap});
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 34,
+        height: 34,
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(9),
+        ),
+        child: Icon(icon, color: Colors.white, size: 16),
+      ),
+    );
+  }
+}
+
+class _HeroChip extends StatelessWidget {
+  const _HeroChip({required this.label, this.isGreen = false});
+  final String label;
+  final bool isGreen;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: isGreen
+            ? const Color(0x401A9B6C)
+            : Colors.white.withValues(alpha: 0.13),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: isGreen
+              ? const Color(0x601A9B6C)
+              : Colors.white.withValues(alpha: 0.15),
+        ),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w700,
+          color: isGreen ? const Color(0xFF4DEBB5) : Colors.white.withValues(alpha: 0.9),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeroActionBtn extends StatelessWidget {
+  const _HeroActionBtn({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    this.solid = false,
+  });
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+  final bool solid;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        decoration: BoxDecoration(
+          color: solid ? Colors.white : Colors.white.withValues(alpha: 0.13),
+          borderRadius: BorderRadius.circular(11),
+          border: solid
+              ? null
+              : Border.all(color: Colors.white.withValues(alpha: 0.22)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 14,
+              color: solid ? const Color(0xFF0A3A5E) : Colors.white,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                color: solid ? const Color(0xFF0A3A5E) : Colors.white,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -519,7 +802,7 @@ class _VitalsPanel extends StatelessWidget {
             child: Text(
               'Resumo rápido',
               style: theme.textTheme.labelMedium?.copyWith(
-                color: AppColors.textMuted,
+                color: theme.colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w600,
                 letterSpacing: 0.4,
               ),
@@ -545,7 +828,7 @@ class _VitalsPanel extends StatelessWidget {
                     ),
                   ),
                 ),
-                Container(width: 1, height: 52, color: AppColors.border),
+                Container(width: 1, height: 52, color: Theme.of(context).colorScheme.outline),
                 Expanded(
                   child: _VitalCell(
                     icon: Icons.flag_outlined,
@@ -560,7 +843,7 @@ class _VitalsPanel extends StatelessWidget {
                     ),
                   ),
                 ),
-                Container(width: 1, height: 52, color: AppColors.border),
+                Container(width: 1, height: 52, color: Theme.of(context).colorScheme.outline),
                 Expanded(
                   child: _VitalCell(
                     icon: Icons.assignment_outlined,
@@ -625,7 +908,7 @@ class _VitalCell extends StatelessWidget {
         builder: (_, v, __) => Text(
           value.replaceAll(RegExp(r'\d+'), '$v'),
           style: theme.textTheme.titleMedium?.copyWith(
-            color: AppColors.navy,
+            color: theme.colorScheme.onSurface,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -634,7 +917,7 @@ class _VitalCell extends StatelessWidget {
       valueWidget = Text(
         value,
         style: theme.textTheme.titleMedium?.copyWith(
-          color: highlight ? effectiveAccent : AppColors.navy,
+          color: highlight ? effectiveAccent : theme.colorScheme.onSurface,
           fontWeight: FontWeight.w700,
         ),
       );
@@ -664,7 +947,7 @@ class _VitalCell extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
+                  color: theme.colorScheme.onSurfaceVariant,
                   fontSize: 11,
                 ),
               ),
@@ -864,7 +1147,7 @@ class _InfoRow extends StatelessWidget {
       value: Text(
         value!,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.navy,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w500,
             ),
       ),
@@ -898,7 +1181,7 @@ class _InfoRowLayout extends StatelessWidget {
             height: 30,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: AppColors.surfaceTint,
+              color: Theme.of(context).colorScheme.surfaceContainerLow,
               borderRadius: BorderRadius.circular(9),
             ),
             child: Icon(icon, size: 16, color: AppColors.cyan),
@@ -909,7 +1192,7 @@ class _InfoRowLayout extends StatelessWidget {
             child: Text(
               label,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.textMuted,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
             ),
           ),
@@ -958,7 +1241,7 @@ class _SensitiveInfoRowState extends State<_SensitiveInfoRow> {
       value: Text(
         _revealed ? widget.value! : widget.maskedValue!,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.navy,
+              color: Theme.of(context).colorScheme.onSurface,
               fontWeight: FontWeight.w500,
               letterSpacing: _revealed ? 0 : 1.5,
             ),
@@ -971,7 +1254,7 @@ class _SensitiveInfoRowState extends State<_SensitiveInfoRow> {
         icon: Icon(
           _revealed ? Icons.visibility_off_outlined : Icons.visibility_outlined,
           size: 20,
-          color: AppColors.textMuted,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),
     );

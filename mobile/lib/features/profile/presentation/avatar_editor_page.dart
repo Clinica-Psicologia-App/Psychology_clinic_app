@@ -171,7 +171,7 @@ class _Preview extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(AppSpacing.sm),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: Theme.of(context).colorScheme.surface,
           shape: BoxShape.circle,
           boxShadow: AppShadows.clay(),
         ),
@@ -420,7 +420,7 @@ class _OptionTile extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.xs),
           decoration: BoxDecoration(
-            color: AppColors.surface,
+            color: theme.colorScheme.surface,
             borderRadius: AppRadius.lgAll,
             border: Border.all(
               color: selected ? AppColors.turquoise : Colors.transparent,
@@ -447,7 +447,7 @@ class _OptionTile extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: option.swatch,
                             shape: BoxShape.circle,
-                            border: Border.all(color: AppColors.border),
+                            border: Border.all(color: theme.colorScheme.outline),
                           ),
                         )
                       : AvatarArtwork(config: option.config, size: 64),
@@ -461,7 +461,7 @@ class _OptionTile extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.labelSmall?.copyWith(
                   color:
-                      selected ? AppColors.turquoise : AppColors.textSecondary,
+                      selected ? AppColors.turquoise : theme.colorScheme.onSurfaceVariant,
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                 ),
               ),

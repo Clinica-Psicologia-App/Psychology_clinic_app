@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/theme_controller.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
@@ -263,6 +264,8 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                     ],
                   ],
                 ),
+                const SizedBox(height: 12),
+                const _AppearanceCard(),
                 const SizedBox(height: 12),
                 ClayCard(
                   child: ListTile(
@@ -767,6 +770,70 @@ IconData _roleIcon(ProfileRole role) {
 // Blocos
 // ---------------------------------------------------------------------------
 
+class _AppearanceCard extends ConsumerWidget {
+  const _AppearanceCard();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final mode = ref.watch(themeModeProvider);
+    final theme = Theme.of(context);
+
+    return ClayCard(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.palette_outlined, size: 15, color: AppColors.turquoise),
+                const SizedBox(width: 7),
+                Text(
+                  'APARÊNCIA',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.turquoise,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.9,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            SegmentedButton<ThemeMode>(
+              segments: const [
+                ButtonSegment(
+                  value: ThemeMode.system,
+                  icon: Icon(Icons.brightness_auto_outlined, size: 16),
+                  label: Text('Sistema'),
+                ),
+                ButtonSegment(
+                  value: ThemeMode.light,
+                  icon: Icon(Icons.light_mode_outlined, size: 16),
+                  label: Text('Claro'),
+                ),
+                ButtonSegment(
+                  value: ThemeMode.dark,
+                  icon: Icon(Icons.dark_mode_outlined, size: 16),
+                  label: Text('Escuro'),
+                ),
+              ],
+              selected: {mode},
+              onSelectionChanged: (modes) {
+                if (modes.isNotEmpty) {
+                  ref.read(themeModeProvider.notifier).setMode(modes.first);
+                }
+              },
+              style: SegmentedButton.styleFrom(
+                visualDensity: VisualDensity.compact,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _SectionCard extends StatelessWidget {
   const _SectionCard({
     required this.title,
@@ -849,7 +916,7 @@ class _ReadOnlyRow extends StatelessWidget {
               Text(
                 label,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppColors.textMuted,
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
               const SizedBox(height: 2),
@@ -865,7 +932,7 @@ class _ReadOnlyRow extends StatelessWidget {
                 Text(
                   hint!,
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: AppColors.textMuted,
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],

@@ -82,7 +82,7 @@ class LifeAreaWheelChart extends StatelessWidget {
           Text(
             'Preencha as áreas abaixo para ver o resultado',
             style: theme.textTheme.bodySmall
-                ?.copyWith(color: AppColors.textMuted),
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
       ],
     );
@@ -105,9 +105,11 @@ class _AreaRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final color = _kAreaColors[area]!;
     final sc = score;
-    final labelColor = sc != null ? _scoreColor(sc) : AppColors.textMuted;
+    final labelColor =
+        sc != null ? _scoreColor(sc) : theme.colorScheme.onSurfaceVariant;
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2.5),
@@ -128,9 +130,9 @@ class _AreaRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   _kShortLabel[area]!,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10,
-                    color: AppColors.textSecondary,
+                    color: theme.colorScheme.onSurfaceVariant,
                   ),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -198,7 +200,7 @@ class _AvgChip extends StatelessWidget {
           Text(
             'média geral de satisfação',
             style: theme.textTheme.bodySmall
-                ?.copyWith(color: AppColors.textMuted),
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           ),
         ],
       ),

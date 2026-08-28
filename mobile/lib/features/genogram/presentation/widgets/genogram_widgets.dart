@@ -115,13 +115,13 @@ class _Stat extends StatelessWidget {
               Text(
                 label,
                 style: theme.textTheme.labelMedium?.copyWith(
-                  color: AppColors.textMuted,
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
               Text(
                 value,
                 style: theme.textTheme.titleLarge?.copyWith(
-                  color: AppColors.navy,
+                  color: theme.colorScheme.onSurface,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -154,7 +154,7 @@ class GenogramPersonTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       color: sensitive
           ? AppColors.purple.withValues(alpha: 0.05)
-          : AppColors.surface,
+          : theme.colorScheme.surface,
       child: InkWell(
         borderRadius: AppRadius.lgAll,
         onTap: onTap,
@@ -184,7 +184,7 @@ class GenogramPersonTile extends StatelessWidget {
                       sensitive ? 'Conteúdo sensível' : person.displayName,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: AppColors.navy,
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xxs),
@@ -199,7 +199,7 @@ class GenogramPersonTile extends StatelessWidget {
                         Text(
                           person.relationshipToPatient!.trim(),
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                       const SizedBox(height: AppSpacing.xs),
@@ -226,9 +226,9 @@ class GenogramPersonTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              const Icon(
+              Icon(
                 Icons.arrow_forward_rounded,
-                color: AppColors.textMuted,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ],
           ),
@@ -263,7 +263,7 @@ class GenogramRelationshipTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: AppSpacing.sm),
       color: sensitive
           ? AppColors.purple.withValues(alpha: 0.05)
-          : AppColors.surface,
+          : theme.colorScheme.surface,
       child: InkWell(
         borderRadius: AppRadius.lgAll,
         onTap: onTap,
@@ -295,7 +295,7 @@ class GenogramRelationshipTile extends StatelessWidget {
                           : relationship.labelBetween(aName, bName),
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: AppColors.navy,
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xs),
@@ -318,7 +318,7 @@ class GenogramRelationshipTile extends StatelessWidget {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -327,9 +327,9 @@ class GenogramRelationshipTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              const Icon(
+              Icon(
                 Icons.arrow_forward_rounded,
-                color: AppColors.textMuted,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ],
           ),

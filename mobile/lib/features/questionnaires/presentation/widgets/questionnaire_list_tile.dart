@@ -29,8 +29,8 @@ class QuestionnaireListTile extends StatelessWidget {
   /// psicólogo).
   final Widget? footer;
 
-  Color _headerColor() {
-    if (!enabled) return AppColors.disabledSurface;
+  Color _headerColor(Color disabledSurface) {
+    if (!enabled) return disabledSurface;
     return switch (patientStatus) {
       QuestionnairePatientStatus.completed => AppColors.successContainer,
       QuestionnairePatientStatus.draft => AppColors.warningContainer,
@@ -59,6 +59,7 @@ class QuestionnaireListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colors = theme.colorScheme;
+    final disabledSurface = colors.surfaceContainerHighest;
 
     final chips = <Widget>[
       if (questionnaire.referencePeriod != ReferencePeriod.unspecified)
@@ -114,7 +115,7 @@ class QuestionnaireListTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
-                color: _headerColor(),
+                color: _headerColor(disabledSurface),
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(AppRadius.lg),
                 ),
@@ -150,7 +151,7 @@ class QuestionnaireListTile extends StatelessWidget {
                           questionnaire.name,
                           style: theme.textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: AppColors.navy,
+                            color: colors.onSurface,
                             height: 1.3,
                           ),
                         ),
@@ -175,8 +176,8 @@ class QuestionnaireListTile extends StatelessWidget {
                   const SizedBox(width: 8),
                   // chevron ou cadeado
                   if (enabled)
-                    const Icon(Icons.chevron_right,
-                        size: 18, color: AppColors.textMuted)
+                    Icon(Icons.chevron_right,
+                        size: 18, color: colors.onSurfaceVariant)
                   else
                     const Icon(Icons.lock_outline,
                         size: 16, color: AppColors.disabled),
@@ -195,7 +196,7 @@ class QuestionnaireListTile extends StatelessWidget {
                       Text(
                         questionnaire.description!,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.textMuted,
+                          color: colors.onSurfaceVariant,
                           height: 1.5,
                         ),
                         maxLines: 2,
@@ -277,9 +278,10 @@ class _MetaChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = Theme.of(context).colorScheme;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.surfaceTint,
+        color: colors.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(999),
       ),
       child: Padding(
@@ -292,7 +294,7 @@ class _MetaChip extends StatelessWidget {
             Text(
               label,
               style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: colors.onSurfaceVariant,
                     fontWeight: FontWeight.w500,
                   ),
             ),

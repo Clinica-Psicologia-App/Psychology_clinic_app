@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 
@@ -92,12 +91,15 @@ class _ShimmerBoxState extends State<_ShimmerBox>
 
   @override
   Widget build(BuildContext context) {
+    final skeletonColor =
+        Theme.of(context).colorScheme.surfaceContainerHighest;
+
     if (MediaQuery.disableAnimationsOf(context)) {
       return Container(
         height: widget.height,
         width: widget.width,
         decoration: BoxDecoration(
-          color: AppColors.surfaceMuted,
+          color: skeletonColor,
           borderRadius: widget.borderRadius,
         ),
       );
@@ -113,7 +115,7 @@ class _ShimmerBoxState extends State<_ShimmerBox>
         child: Stack(
           fit: StackFit.expand,
           children: [
-            const ColoredBox(color: AppColors.surfaceMuted),
+            ColoredBox(color: skeletonColor),
             AnimatedBuilder(
               animation: _controller,
               builder: (context, _) {

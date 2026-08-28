@@ -66,7 +66,7 @@ class _ExpandableDashboardSectionState
                           widget.title,
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w700,
-                            color: AppColors.navy,
+                            color: theme.colorScheme.onSurface,
                           ),
                         ),
                         if (widget.subtitle != null) ...[
@@ -74,7 +74,7 @@ class _ExpandableDashboardSectionState
                           Text(
                             widget.subtitle!,
                             style: theme.textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondary,
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -84,9 +84,9 @@ class _ExpandableDashboardSectionState
                   AnimatedRotation(
                     duration: duration,
                     turns: _expanded ? 0.5 : 0,
-                    child: const Icon(
+                    child: Icon(
                       Icons.expand_more,
-                      color: AppColors.textMuted,
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -176,7 +176,7 @@ class AnimatedClinicalScoreBar extends StatelessWidget {
                         Text(
                           row.code,
                           style: theme.textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
+                            color: theme.colorScheme.onSurfaceVariant,
                           ),
                         ),
                     ],

@@ -495,7 +495,7 @@ class _QuestionnaireCatalogTile extends StatelessWidget {
                         style:
                             Theme.of(context).textTheme.titleMedium?.copyWith(
                                   fontWeight: FontWeight.w700,
-                                  color: AppColors.navy,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                 ),
                       ),
                       const SizedBox(height: AppSpacing.xxs),
@@ -526,7 +526,7 @@ class _QuestionnaireCatalogTile extends StatelessWidget {
               Text(
                 questionnaire.description!,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
               ),
             ],
@@ -691,7 +691,7 @@ class _AccessTile extends StatelessWidget {
                           style:
                               Theme.of(context).textTheme.titleMedium?.copyWith(
                                     fontWeight: FontWeight.w700,
-                                    color: AppColors.navy,
+                                    color: Theme.of(context).colorScheme.onSurface,
                                   ),
                         ),
                       ),
@@ -711,7 +711,7 @@ class _AccessTile extends StatelessWidget {
                   Text(
                     'Código: ${questionnaire.code}',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                   ),
                   if (questionnaire.authorName != null &&
@@ -719,7 +719,7 @@ class _AccessTile extends StatelessWidget {
                     Text(
                       'Autor: ${questionnaire.authorName}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                     ),
                   if (questionnaire.instrumentVersion != null &&
@@ -727,7 +727,7 @@ class _AccessTile extends StatelessWidget {
                     Text(
                       'Versão: ${questionnaire.instrumentVersion}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppColors.textSecondary,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
                     ),
                   if (showPendingLicense &&

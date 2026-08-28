@@ -71,7 +71,7 @@ class ResponseSummaryTile extends StatelessWidget {
                     Text(
                       summary.questionnaireName,
                       style: theme.textTheme.titleSmall?.copyWith(
-                        color: AppColors.navy,
+                        color: theme.colorScheme.onSurface,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -83,7 +83,7 @@ class ResponseSummaryTile extends StatelessWidget {
                         '${summary.answerCount} respostas',
                       ].join(' · '),
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.textMuted,
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -102,9 +102,9 @@ class ResponseSummaryTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(
+              Icon(
                 Icons.chevron_right,
-                color: AppColors.textMuted,
+                color: theme.colorScheme.onSurfaceVariant,
                 size: 20,
               ),
             ],

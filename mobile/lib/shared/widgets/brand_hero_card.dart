@@ -279,7 +279,7 @@ class _HeroChip extends StatelessWidget {
         vertical: AppSpacing.xs + 1,
       ),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(999),
         boxShadow: [
           BoxShadow(
@@ -299,7 +299,7 @@ class _HeroChip extends StatelessWidget {
               label,
               overflow: TextOverflow.ellipsis,
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: AppColors.navy,
+                    color: Theme.of(context).colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
                   ),
             ),

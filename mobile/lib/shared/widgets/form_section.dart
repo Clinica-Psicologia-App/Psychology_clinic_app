@@ -44,7 +44,7 @@ class FormSection extends StatelessWidget {
                       title,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w700,
-                        color: AppColors.navy,
+                        color: theme.colorScheme.onSurface,
                       ),
                     ),
                     if (subtitle != null) ...[
@@ -52,7 +52,7 @@ class FormSection extends StatelessWidget {
                       Text(
                         subtitle!,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
+                          color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],

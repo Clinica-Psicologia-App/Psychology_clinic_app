@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/theme/app_breakpoints.dart';
-import '../../core/theme/app_colors.dart';
 import 'esquema_core_logo.dart';
 
 /// Destino de navegação do shell lateral.
@@ -62,7 +61,7 @@ class AppNavShell extends StatelessWidget {
       children: [
         SafeArea(
           child: NavigationRail(
-            backgroundColor: AppColors.surface,
+            backgroundColor: Theme.of(context).colorScheme.surface,
             selectedIndex: selectedIndex < 0 ? null : selectedIndex,
             labelType: NavigationRailLabelType.all,
             leading: const Padding(

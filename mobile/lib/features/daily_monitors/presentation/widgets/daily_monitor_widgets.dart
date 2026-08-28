@@ -50,7 +50,7 @@ class DailyMonitorListTile extends StatelessWidget {
                     Text(
                       monitor.summaryLine,
                       style: theme.textTheme.titleSmall?.copyWith(
-                        color: AppColors.navy,
+                        color: theme.colorScheme.onSurface,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -58,16 +58,16 @@ class DailyMonitorListTile extends StatelessWidget {
                     Text(
                       dateLabel,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.textMuted,
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(
+              Icon(
                 Icons.chevron_right,
-                color: AppColors.textMuted,
+                color: theme.colorScheme.onSurfaceVariant,
                 size: 20,
               ),
             ],

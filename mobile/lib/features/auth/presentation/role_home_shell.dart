@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/errors/app_exception.dart';
@@ -9,6 +10,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_canopy_header.dart';
+import '../../../shared/widgets/brand_brain_mark.dart';
+import '../../profile/presentation/widgets/user_avatar.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
@@ -387,15 +390,6 @@ class _PsychologistWorkspace extends ConsumerWidget {
                 ),
               ),
               ClinicalModuleCard(
-                icon: Icons.person_add_alt_1_outlined,
-                title: 'Novo paciente',
-                subtitle: 'Cadastrar paciente diretamente na sua carteira',
-                accentColor: _WorkspaceAccents.management,
-                onTap: () => context.push(
-                  PatientRoutes.create(ProfileRole.psychologist),
-                ),
-              ),
-              ClinicalModuleCard(
                 icon: Icons.mark_email_unread_outlined,
                 title: 'Convites',
                 subtitle: 'Enviar convite e acompanhar aceite do paciente',
@@ -541,7 +535,7 @@ class _AlertsPanelState extends State<_AlertsPanel> {
                 Text(
                   'Notificações',
                   style: theme.textTheme.labelLarge?.copyWith(
-                    color: AppColors.navy,
+                    color: theme.colorScheme.onSurface,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -567,11 +561,11 @@ class _AlertsPanelState extends State<_AlertsPanel> {
             ),
           ),
           for (final alert in visible) ...[
-            const Divider(height: 1, thickness: 0.5, color: AppColors.border),
+            Divider(height: 1, thickness: 0.5, color: Theme.of(context).colorScheme.outline),
             _AlertRow(alert: alert),
           ],
           if (hasMore) ...[
-            const Divider(height: 1, thickness: 0.5, color: AppColors.border),
+            Divider(height: 1, thickness: 0.5, color: Theme.of(context).colorScheme.outline),
             InkWell(
               onTap: () => setState(() => _expanded = !_expanded),
               borderRadius: const BorderRadius.only(
@@ -699,7 +693,7 @@ class _AlertRow extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.navy,
+                        color: theme.colorScheme.onSurface,
                         fontWeight: FontWeight.w600,
                         height: 1.3,
                       ),
@@ -709,7 +703,7 @@ class _AlertRow extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.labelSmall?.copyWith(
-                        color: AppColors.textMuted,
+                        color: theme.colorScheme.onSurfaceVariant,
                         height: 1.3,
                       ),
                     ),
@@ -732,10 +726,10 @@ class _AlertRow extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: AppSpacing.xs),
-              const Icon(
+              Icon(
                 Icons.arrow_forward_ios_rounded,
                 size: 11,
-                color: AppColors.textMuted,
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ],
           ),
@@ -894,7 +888,7 @@ class _PatientNextStep extends ConsumerWidget {
                     'Tudo em dia por hoje',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: AppColors.navy,
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
                   ),
                   const SizedBox(height: AppSpacing.xxs),
@@ -902,7 +896,7 @@ class _PatientNextStep extends ConsumerWidget {
                     'Você já cuidou do que precisava por hoje. Volte quando '
                     'quiser — sem pressa.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                           height: 1.4,
                         ),
                   ),
@@ -979,7 +973,7 @@ class _PatientExploreCard extends StatelessWidget {
                       Text(
                         title,
                         style: theme.textTheme.titleSmall?.copyWith(
-                          color: AppColors.navy,
+                          color: theme.colorScheme.onSurface,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
@@ -989,7 +983,7 @@ class _PatientExploreCard extends StatelessWidget {
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
+                          color: theme.colorScheme.onSurfaceVariant,
                           height: 1.35,
                         ),
                       ),
@@ -1100,7 +1094,7 @@ class _PatientMetricsPanel extends StatelessWidget {
           children: [
             for (var i = 0; i < metrics.length; i++) ...[
               if (i > 0)
-                Container(width: 1, height: 64, color: AppColors.border),
+                Container(width: 1, height: 64, color: Theme.of(context).colorScheme.outline),
               Expanded(child: _PatientMetricCell(metric: metrics[i])),
             ],
           ],
@@ -1156,7 +1150,7 @@ class _PatientMetricCell extends StatelessWidget {
                   return Text(
                     '$animated',
                     style: theme.textTheme.headlineSmall?.copyWith(
-                      color: AppColors.navy,
+                      color: theme.colorScheme.onSurface,
                       fontWeight: FontWeight.w700,
                     ),
                   );
@@ -1169,7 +1163,7 @@ class _PatientMetricCell extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -1235,7 +1229,7 @@ class _WorkspaceMetricCell extends StatelessWidget {
                   return Text(
                     '$animated',
                     style: theme.textTheme.headlineSmall?.copyWith(
-                      color: AppColors.navy,
+                      color: theme.colorScheme.onSurface,
                       fontWeight: FontWeight.w700,
                     ),
                   );
@@ -1248,7 +1242,7 @@ class _WorkspaceMetricCell extends StatelessWidget {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppColors.textSecondary,
+                  color: theme.colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -1290,16 +1284,14 @@ class _ProfileHeader extends ConsumerWidget {
         .where((invitation) => invitation.isPending)
         .length;
 
-    return AppCanopyHeader(
+    return _CupolaHeader(
       profile: profile,
-      accent: _WorkspaceAccents.clinical,
       name: firstName,
       areaLabel: 'Profissional',
       contextLine: _contextLine(
         patients == null ? null : activePatients,
         invitations,
       ),
-      watermarkIcon: Icons.psychology_alt_outlined,
       onProfileTap: () => context.push(ProfileRoutes.me),
       trailingAction: IconButton(
         tooltip: 'Rever tutorial',
@@ -1307,10 +1299,6 @@ class _ProfileHeader extends ConsumerWidget {
         icon: const Icon(Icons.help_outline_rounded),
         color: Colors.white,
       ),
-      // Stats + faixa semanal num único ClayCard que flutua sobre o canopy.
-      // Unificados aqui para não ter gap entre os dois (o Transform.translate
-      // -28px do AppCanopyHeader cria um deslocamento que não pode ser
-      // compensado por padding externo).
       footer: KeyedSubtree(
         key: summaryKey,
         child: _PsychologistSummaryFooter(
@@ -1376,13 +1364,268 @@ class _ProfileHeader extends ConsumerWidget {
 }
 
 // ---------------------------------------------------------------------------
+// Header Cúpula — design com gradiente teal centrado e onda na base
+// ---------------------------------------------------------------------------
+
+class _CupolaHeader extends StatelessWidget {
+  const _CupolaHeader({
+    required this.profile,
+    required this.name,
+    required this.areaLabel,
+    required this.contextLine,
+    required this.onProfileTap,
+    required this.trailingAction,
+    this.footer,
+  });
+
+  final UserProfile profile;
+  final String name;
+  final String areaLabel;
+  final String contextLine;
+  final VoidCallback? onProfileTap;
+  final Widget? trailingAction;
+  final Widget? footer;
+
+  static String _greeting(int h) =>
+      h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
+  static String _timeAsset(int h) => h < 12
+      ? 'assets/greeting/sunrise.svg'
+      : h < 18
+          ? 'assets/greeting/sun.svg'
+          : 'assets/greeting/moon.svg';
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final topInset = MediaQuery.paddingOf(context).top;
+    final hour = DateTime.now().hour;
+    final scaffoldBg = theme.colorScheme.surfaceContainerLow;
+
+    final gradientBody = Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF0A4A6E), Color(0xFF007A73), Color(0xFF00B2A9)],
+          stops: [0.0, 0.5, 1.0],
+        ),
+      ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // Marca-d'água
+          Positioned(
+            right: -8,
+            top: topInset + 48,
+            child: Icon(
+              Icons.psychology_alt_outlined,
+              size: 110,
+              color: Colors.white.withValues(alpha: 0.07),
+            ),
+          ),
+
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.xl,
+              topInset + AppSpacing.xs,
+              AppSpacing.xl,
+              footer != null ? 68 : AppSpacing.xl,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                // App bar row
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    // Marca à esquerda: flexível para ceder espaço ao grupo da
+                    // direita em telas estreitas, em vez de estourar a Row.
+                    Expanded(
+                      child: Row(
+                        children: [
+                          const BrandBrainMark(size: 20, color: Colors.white),
+                          const SizedBox(width: 7),
+                          Flexible(
+                            child: Text(
+                              'EsquemaCore',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.labelLarge?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.16),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            areaLabel,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: Colors.white.withValues(alpha: 0.95),
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ),
+                        if (trailingAction != null) ...[
+                          const SizedBox(width: AppSpacing.xs),
+                          trailingAction!,
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: AppSpacing.md),
+
+                // Avatar centralizado com anel
+                GestureDetector(
+                  onTap: onProfileTap,
+                  child: Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.5),
+                        width: 2.5,
+                      ),
+                      color: Colors.white.withValues(alpha: 0.12),
+                    ),
+                    child: UserAvatar(profile: profile, size: 68),
+                  ),
+                ),
+
+                const SizedBox(height: AppSpacing.sm),
+
+                // Saudação
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SvgPicture.asset(_timeAsset(hour), width: 16, height: 16),
+                    const SizedBox(width: 5),
+                    Text(
+                      _greeting(hour).toUpperCase(),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.92),
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 4),
+
+                // Nome
+                Text(
+                  name,
+                  style: theme.textTheme.headlineLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    height: 1.05,
+                  ),
+                ),
+
+                const SizedBox(height: AppSpacing.xs),
+
+                // Linha de contexto
+                Text(
+                  contextLine,
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.95),
+                    height: 1.4,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Onda na base — pinta a cor de fundo sobre o gradiente
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            child: SizedBox(
+              height: 64,
+              child: CustomPaint(
+                painter: _CupolaPainter(color: scaffoldBg),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (footer == null) return gradientBody;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        gradientBody,
+        Transform.translate(
+          offset: const Offset(0, -12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+            child: footer,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _CupolaPainter extends CustomPainter {
+  const _CupolaPainter({required this.color});
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()..color = color;
+    final path = Path()
+      ..moveTo(0, size.height)
+      ..lineTo(0, size.height * 0.46)
+      ..quadraticBezierTo(
+        size.width * 0.25, 0,
+        size.width * 0.5, size.height * 0.35,
+      )
+      ..quadraticBezierTo(
+        size.width * 0.75, size.height * 0.69,
+        size.width, size.height * 0.23,
+      )
+      ..lineTo(size.width, size.height)
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(_CupolaPainter old) => old.color != color;
+}
+
+// ---------------------------------------------------------------------------
 // Footer unificado do psicólogo: stats + faixa semanal num único ClayCard
 // ---------------------------------------------------------------------------
 
 /// Stats (Pacientes / Convites / Questionários) e faixa semanal num único
 /// ClayCard que flutua sobre o canopy via Transform.translate do
 /// AppCanopyHeader. Unificados para não haver gap visual entre os dois blocos.
-class _PsychologistSummaryFooter extends StatelessWidget {
+class _PsychologistSummaryFooter extends ConsumerWidget {
   const _PsychologistSummaryFooter({required this.metrics});
 
   final List<_WorkspaceMetric> metrics;
@@ -1394,11 +1637,58 @@ class _PsychologistSummaryFooter extends StatelessWidget {
   static bool _sameDay(DateTime a, DateTime b) =>
       a.year == b.year && a.month == b.month && a.day == b.day;
 
+  static Color _alertColor(PsychologistAlertKind kind) {
+    switch (kind) {
+      case PsychologistAlertKind.expiringInvitation:
+        return AppColors.error;
+      case PsychologistAlertKind.staleQuestionnaire:
+        return AppColors.warning;
+      case PsychologistAlertKind.missingCheckin:
+        return AppColors.info;
+      case PsychologistAlertKind.pendingResultsRelease:
+        return AppColors.success;
+    }
+  }
+
+  /// Mapeia alertas para o índice do dia na semana atual (0=seg…6=dom).
+  /// expiringInvitation usa daysCount para apontar o dia exato de expiração;
+  /// os demais ficam no dia de hoje.
+  static List<List<Color>> _buildDots(
+    List<PsychologistAlert> alerts,
+    DateTime now,
+    List<DateTime> days,
+  ) {
+    // Por dia: set de cores (sem duplicatas de cor) — máx 3 dots.
+    final dotsPerDay = List.generate(7, (_) => <Color>{});
+
+    for (final alert in alerts) {
+      final color = _alertColor(alert.kind);
+      DateTime target;
+      if (alert.kind == PsychologistAlertKind.expiringInvitation) {
+        target = DateTime(now.year, now.month, now.day)
+            .add(Duration(days: alert.daysCount));
+      } else {
+        target = now;
+      }
+      for (var i = 0; i < days.length; i++) {
+        if (_sameDay(days[i], target)) {
+          dotsPerDay[i].add(color);
+          break;
+        }
+      }
+    }
+
+    return dotsPerDay.map((s) => s.take(3).toList()).toList();
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final now = DateTime.now();
     final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
     final days = List.generate(7, (i) => startOfWeek.add(Duration(days: i)));
+
+    final alerts = ref.watch(psychologistAlertsProvider).valueOrNull ?? [];
+    final dots = _buildDots(alerts, now, days);
 
     return ClayCard(
       shape: RoundedRectangleBorder(borderRadius: AppRadius.xlAll),
@@ -1413,14 +1703,14 @@ class _PsychologistSummaryFooter extends StatelessWidget {
               children: [
                 for (var i = 0; i < metrics.length; i++) ...[
                   if (i > 0)
-                    Container(width: 1, height: 56, color: AppColors.border),
+                    Container(width: 1, height: 56, color: Theme.of(context).colorScheme.outline),
                   Expanded(child: _WorkspaceMetricCell(metric: metrics[i])),
                 ],
               ],
             ),
           ),
           // Divisória
-          const Divider(height: 1, thickness: 0.5, color: AppColors.border),
+          Divider(height: 1, thickness: 0.5, color: Theme.of(context).colorScheme.outline),
           // Faixa semanal
           Padding(
             padding: const EdgeInsets.symmetric(
@@ -1435,6 +1725,7 @@ class _PsychologistSummaryFooter extends StatelessWidget {
                     label: _labels[i],
                     day: days[i],
                     isToday: _sameDay(days[i], now),
+                    dots: dots[i],
                   ),
               ],
             ),
@@ -1450,11 +1741,13 @@ class _DayCell extends StatelessWidget {
     required this.label,
     required this.day,
     required this.isToday,
+    this.dots = const [],
   });
 
   final String label;
   final DateTime day;
   final bool isToday;
+  final List<Color> dots;
 
   @override
   Widget build(BuildContext context) {
@@ -1464,7 +1757,7 @@ class _DayCell extends StatelessWidget {
       width: 36,
       padding: const EdgeInsets.symmetric(vertical: 8),
       decoration: BoxDecoration(
-        color: isToday ? AppColors.navy : Colors.transparent,
+        color: isToday ? theme.colorScheme.primaryContainer : Colors.transparent,
         borderRadius: BorderRadius.circular(10),
       ),
       child: Column(
@@ -1473,7 +1766,7 @@ class _DayCell extends StatelessWidget {
           Text(
             label,
             style: theme.textTheme.labelSmall?.copyWith(
-              color: isToday ? Colors.white60 : AppColors.textMuted,
+              color: isToday ? Colors.white60 : theme.colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w700,
               fontSize: 10,
               letterSpacing: 0.3,
@@ -1483,9 +1776,34 @@ class _DayCell extends StatelessWidget {
           Text(
             '${day.day}',
             style: theme.textTheme.titleSmall?.copyWith(
-              color: isToday ? Colors.white : AppColors.navy,
+              color: isToday ? Colors.white : theme.colorScheme.onSurface,
               fontWeight: FontWeight.w800,
             ),
+          ),
+          const SizedBox(height: 5),
+          SizedBox(
+            height: 6,
+            child: dots.isEmpty
+                ? const SizedBox.shrink()
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      for (var i = 0; i < dots.length; i++) ...[
+                        if (i > 0) const SizedBox(width: 2),
+                        Container(
+                          width: 5,
+                          height: 5,
+                          decoration: BoxDecoration(
+                            color: isToday
+                                ? dots[i].withValues(alpha: 0.9)
+                                : dots[i],
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
           ),
         ],
       ),

@@ -120,15 +120,15 @@ class _Header extends StatelessWidget {
       children: [
         Text(work.displayTitle,
             style: theme.textTheme.headlineSmall
-                ?.copyWith(fontWeight: FontWeight.w800, color: AppColors.navy)),
+                ?.copyWith(fontWeight: FontWeight.w800, color: theme.colorScheme.onSurface)),
         if ((work.originalTitle ?? '').isNotEmpty)
           Text(work.originalTitle!,
               style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppColors.textMuted, fontStyle: FontStyle.italic)),
+                  color: theme.colorScheme.onSurfaceVariant, fontStyle: FontStyle.italic)),
         const SizedBox(height: 6),
         Text(meta,
             style: theme.textTheme.bodySmall
-                ?.copyWith(color: AppColors.textSecondary)),
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
         const SizedBox(height: 12),
         Wrap(
           spacing: 6,
@@ -223,7 +223,7 @@ class _SectionCard extends StatelessWidget {
                 Expanded(
                   child: Text(title,
                       style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700, color: AppColors.navy)),
+                          fontWeight: FontWeight.w700, color: theme.colorScheme.onSurface)),
                 ),
               ],
             ),
@@ -274,7 +274,7 @@ class _ListCard extends StatelessWidget {
                   Expanded(
                     child: Text(it,
                         style: theme.textTheme.bodyMedium?.copyWith(
-                            color: AppColors.textSecondary, height: 1.4)),
+                            color: theme.colorScheme.onSurfaceVariant, height: 1.4)),
                   ),
                 ],
               ),
@@ -319,7 +319,7 @@ class _TextCard extends StatelessWidget {
           style: Theme.of(context)
               .textTheme
               .bodyMedium
-              ?.copyWith(color: AppColors.textSecondary, height: 1.45)),
+              ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant, height: 1.45)),
     );
   }
 }
@@ -349,13 +349,13 @@ class _PatientPreview extends StatelessWidget {
                     ?.copyWith(fontWeight: FontWeight.w700)),
             Text(layer.before!,
                 style: theme.textTheme.bodySmall
-                    ?.copyWith(color: AppColors.textSecondary)),
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
             const SizedBox(height: 8),
           ],
           if (layer.after.isNotEmpty)
             Text('${layer.after.length} pergunta(s) no "depois de assistir"',
                 style: theme.textTheme.bodySmall
-                    ?.copyWith(color: AppColors.textMuted)),
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
         ],
       ),
     );

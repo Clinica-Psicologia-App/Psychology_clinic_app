@@ -716,7 +716,7 @@ class _AdminLibraryEditorPageState
                                 ? 'Pré-visualização atualizada ao lado.'
                                 : 'Suba uma imagem ou cole a URL diretamente.',
                             style: theme.textTheme.labelSmall?.copyWith(
-                              color: AppColors.textMuted,
+                              color: theme.colorScheme.onSurfaceVariant,
                             ),
                           ),
                         ],
@@ -763,7 +763,8 @@ class _WorkHero extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final pubColor = isPublished ? AppColors.success : AppColors.textMuted;
+    final pubColor =
+        isPublished ? AppColors.success : theme.colorScheme.onSurfaceVariant;
 
     return AnimatedBuilder(
       animation: Listenable.merge([titleController, coverController]),
@@ -901,12 +902,12 @@ class _AnimationToggle extends StatelessWidget {
       decoration: BoxDecoration(
         color: value
             ? AppColors.cyan.withValues(alpha: 0.08)
-            : AppColors.surface,
+            : theme.colorScheme.surface,
         borderRadius: AppRadius.mdAll,
         border: Border.all(
           color: value
               ? AppColors.cyan.withValues(alpha: 0.25)
-              : AppColors.border,
+              : theme.colorScheme.outline,
         ),
       ),
       child: SwitchListTile(
@@ -919,13 +920,13 @@ class _AnimationToggle extends StatelessWidget {
           'Animação',
           style: theme.textTheme.bodyMedium?.copyWith(
             fontWeight: FontWeight.w600,
-            color: value ? AppColors.cyan : AppColors.textSecondary,
+            color: value ? AppColors.cyan : theme.colorScheme.onSurfaceVariant,
           ),
         ),
         secondary: Icon(
           Icons.animation_outlined,
           size: 20,
-          color: value ? AppColors.cyan : AppColors.textMuted,
+          color: value ? AppColors.cyan : theme.colorScheme.onSurfaceVariant,
         ),
         value: value,
         onChanged: onChanged,
@@ -994,7 +995,7 @@ class _StringListEditor extends StatelessWidget {
         Text(
           label,
           style: theme.textTheme.labelMedium?.copyWith(
-            color: AppColors.textSecondary,
+            color: theme.colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.2,
           ),
@@ -1005,7 +1006,7 @@ class _StringListEditor extends StatelessWidget {
             child: Text(
               'Nenhum item ainda.',
               style: theme.textTheme.bodySmall
-                  ?.copyWith(color: AppColors.textMuted),
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
           )
         else
@@ -1023,14 +1024,14 @@ class _StringListEditor extends StatelessWidget {
                           width: 24,
                           height: 24,
                           decoration: BoxDecoration(
-                            color: AppColors.surfaceTint,
+                            color: theme.colorScheme.surfaceContainerLow,
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: Center(
                             child: Text(
                               '${i + 1}',
                               style: theme.textTheme.labelSmall?.copyWith(
-                                color: AppColors.textSecondary,
+                                color: theme.colorScheme.onSurfaceVariant,
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
@@ -1098,7 +1099,7 @@ class _AfterQuestionsEditor extends StatelessWidget {
         Text(
           'Depois de assistir (perguntas)',
           style: theme.textTheme.labelMedium?.copyWith(
-            color: AppColors.textSecondary,
+            color: theme.colorScheme.onSurfaceVariant,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.2,
           ),
@@ -1109,7 +1110,7 @@ class _AfterQuestionsEditor extends StatelessWidget {
             child: Text(
               'Nenhuma pergunta ainda.',
               style: theme.textTheme.bodySmall
-                  ?.copyWith(color: AppColors.textMuted),
+                  ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
           )
         else
@@ -1123,7 +1124,7 @@ class _AfterQuestionsEditor extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(AppSpacing.sm),
                       decoration: BoxDecoration(
-                        color: AppColors.surfaceTint,
+                        color: theme.colorScheme.surfaceContainerLow,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Column(

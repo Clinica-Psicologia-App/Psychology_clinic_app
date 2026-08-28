@@ -1,7 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 
 import '../../core/theme/app_breakpoints.dart';
-import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import 'responsive_content.dart';
 
@@ -49,13 +48,13 @@ class AppScaffold extends StatelessWidget {
                   Text(
                     subtitle!,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: AppColors.textMuted,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                   ),
                 ],
               ),
         actions: actions,
-        backgroundColor: _accentBarBackground(accent),
+        backgroundColor: _accentBarBackground(accent, context),
         bottom: _accentBarLine(accent),
       ),
       body: SafeArea(
@@ -126,7 +125,7 @@ class AppFormScaffold extends StatelessWidget {
       appBar: AppBar(
         title: Text(title),
         actions: actions,
-        backgroundColor: _accentBarBackground(accent),
+        backgroundColor: _accentBarBackground(accent, context),
         bottom: _accentBarLine(accent),
       ),
       body: SafeArea(
@@ -145,11 +144,11 @@ class AppFormScaffold extends StatelessWidget {
 
 /// Fundo da barra com uma tinta discreta do acento do módulo (a versão leve
 /// do canopy). `null` mantém o fundo neutro padrão da barra.
-Color? _accentBarBackground(Color? accent) => accent == null
+Color? _accentBarBackground(Color? accent, BuildContext context) => accent == null
     ? null
     : Color.alphaBlend(
         accent.withValues(alpha: 0.05),
-        AppColors.background,
+        Theme.of(context).colorScheme.surfaceContainerLow,
       );
 
 /// Fio de luz do acento sob o título — brilha no centro e some nas pontas.

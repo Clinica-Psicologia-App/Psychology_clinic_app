@@ -126,7 +126,7 @@ class _QuestionnaireCard extends StatelessWidget {
                     Text(item.name,
                         style:
                             Theme.of(context).textTheme.titleMedium?.copyWith(
-                                  color: AppColors.navy,
+                                  color: Theme.of(context).colorScheme.onSurface,
                                   fontWeight: FontWeight.w700,
                                 )),
                     const SizedBox(height: AppSpacing.xxs),
@@ -134,7 +134,7 @@ class _QuestionnaireCard extends StatelessWidget {
                         style: Theme.of(context)
                             .textTheme
                             .bodySmall
-                            ?.copyWith(color: AppColors.textSecondary)),
+                            ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant)),
                     const SizedBox(height: AppSpacing.sm),
                     Wrap(spacing: 8, runSpacing: 6, children: [
                       _Tag(label: status, color: color),
@@ -144,7 +144,7 @@ class _QuestionnaireCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.textMuted),
+              Icon(Icons.chevron_right, color: Theme.of(context).colorScheme.onSurfaceVariant),
             ],
           ),
         ),
@@ -154,22 +154,26 @@ class _QuestionnaireCard extends StatelessWidget {
 }
 
 class _Tag extends StatelessWidget {
-  const _Tag({required this.label, this.color = AppColors.textSecondary});
+  const _Tag({required this.label, this.color});
   final String label;
-  final Color color;
+  final Color? color;
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: .09),
-          borderRadius: BorderRadius.circular(99),
-        ),
-        child: Text(label,
-            style: Theme.of(context)
-                .textTheme
-                .labelSmall
-                ?.copyWith(color: color, fontWeight: FontWeight.w700)),
-      );
+  Widget build(BuildContext context) {
+    final effectiveColor =
+        color ?? Theme.of(context).colorScheme.onSurfaceVariant;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: effectiveColor.withValues(alpha: .09),
+        borderRadius: BorderRadius.circular(99),
+      ),
+      child: Text(label,
+          style: Theme.of(context)
+              .textTheme
+              .labelSmall
+              ?.copyWith(color: effectiveColor, fontWeight: FontWeight.w700)),
+    );
+  }
 }
 
 class _CatalogError extends StatelessWidget {

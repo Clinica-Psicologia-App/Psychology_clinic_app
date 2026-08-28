@@ -28,7 +28,7 @@ class PatientCheckInListTile extends StatelessWidget {
 
     return ClayCard(
       margin: const EdgeInsets.only(bottom: 12),
-      color: highlightToday ? AppColors.surfaceTintTurquoise : null,
+      color: highlightToday ? AppColors.turquoise.withValues(alpha: 0.08) : null,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
         side: BorderSide(color: accent.withValues(alpha: 0.16)),
@@ -73,7 +73,7 @@ class PatientCheckInListTile extends StatelessWidget {
                     Text(
                       highlightToday ? 'Check-in de hoje' : date,
                       style: theme.textTheme.titleSmall?.copyWith(
-                        color: AppColors.navy,
+                        color: theme.colorScheme.onSurface,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -81,7 +81,7 @@ class PatientCheckInListTile extends StatelessWidget {
                     Text(
                       '$time · ${checkIn.summaryLine}',
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.textMuted,
+                        color: theme.colorScheme.onSurfaceVariant,
                       ),
                     ),
                     if (checkIn.notes != null &&
@@ -99,9 +99,9 @@ class PatientCheckInListTile extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 8),
-              const Icon(
+              Icon(
                 Icons.chevron_right,
-                color: AppColors.textMuted,
+                color: theme.colorScheme.onSurfaceVariant,
                 size: 20,
               ),
             ],

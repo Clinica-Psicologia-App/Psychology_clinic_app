@@ -116,8 +116,8 @@ class _ModuleCard extends ConsumerWidget {
                             ?.copyWith(fontWeight: FontWeight.w700)),
                     const SizedBox(height: 2),
                     Text('${module.stage} · ${module.cardCount} cards',
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: AppColors.textMuted)),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant)),
                   ],
                 ),
               ),
@@ -162,7 +162,7 @@ class _PublishSwitch extends ConsumerWidget {
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
                 color: module.isPublished
                     ? AppColors.success
-                    : AppColors.textMuted,
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
                 fontWeight: FontWeight.w700,
               ),
         ),

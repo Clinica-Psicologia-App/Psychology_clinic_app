@@ -93,7 +93,7 @@ class _ResultsReleaseCardState extends ConsumerState<ResultsReleaseCard> {
                             : 'Resultados não liberados',
                         style: theme.textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w700,
-                          color: AppColors.navy,
+                          color: theme.colorScheme.onSurface,
                         ),
                       ),
                       Text(
@@ -103,7 +103,7 @@ class _ResultsReleaseCardState extends ConsumerState<ResultsReleaseCard> {
                             : 'Valide as ativações no perfil esquemático acima. '
                                 'Ao liberar, o paciente passa a ver os resultados.',
                         style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.textSecondary,
+                          color: theme.colorScheme.onSurfaceVariant,
                           height: 1.4,
                         ),
                       ),
@@ -281,7 +281,7 @@ class _ReleaseConfirmationDialogState
             'O paciente passa a ver os resultados dos questionários e o '
             'mapa mental.',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: AppColors.textSecondary,
+              color: theme.colorScheme.onSurfaceVariant,
               height: 1.4,
             ),
           ),

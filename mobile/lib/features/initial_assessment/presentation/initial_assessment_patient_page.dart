@@ -367,8 +367,8 @@ class _InitialAssessmentPatientPageState
                   ?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),
           Text(subtitle,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: AppColors.textSecondary, height: 1.4)),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant, height: 1.4)),
         ],
       ),
     );

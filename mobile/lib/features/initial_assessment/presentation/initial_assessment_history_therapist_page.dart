@@ -111,7 +111,7 @@ class _InitialAssessmentHistoryTherapistPageState
                         'O paciente ainda não registrou acontecimentos. '
                         'Você pode adicioná-los por ele.',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: AppColors.textSecondary,
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
                             ),
                       ),
                     ),
@@ -219,7 +219,7 @@ class _InitialAssessmentHistoryTherapistPageState
                 padding: const EdgeInsets.only(top: 2),
                 child: Text(meta.join(' · '),
                     style: theme.textTheme.labelSmall
-                        ?.copyWith(color: AppColors.textSecondary)),
+                        ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
               ),
             if ((entry.description ?? '').isNotEmpty)
               Padding(

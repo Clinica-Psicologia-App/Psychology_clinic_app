@@ -19,6 +19,7 @@ class UserAvatar extends StatelessWidget {
     super.key,
     required UserProfile profile,
     this.size = 44,
+    this.borderRadius,
   })  : fullName = profile.fullName,
         initials = profile.initials,
         role = profile.role,
@@ -38,6 +39,7 @@ class UserAvatar extends StatelessWidget {
     this.photoUrl,
     this.avatarConfig,
     this.size = 44,
+    this.borderRadius,
   }) : effectiveType = switch (avatarType) {
           AvatarType.photo =>
             (photoUrl ?? '').trim().isEmpty ? AvatarType.initials : avatarType,
@@ -53,11 +55,13 @@ class UserAvatar extends StatelessWidget {
   final String? photoUrl;
   final AvatarConfig? avatarConfig;
   final double size;
+  // ignore: unused_element
+  final BorderRadius? borderRadius;
 
-  Color get _accent {
+  Color _accent(BuildContext context) {
     switch (role) {
       case ProfileRole.platformAdmin:
-        return AppColors.navy;
+        return Theme.of(context).colorScheme.primary;
       case ProfileRole.psychologist:
         return AppColors.turquoise;
       case ProfileRole.patient:
@@ -67,23 +71,37 @@ class UserAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final accent = _accent(context);
+    final br = borderRadius;
     return Semantics(
       label: 'Foto de perfil de $fullName',
       image: true,
       child: Container(
         width: size,
         height: size,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: _accent,
-          boxShadow: [
-            BoxShadow(
-              color: _accent.withValues(alpha: 0.32),
-              blurRadius: size * 0.18,
-              offset: Offset(0, size * 0.07),
-            ),
-          ],
-        ),
+        decoration: br != null
+            ? BoxDecoration(
+                borderRadius: br,
+                color: accent,
+                boxShadow: [
+                  BoxShadow(
+                    color: accent.withValues(alpha: 0.32),
+                    blurRadius: size * 0.18,
+                    offset: Offset(0, size * 0.07),
+                  ),
+                ],
+              )
+            : BoxDecoration(
+                shape: BoxShape.circle,
+                color: accent,
+                boxShadow: [
+                  BoxShadow(
+                    color: accent.withValues(alpha: 0.32),
+                    blurRadius: size * 0.18,
+                    offset: Offset(0, size * 0.07),
+                  ),
+                ],
+              ),
         clipBehavior: Clip.antiAlias,
         child: _content(),
       ),
@@ -96,7 +114,7 @@ class UserAvatar extends StatelessWidget {
     // estado de carregamento nem de erro para tratar aqui.
     if (effectiveType == AvatarType.custom) {
       final config = avatarConfig;
-      if (config != null) return AvatarArtwork(config: config, size: size);
+      if (config != null) return AvatarArtwork(config: config, size: size, borderRadius: borderRadius);
       return _initials();
     }
 

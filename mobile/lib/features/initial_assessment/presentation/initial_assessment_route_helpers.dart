@@ -9,7 +9,6 @@ import '../providers/initial_assessment_providers.dart';
 import '../providers/patient_family_providers.dart';
 import '../providers/patient_history_providers.dart';
 import 'initial_assessment_family_page.dart';
-import 'initial_assessment_family_therapist_page.dart';
 import 'initial_assessment_history_page.dart';
 import 'initial_assessment_history_therapist_page.dart';
 import 'initial_assessment_patient_page.dart';
@@ -53,13 +52,8 @@ List<RouteBase> staffPatientInitialAssessmentRoutes({
             patientId: state.pathParameters['patientId']!,
           ),
         ),
-        GoRoute(
-          path: 'family',
-          builder: (context, state) => InitialAssessmentFamilyTherapistPage(
-            role: role,
-            patientId: state.pathParameters['patientId']!,
-          ),
-        ),
+        // 'family' (Genograma emocional) removido: o genograma do terapeuta
+        // vive no painel canônico (LifeStoryRoutes.genogramPanel).
       ],
     ),
   ];

@@ -22,12 +22,6 @@ abstract final class InitialAssessmentRoutes {
   }) =>
       '${_staffBase(role: role, patientId: patientId)}/history';
 
-  static String staffFamily({
-    required ProfileRole role,
-    required String patientId,
-  }) =>
-      '${_staffBase(role: role, patientId: patientId)}/family';
-
   static String _staffBase({
     required ProfileRole role,
     required String patientId,

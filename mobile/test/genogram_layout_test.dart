@@ -1,0 +1,150 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:terapia_esquema/features/genogram/domain/genogram_layout.dart';
+
+void main() {
+  group('buildGenogramStructure', () {
+    test('família nuclear: gerações e linhagens do pai/mãe', () {
+      final layout = buildGenogramStructure(
+        focusId: 'F',
+        people: const [
+          GPerson('F'),
+          GPerson('Fa', sex: GSex.male),
+          GPerson('Mo', sex: GSex.female),
+          GPerson('Si'),
+        ],
+        edges: const [
+          GEdge('Fa', 'F', GEdgeType.parentChild),
+          GEdge('Mo', 'F', GEdgeType.parentChild),
+          GEdge('Fa', 'Si', GEdgeType.parentChild),
+          GEdge('Mo', 'Si', GEdgeType.parentChild),
+          GEdge('Fa', 'Mo', GEdgeType.spouse),
+        ],
+      );
+
+      // Gerações
+      expect(layout.placed['F']!.generation, 0);
+      expect(layout.placed['Si']!.generation, 0);
+      expect(layout.placed['Fa']!.generation, -1);
+      expect(layout.placed['Mo']!.generation, -1);
+
+      // Linhagens
+      expect(layout.placed['F']!.lineage, GLineage.self);
+      expect(layout.placed['Si']!.lineage, GLineage.self);
+      expect(layout.placed['Fa']!.lineage, GLineage.paternal);
+      expect(layout.placed['Mo']!.lineage, GLineage.maternal);
+
+      // Todos conectados
+      expect(layout.placed.values.every((p) => p.connected), isTrue);
+
+      // Um casal
+      expect(layout.couples.length, 1);
+
+      // Um grupo de irmãos [F, Si]
+      final sib = layout.sibGroups.firstWhere((g) => g.members.contains('F'));
+      expect(sib.members.toSet(), {'F', 'Si'});
+      expect(sib.parents, {'Fa', 'Mo'});
+    });
+
+    test('árvore bilateral: avós paternos e maternos na linhagem certa', () {
+      final layout = buildGenogramStructure(
+        focusId: 'F',
+        people: const [
+          GPerson('F'),
+          GPerson('Fa', sex: GSex.male),
+          GPerson('Mo', sex: GSex.female),
+          GPerson('GpP', sex: GSex.male), // avô paterno
+          GPerson('GmP', sex: GSex.female), // avó paterna
+          GPerson('GpM', sex: GSex.male), // avô materno
+          GPerson('GmM', sex: GSex.female), // avó materna
+        ],
+        edges: const [
+          GEdge('Fa', 'F', GEdgeType.parentChild),
+          GEdge('Mo', 'F', GEdgeType.parentChild),
+          GEdge('Fa', 'Mo', GEdgeType.spouse),
+          // linhagem paterna
+          GEdge('GpP', 'Fa', GEdgeType.parentChild),
+          GEdge('GmP', 'Fa', GEdgeType.parentChild),
+          GEdge('GpP', 'GmP', GEdgeType.spouse),
+          // linhagem materna
+          GEdge('GpM', 'Mo', GEdgeType.parentChild),
+          GEdge('GmM', 'Mo', GEdgeType.parentChild),
+          GEdge('GpM', 'GmM', GEdgeType.spouse),
+        ],
+      );
+
+      // Gerações dos avós
+      for (final id in ['GpP', 'GmP', 'GpM', 'GmM']) {
+        expect(layout.placed[id]!.generation, -2, reason: '$id deve ser -2');
+      }
+
+      // Linhagens
+      expect(layout.placed['GpP']!.lineage, GLineage.paternal);
+      expect(layout.placed['GmP']!.lineage, GLineage.paternal);
+      expect(layout.placed['GpM']!.lineage, GLineage.maternal);
+      expect(layout.placed['GmM']!.lineage, GLineage.maternal);
+    });
+
+    test('tia paterna herda a linhagem do pai', () {
+      final layout = buildGenogramStructure(
+        focusId: 'F',
+        people: const [
+          GPerson('F'),
+          GPerson('Fa', sex: GSex.male),
+          GPerson('Mo', sex: GSex.female),
+          GPerson('GpP', sex: GSex.male),
+          GPerson('GmP', sex: GSex.female),
+          GPerson('Sofia', sex: GSex.female), // tia paterna
+        ],
+        edges: const [
+          GEdge('Fa', 'F', GEdgeType.parentChild),
+          GEdge('Mo', 'F', GEdgeType.parentChild),
+          GEdge('Fa', 'Mo', GEdgeType.spouse),
+          GEdge('GpP', 'Fa', GEdgeType.parentChild),
+          GEdge('GmP', 'Fa', GEdgeType.parentChild),
+          GEdge('GpP', 'Sofia', GEdgeType.parentChild),
+          GEdge('GmP', 'Sofia', GEdgeType.parentChild),
+        ],
+      );
+
+      expect(layout.placed['Sofia']!.generation, -1);
+      expect(layout.placed['Sofia']!.lineage, GLineage.paternal);
+      expect(layout.placed['Sofia']!.connected, isTrue);
+    });
+
+    test('pessoa sem vínculo estrutural fica não-conectada (fallback)', () {
+      final layout = buildGenogramStructure(
+        focusId: 'F',
+        people: const [
+          GPerson('F'),
+          GPerson('Fa', sex: GSex.male),
+          GPerson('X'), // solta, sem arestas
+        ],
+        edges: const [
+          GEdge('Fa', 'F', GEdgeType.parentChild),
+        ],
+      );
+
+      expect(layout.placed['X']!.connected, isFalse);
+      expect(layout.placed['X']!.lineage, GLineage.unknown);
+      expect(layout.placed['F']!.connected, isTrue);
+      expect(layout.placed['Fa']!.connected, isTrue);
+      expect(layout.unconnected.map((p) => p.id).toList(), ['X']);
+    });
+
+    test('descendentes do foco entram na própria linhagem', () {
+      final layout = buildGenogramStructure(
+        focusId: 'F',
+        people: const [
+          GPerson('F'),
+          GPerson('Filho'),
+        ],
+        edges: const [
+          GEdge('F', 'Filho', GEdgeType.parentChild),
+        ],
+      );
+
+      expect(layout.placed['Filho']!.generation, 1);
+      expect(layout.placed['Filho']!.lineage, GLineage.self);
+    });
+  });
+}

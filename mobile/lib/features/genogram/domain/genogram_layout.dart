@@ -223,6 +223,157 @@ GLayout buildGenogramStructure({
   return GLayout(placed, couples, _siblingGroups(ids, parentsOf));
 }
 
+/// Uma pessoa já posicionada em coordenadas.
+class GPositioned {
+  final String id;
+  final int generation;
+  final GLineage lineage;
+  final bool connected;
+  final double x;
+  final double y;
+  const GPositioned(
+    this.id, {
+    required this.generation,
+    required this.lineage,
+    required this.connected,
+    required this.x,
+    required this.y,
+  });
+}
+
+/// O diagrama posicionado, pronto para o desenho.
+class GDiagram {
+  final List<GPositioned> nodes;
+  final double width;
+  final double height;
+  final double colWidth;
+  final double rowHeight;
+  const GDiagram(
+    this.nodes, {
+    required this.width,
+    required this.height,
+    required this.colWidth,
+    required this.rowHeight,
+  });
+
+  GPositioned? byId(String id) {
+    for (final n in nodes) {
+      if (n.id == id) return n;
+    }
+    return null;
+  }
+}
+
+int _lineageOrder(GLineage l) => switch (l) {
+      GLineage.paternal => 0,
+      GLineage.self => 1,
+      GLineage.maternal => 2,
+      GLineage.unknown => 3,
+    };
+
+/// Converte a topologia em coordenadas do desenho bilateral: cada geração numa
+/// faixa horizontal (mais ancestral no topo), linhagem paterna à esquerda e
+/// materna à direita, casais adjacentes. Pessoas não-conectadas vão para uma
+/// faixa solta na base (fallback). Posicionamento v1: agrupa por linhagem e
+/// centra cada faixa; o refino de centralizar pais sobre filhos vem depois.
+GDiagram positionGenogram(
+  GLayout layout, {
+  double colWidth = 120,
+  double rowHeight = 150,
+  double margin = 40,
+}) {
+  final connected = layout.placed.values.where((p) => p.connected).toList();
+  final unconnected = layout.placed.values.where((p) => !p.connected).toList();
+
+  final spouse = <String, String>{};
+  for (final c in layout.couples) {
+    spouse[c.a] = c.b;
+    spouse[c.b] = c.a;
+  }
+
+  final byGen = <int, List<GPlaced>>{};
+  for (final p in connected) {
+    byGen.putIfAbsent(p.generation, () => []).add(p);
+  }
+  final gens = byGen.keys.toList()..sort(); // ascendente: ancestral no topo
+
+  // Ordena cada faixa: por linhagem, mantendo casais adjacentes.
+  final rowOrders = <int, List<String>>{};
+  for (final g in gens) {
+    final people = byGen[g]!
+      ..sort((a, b) {
+        final lo = _lineageOrder(a.lineage).compareTo(_lineageOrder(b.lineage));
+        return lo != 0 ? lo : a.id.compareTo(b.id);
+      });
+    final inGen = {for (final p in people) p.id};
+    final order = <String>[];
+    final done = <String>{};
+    for (final p in people) {
+      if (done.contains(p.id)) continue;
+      order.add(p.id);
+      done.add(p.id);
+      final sp = spouse[p.id];
+      if (sp != null && inGen.contains(sp) && !done.contains(sp)) {
+        order.add(sp);
+        done.add(sp);
+      }
+    }
+    rowOrders[g] = order;
+  }
+
+  final maxCount = rowOrders.values
+      .fold<int>(0, (m, l) => l.length > m ? l.length : m)
+      .clamp(1, 1 << 30);
+  final looseRow = unconnected.isNotEmpty ? 1 : 0;
+  final width = maxCount * colWidth + 2 * margin;
+  final height = (gens.length + looseRow) * rowHeight + 2 * margin;
+
+  final nodes = <GPositioned>[];
+  for (var r = 0; r < gens.length; r++) {
+    final g = gens[r];
+    final order = rowOrders[g]!;
+    final rowWidth = order.length * colWidth;
+    final startX = margin + (maxCount * colWidth - rowWidth) / 2 + colWidth / 2;
+    final y = margin + r * rowHeight + rowHeight / 2;
+    for (var i = 0; i < order.length; i++) {
+      final pl = layout.placed[order[i]]!;
+      nodes.add(GPositioned(
+        pl.id,
+        generation: g,
+        lineage: pl.lineage,
+        connected: true,
+        x: startX + i * colWidth,
+        y: y,
+      ));
+    }
+  }
+
+  if (unconnected.isNotEmpty) {
+    final rowWidth = unconnected.length * colWidth;
+    final startX = margin + (maxCount * colWidth - rowWidth) / 2 + colWidth / 2;
+    final y = margin + gens.length * rowHeight + rowHeight / 2;
+    for (var i = 0; i < unconnected.length; i++) {
+      final pl = unconnected[i];
+      nodes.add(GPositioned(
+        pl.id,
+        generation: pl.generation,
+        lineage: pl.lineage,
+        connected: false,
+        x: startX + i * colWidth,
+        y: y,
+      ));
+    }
+  }
+
+  return GDiagram(
+    nodes,
+    width: width,
+    height: height,
+    colWidth: colWidth,
+    rowHeight: rowHeight,
+  );
+}
+
 /// Agrupa pessoas que compartilham exatamente o mesmo conjunto de pais.
 List<GSibGroup> _siblingGroups(
   Set<String> ids,

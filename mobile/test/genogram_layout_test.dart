@@ -147,4 +147,77 @@ void main() {
       expect(layout.placed['Filho']!.lineage, GLineage.self);
     });
   });
+
+  group('positionGenogram', () {
+    GLayout bilateral() => buildGenogramStructure(
+          focusId: 'F',
+          people: const [
+            GPerson('F'),
+            GPerson('Fa', sex: GSex.male),
+            GPerson('Mo', sex: GSex.female),
+            GPerson('GpP', sex: GSex.male),
+            GPerson('GmP', sex: GSex.female),
+            GPerson('GpM', sex: GSex.male),
+            GPerson('GmM', sex: GSex.female),
+          ],
+          edges: const [
+            GEdge('Fa', 'F', GEdgeType.parentChild),
+            GEdge('Mo', 'F', GEdgeType.parentChild),
+            GEdge('Fa', 'Mo', GEdgeType.spouse),
+            GEdge('GpP', 'Fa', GEdgeType.parentChild),
+            GEdge('GmP', 'Fa', GEdgeType.parentChild),
+            GEdge('GpP', 'GmP', GEdgeType.spouse),
+            GEdge('GpM', 'Mo', GEdgeType.parentChild),
+            GEdge('GmM', 'Mo', GEdgeType.parentChild),
+            GEdge('GpM', 'GmM', GEdgeType.spouse),
+          ],
+        );
+
+    test('mesma geração → mesmo y; gerações empilhadas do topo', () {
+      final d = positionGenogram(bilateral());
+      // avós na mesma faixa
+      expect(d.byId('GpP')!.y, d.byId('GmM')!.y);
+      // pais na mesma faixa
+      expect(d.byId('Fa')!.y, d.byId('Mo')!.y);
+      // ancestral mais alto tem y menor (mais no topo)
+      expect(d.byId('GpP')!.y, lessThan(d.byId('Fa')!.y));
+      expect(d.byId('Fa')!.y, lessThan(d.byId('F')!.y));
+    });
+
+    test('paterna à esquerda, materna à direita', () {
+      final d = positionGenogram(bilateral());
+      // na faixa dos pais: pai (paterna) à esquerda da mãe (materna)
+      expect(d.byId('Fa')!.x, lessThan(d.byId('Mo')!.x));
+      // na faixa dos avós: paternos à esquerda dos maternos
+      final patX = [d.byId('GpP')!.x, d.byId('GmP')!.x].reduce((a, b) => a > b ? a : b);
+      final matX = [d.byId('GpM')!.x, d.byId('GmM')!.x].reduce((a, b) => a < b ? a : b);
+      expect(patX, lessThan(matX));
+    });
+
+    test('casais ficam adjacentes (uma coluna de distância)', () {
+      final d = positionGenogram(bilateral(), colWidth: 100);
+      expect((d.byId('Fa')!.x - d.byId('Mo')!.x).abs(), 100);
+      expect((d.byId('GpP')!.x - d.byId('GmP')!.x).abs(), 100);
+    });
+
+    test('não-conectados vão para a faixa solta na base', () {
+      final layout = buildGenogramStructure(
+        focusId: 'F',
+        people: const [
+          GPerson('F'),
+          GPerson('Fa', sex: GSex.male),
+          GPerson('X'),
+        ],
+        edges: const [GEdge('Fa', 'F', GEdgeType.parentChild)],
+      );
+      final d = positionGenogram(layout);
+      // X está abaixo de todo mundo conectado
+      final maxConnectedY = d.nodes
+          .where((n) => n.connected)
+          .map((n) => n.y)
+          .reduce((a, b) => a > b ? a : b);
+      expect(d.byId('X')!.y, greaterThan(maxConnectedY));
+      expect(d.byId('X')!.connected, isFalse);
+    });
+  });
 }

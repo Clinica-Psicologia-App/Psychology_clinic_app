@@ -15,7 +15,6 @@ import '../../coach/domain/coach_step.dart';
 import '../../coach/domain/coach_tour.dart';
 import '../../coach/providers/coach_providers.dart';
 import '../../clinical_reports/presentation/clinical_report_routes.dart';
-import '../../life_story/presentation/life_story_routes.dart';
 import '../../patient_check_ins/presentation/patient_check_in_routes.dart';
 import '../../patient_invitations/domain/patient_invitation_draft.dart';
 import '../../profile/domain/profile_role.dart';
@@ -310,26 +309,14 @@ class _PatientDetailsBody extends StatelessWidget {
               ),
             ),
             const SizedBox(height: AppSpacing.md),
-            AppInfoCard(
-              key: genogramKey,
-              icon: Icons.account_tree_outlined,
-              title: 'Genograma',
-              body:
-                  'Veja a família, os vínculos e os padrões que o paciente registrou.',
-              action: IconButton(
-                tooltip: 'Abrir genograma',
-                onPressed: () => context.push(
-                  LifeStoryRoutes.genogramPanel,
-                  extra: patient.id,
-                ),
-                icon: const Icon(Icons.arrow_forward_rounded),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
             _PatientVitalsSummary(
                 key: vitalsKey, role: role, patient: patient),
             const SizedBox(height: AppSpacing.xl),
+            // Genograma vive aqui, no card da grade "Avaliação Inicial"
+            // (o card avulso foi removido — era um segundo caminho para a
+            // mesma tela). A key do tour aponta para esta seção.
             FutureModulesSection(
+              key: genogramKey,
               role: role,
               patientId: patient.id,
             ),

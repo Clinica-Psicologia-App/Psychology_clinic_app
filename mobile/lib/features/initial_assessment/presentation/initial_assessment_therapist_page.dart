@@ -8,6 +8,7 @@ import '../../../shared/widgets/async_state_body.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../profile/domain/profile_role.dart';
 import 'initial_assessment_routes.dart';
+import '../../life_story/presentation/life_story_routes.dart';
 import '../domain/functioning_level.dart';
 import '../domain/initial_assessment.dart';
 import '../domain/life_area.dart';
@@ -370,14 +371,11 @@ class _InitialAssessmentTherapistPageState
                   _navCard(
                     context: context,
                     icon: Icons.family_restroom_outlined,
-                    title: 'Genograma emocional',
+                    title: 'Genograma',
                     subtitle:
                         'Vínculos, figuras de apego, clima e padrões familiares.',
                     onTap: () => context.push(
-                      InitialAssessmentRoutes.staffFamily(
-                        role: widget.role,
-                        patientId: widget.patientId,
-                      ),
+                      LifeStoryRoutes.genogramPanelFor(widget.patientId),
                     ),
                   ),
                 ],

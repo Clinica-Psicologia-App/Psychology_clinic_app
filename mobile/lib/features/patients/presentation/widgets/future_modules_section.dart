@@ -10,6 +10,7 @@ import '../../../clinic_entitlements/domain/clinic_feature_entitlement.dart';
 import '../../../clinic_entitlements/providers/clinic_entitlements_providers.dart';
 import '../../../daily_monitors/presentation/daily_monitor_routes.dart';
 import '../../../initial_assessment/presentation/initial_assessment_routes.dart';
+import '../../../life_story/presentation/life_story_routes.dart';
 import '../../../mental_map/presentation/mental_map_routes.dart';
 import '../../../patient_infographic/presentation/patient_infographic_route_helpers.dart';
 import '../../../patient_library/presentation/patient_library_routes.dart';
@@ -141,10 +142,7 @@ class FutureModulesSection extends ConsumerWidget {
             subtitle: 'Pessoas e relações familiares.',
             accentColor: AppColors.moduleGenogram,
             onTap: () => context.push(
-              InitialAssessmentRoutes.staffFamily(
-                role: role,
-                patientId: patientId,
-              ),
+              LifeStoryRoutes.genogramPanelFor(patientId),
             ),
           ),
           const _ModuleSpec(

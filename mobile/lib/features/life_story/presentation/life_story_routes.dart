@@ -22,7 +22,16 @@ abstract final class LifeStoryRoutes {
   static const personMoments = '/patient/my-family/person/moments';
 
   /// Painel do terapeuta — Genograma (§41); recebe o `patientId` via `extra`.
+  /// (Entrada pela ficha do paciente.)
   static const genogramPanel = '/psychologist/genogram';
+
+  /// Mesmo painel, com o `patientId` no path — necessário para entradas que
+  /// só empurram uma rota-string (ex.: o nó do Mapa Mental). Aponta para a
+  /// mesma [GenogramPanelPage]; assim ficha e Mapa Mental chegam ao MESMO
+  /// genograma canônico.
+  static const genogramPanelByPath = '/psychologist/genogram-panel/:patientId';
+  static String genogramPanelFor(String patientId) =>
+      '/psychologist/genogram-panel/$patientId';
 
   /// Genograma gráfico (§36–38); recebe o `patientId` via `extra`.
   static const genogramDiagram = '/psychologist/genogram/diagram';

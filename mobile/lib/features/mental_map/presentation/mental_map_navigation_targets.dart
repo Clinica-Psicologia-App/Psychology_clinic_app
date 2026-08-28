@@ -1,6 +1,6 @@
 ﻿import '../../daily_monitors/presentation/daily_monitor_routes.dart';
 import '../../clinical_dashboard/presentation/clinical_dashboard_routes.dart';
-import '../../genogram/presentation/genogram_routes.dart';
+import '../../life_story/presentation/life_story_routes.dart';
 import '../../patient_check_ins/presentation/patient_check_in_routes.dart';
 import '../../patient_problems/presentation/patient_problem_routes.dart';
 import '../../patient_timeline/presentation/patient_timeline_routes.dart';
@@ -97,10 +97,14 @@ abstract final class MentalMapNavigationTargets {
 
   static String? genogram({required ProfileRole role, String? patientId}) {
     if (role == ProfileRole.patient) {
-      return GenogramRoutes.patientList;
+      // Genograma do paciente = "Minha Família" (fluxo Conhecer, modelo A), e
+      // não o construtor clínico de B — o paciente não edita relações tipadas.
+      return LifeStoryRoutes.myFamily;
     }
     if (patientId == null) return null;
-    return GenogramRoutes.staffList(role: role, patientId: patientId);
+    // Terapeuta: cai no MESMO painel canônico que a ficha abre (ver + editar),
+    // em vez do construtor em lista isolado.
+    return LifeStoryRoutes.genogramPanelFor(patientId);
   }
 
   static String? therapyResources({

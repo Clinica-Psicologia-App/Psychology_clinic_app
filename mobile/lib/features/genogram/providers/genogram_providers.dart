@@ -62,6 +62,19 @@ final genogramFamilyPatternsProvider =
   return ref.read(genogramRepositoryProvider).getFamilyPatterns(patientId);
 });
 
+/// Só as relações tipadas do genograma de um paciente — camada emocional
+/// explícita (cônjuge, conflito, rompida…) para o diagrama do fluxo Conhecer,
+/// que antes só inferia a estrutura pelo parentesco. Reusa o repositório do
+/// genograma clínico (mesma tabela `genogram_relationships`).
+final genogramRelationshipsForPatientProvider =
+    FutureProvider.family<List<GenogramRelationship>, String>(
+  (ref, patientId) async {
+    final data =
+        await ref.read(genogramRepositoryProvider).loadForPatient(patientId);
+    return data.relationships;
+  },
+);
+
 final genogramPersonDetailProvider =
     FutureProvider.family<GenogramPerson?, String>((ref, id) {
   return ref.read(genogramRepositoryProvider).getPersonById(id);

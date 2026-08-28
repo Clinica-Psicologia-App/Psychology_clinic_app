@@ -26,6 +26,8 @@ import 'package:terapia_esquema/features/life_story/presentation/developmental_s
 import 'package:terapia_esquema/features/life_story/presentation/genogram_panel_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/widgets/genogram_diagram.dart';
 import 'package:terapia_esquema/features/life_story/domain/genogram_relationship_enums.dart';
+import 'package:terapia_esquema/features/genogram/domain/genogram_relationship.dart';
+import 'package:terapia_esquema/features/genogram/domain/genogram_relationship_type.dart';
 import 'package:terapia_esquema/features/life_story/presentation/my_family_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/person_card_page.dart';
 import 'package:terapia_esquema/features/life_story/presentation/person_clinical_card_page.dart';
@@ -490,7 +492,33 @@ void main() {
           id: 'd', fullName: 'Lia', role: RelationshipRole.daughter),
     ];
 
-    Future<void> renderDiagram(bool bonds, bool caregivers, String file) async {
+    // Relações tipadas explícitas entre familiares — ligam quaisquer duas
+    // pessoas (não só o paciente), o que a camada de vínculos antiga não fazia.
+    final relAt = DateTime(2024);
+    GenogramRelationship rel(String a, String b, GenogramRelationshipType t) =>
+        GenogramRelationship(
+          id: '$a-$b',
+          clinicId: 'c',
+          patientId: 'p',
+          personAId: a,
+          personBId: b,
+          relationshipType: t,
+          isSensitive: false,
+          createdAt: relAt,
+          updatedAt: relAt,
+        );
+    final rels = [
+      rel('f', 'm', GenogramRelationshipType.conflict), // pai × mãe (ziguezague)
+      rel('gf', 'gm', GenogramRelationshipType.ruptured), // avós (rompida)
+      rel('m', 'b', GenogramRelationshipType.close), // mãe × irmão (linha dupla)
+    ];
+
+    Future<void> renderDiagram(
+      bool bonds,
+      bool caregivers,
+      String file, {
+      List<GenogramRelationship> relationships = const [],
+    }) async {
       tester.view.physicalSize = const Size(420, 720);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.reset);
@@ -505,6 +533,7 @@ void main() {
                   height: 700,
                   child: GenogramDiagram(
                     people: fam,
+                    relationships: relationships,
                     showBonds: bonds,
                     highlightCaregivers: caregivers,
                   ),
@@ -519,7 +548,8 @@ void main() {
     }
 
     await renderDiagram(false, false, 'life_story_genograma_estrutura.png');
-    await renderDiagram(true, true, 'life_story_genograma_relacoes.png');
+    await renderDiagram(true, true, 'life_story_genograma_relacoes.png',
+        relationships: rels);
   });
 
   testWidgets('família — clima', (tester) async {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../genogram/providers/genogram_providers.dart';
 import '../providers/life_story_providers.dart';
 import 'widgets/genogram_diagram.dart';
 import '../../../shared/widgets/brand_loading.dart';
@@ -26,6 +27,12 @@ class _GenogramDiagramPageState extends ConsumerState<GenogramDiagramPage> {
   @override
   Widget build(BuildContext context) {
     final familyAsync = ref.watch(familyForPatientProvider(widget.patientId));
+    // Camada de relações tipadas (mãe×pai, etc.). Secundária: se falhar ou
+    // estiver vazia, o diagrama ainda desenha a estrutura normalmente.
+    final relationships = ref
+            .watch(genogramRelationshipsForPatientProvider(widget.patientId))
+            .valueOrNull ??
+        const [];
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -69,6 +76,7 @@ class _GenogramDiagramPageState extends ConsumerState<GenogramDiagramPage> {
                   color: const Color(0xFFF3F5F9),
                   child: GenogramDiagram(
                     people: people,
+                    relationships: relationships,
                     showBonds: _showBonds,
                     highlightCaregivers: _highlightCaregivers,
                   ),

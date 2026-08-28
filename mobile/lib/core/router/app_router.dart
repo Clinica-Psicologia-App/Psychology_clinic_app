@@ -247,6 +247,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             GenogramPanelPage(patientId: state.extra as String),
       ),
       GoRoute(
+        path: LifeStoryRoutes.genogramPanelByPath,
+        builder: (_, state) => GenogramPanelPage(
+          patientId: state.pathParameters['patientId']!,
+        ),
+      ),
+      GoRoute(
         path: LifeStoryRoutes.genogramDiagram,
         builder: (_, state) =>
             GenogramDiagramPage(patientId: state.extra as String),

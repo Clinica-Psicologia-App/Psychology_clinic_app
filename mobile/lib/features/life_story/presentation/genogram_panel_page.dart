@@ -9,6 +9,8 @@ import '../domain/genogram_relationship_enums.dart';
 import '../domain/life_story_enums.dart';
 import '../providers/life_story_providers.dart';
 import 'life_story_routes.dart';
+import '../../genogram/presentation/genogram_routes.dart';
+import '../../profile/domain/profile_role.dart';
 import '../../../shared/widgets/brand_loading.dart';
 
 /// Painel do terapeuta — Genograma (spec §41). Reúne, para uma pessoa/paciente,
@@ -95,6 +97,25 @@ class GenogramPanelPage extends ConsumerWidget {
                     minimumSize: const Size.fromHeight(48),
                   ),
                   label: const Text('Síntese Desenvolvimental'),
+                ),
+              ),
+              // Superfície de edição: cadastrar/editar pessoas e relações. Este
+              // painel é a visão; o construtor detalhado abre a partir daqui, de
+              // modo que ver e editar convivem num só lugar.
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: OutlinedButton.icon(
+                  onPressed: () => context.push(
+                    GenogramRoutes.staffList(
+                      role: ProfileRole.psychologist,
+                      patientId: patientId,
+                    ),
+                  ),
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size.fromHeight(46),
+                  ),
+                  label: const Text('Editar pessoas e relações'),
                 ),
               ),
               _StructureBlock(people: people, patientId: patientId),

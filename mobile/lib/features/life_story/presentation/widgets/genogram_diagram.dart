@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../genogram/domain/genogram_relationship.dart';
+import '../../../genogram/domain/genogram_relationship_type.dart';
 import '../../domain/family_person.dart';
 import '../../domain/genogram_relationship_enums.dart';
 import '../../domain/life_story_enums.dart';
@@ -12,25 +14,34 @@ import '../../domain/life_story_enums.dart';
 /// círculo = feminino, losango = outro/não informado; o paciente é a pessoa
 /// focal (traço duplo). Falecimento = "X" sobre o símbolo.
 ///
-/// IMPORTANTE — topologia inferida: o modelo guarda o parentesco de cada
-/// pessoa em relação ao paciente, mas não os laços explícitos entre os
-/// familiares (quem é casado com quem, filho de quem). Por isso os conectores
-/// (união dos pais, descendência, irmãos) são inferidos do parentesco. Os
-/// vínculos precisos (materno x paterno, cônjuges) dependeriam de dados que
-/// ainda não coletamos.
+/// IMPORTANTE — topologia estrutural inferida: os conectores de parentesco
+/// (união dos pais, descendência, irmãos) são inferidos do papel de cada
+/// pessoa em relação ao paciente, pois o modelo não guarda os laços
+/// estruturais explícitos (quem é casado com quem, filho de quem).
+///
+/// As relações emocionais tipadas (próxima, distante, conflito, rompida),
+/// porém, quando cadastradas em [relationships], são desenhadas entre as duas
+/// pessoas que elas ligam — inclusive entre familiares (ex.: mãe × pai), o que
+/// a camada de vínculos radiais do paciente não representa.
 ///
 /// Camadas (§38): a Estrutura é sempre exibida; [showBonds] liga os marcadores
-/// de relação emocional (camada 2); [highlightCaregivers] destaca figuras de
-/// cuidado (camada 3, visão do terapeuta).
+/// de relação emocional (camada 2 — vínculos do paciente + [relationships]);
+/// [highlightCaregivers] destaca figuras de cuidado (camada 3, visão do
+/// terapeuta).
 class GenogramDiagram extends StatelessWidget {
   const GenogramDiagram({
     super.key,
     required this.people,
+    this.relationships = const [],
     this.showBonds = false,
     this.highlightCaregivers = false,
   });
 
   final List<FamilyPerson> people;
+
+  /// Relações tipadas explícitas entre familiares (camada emocional). Quando
+  /// vazias, o diagrama cai no comportamento antigo (só estrutura inferida).
+  final List<GenogramRelationship> relationships;
   final bool showBonds;
   final bool highlightCaregivers;
 
@@ -54,6 +65,7 @@ class GenogramDiagram extends StatelessWidget {
         size: size,
         painter: _GenogramPainter(
           layout: layout,
+          relationships: relationships,
           showBonds: showBonds,
           highlightCaregivers: highlightCaregivers,
           fontFamily: fontFamily,
@@ -222,12 +234,14 @@ class _Layout {
 class _GenogramPainter extends CustomPainter {
   _GenogramPainter({
     required this.layout,
+    required this.relationships,
     required this.showBonds,
     required this.highlightCaregivers,
     this.fontFamily,
   });
 
   final _Layout layout;
+  final List<GenogramRelationship> relationships;
   final bool showBonds;
   final bool highlightCaregivers;
   final String? fontFamily;
@@ -238,7 +252,10 @@ class _GenogramPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     _drawStructuralConnectors(canvas);
-    if (showBonds) _drawBonds(canvas);
+    if (showBonds) {
+      _drawRelationships(canvas);
+      _drawBonds(canvas);
+    }
     for (final row in layout.rows) {
       for (final node in row) {
         _drawNode(canvas, node);
@@ -380,18 +397,71 @@ class _GenogramPainter extends CustomPainter {
 
   void _drawBond(Canvas canvas, Offset a, Offset b, FamilyPerson p) {
     final style = _bondStyle(p);
+    _drawStyledLine(canvas, a, b, style.kind, style.color);
+  }
+
+  // ── Relações explícitas entre familiares (camada emocional cadastrada) ─────
+  // Diferente dos vínculos do paciente (radiais), estas ligam quaisquer duas
+  // pessoas — ex.: mãe × pai conflituoso — usando os dados tipados que antes
+  // não apareciam no desenho.
+  void _drawRelationships(Canvas canvas) {
+    if (relationships.isEmpty) return;
+    final byId = <String, _Node>{};
+    for (final row in layout.rows) {
+      for (final node in row) {
+        final id = node.person?.id;
+        if (id != null) byId[id] = node;
+      }
+    }
+    for (final rel in relationships) {
+      final style = _relationshipStyle(rel.relationshipType);
+      if (style == null) continue; // só a camada emocional (a estrutural é inferida)
+      final a = byId[rel.personAId];
+      final b = byId[rel.personBId];
+      if (a == null || b == null) continue;
+      _drawStyledLine(canvas, a.center, b.center, style.kind, style.color);
+    }
+  }
+
+  /// Mapeia o tipo de relação para o vocabulário visual do genograma. Retorna
+  /// `null` para os tipos estruturais (cônjuge, irmão, pai/mãe–filho), que já
+  /// são representados pelos conectores inferidos e não devem duplicar linha.
+  _BondStyle? _relationshipStyle(GenogramRelationshipType type) {
+    switch (type) {
+      case GenogramRelationshipType.close:
+        return const _BondStyle(_BondKind.close, Color(0xFF2E7D6B));
+      case GenogramRelationshipType.distant:
+        return const _BondStyle(_BondKind.distant, Color(0xFF6B7A90));
+      case GenogramRelationshipType.conflict:
+        return const _BondStyle(_BondKind.conflict, Color(0xFFB5651D));
+      case GenogramRelationshipType.ruptured:
+        return const _BondStyle(_BondKind.broken, Color(0xFFB03A3A));
+      case GenogramRelationshipType.spouse:
+      case GenogramRelationshipType.exSpouse:
+      case GenogramRelationshipType.sibling:
+      case GenogramRelationshipType.parentChild:
+      case GenogramRelationshipType.neutral:
+      case GenogramRelationshipType.other:
+        return null;
+    }
+  }
+
+  /// Desenha uma linha entre dois pontos no estilo do vínculo, encolhendo as
+  /// pontas para não invadir os símbolos. Compartilhado entre a camada de
+  /// vínculos do paciente e a de relações cadastradas.
+  void _drawStyledLine(
+      Canvas canvas, Offset a, Offset b, _BondKind kind, Color color) {
     final paint = Paint()
-      ..color = style.color
+      ..color = color
       ..strokeWidth = 1.6
       ..style = PaintingStyle.stroke;
-    // Encolhe as pontas para não invadir os símbolos.
     final dir = b - a;
     final len = dir.distance;
     if (len < 1) return;
     final unit = dir / len;
     final start = a + unit * (layout.symbolR + 6);
     final end = b - unit * (layout.symbolR + 6);
-    switch (style.kind) {
+    switch (kind) {
       case _BondKind.close:
         final normal = Offset(-unit.dy, unit.dx) * 2.2;
         canvas.drawLine(start + normal, end + normal, paint);
@@ -590,6 +660,7 @@ class _GenogramPainter extends CustomPainter {
   bool shouldRepaint(_GenogramPainter old) =>
       old.showBonds != showBonds ||
       old.highlightCaregivers != highlightCaregivers ||
+      old.relationships != relationships ||
       old.layout != layout;
 }
 

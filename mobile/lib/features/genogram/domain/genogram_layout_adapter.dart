@@ -7,6 +7,7 @@
 /// (conflito, próxima…) são outra camada e não entram na estrutura.
 library;
 
+import 'genogram_bootstrap.dart';
 import 'genogram_gender.dart';
 import 'genogram_layout.dart';
 import 'genogram_person.dart';
@@ -18,6 +19,53 @@ GSex _sexOf(GenogramGender? g) => switch (g) {
       GenogramGender.female => GSex.female,
       _ => GSex.unknown,
     };
+
+/// Converte só os vínculos ESTRUTURAIS (casamento e pai/mãe–filho) em arestas.
+List<GEdge> structuralEdges(List<GenogramRelationship> relationships) {
+  final edges = <GEdge>[];
+  for (final r in relationships) {
+    switch (r.relationshipType) {
+      case GenogramRelationshipType.parentChild:
+        edges.add(GEdge(r.personAId, r.personBId, GEdgeType.parentChild));
+      case GenogramRelationshipType.spouse:
+        edges.add(GEdge(r.personAId, r.personBId, GEdgeType.spouse));
+      case GenogramRelationshipType.exSpouse:
+        edges.add(GEdge(r.personAId, r.personBId, GEdgeType.exSpouse));
+      case GenogramRelationshipType.sibling:
+      case GenogramRelationshipType.conflict:
+      case GenogramRelationshipType.distant:
+      case GenogramRelationshipType.neutral:
+      case GenogramRelationshipType.close:
+      case GenogramRelationshipType.ruptured:
+      case GenogramRelationshipType.other:
+        break; // não-estrutural
+    }
+  }
+  return edges;
+}
+
+/// Roda o bootstrap sobre os dados reais de B: propõe os vínculos estruturais
+/// que faltam a partir dos papéis, sem duplicar os existentes.
+List<GEdgeProposal> proposeBootstrap({
+  required List<GenogramPerson> people,
+  required List<GenogramRelationship> relationships,
+}) {
+  final bp = [
+    for (final p in people)
+      GBootstrapPerson(
+        p.id,
+        role: p.relationshipToPatient,
+        sex: _sexOf(p.gender),
+        name: (p.nickname != null && p.nickname!.trim().isNotEmpty)
+            ? p.nickname!.trim()
+            : p.fullName,
+      ),
+  ];
+  return proposeStructure(
+    people: bp,
+    existing: structuralEdges(relationships),
+  );
+}
 
 /// Entrada do motor derivada dos dados reais.
 class GLayoutInput {
@@ -47,28 +95,7 @@ GLayoutInput? buildLayoutInput({
     for (final p in people) GPerson(p.id, sex: _sexOf(p.gender)),
   ];
 
-  final edges = <GEdge>[];
-  for (final r in relationships) {
-    switch (r.relationshipType) {
-      case GenogramRelationshipType.parentChild:
-        // Convenção: personA = pai/mãe, personB = filho(a).
-        edges.add(GEdge(r.personAId, r.personBId, GEdgeType.parentChild));
-      case GenogramRelationshipType.spouse:
-        edges.add(GEdge(r.personAId, r.personBId, GEdgeType.spouse));
-      case GenogramRelationshipType.exSpouse:
-        edges.add(GEdge(r.personAId, r.personBId, GEdgeType.exSpouse));
-      case GenogramRelationshipType.sibling:
-      case GenogramRelationshipType.conflict:
-      case GenogramRelationshipType.distant:
-      case GenogramRelationshipType.neutral:
-      case GenogramRelationshipType.close:
-      case GenogramRelationshipType.ruptured:
-      case GenogramRelationshipType.other:
-        break; // não-estrutural: ignorado aqui.
-    }
-  }
-
-  return GLayoutInput(gpeople, edges, focusId);
+  return GLayoutInput(gpeople, structuralEdges(relationships), focusId);
 }
 
 /// Pipeline completo: dados reais → topologia → coordenadas.

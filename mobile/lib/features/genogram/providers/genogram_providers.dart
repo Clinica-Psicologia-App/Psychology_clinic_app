@@ -2,8 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../profile/domain/profile_role.dart';
 import '../data/genogram_repository.dart';
+import '../domain/genogram_bootstrap.dart';
 import '../domain/genogram_data.dart';
 import '../domain/genogram_family_patterns.dart';
+import '../domain/genogram_layout_adapter.dart';
 import '../domain/genogram_person.dart';
 import '../domain/genogram_relationship.dart';
 
@@ -84,3 +86,28 @@ final genogramRelationshipDetailProvider =
     FutureProvider.family<GenogramRelationship?, String>((ref, id) {
   return ref.read(genogramRepositoryProvider).getRelationshipById(id);
 });
+
+/// Dados do bootstrap de vínculos: as propostas + o contexto para gravá-las.
+class GBootstrapData {
+  final List<GEdgeProposal> proposals;
+  final String? clinicId;
+  final String patientId;
+  const GBootstrapData(this.proposals, this.clinicId, this.patientId);
+}
+
+/// Carrega o genograma do paciente e propõe os vínculos estruturais que faltam
+/// a partir dos papéis (para o terapeuta confirmar).
+final genogramBootstrapProvider =
+    FutureProvider.autoDispose.family<GBootstrapData, String>(
+  (ref, patientId) async {
+    final data =
+        await ref.read(genogramRepositoryProvider).loadForPatient(patientId);
+    final clinicId =
+        data.people.isNotEmpty ? data.people.first.clinicId : null;
+    final proposals = proposeBootstrap(
+      people: data.people,
+      relationships: data.relationships,
+    );
+    return GBootstrapData(proposals, clinicId, patientId);
+  },
+);

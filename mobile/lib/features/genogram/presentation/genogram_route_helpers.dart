@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../../profile/domain/profile_role.dart';
+import 'genogram_bootstrap_page.dart';
 import 'genogram_person_detail_page.dart';
 import 'genogram_person_form_page.dart';
 import 'genogram_relationship_detail_page.dart';
@@ -120,6 +121,12 @@ List<RouteBase> staffPatientGenogramRoutes({required ProfileRole role}) {
               ),
             ),
           ],
+        ),
+        GoRoute(
+          path: 'bootstrap',
+          builder: (context, state) => GenogramBootstrapPage(
+            patientId: state.pathParameters['patientId']!,
+          ),
         ),
       ],
     ),

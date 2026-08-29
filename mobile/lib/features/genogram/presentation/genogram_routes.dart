@@ -71,4 +71,10 @@ abstract final class GenogramRoutes {
     required String relationshipId,
   }) =>
       '${staffList(role: role, patientId: patientId)}/relationships/$relationshipId/edit';
+
+  static String staffBootstrap({
+    required ProfileRole role,
+    required String patientId,
+  }) =>
+      '${staffList(role: role, patientId: patientId)}/bootstrap';
 }

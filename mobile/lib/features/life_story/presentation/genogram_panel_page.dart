@@ -118,6 +118,21 @@ class GenogramPanelPage extends ConsumerWidget {
                   label: const Text('Editar pessoas e relações'),
                 ),
               ),
+              // Bootstrap: infere os vínculos estruturais (casamento, pai/mãe–
+              // filho) a partir dos papéis, para o terapeuta só confirmar.
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: TextButton.icon(
+                  onPressed: () => context.push(
+                    GenogramRoutes.staffBootstrap(
+                      role: ProfileRole.psychologist,
+                      patientId: patientId,
+                    ),
+                  ),
+                  icon: const Icon(Icons.auto_fix_high_outlined, size: 18),
+                  label: const Text('Sugerir vínculos a partir dos papéis'),
+                ),
+              ),
               _StructureBlock(people: people, patientId: patientId),
               if (caregivers.isNotEmpty)
                 _FiguresBlock(people: caregivers, patientId: patientId),

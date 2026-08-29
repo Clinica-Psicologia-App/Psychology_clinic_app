@@ -44,8 +44,13 @@ class _GenogramDiagramPageState extends ConsumerState<GenogramDiagramPage> {
   Widget _body() {
     // Com vínculos estruturais explícitos, desenha pelo MOTOR (árvore
     // bilateral, linhagens). Sem eles, cai no desenho por inferência de papel.
-    final gdata =
-        ref.watch(genogramDataForPatientProvider(widget.patientId)).valueOrNull;
+    final gdataAsync =
+        ref.watch(genogramDataForPatientProvider(widget.patientId));
+
+    // Durante reload (após edição), mostra loader em vez do dado antigo.
+    if (gdataAsync.isLoading) return const BrandLoader();
+
+    final gdata = gdataAsync.valueOrNull;
     if (gdata != null && MotorGenogramDiagram.hasStructure(gdata)) {
       return Column(
         children: [

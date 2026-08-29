@@ -365,6 +365,8 @@ class _MotorGenogramPainter extends CustomPainter {
     final c = Offset(n.x, n.y);
     final person = byId[n.id];
     final isIndex = n.id == focusId;
+    final isFemale = person?.gender == GenogramGender.female;
+
     final fill = Paint()
       ..color = isIndex ? const Color(0xFFEAFAF7) : Colors.white
       ..style = PaintingStyle.fill;
@@ -373,21 +375,24 @@ class _MotorGenogramPainter extends CustomPainter {
       ..strokeWidth = isIndex ? 2.6 : 2.2
       ..style = PaintingStyle.stroke;
 
-    // Cuidador(a) principal: halo âmbar atrás do símbolo (destaque de cuidado).
+    // Cuidador(a) principal: halo âmbar atrás do símbolo — segue a forma do símbolo.
     if (person?.isPrimaryCaregiver ?? false) {
-      canvas.drawCircle(
-          c,
-          _r + 9,
-          Paint()
-            ..color = _care.withValues(alpha: 0.18)
-            ..style = PaintingStyle.fill);
+      final haloPaint = Paint()
+        ..color = _care.withValues(alpha: 0.18)
+        ..style = PaintingStyle.fill;
+      if (isFemale) {
+        canvas.drawCircle(c, _r + 9, haloPaint);
+      } else {
+        canvas.drawRect(
+            Rect.fromCenter(
+                center: c, width: (_r + 9) * 2, height: (_r + 9) * 2),
+            haloPaint);
+      }
     }
 
-    if (isIndex) {
-      final path = _diamond(c, _r);
-      canvas.drawPath(path, fill);
-      canvas.drawPath(path, stroke);
-    } else if (person?.gender == GenogramGender.female) {
+    // Símbolo: círculo (feminino) ou quadrado (masculino/outro).
+    // O paciente (isIndex) mantém a cor teal mas segue a mesma forma.
+    if (isFemale) {
       canvas.drawCircle(c, _r, fill);
       canvas.drawCircle(c, _r, stroke);
     } else {
@@ -396,23 +401,33 @@ class _MotorGenogramPainter extends CustomPainter {
       canvas.drawRect(rect, stroke);
     }
 
-    // Anel de cuidador: cheio para principal, fino para parcial.
+    // Anel de cuidador: forma acompanha o símbolo.
     if (person?.isPrimaryCaregiver ?? false) {
-      canvas.drawCircle(
-          c,
-          _r + 6,
-          Paint()
-            ..color = _care
-            ..strokeWidth = 2.4
-            ..style = PaintingStyle.stroke);
+      final ringPaint = Paint()
+        ..color = _care
+        ..strokeWidth = 2.4
+        ..style = PaintingStyle.stroke;
+      if (isFemale) {
+        canvas.drawCircle(c, _r + 6, ringPaint);
+      } else {
+        canvas.drawRect(
+            Rect.fromCenter(
+                center: c, width: (_r + 6) * 2, height: (_r + 6) * 2),
+            ringPaint);
+      }
     } else if (person?.isPartialCaregiver ?? false) {
-      canvas.drawCircle(
-          c,
-          _r + 6,
-          Paint()
-            ..color = _care.withValues(alpha: 0.55)
-            ..strokeWidth = 1.6
-            ..style = PaintingStyle.stroke);
+      final ringPaint = Paint()
+        ..color = _care.withValues(alpha: 0.55)
+        ..strokeWidth = 1.6
+        ..style = PaintingStyle.stroke;
+      if (isFemale) {
+        canvas.drawCircle(c, _r + 6, ringPaint);
+      } else {
+        canvas.drawRect(
+            Rect.fromCenter(
+                center: c, width: (_r + 6) * 2, height: (_r + 6) * 2),
+            ringPaint);
+      }
     }
 
     // Idade dentro do símbolo.
@@ -478,12 +493,6 @@ class _MotorGenogramPainter extends CustomPainter {
     tp.paint(canvas, Offset(dx, dy));
   }
 
-  Path _diamond(Offset c, double r) => Path()
-    ..moveTo(c.dx, c.dy - r)
-    ..lineTo(c.dx + r, c.dy)
-    ..lineTo(c.dx, c.dy + r)
-    ..lineTo(c.dx - r, c.dy)
-    ..close();
 
   @override
   bool shouldRepaint(_MotorGenogramPainter old) =>

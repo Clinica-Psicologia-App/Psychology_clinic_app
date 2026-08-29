@@ -297,8 +297,9 @@ class GDiagram {
 /// Converte a topologia em coordenadas do desenho bilateral: cada geração numa
 /// faixa horizontal (mais ancestral no topo), linhagem paterna à esquerda e
 /// materna à direita, casais adjacentes. Pessoas não-conectadas vão para uma
-/// faixa solta na base (fallback). Posicionamento v1: agrupa por linhagem e
-/// centra cada faixa; o refino de centralizar pais sobre filhos vem depois.
+/// faixa solta na base (fallback). O posicionamento horizontal parte da geração
+/// mais NOVA (âncora) para a mais velha, centralizando cada pai/casal sobre a
+/// média dos filhos já posicionados — assim as linhas de descida saem retas.
 GDiagram positionGenogram(
   GLayout layout, {
   double colWidth = 120,
@@ -362,36 +363,125 @@ GDiagram positionGenogram(
     rowOrders[g] = order;
   }
 
-  final maxCount = rowOrders.values
-      .fold<int>(0, (m, l) => l.length > m ? l.length : m)
-      .clamp(1, 1 << 30);
+  // childrenOf reconstruído dos grupos de irmãos (o motor não guarda a
+  // adjacência pai→filho depois da topologia).
+  final childrenOf = <String, Set<String>>{};
+  for (final sg in layout.sibGroups) {
+    for (final par in sg.parents) {
+      childrenOf.putIfAbsent(par, () => <String>{}).addAll(sg.members);
+    }
+  }
+
+  // Posiciona da geração mais NOVA (âncora, espaçada por igual) para a mais
+  // velha; cada pai/casal é puxado para a média dos filhos já colocados, e os
+  // tios (sem filhos) encostam no irmão. Coordenadas cruas, normalizadas no fim.
+  final xById = <String, double>{};
+  for (var r = gens.length - 1; r >= 0; r--) {
+    final order = rowOrders[gens[r]]!;
+    final n = order.length;
+    if (r == gens.length - 1) {
+      for (var i = 0; i < n; i++) {
+        xById[order[i]] = i * colWidth;
+      }
+      continue;
+    }
+    // desejado por nó: casal centra sobre os filhos comuns; solteiro sobre os
+    // seus. Quem não tem filho posicionado fica null (preenchido depois).
+    final desired = List<double?>.filled(n, null);
+    var i = 0;
+    while (i < n) {
+      final id = order[i];
+      final sp = spouse[id];
+      final couple = i + 1 < n && order[i + 1] == sp;
+      final kids = <String>{
+        ...?childrenOf[id],
+        if (couple) ...?childrenOf[sp],
+      }.where(xById.containsKey).toList();
+      if (kids.isNotEmpty) {
+        var sum = 0.0;
+        for (final k in kids) {
+          sum += xById[k]!;
+        }
+        final mean = sum / kids.length;
+        if (couple) {
+          desired[i] = mean - colWidth / 2;
+          desired[i + 1] = mean + colWidth / 2;
+        } else {
+          desired[i] = mean;
+        }
+      }
+      i += couple ? 2 : 1;
+    }
+    // preenche os nulos (tios) encostando no vizinho à direita e resolve
+    // sobreposições da esquerda para a direita mantendo a ordem.
+    final prov = List<double>.filled(n, 0);
+    for (var k = 0; k < n; k++) {
+      prov[k] = desired[k] ?? (k > 0 ? prov[k - 1] + colWidth : 0.0);
+    }
+    for (var k = n - 2; k >= 0; k--) {
+      if (desired[k] == null) prov[k] = prov[k + 1] - colWidth;
+    }
+    for (var k = 0; k < n; k++) {
+      final lb = k > 0 ? xById[order[k - 1]]! + colWidth : prov[k];
+      xById[order[k]] = prov[k] < lb ? lb : prov[k];
+    }
+    // Re-centra a faixa sobre os filhos: o empurrão de espaçamento só desloca
+    // para a direita; este shift devolve os pais para cima da média dos filhos.
+    var sumD = 0.0, sumA = 0.0, cnt = 0;
+    for (var k = 0; k < n; k++) {
+      if (desired[k] != null) {
+        sumD += desired[k]!;
+        sumA += xById[order[k]]!;
+        cnt++;
+      }
+    }
+    if (cnt > 0) {
+      final shift = (sumD - sumA) / cnt;
+      for (final id in order) {
+        xById[id] = xById[id]! + shift;
+      }
+    }
+  }
+
+  // ── Normalização: encaixa nas margens e centra na largura final ───────────
+  var minX = double.infinity, maxX = -double.infinity;
+  for (final v in xById.values) {
+    if (v < minX) minX = v;
+    if (v > maxX) maxX = v;
+  }
+  if (xById.isEmpty) {
+    minX = 0;
+    maxX = 0;
+  }
+  final connectedRowWidth = (maxX - minX) + colWidth;
+  final looseRowWidth = unconnected.length * colWidth;
+  final innerWidth =
+      connectedRowWidth > looseRowWidth ? connectedRowWidth : looseRowWidth;
   final looseRow = unconnected.isNotEmpty ? 1 : 0;
-  final width = maxCount * colWidth + 2 * margin;
+  final width = innerWidth + 2 * margin;
   final height = (gens.length + looseRow) * rowHeight + 2 * margin;
+  final connShift =
+      margin + (innerWidth - connectedRowWidth) / 2 + colWidth / 2 - minX;
 
   final nodes = <GPositioned>[];
   for (var r = 0; r < gens.length; r++) {
     final g = gens[r];
-    final order = rowOrders[g]!;
-    final rowWidth = order.length * colWidth;
-    final startX = margin + (maxCount * colWidth - rowWidth) / 2 + colWidth / 2;
     final y = margin + r * rowHeight + rowHeight / 2;
-    for (var i = 0; i < order.length; i++) {
-      final pl = layout.placed[order[i]]!;
+    for (final id in rowOrders[g]!) {
+      final pl = layout.placed[id]!;
       nodes.add(GPositioned(
         pl.id,
         generation: g,
         lineage: pl.lineage,
         connected: true,
-        x: startX + i * colWidth,
+        x: xById[id]! + connShift,
         y: y,
       ));
     }
   }
 
   if (unconnected.isNotEmpty) {
-    final rowWidth = unconnected.length * colWidth;
-    final startX = margin + (maxCount * colWidth - rowWidth) / 2 + colWidth / 2;
+    final startX = margin + (innerWidth - looseRowWidth) / 2 + colWidth / 2;
     final y = margin + gens.length * rowHeight + rowHeight / 2;
     for (var i = 0; i < unconnected.length; i++) {
       final pl = unconnected[i];

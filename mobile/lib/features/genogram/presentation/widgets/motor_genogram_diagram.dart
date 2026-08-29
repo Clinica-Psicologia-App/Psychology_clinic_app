@@ -259,10 +259,14 @@ class _MotorGenogramPainter extends CustomPainter {
       final childY = kids.first.y;
       final barY = (parentY + childY) / 2 + 20;
       canvas.drawLine(Offset(midX, parentY + _r), Offset(midX, barY), paint);
-      final minX = kids.map((k) => k.x).reduce(math.min);
-      final maxX = kids.map((k) => k.x).reduce(math.max);
-      if (kids.length > 1) {
-        canvas.drawLine(Offset(minX, barY), Offset(maxX, barY), paint);
+      // A barra de irmãos cobre os filhos E o ponto de descida do casal, para
+      // o traço nunca ficar solto quando o casal não fica exatamente em cima.
+      final barLeft =
+          math.min(midX, kids.map((k) => k.x).reduce(math.min));
+      final barRight =
+          math.max(midX, kids.map((k) => k.x).reduce(math.max));
+      if (barRight > barLeft) {
+        canvas.drawLine(Offset(barLeft, barY), Offset(barRight, barY), paint);
       }
       for (final k in kids) {
         canvas.drawLine(Offset(k.x, barY), Offset(k.x, k.y - _r), paint);

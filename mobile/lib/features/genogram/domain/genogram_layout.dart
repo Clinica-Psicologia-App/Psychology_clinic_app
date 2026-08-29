@@ -46,7 +46,17 @@ class GEdge {
   final String a;
   final String b;
   final GEdgeType type;
-  const GEdge(this.a, this.b, this.type);
+
+  /// Só em `parentChild`: filiação adotiva (descida tracejada no desenho).
+  final bool adopted;
+  const GEdge(this.a, this.b, this.type, {this.adopted = false});
+}
+
+/// Um par de gêmeos (irmãos ligados por um ponto único na barra de irmãos).
+class GTwin {
+  final String a;
+  final String b;
+  const GTwin(this.a, this.b);
 }
 
 /// Resultado por pessoa.
@@ -95,7 +105,19 @@ class GLayout {
   final Map<String, GPlaced> placed;
   final List<GCouple> couples;
   final List<GSibGroup> sibGroups;
-  const GLayout(this.placed, this.couples, this.sibGroups);
+
+  /// Grupos de gêmeos (cada conjunto liga-se por um único ponto na barra).
+  final List<Set<String>> twinGroups;
+
+  /// Filhos com filiação adotiva (descida tracejada).
+  final Set<String> adoptedChildren;
+  const GLayout(
+    this.placed,
+    this.couples,
+    this.sibGroups, {
+    this.twinGroups = const [],
+    this.adoptedChildren = const {},
+  });
 
   Iterable<GPlaced> get connected => placed.values.where((p) => p.connected);
   Iterable<GPlaced> get unconnected => placed.values.where((p) => !p.connected);
@@ -106,9 +128,18 @@ GLayout buildGenogramStructure({
   required List<GPerson> people,
   required List<GEdge> edges,
   required String focusId,
+  List<GTwin> twins = const [],
 }) {
   final ids = {for (final p in people) p.id};
   final sex = {for (final p in people) p.id: p.sex};
+
+  // Filhos adotivos (aresta parentChild marcada) e grupos de gêmeos — camadas
+  // de desenho, independentes da geração/linhagem.
+  final adoptedChildren = <String>{
+    for (final e in edges)
+      if (e.type == GEdgeType.parentChild && e.adopted) e.b,
+  };
+  final twinGroups = _twinGroups(twins, ids);
 
   // ── Adjacência ────────────────────────────────────────────────────────────
   final parentsOf = {for (final id in ids) id: <String>{}};
@@ -133,7 +164,13 @@ GLayout buildGenogramStructure({
   final placed = {for (final id in ids) id: GPlaced(id)};
 
   if (!ids.contains(focusId)) {
-    return GLayout(placed, couples, _siblingGroups(ids, parentsOf));
+    return GLayout(
+      placed,
+      couples,
+      _siblingGroups(ids, parentsOf),
+      twinGroups: twinGroups,
+      adoptedChildren: adoptedChildren,
+    );
   }
 
   // ── Geração: BFS a partir do foco ─────────────────────────────────────────
@@ -250,7 +287,37 @@ GLayout buildGenogramStructure({
     }
   }
 
-  return GLayout(placed, couples, _siblingGroups(ids, parentsOf));
+  return GLayout(
+    placed,
+    couples,
+    _siblingGroups(ids, parentsOf),
+    twinGroups: twinGroups,
+    adoptedChildren: adoptedChildren,
+  );
+}
+
+/// Une os pares de gêmeos em grupos (union-find simples), só ids existentes.
+List<Set<String>> _twinGroups(List<GTwin> twins, Set<String> ids) {
+  final groups = <Set<String>>[];
+  for (final t in twins) {
+    if (!ids.contains(t.a) || !ids.contains(t.b) || t.a == t.b) continue;
+    Set<String>? ga, gb;
+    for (final g in groups) {
+      if (g.contains(t.a)) ga = g;
+      if (g.contains(t.b)) gb = g;
+    }
+    if (ga == null && gb == null) {
+      groups.add({t.a, t.b});
+    } else if (ga != null && gb == null) {
+      ga.add(t.b);
+    } else if (ga == null && gb != null) {
+      gb.add(t.a);
+    } else if (ga != null && gb != null && !identical(ga, gb)) {
+      ga.addAll(gb);
+      groups.remove(gb);
+    }
+  }
+  return groups;
 }
 
 /// Uma pessoa já posicionada em coordenadas.

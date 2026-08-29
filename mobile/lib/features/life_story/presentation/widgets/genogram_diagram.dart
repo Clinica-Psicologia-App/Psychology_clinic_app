@@ -439,6 +439,7 @@ class _GenogramPainter extends CustomPainter {
       case GenogramRelationshipType.spouse:
       case GenogramRelationshipType.exSpouse:
       case GenogramRelationshipType.sibling:
+      case GenogramRelationshipType.twin:
       case GenogramRelationshipType.parentChild:
       case GenogramRelationshipType.neutral:
       case GenogramRelationshipType.other:

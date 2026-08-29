@@ -45,6 +45,7 @@ class _GenogramRelationshipFormPageState
   String? _personAId;
   String? _personBId;
   GenogramRelationshipType _type = GenogramRelationshipType.other;
+  bool _isAdoptive = false;
   bool _isSensitive = false;
   bool _saving = false;
   bool _loaded = false;
@@ -63,6 +64,7 @@ class _GenogramRelationshipFormPageState
     _personBId = input.personBId;
     _type = input.relationshipType;
     _notesController.text = input.notes ?? '';
+    _isAdoptive = input.isAdoptive;
     _isSensitive = input.isSensitive;
   }
 
@@ -72,6 +74,7 @@ class _GenogramRelationshipFormPageState
       personBId: _personBId ?? '',
       relationshipType: _type,
       notes: _notesController.text,
+      isAdoptive: _isAdoptive,
       isSensitive: _isSensitive,
     );
   }
@@ -309,6 +312,18 @@ class _GenogramRelationshipFormPageState
                   if (v != null) setState(() => _type = v);
                 },
               ),
+              if (_type == GenogramRelationshipType.parentChild) ...[
+                const SizedBox(height: AppSpacing.xs),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Filiação adotiva'),
+                  subtitle: const Text(
+                    'Desenha a descida tracejada no genograma (padrão McGoldrick).',
+                  ),
+                  value: _isAdoptive,
+                  onChanged: (v) => setState(() => _isAdoptive = v),
+                ),
+              ],
               const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _notesController,

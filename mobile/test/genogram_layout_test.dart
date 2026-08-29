@@ -63,6 +63,44 @@ void main() {
       expect(layout.couples.single.current, isFalse);
     });
 
+    test('gêmeos viram grupo; filho adotivo é marcado', () {
+      final layout = buildGenogramStructure(
+        focusId: 'F',
+        people: const [
+          GPerson('F'),
+          GPerson('Fa', sex: GSex.male),
+          GPerson('Mo', sex: GSex.female),
+          GPerson('T1'),
+          GPerson('T2'),
+          GPerson('Ad'),
+        ],
+        edges: const [
+          GEdge('Fa', 'F', GEdgeType.parentChild),
+          GEdge('Mo', 'F', GEdgeType.parentChild),
+          GEdge('Fa', 'T1', GEdgeType.parentChild),
+          GEdge('Fa', 'T2', GEdgeType.parentChild),
+          GEdge('Fa', 'Ad', GEdgeType.parentChild, adopted: true),
+          GEdge('Mo', 'Ad', GEdgeType.parentChild, adopted: true),
+          GEdge('Fa', 'Mo', GEdgeType.spouse),
+        ],
+        twins: const [GTwin('T1', 'T2')],
+      );
+
+      expect(layout.twinGroups.length, 1);
+      expect(layout.twinGroups.single, {'T1', 'T2'});
+      expect(layout.adoptedChildren, {'Ad'});
+    });
+
+    test('três gêmeos encadeados viram um único grupo', () {
+      final layout = buildGenogramStructure(
+        focusId: 'F',
+        people: const [GPerson('F'), GPerson('A'), GPerson('B'), GPerson('C')],
+        edges: const [GEdge('F', 'A', GEdgeType.parentChild)],
+        twins: const [GTwin('A', 'B'), GTwin('B', 'C')],
+      );
+      expect(layout.twinGroups.single, {'A', 'B', 'C'});
+    });
+
     test('árvore bilateral: avós paternos e maternos na linhagem certa', () {
       final layout = buildGenogramStructure(
         focusId: 'F',

@@ -10,6 +10,7 @@ class GenogramRelationship {
     required this.personBId,
     required this.relationshipType,
     this.notes,
+    this.isAdoptive = false,
     required this.isSensitive,
     required this.createdAt,
     required this.updatedAt,
@@ -23,6 +24,9 @@ class GenogramRelationship {
   final String personBId;
   final GenogramRelationshipType relationshipType;
   final String? notes;
+
+  /// Só relevante em [GenogramRelationshipType.parentChild]: filiação adotiva.
+  final bool isAdoptive;
   final bool isSensitive;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -52,6 +56,7 @@ class GenogramRelationship {
         json['relationship_type'] as String?,
       ),
       notes: json['notes'] as String?,
+      isAdoptive: json['is_adoptive'] as bool? ?? false,
       isSensitive: json['is_sensitive'] as bool? ?? false,
       createdAt: DateTime.parse(json['created_at'] as String).toLocal(),
       updatedAt: DateTime.parse(json['updated_at'] as String).toLocal(),

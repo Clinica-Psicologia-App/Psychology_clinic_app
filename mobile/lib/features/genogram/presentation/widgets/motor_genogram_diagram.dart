@@ -47,6 +47,7 @@ class MotorGenogramDiagram extends StatelessWidget {
       people: input.people,
       edges: input.edges,
       focusId: input.focusId,
+      twins: input.twins,
     );
     final diagram = positionGenogram(layout, colWidth: 116, rowHeight: 150);
     final byId = {for (final p in data.people) p.id: p};
@@ -268,8 +269,54 @@ class _MotorGenogramPainter extends CustomPainter {
       if (barRight > barLeft) {
         canvas.drawLine(Offset(barLeft, barY), Offset(barRight, barY), paint);
       }
-      for (final k in kids) {
-        canvas.drawLine(Offset(k.x, barY), Offset(k.x, k.y - _r), paint);
+      _descents(canvas, kids, barY, paint);
+    }
+  }
+
+  /// Desce da barra de irmãos até cada filho. Gêmeos convergem num único ponto
+  /// (Λ); filhos adotivos descem tracejado.
+  void _descents(
+      Canvas canvas, List<GPositioned> kids, double barY, Paint paint) {
+    final kidIds = {for (final k in kids) k.id};
+    // Grupos de gêmeos presentes neste conjunto de irmãos.
+    final twinOf = <String, Set<String>>{};
+    for (final tg in layout.twinGroups) {
+      final here = tg.where(kidIds.contains).toSet();
+      if (here.length >= 2) {
+        for (final id in here) {
+          twinOf[id] = here;
+        }
+      }
+    }
+    final dashed = Paint()
+      ..color = _line
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    void drop(double fromX, GPositioned k) {
+      final a = Offset(fromX, barY);
+      final b = Offset(k.x, k.y - _r);
+      if (layout.adoptedChildren.contains(k.id)) {
+        _dashed(canvas, a, b, dashed);
+      } else {
+        canvas.drawLine(a, b, paint);
+      }
+    }
+
+    final done = <String>{};
+    for (final k in kids) {
+      final group = twinOf[k.id];
+      if (group == null) {
+        drop(k.x, k); // filho comum: vertical
+        continue;
+      }
+      if (done.contains(k.id)) continue;
+      final members = kids.where((c) => group.contains(c.id)).toList();
+      final apexX =
+          members.map((c) => c.x).reduce((a, b) => a + b) / members.length;
+      for (final m in members) {
+        drop(apexX, m); // gêmeos: convergem no apex sobre a barra
+        done.add(m.id);
       }
     }
   }

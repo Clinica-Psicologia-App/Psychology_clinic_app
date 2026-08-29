@@ -7,6 +7,7 @@ class GenogramRelationshipInput {
     required this.personBId,
     required this.relationshipType,
     this.notes,
+    this.isAdoptive = false,
     this.isSensitive = false,
   });
 
@@ -14,6 +15,9 @@ class GenogramRelationshipInput {
   final String personBId;
   final GenogramRelationshipType relationshipType;
   final String? notes;
+
+  /// Só relevante em [GenogramRelationshipType.parentChild]: filiação adotiva.
+  final bool isAdoptive;
   final bool isSensitive;
 
   factory GenogramRelationshipInput.fromRelationship(
@@ -24,6 +28,7 @@ class GenogramRelationshipInput {
       personBId: relationship.personBId,
       relationshipType: relationship.relationshipType,
       notes: relationship.notes,
+      isAdoptive: relationship.isAdoptive,
       isSensitive: relationship.isSensitive,
     );
   }
@@ -44,6 +49,9 @@ class GenogramRelationshipInput {
       'person_b_id': personBId,
       'relationship_type': relationshipType.storageValue,
       'notes': _nullableTrim(notes),
+      // Adoção só faz sentido em pai/mãe–filho; nos demais tipos grava false.
+      'is_adoptive':
+          isAdoptive && relationshipType == GenogramRelationshipType.parentChild,
       'is_sensitive': isSensitive,
     };
   }

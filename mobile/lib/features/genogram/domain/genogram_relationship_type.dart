@@ -3,6 +3,7 @@
   spouse,
   exSpouse,
   sibling,
+  twin,
   conflict,
   distant,
   neutral,
@@ -22,6 +23,8 @@ extension GenogramRelationshipTypeX on GenogramRelationshipType {
         return 'ex_spouse';
       case GenogramRelationshipType.sibling:
         return 'sibling';
+      case GenogramRelationshipType.twin:
+        return 'twin';
       case GenogramRelationshipType.conflict:
         return 'conflict';
       case GenogramRelationshipType.distant:
@@ -47,6 +50,8 @@ extension GenogramRelationshipTypeX on GenogramRelationshipType {
         return 'Ex-cônjuge';
       case GenogramRelationshipType.sibling:
         return 'Irmão(ã)';
+      case GenogramRelationshipType.twin:
+        return 'Gêmeos(as)';
       case GenogramRelationshipType.conflict:
         return 'Conflituosa';
       case GenogramRelationshipType.distant:

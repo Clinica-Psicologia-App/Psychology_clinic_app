@@ -26,23 +26,32 @@ List<GEdge> structuralEdges(List<GenogramRelationship> relationships) {
   for (final r in relationships) {
     switch (r.relationshipType) {
       case GenogramRelationshipType.parentChild:
-        edges.add(GEdge(r.personAId, r.personBId, GEdgeType.parentChild));
+        edges.add(GEdge(r.personAId, r.personBId, GEdgeType.parentChild,
+            adopted: r.isAdoptive));
       case GenogramRelationshipType.spouse:
         edges.add(GEdge(r.personAId, r.personBId, GEdgeType.spouse));
       case GenogramRelationshipType.exSpouse:
         edges.add(GEdge(r.personAId, r.personBId, GEdgeType.exSpouse));
       case GenogramRelationshipType.sibling:
+      case GenogramRelationshipType.twin:
       case GenogramRelationshipType.conflict:
       case GenogramRelationshipType.distant:
       case GenogramRelationshipType.neutral:
       case GenogramRelationshipType.close:
       case GenogramRelationshipType.ruptured:
       case GenogramRelationshipType.other:
-        break; // não-estrutural
+        break; // não-estrutural (gêmeos entra por twinPairs, não como aresta)
     }
   }
   return edges;
 }
+
+/// Extrai os pares de gêmeos (tipo `twin`) para a camada de desenho.
+List<GTwin> twinPairs(List<GenogramRelationship> relationships) => [
+      for (final r in relationships)
+        if (r.relationshipType == GenogramRelationshipType.twin)
+          GTwin(r.personAId, r.personBId),
+    ];
 
 /// Extrai as relações EMOCIONAIS (conflito, próxima, distante, rompimento)
 /// para o overlay do desenho — separadas da estrutura.
@@ -102,7 +111,9 @@ class GLayoutInput {
   final List<GPerson> people;
   final List<GEdge> edges;
   final String focusId;
-  const GLayoutInput(this.people, this.edges, this.focusId);
+  final List<GTwin> twins;
+  const GLayoutInput(this.people, this.edges, this.focusId,
+      {this.twins = const []});
 }
 
 /// Constrói a entrada do motor a partir das pessoas e relações de B.
@@ -125,7 +136,8 @@ GLayoutInput? buildLayoutInput({
     for (final p in people) GPerson(p.id, sex: _sexOf(p.gender)),
   ];
 
-  return GLayoutInput(gpeople, structuralEdges(relationships), focusId);
+  return GLayoutInput(gpeople, structuralEdges(relationships), focusId,
+      twins: twinPairs(relationships));
 }
 
 /// Pipeline completo: dados reais → topologia → coordenadas.
@@ -148,6 +160,7 @@ GDiagram? buildGenogramDiagram({
     people: input.people,
     edges: input.edges,
     focusId: input.focusId,
+    twins: input.twins,
   );
   return positionGenogram(
     layout,

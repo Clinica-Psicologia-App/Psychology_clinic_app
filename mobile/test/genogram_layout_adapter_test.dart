@@ -75,6 +75,34 @@ void main() {
       expect(em.any((x) => x.kind == GEmotion.close), isTrue);
     });
 
+    test('twinPairs extrai só os gêmeos; adoção vira aresta marcada', () {
+      final rels = [
+        _r('Fa', 'C', GenogramRelationshipType.parentChild),
+        _r('Ga', 'Gb', GenogramRelationshipType.twin),
+        _r('Fa', 'Mo', GenogramRelationshipType.spouse),
+      ];
+      final twins = twinPairs(rels);
+      expect(twins.length, 1);
+      expect(twins.single.a, 'Ga');
+      expect(twins.single.b, 'Gb');
+
+      final adoptiveRel = GenogramRelationship(
+        id: 'a',
+        clinicId: 'c',
+        patientId: 'pat',
+        personAId: 'Fa',
+        personBId: 'Kid',
+        relationshipType: GenogramRelationshipType.parentChild,
+        isAdoptive: true,
+        isSensitive: false,
+        createdAt: _t,
+        updatedAt: _t,
+      );
+      final edges = structuralEdges([adoptiveRel]);
+      expect(edges.single.type, GEdgeType.parentChild);
+      expect(edges.single.adopted, isTrue);
+    });
+
     test('sem paciente na lista → null', () {
       final input = buildLayoutInput(
         people: [_p('Fa', gender: GenogramGender.male)],

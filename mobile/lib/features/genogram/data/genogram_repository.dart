@@ -20,7 +20,7 @@ class GenogramRepository {
       'id, clinic_id, patient_id, created_by, full_name, nickname, relationship_to_patient, gender, birth_year, death_year, is_deceased, notes, is_sensitive, created_at, updated_at';
 
   static const _relationshipSelect =
-      'id, clinic_id, patient_id, created_by, person_a_id, person_b_id, relationship_type, notes, is_sensitive, created_at, updated_at';
+      'id, clinic_id, patient_id, created_by, person_a_id, person_b_id, relationship_type, notes, is_adoptive, is_sensitive, created_at, updated_at';
 
   Future<String> getPatientIdForCurrentProfile() async {
     try {

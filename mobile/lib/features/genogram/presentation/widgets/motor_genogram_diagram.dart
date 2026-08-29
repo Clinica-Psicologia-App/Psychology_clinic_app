@@ -234,6 +234,19 @@ class _MotorGenogramPainter extends CustomPainter {
       final right = a.x < b.x ? b : a;
       canvas.drawLine(
           Offset(left.x + _r, left.y), Offset(right.x - _r, right.y), paint);
+      // Divórcio/separação: duas barras "//" sobre a linha do casal.
+      if (!c.current) {
+        final mx = (left.x + right.x) / 2;
+        final my = left.y;
+        final dp = Paint()
+          ..color = _red
+          ..strokeWidth = 2
+          ..style = PaintingStyle.stroke;
+        for (final off in [-4.0, 4.0]) {
+          canvas.drawLine(
+              Offset(mx + off - 4, my + 7), Offset(mx + off + 4, my - 7), dp);
+        }
+      }
     }
 
     for (final g in layout.sibGroups) {

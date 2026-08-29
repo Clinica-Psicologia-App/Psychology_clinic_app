@@ -45,6 +45,24 @@ void main() {
       expect(sib.parents, {'Fa', 'Mo'});
     });
 
+    test('exSpouse vira casal com current=false (divórcio)', () {
+      final layout = buildGenogramStructure(
+        focusId: 'F',
+        people: const [
+          GPerson('F'),
+          GPerson('Fa', sex: GSex.male),
+          GPerson('Mo', sex: GSex.female),
+        ],
+        edges: const [
+          GEdge('Fa', 'F', GEdgeType.parentChild),
+          GEdge('Mo', 'F', GEdgeType.parentChild),
+          GEdge('Fa', 'Mo', GEdgeType.exSpouse),
+        ],
+      );
+      expect(layout.couples.length, 1);
+      expect(layout.couples.single.current, isFalse);
+    });
+
     test('árvore bilateral: avós paternos e maternos na linhagem certa', () {
       final layout = buildGenogramStructure(
         focusId: 'F',

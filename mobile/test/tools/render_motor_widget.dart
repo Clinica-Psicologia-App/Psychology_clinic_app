@@ -90,7 +90,7 @@ final _data = GenogramData(
     _r('GpP', 'GmP', GenogramRelationshipType.spouse),
     _r('GpM', 'Mo', GenogramRelationshipType.parentChild),
     _r('GmM', 'Mo', GenogramRelationshipType.parentChild),
-    _r('GpM', 'GmM', GenogramRelationshipType.spouse),
+    _r('GpM', 'GmM', GenogramRelationshipType.exSpouse), // avós maternos divorciados
     // Camada emocional (overlay):
     _r('Fa', 'Mo', GenogramRelationshipType.conflict), // pai × mãe
     _r('P', 'Mo', GenogramRelationshipType.close), // paciente × mãe

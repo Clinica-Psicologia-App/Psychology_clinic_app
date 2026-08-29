@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../genogram/presentation/widgets/motor_genogram_diagram.dart';
 import '../../genogram/providers/genogram_providers.dart';
 import '../providers/life_story_providers.dart';
 import 'widgets/genogram_diagram.dart';
@@ -26,14 +27,6 @@ class _GenogramDiagramPageState extends ConsumerState<GenogramDiagramPage> {
 
   @override
   Widget build(BuildContext context) {
-    final familyAsync = ref.watch(familyForPatientProvider(widget.patientId));
-    // Camada de relações tipadas (mãe×pai, etc.). Secundária: se falhar ou
-    // estiver vazia, o diagrama ainda desenha a estrutura normalmente.
-    final relationships = ref
-            .watch(genogramRelationshipsForPatientProvider(widget.patientId))
-            .valueOrNull ??
-        const [];
-
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -42,52 +35,84 @@ class _GenogramDiagramPageState extends ConsumerState<GenogramDiagramPage> {
         title: const Text('Genograma',
             style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
       ),
-      body: familyAsync.when(
-        loading: () => const BrandLoader(),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: OutlinedButton(
-              onPressed: () =>
-                  ref.invalidate(familyForPatientProvider(widget.patientId)),
-              child: const Text('Tentar de novo'),
+      body: _body(),
+    );
+  }
+
+  Widget _body() {
+    // Com vínculos estruturais explícitos, desenha pelo MOTOR (árvore
+    // bilateral, linhagens). Sem eles, cai no desenho por inferência de papel.
+    final gdata =
+        ref.watch(genogramDataForPatientProvider(widget.patientId)).valueOrNull;
+    if (gdata != null && MotorGenogramDiagram.hasStructure(gdata)) {
+      return Column(
+        children: [
+          Expanded(
+            child: Container(
+              width: double.infinity,
+              color: const Color(0xFFF3F5F9),
+              child: MotorGenogramDiagram(data: gdata),
             ),
           ),
+          _note(),
+        ],
+      );
+    }
+    return _fallbackBody();
+  }
+
+  Widget _fallbackBody() {
+    final familyAsync = ref.watch(familyForPatientProvider(widget.patientId));
+    // Camada de relações tipadas (mãe×pai, etc.), secundária no desenho antigo.
+    final relationships = ref
+            .watch(genogramRelationshipsForPatientProvider(widget.patientId))
+            .valueOrNull ??
+        const [];
+    return familyAsync.when(
+      loading: () => const BrandLoader(),
+      error: (e, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: OutlinedButton(
+            onPressed: () =>
+                ref.invalidate(familyForPatientProvider(widget.patientId)),
+            child: const Text('Tentar de novo'),
+          ),
         ),
-        data: (people) {
-          if (people.isEmpty) {
-            return const Center(
-              child: Padding(
-                padding: EdgeInsets.all(28),
-                child: Text(
-                  'Ainda não há pessoas registradas para desenhar o genograma.',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: AppColors.textSecondary),
-                ),
-              ),
-            );
-          }
-          return Column(
-            children: [
-              _controls(),
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  color: const Color(0xFFF3F5F9),
-                  child: GenogramDiagram(
-                    people: people,
-                    relationships: relationships,
-                    showBonds: _showBonds,
-                    highlightCaregivers: _highlightCaregivers,
-                  ),
-                ),
-              ),
-              if (_showBonds) _bondLegend(),
-              _note(),
-            ],
-          );
-        },
       ),
+      data: (people) {
+        if (people.isEmpty) {
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(28),
+              child: Text(
+                'Ainda não há pessoas registradas para desenhar o genograma.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
+            ),
+          );
+        }
+        return Column(
+          children: [
+            _controls(),
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                color: const Color(0xFFF3F5F9),
+                child: GenogramDiagram(
+                  people: people,
+                  relationships: relationships,
+                  showBonds: _showBonds,
+                  highlightCaregivers: _highlightCaregivers,
+                ),
+              ),
+            ),
+            if (_showBonds) _bondLegend(),
+            _note(),
+          ],
+        );
+      },
     );
   }
 

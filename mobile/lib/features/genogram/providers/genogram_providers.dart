@@ -87,6 +87,13 @@ final genogramRelationshipDetailProvider =
   return ref.read(genogramRepositoryProvider).getRelationshipById(id);
 });
 
+/// Genograma completo (pessoas + relações) de um paciente, por id — para o
+/// desenho pelo motor.
+final genogramDataForPatientProvider =
+    FutureProvider.autoDispose.family<GenogramData, String>((ref, patientId) {
+  return ref.read(genogramRepositoryProvider).loadForPatient(patientId);
+});
+
 /// Dados do bootstrap de vínculos: as propostas + o contexto para gravá-las.
 class GBootstrapData {
   final List<GEdgeProposal> proposals;

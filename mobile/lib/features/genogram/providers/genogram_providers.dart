@@ -94,12 +94,17 @@ final genogramDataForPatientProvider =
   return ref.read(genogramRepositoryProvider).loadForPatient(patientId);
 });
 
-/// Dados do bootstrap de vínculos: as propostas + o contexto para gravá-las.
+/// Dados do bootstrap de vínculos: as propostas, os avós que precisam de lado,
+/// e o contexto para gravar tudo.
 class GBootstrapData {
   final List<GEdgeProposal> proposals;
+  final GSidePlan sidePlan;
   final String? clinicId;
   final String patientId;
-  const GBootstrapData(this.proposals, this.clinicId, this.patientId);
+  const GBootstrapData(
+      this.proposals, this.sidePlan, this.clinicId, this.patientId);
+
+  bool get isEmpty => proposals.isEmpty && !sidePlan.isUsable;
 }
 
 /// Carrega o genograma do paciente e propõe os vínculos estruturais que faltam
@@ -115,6 +120,10 @@ final genogramBootstrapProvider =
       people: data.people,
       relationships: data.relationships,
     );
-    return GBootstrapData(proposals, clinicId, patientId);
+    final sidePlan = grandparentsNeedingSideFor(
+      people: data.people,
+      relationships: data.relationships,
+    );
+    return GBootstrapData(proposals, sidePlan, clinicId, patientId);
   },
 );

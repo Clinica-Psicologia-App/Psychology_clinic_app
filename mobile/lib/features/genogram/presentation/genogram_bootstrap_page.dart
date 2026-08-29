@@ -7,7 +7,8 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../../shared/widgets/error_banner.dart';
-import '../domain/genogram_layout.dart' show GEdgeType;
+import '../domain/genogram_bootstrap.dart';
+import '../domain/genogram_layout.dart' show GEdge, GEdgeType;
 import '../domain/genogram_relationship_input.dart';
 import '../domain/genogram_relationship_type.dart';
 import '../providers/genogram_providers.dart';
@@ -27,6 +28,8 @@ class GenogramBootstrapPage extends ConsumerStatefulWidget {
 
 class _GenogramBootstrapPageState extends ConsumerState<GenogramBootstrapPage> {
   Set<int>? _accepted;
+  // Escolha de lado dos avós: id → true (paterno) / false (materno).
+  final Map<String, bool> _sides = {};
   bool _saving = false;
 
   static GenogramRelationshipType _mapType(GEdgeType t) => switch (t) {
@@ -43,28 +46,39 @@ class _GenogramBootstrapPageState extends ConsumerState<GenogramBootstrapPage> {
 
   Future<void> _commit(GBootstrapData data) async {
     final accepted = _accepted ?? const {};
-    if (accepted.isEmpty || data.clinicId == null) return;
+    final sideEdges = grandparentSideEdges(
+      plan: data.sidePlan,
+      paternalById: _sides,
+    );
+    final total = accepted.length + sideEdges.length;
+    if (total == 0 || data.clinicId == null) return;
     setState(() => _saving = true);
     final repo = ref.read(genogramRepositoryProvider);
-    try {
-      for (final i in accepted) {
-        final p = data.proposals[i];
-        await repo.createRelationship(
+
+    Future<void> create(GEdge e) => repo.createRelationship(
           clinicId: data.clinicId!,
           patientId: data.patientId,
           input: GenogramRelationshipInput(
-            personAId: p.edge.a,
-            personBId: p.edge.b,
-            relationshipType: _mapType(p.edge.type),
+            personAId: e.a,
+            personBId: e.b,
+            relationshipType: _mapType(e.type),
           ),
         );
+
+    try {
+      for (final i in accepted) {
+        await create(data.proposals[i].edge);
+      }
+      for (final e in sideEdges) {
+        await create(e);
       }
       ref.invalidate(staffGenogramProvider);
       ref.invalidate(genogramBootstrapProvider(data.patientId));
+      ref.invalidate(genogramDataForPatientProvider(data.patientId));
       ref.invalidate(genogramRelationshipsForPatientProvider(data.patientId));
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${accepted.length} vínculo(s) criado(s).')),
+        SnackBar(content: Text('$total vínculo(s) criado(s).')),
       );
       context.pop();
     } catch (e) {
@@ -86,57 +100,67 @@ class _GenogramBootstrapPageState extends ConsumerState<GenogramBootstrapPage> {
         onRetry: () =>
             ref.invalidate(genogramBootstrapProvider(widget.patientId)),
         dataBuilder: (data) {
-          final proposals = data.proposals;
-          if (proposals.isEmpty) {
+          if (data.isEmpty) {
             return const Center(
               child: Padding(
                 padding: EdgeInsets.all(AppSpacing.xl),
                 child: Text(
                   'Nada a sugerir — os vínculos estruturais já estão '
                   'cadastrados, ou não há papéis suficientes (mãe, pai, '
-                  'irmão…) para inferir.',
+                  'irmão, avós…) para inferir.',
                   textAlign: TextAlign.center,
                 ),
               ),
             );
           }
+          final proposals = data.proposals;
           final accepted =
               _accepted ??= {for (var i = 0; i < proposals.length; i++) i};
+          final gps = data.sidePlan.grandparents;
+          final total = accepted.length +
+              grandparentSideEdges(plan: data.sidePlan, paternalById: _sides)
+                  .length;
 
           return Column(
             children: [
-              const Padding(
-                padding: EdgeInsets.fromLTRB(
-                    AppSpacing.md, AppSpacing.md, AppSpacing.md, 0),
-                child: Text(
-                  'Inferido dos papéis registrados. Revise e confirme o que '
-                  'faz sentido — nada é gravado até você confirmar.',
-                  style: TextStyle(color: AppColors.textSecondary),
-                ),
-              ),
               Expanded(
-                child: ListView.builder(
+                child: ListView(
                   padding: const EdgeInsets.all(AppSpacing.sm),
-                  itemCount: proposals.length,
-                  itemBuilder: (context, i) {
-                    final p = proposals[i];
-                    return CheckboxListTile(
-                      value: accepted.contains(i),
-                      onChanged: _saving
-                          ? null
-                          : (v) => setState(() {
-                                if (v == true) {
-                                  accepted.add(i);
-                                } else {
-                                  accepted.remove(i);
-                                }
-                              }),
-                      title: Text(p.reason),
-                      subtitle: Text(_typeLabel(p.edge.type)),
-                      controlAffinity: ListTileControlAffinity.leading,
-                      dense: true,
-                    );
-                  },
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(
+                          AppSpacing.sm, AppSpacing.sm, AppSpacing.sm, 4),
+                      child: Text(
+                        'Inferido dos papéis. Revise e confirme — nada é '
+                        'gravado até você confirmar.',
+                        style: TextStyle(color: AppColors.textSecondary),
+                      ),
+                    ),
+                    if (proposals.isNotEmpty) ...[
+                      _sectionLabel('Vínculos propostos'),
+                      for (var i = 0; i < proposals.length; i++)
+                        CheckboxListTile(
+                          value: accepted.contains(i),
+                          onChanged: _saving
+                              ? null
+                              : (v) => setState(() {
+                                    if (v == true) {
+                                      accepted.add(i);
+                                    } else {
+                                      accepted.remove(i);
+                                    }
+                                  }),
+                          title: Text(proposals[i].reason),
+                          subtitle: Text(_typeLabel(proposals[i].edge.type)),
+                          controlAffinity: ListTileControlAffinity.leading,
+                          dense: true,
+                        ),
+                    ],
+                    if (data.sidePlan.isUsable && gps.isNotEmpty) ...[
+                      _sectionLabel('Avós — de que lado?'),
+                      for (final gp in gps) _grandparentTile(gp),
+                    ],
+                  ],
                 ),
               ),
               SafeArea(
@@ -144,9 +168,8 @@ class _GenogramBootstrapPageState extends ConsumerState<GenogramBootstrapPage> {
                 child: Padding(
                   padding: const EdgeInsets.all(AppSpacing.md),
                   child: FilledButton.icon(
-                    onPressed: _saving || accepted.isEmpty
-                        ? null
-                        : () => _commit(data),
+                    onPressed:
+                        _saving || total == 0 ? null : () => _commit(data),
                     icon: _saving
                         ? const SizedBox(
                             width: 18,
@@ -160,13 +183,64 @@ class _GenogramBootstrapPageState extends ConsumerState<GenogramBootstrapPage> {
                     style: FilledButton.styleFrom(
                       minimumSize: const Size.fromHeight(48),
                     ),
-                    label: Text('Confirmar (${accepted.length})'),
+                    label: Text('Confirmar ($total)'),
                   ),
                 ),
               ),
             ],
           );
         },
+      ),
+    );
+  }
+
+  Widget _sectionLabel(String text) => Padding(
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.sm, AppSpacing.md, AppSpacing.sm, AppSpacing.xxs),
+        child: Text(
+          text.toUpperCase(),
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.6,
+            color: AppColors.textMuted,
+          ),
+        ),
+      );
+
+  Widget _grandparentTile(GGrandparentSideChoice gp) {
+    final sel = _sides[gp.id];
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm, vertical: AppSpacing.xs),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(gp.name,
+              style: const TextStyle(fontWeight: FontWeight.w600)),
+          const SizedBox(height: AppSpacing.xxs),
+          SegmentedButton<bool>(
+            showSelectedIcon: false,
+            emptySelectionAllowed: true,
+            segments: const [
+              ButtonSegment(value: true, label: Text('Paterno')),
+              ButtonSegment(value: false, label: Text('Materno')),
+            ],
+            selected: sel == null ? <bool>{} : {sel},
+            onSelectionChanged: _saving
+                ? null
+                : (s) => setState(() {
+                      if (s.isEmpty) {
+                        _sides.remove(gp.id);
+                      } else {
+                        _sides[gp.id] = s.first;
+                      }
+                    }),
+            style: const ButtonStyle(
+              visualDensity: VisualDensity.compact,
+            ),
+          ),
+        ],
       ),
     );
   }

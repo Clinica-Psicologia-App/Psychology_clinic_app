@@ -62,25 +62,37 @@ List<GEmotionalRel> emotionalRelations(
   return out;
 }
 
+List<GBootstrapPerson> _bootstrapPeople(List<GenogramPerson> people) => [
+      for (final p in people)
+        GBootstrapPerson(
+          p.id,
+          role: p.relationshipToPatient,
+          sex: _sexOf(p.gender),
+          name: (p.nickname != null && p.nickname!.trim().isNotEmpty)
+              ? p.nickname!.trim()
+              : p.fullName,
+        ),
+    ];
+
 /// Roda o bootstrap sobre os dados reais de B: propõe os vínculos estruturais
 /// que faltam a partir dos papéis, sem duplicar os existentes.
 List<GEdgeProposal> proposeBootstrap({
   required List<GenogramPerson> people,
   required List<GenogramRelationship> relationships,
 }) {
-  final bp = [
-    for (final p in people)
-      GBootstrapPerson(
-        p.id,
-        role: p.relationshipToPatient,
-        sex: _sexOf(p.gender),
-        name: (p.nickname != null && p.nickname!.trim().isNotEmpty)
-            ? p.nickname!.trim()
-            : p.fullName,
-      ),
-  ];
   return proposeStructure(
-    people: bp,
+    people: _bootstrapPeople(people),
+    existing: structuralEdges(relationships),
+  );
+}
+
+/// Lista os avós que precisam de lado (paterno/materno), a partir dos dados.
+GSidePlan grandparentsNeedingSideFor({
+  required List<GenogramPerson> people,
+  required List<GenogramRelationship> relationships,
+}) {
+  return grandparentsNeedingSide(
+    people: _bootstrapPeople(people),
     existing: structuralEdges(relationships),
   );
 }

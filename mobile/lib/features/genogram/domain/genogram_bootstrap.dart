@@ -88,6 +88,97 @@ String _coupleKey(String a, String b) {
   return '${s[0]}|${s[1]}';
 }
 
+/// Um avô/avó cujo LADO (paterno/materno) o terapeuta precisa escolher —
+/// o papel ("grandmother"/"grandfather") não distingue.
+class GGrandparentSideChoice {
+  final String id;
+  final String name;
+  final GSex sex;
+  const GGrandparentSideChoice(this.id, this.name, this.sex);
+}
+
+/// Os avós que precisam de lado + o pai/mãe alvo de cada lado.
+class GSidePlan {
+  final List<GGrandparentSideChoice> grandparents;
+  final String? fatherId;
+  final String? motherId;
+  const GSidePlan(this.grandparents, this.fatherId, this.motherId);
+
+  bool get isUsable =>
+      grandparents.isNotEmpty && (fatherId != null || motherId != null);
+}
+
+/// Lista os avós sem lado (e ainda não ligados a um pai/mãe) para o terapeuta
+/// escolher paterno/materno.
+GSidePlan grandparentsNeedingSide({
+  required List<GBootstrapPerson> people,
+  required List<GEdge> existing,
+}) {
+  final fathers = <String>[];
+  final mothers = <String>[];
+  final gps = <GGrandparentSideChoice>[];
+  final linkedParents = {
+    for (final e in existing)
+      if (e.type == GEdgeType.parentChild) e.a,
+  };
+
+  for (final p in people) {
+    final c = _classify(p.role);
+    switch (c.kind) {
+      case _Kind.father:
+        fathers.add(p.id);
+      case _Kind.mother:
+        mothers.add(p.id);
+      case _Kind.grandparent:
+        if (c.side == _Side.none && !linkedParents.contains(p.id)) {
+          gps.add(GGrandparentSideChoice(p.id, p.name, p.sex));
+        }
+      case _Kind.patient ||
+            _Kind.sibling ||
+            _Kind.child ||
+            _Kind.partner ||
+            _Kind.unknown:
+        break;
+    }
+  }
+
+  return GSidePlan(
+    gps,
+    fathers.isNotEmpty ? fathers.first : null,
+    mothers.isNotEmpty ? mothers.first : null,
+  );
+}
+
+/// Monta as arestas a partir das escolhas de lado: liga cada avô/avó ao pai
+/// (paterno) ou mãe (materno), e casa os dois avós do mesmo lado.
+/// [paternalById]: `true` = paterno, `false` = materno, ausente = sem escolha.
+List<GEdge> grandparentSideEdges({
+  required GSidePlan plan,
+  required Map<String, bool> paternalById,
+}) {
+  final out = <GEdge>[];
+  final paternal = <String>[];
+  final maternal = <String>[];
+  for (final gp in plan.grandparents) {
+    final isPat = paternalById[gp.id];
+    if (isPat == null) continue;
+    if (isPat && plan.fatherId != null) {
+      out.add(GEdge(gp.id, plan.fatherId!, GEdgeType.parentChild));
+      paternal.add(gp.id);
+    } else if (!isPat && plan.motherId != null) {
+      out.add(GEdge(gp.id, plan.motherId!, GEdgeType.parentChild));
+      maternal.add(gp.id);
+    }
+  }
+  if (paternal.length == 2) {
+    out.add(GEdge(paternal[0], paternal[1], GEdgeType.spouse));
+  }
+  if (maternal.length == 2) {
+    out.add(GEdge(maternal[0], maternal[1], GEdgeType.spouse));
+  }
+  return out;
+}
+
 /// Propõe os vínculos estruturais que faltam a partir dos papéis.
 List<GEdgeProposal> proposeStructure({
   required List<GBootstrapPerson> people,

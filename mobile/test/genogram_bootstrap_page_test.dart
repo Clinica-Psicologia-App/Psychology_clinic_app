@@ -15,6 +15,7 @@ void main() {
         GEdgeProposal(
             GEdge('Fa', 'P', GEdgeType.parentChild), 'Bruno é filho de João'),
       ],
+      GSidePlan([], null, null),
       'clinic',
       'pat',
     );
@@ -43,7 +44,7 @@ void main() {
   });
 
   testWidgets('estado vazio quando não há propostas', (tester) async {
-    const data = GBootstrapData([], 'clinic', 'pat');
+    const data = GBootstrapData([], GSidePlan([], null, null), 'clinic', 'pat');
     await tester.pumpWidget(
       ProviderScope(
         overrides: [

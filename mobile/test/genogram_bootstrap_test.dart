@@ -116,4 +116,75 @@ void main() {
       expect(_has(ps, 'P', 'Fi', GEdgeType.parentChild), isTrue);
     });
   });
+
+  group('grandparentsNeedingSide / grandparentSideEdges', () {
+    test('lista os avós sem lado + o pai/mãe alvo', () {
+      final plan = grandparentsNeedingSide(
+        people: const [
+          GBootstrapPerson('P', role: 'Paciente'),
+          GBootstrapPerson('Fa', role: 'father', sex: GSex.male),
+          GBootstrapPerson('Mo', role: 'mother', sex: GSex.female),
+          GBootstrapPerson('G1', role: 'grandfather', sex: GSex.male),
+          GBootstrapPerson('G2', role: 'grandmother', sex: GSex.female),
+        ],
+        existing: const [],
+      );
+      expect(plan.fatherId, 'Fa');
+      expect(plan.motherId, 'Mo');
+      expect(plan.grandparents.map((g) => g.id).toSet(), {'G1', 'G2'});
+      expect(plan.isUsable, isTrue);
+    });
+
+    test('avô já com lado explícito NÃO entra na lista', () {
+      final plan = grandparentsNeedingSide(
+        people: const [
+          GBootstrapPerson('P', role: 'Paciente'),
+          GBootstrapPerson('Fa', role: 'father', sex: GSex.male),
+          GBootstrapPerson('G1', role: 'Avô paterno', sex: GSex.male),
+        ],
+        existing: const [],
+      );
+      expect(plan.grandparents, isEmpty);
+    });
+
+    test('dois avós no mesmo lado → parent_child + casal', () {
+      const plan = GSidePlan(
+        [
+          GGrandparentSideChoice('G1', 'Antônio', GSex.male),
+          GGrandparentSideChoice('G2', 'Cecília', GSex.female),
+        ],
+        'Fa',
+        'Mo',
+      );
+      final edges = grandparentSideEdges(
+        plan: plan,
+        paternalById: const {'G1': true, 'G2': true}, // ambos paternos
+      );
+      bool has(String a, String b, GEdgeType t) =>
+          edges.any((e) => e.a == a && e.b == b && e.type == t);
+      expect(has('G1', 'Fa', GEdgeType.parentChild), isTrue);
+      expect(has('G2', 'Fa', GEdgeType.parentChild), isTrue);
+      expect(edges.any((e) => e.type == GEdgeType.spouse), isTrue);
+    });
+
+    test('avós em lados diferentes → sem casal, cada um no seu pai/mãe', () {
+      const plan = GSidePlan(
+        [
+          GGrandparentSideChoice('G1', 'Antônio', GSex.male),
+          GGrandparentSideChoice('G2', 'Rosa', GSex.female),
+        ],
+        'Fa',
+        'Mo',
+      );
+      final edges = grandparentSideEdges(
+        plan: plan,
+        paternalById: const {'G1': true, 'G2': false},
+      );
+      bool has(String a, String b, GEdgeType t) =>
+          edges.any((e) => e.a == a && e.b == b && e.type == t);
+      expect(has('G1', 'Fa', GEdgeType.parentChild), isTrue);
+      expect(has('G2', 'Mo', GEdgeType.parentChild), isTrue);
+      expect(edges.any((e) => e.type == GEdgeType.spouse), isFalse);
+    });
+  });
 }

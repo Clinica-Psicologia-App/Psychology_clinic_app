@@ -17,12 +17,17 @@ class MotorGenogramDiagram extends StatelessWidget {
     super.key,
     required this.data,
     this.showEmotional = true,
+    this.onTapPerson,
   });
 
   final GenogramData data;
 
   /// Liga/desliga o overlay das relações emocionais (conflito, próxima…).
   final bool showEmotional;
+
+  /// Chamado ao tocar num símbolo (edição no próprio diagrama). Recebe o id da
+  /// pessoa. Quando nulo, os toques não fazem nada.
+  final void Function(String personId)? onTapPerson;
 
   /// `true` se há estrutura suficiente para o motor desenhar (ao menos um
   /// vínculo estrutural e um paciente).
@@ -56,23 +61,50 @@ class MotorGenogramDiagram extends StatelessWidget {
         ? emotionalRelations(data.relationships)
         : const <GEmotionalRel>[];
 
+    final painter = CustomPaint(
+      size: Size(diagram.width, diagram.height),
+      painter: _MotorGenogramPainter(
+        layout: layout,
+        diagram: diagram,
+        byId: byId,
+        focusId: input.focusId,
+        emotional: emotional,
+        fontFamily: fontFamily,
+      ),
+    );
+
     return InteractiveViewer(
       constrained: false,
       minScale: 0.4,
       maxScale: 2.5,
       boundaryMargin: const EdgeInsets.all(80),
-      child: CustomPaint(
-        size: Size(diagram.width, diagram.height),
-        painter: _MotorGenogramPainter(
-          layout: layout,
-          diagram: diagram,
-          byId: byId,
-          focusId: input.focusId,
-          emotional: emotional,
-          fontFamily: fontFamily,
-        ),
-      ),
+      child: onTapPerson == null
+          ? painter
+          : GestureDetector(
+              behavior: HitTestBehavior.deferToChild,
+              onTapUp: (d) {
+                final id = _hitTest(diagram, d.localPosition);
+                if (id != null) onTapPerson!(id);
+              },
+              child: painter,
+            ),
     );
+  }
+
+  /// Nó mais próximo do toque (dentro do raio do símbolo). `localPosition` está
+  /// no espaço do diagrama porque o GestureDetector é filho do InteractiveViewer.
+  static String? _hitTest(GDiagram diagram, Offset at) {
+    const hitRadius = 26.0;
+    String? best;
+    var bestD = hitRadius;
+    for (final n in diagram.nodes) {
+      final d = (Offset(n.x, n.y) - at).distance;
+      if (d <= bestD) {
+        bestD = d;
+        best = n.id;
+      }
+    }
+    return best;
   }
 }
 

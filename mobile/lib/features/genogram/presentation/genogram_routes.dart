@@ -78,4 +78,12 @@ abstract final class GenogramRoutes {
   static const bootstrapByPath = '/psychologist/genogram-bootstrap/:patientId';
   static String bootstrapFor(String patientId) =>
       '/psychologist/genogram-bootstrap/$patientId';
+
+  // Edição de pessoa STANDALONE (topo-nível), para abrir a partir do diagrama
+  // sem reconstruir StaffPatientGenogramPage (evita o crash de GlobalKey que
+  // acontecia ao cruzar de branch). Mesmo padrão do bootstrap.
+  static const personEditByPath =
+      '/psychologist/genogram-person-edit/:patientId/:personId';
+  static String personEditFor(String patientId, String personId) =>
+      '/psychologist/genogram-person-edit/$patientId/$personId';
 }

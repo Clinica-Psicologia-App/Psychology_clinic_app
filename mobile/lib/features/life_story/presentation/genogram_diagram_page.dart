@@ -57,6 +57,7 @@ class _GenogramDiagramPageState extends ConsumerState<GenogramDiagramPage> {
               child: MotorGenogramDiagram(
                 data: gdata,
                 showEmotional: _showBonds,
+                onTapPerson: _openPerson,
               ),
             ),
           ),
@@ -124,19 +125,38 @@ class _GenogramDiagramPageState extends ConsumerState<GenogramDiagramPage> {
     );
   }
 
+  /// Toque num símbolo do motor → abre a edição STANDALONE daquela pessoa
+  /// (rota de topo, não reconstrói StaffPatientGenogramPage — evita o crash de
+  /// GlobalKey ao cruzar de branch). Ao voltar, revalida os dados do diagrama.
+  Future<void> _openPerson(String personId) async {
+    await context.push(
+      GenogramRoutes.personEditFor(widget.patientId, personId),
+    );
+    if (!mounted) return;
+    ref.invalidate(genogramDataForPatientProvider(widget.patientId));
+  }
+
   Widget _motorControls() {
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
-      child: Align(
-        alignment: Alignment.centerLeft,
-        child: FilterChip(
-          label: const Text('Mostrar relações'),
-          selected: _showBonds,
-          onSelected: (v) => setState(() => _showBonds = v),
-          selectedColor: AppColors.turquoise.withValues(alpha: 0.18),
-          checkmarkColor: AppColors.turquoise,
-        ),
+      child: Row(
+        children: [
+          FilterChip(
+            label: const Text('Mostrar relações'),
+            selected: _showBonds,
+            onSelected: (v) => setState(() => _showBonds = v),
+            selectedColor: AppColors.turquoise.withValues(alpha: 0.18),
+            checkmarkColor: AppColors.turquoise,
+          ),
+          const SizedBox(width: 10),
+          const Expanded(
+            child: Text(
+              'Toque numa pessoa para ver/editar.',
+              style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
+            ),
+          ),
+        ],
       ),
     );
   }

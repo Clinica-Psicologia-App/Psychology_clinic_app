@@ -44,6 +44,24 @@ List<GEdge> structuralEdges(List<GenogramRelationship> relationships) {
   return edges;
 }
 
+/// Extrai as relações EMOCIONAIS (conflito, próxima, distante, rompimento)
+/// para o overlay do desenho — separadas da estrutura.
+List<GEmotionalRel> emotionalRelations(
+    List<GenogramRelationship> relationships) {
+  final out = <GEmotionalRel>[];
+  for (final r in relationships) {
+    final k = switch (r.relationshipType) {
+      GenogramRelationshipType.close => GEmotion.close,
+      GenogramRelationshipType.distant => GEmotion.distant,
+      GenogramRelationshipType.conflict => GEmotion.conflict,
+      GenogramRelationshipType.ruptured => GEmotion.broken,
+      _ => null,
+    };
+    if (k != null) out.add(GEmotionalRel(r.personAId, r.personBId, k));
+  }
+  return out;
+}
+
 /// Roda o bootstrap sobre os dados reais de B: propõe os vínculos estruturais
 /// que faltam a partir dos papéis, sem duplicar os existentes.
 List<GEdgeProposal> proposeBootstrap({

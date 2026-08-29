@@ -21,6 +21,17 @@ enum GEdgeType { spouse, exSpouse, parentChild }
 /// Linhagem de uma pessoa em relação ao paciente (foco).
 enum GLineage { paternal, maternal, self, unknown }
 
+/// Tipos de relação EMOCIONAL (camada 2), separados da estrutura.
+enum GEmotion { close, distant, conflict, broken }
+
+/// Uma relação emocional entre duas pessoas (para o overlay do desenho).
+class GEmotionalRel {
+  final String a;
+  final String b;
+  final GEmotion kind;
+  const GEmotionalRel(this.a, this.b, this.kind);
+}
+
 /// Uma pessoa, para o motor (só o que o layout precisa).
 class GPerson {
   final String id;

@@ -13,9 +13,16 @@ import '../../domain/genogram_person.dart';
 /// paterna à esquerda, materna à direita, gerações em faixas). Só faz sentido
 /// quando há vínculos; a página decide entre este e o desenho por inferência.
 class MotorGenogramDiagram extends StatelessWidget {
-  const MotorGenogramDiagram({super.key, required this.data});
+  const MotorGenogramDiagram({
+    super.key,
+    required this.data,
+    this.showEmotional = true,
+  });
 
   final GenogramData data;
+
+  /// Liga/desliga o overlay das relações emocionais (conflito, próxima…).
+  final bool showEmotional;
 
   /// `true` se há estrutura suficiente para o motor desenhar (ao menos um
   /// vínculo estrutural e um paciente).
@@ -44,6 +51,9 @@ class MotorGenogramDiagram extends StatelessWidget {
     final diagram = positionGenogram(layout, colWidth: 116, rowHeight: 150);
     final byId = {for (final p in data.people) p.id: p};
     final fontFamily = DefaultTextStyle.of(context).style.fontFamily;
+    final emotional = showEmotional
+        ? emotionalRelations(data.relationships)
+        : const <GEmotionalRel>[];
 
     return InteractiveViewer(
       constrained: false,
@@ -57,6 +67,7 @@ class MotorGenogramDiagram extends StatelessWidget {
           diagram: diagram,
           byId: byId,
           focusId: input.focusId,
+          emotional: emotional,
           fontFamily: fontFamily,
         ),
       ),
@@ -70,6 +81,7 @@ class _MotorGenogramPainter extends CustomPainter {
     required this.diagram,
     required this.byId,
     required this.focusId,
+    required this.emotional,
     this.fontFamily,
   });
 
@@ -77,7 +89,12 @@ class _MotorGenogramPainter extends CustomPainter {
   final GDiagram diagram;
   final Map<String, GenogramPerson> byId;
   final String focusId;
+  final List<GEmotionalRel> emotional;
   final String? fontFamily;
+
+  static const _green = Color(0xFF2E7D6B);
+  static const _ochre = Color(0xFFB5651D);
+  static const _red = Color(0xFFB03A3A);
 
   static const _r = 22.0;
   static const _navy = Color(0xFF0D1B3D);
@@ -96,8 +113,92 @@ class _MotorGenogramPainter extends CustomPainter {
         Offset.zero & size, Paint()..color = const Color(0xFFFBFCFE));
     _bands(canvas);
     _connectors(canvas);
+    _emotionalLayer(canvas);
     for (final n in diagram.nodes) {
       _node(canvas, n);
+    }
+  }
+
+  // ── Camada emocional (overlay) ─────────────────────────────────────────────
+  void _emotionalLayer(Canvas canvas) {
+    for (final e in emotional) {
+      final a = _p(e.a), b = _p(e.b);
+      if (a == null || b == null) continue;
+      final (color, draw) = switch (e.kind) {
+        GEmotion.close => (_green, _CurveKind.doubleLine),
+        GEmotion.distant => (const Color(0xFF6B7A90), _CurveKind.dashed),
+        GEmotion.conflict => (_ochre, _CurveKind.zigzag),
+        GEmotion.broken => (_red, _CurveKind.slashed),
+      };
+      _styledLine(canvas, Offset(a.x, a.y), Offset(b.x, b.y), draw, color);
+    }
+  }
+
+  void _styledLine(
+      Canvas canvas, Offset a, Offset b, _CurveKind kind, Color color) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 1.8
+      ..style = PaintingStyle.stroke;
+    final dir = b - a;
+    final len = dir.distance;
+    if (len < 1) return;
+    final unit = dir / len;
+    final start = a + unit * (_r + 6);
+    final end = b - unit * (_r + 6);
+    switch (kind) {
+      case _CurveKind.doubleLine:
+        final n = Offset(-unit.dy, unit.dx) * 2.4;
+        canvas.drawLine(start + n, end + n, paint);
+        canvas.drawLine(start - n, end - n, paint);
+      case _CurveKind.dashed:
+        _dashed(canvas, start, end, paint);
+      case _CurveKind.zigzag:
+        _zigzag(canvas, start, end, paint);
+      case _CurveKind.slashed:
+        canvas.drawLine(start, end, paint);
+        _slashes(canvas, start, end, paint);
+    }
+  }
+
+  void _dashed(Canvas canvas, Offset a, Offset b, Paint paint) {
+    const dash = 6.0, gap = 4.0;
+    final total = (b - a).distance;
+    final unit = (b - a) / total;
+    var d = 0.0;
+    while (d < total) {
+      canvas.drawLine(
+          a + unit * d, a + unit * math.min(d + dash, total), paint);
+      d += dash + gap;
+    }
+  }
+
+  void _zigzag(Canvas canvas, Offset a, Offset b, Paint paint) {
+    final total = (b - a).distance;
+    final unit = (b - a) / total;
+    final normal = Offset(-unit.dy, unit.dx);
+    const step = 9.0, amp = 4.0;
+    final path = Path()..moveTo(a.dx, a.dy);
+    var d = 0.0, s = 1.0;
+    while (d < total) {
+      final next = math.min(d + step, total);
+      final mid = a + unit * ((d + next) / 2) + normal * (amp * s);
+      final e = a + unit * next;
+      path.lineTo(mid.dx, mid.dy);
+      path.lineTo(e.dx, e.dy);
+      s = -s;
+      d = next;
+    }
+    canvas.drawPath(path, paint);
+  }
+
+  void _slashes(Canvas canvas, Offset a, Offset b, Paint paint) {
+    final mid = (a + b) / 2;
+    final unit = (b - a) / (b - a).distance;
+    final normal = Offset(-unit.dy, unit.dx) * 5;
+    for (final off in [-3.0, 3.0]) {
+      final c = mid + unit * off;
+      canvas.drawLine(c + normal, c - normal, paint);
     }
   }
 
@@ -260,5 +361,9 @@ class _MotorGenogramPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_MotorGenogramPainter old) =>
-      old.diagram != diagram || old.layout != layout;
+      old.diagram != diagram ||
+      old.layout != layout ||
+      old.emotional != emotional;
 }
+
+enum _CurveKind { doubleLine, dashed, zigzag, slashed }

@@ -63,6 +63,18 @@ void main() {
       expect(mo.sex, GSex.female);
     });
 
+    test('emotionalRelations extrai só as emocionais', () {
+      final em = emotionalRelations([
+        _r('a', 'b', GenogramRelationshipType.conflict),
+        _r('a', 'c', GenogramRelationshipType.close),
+        _r('a', 'd', GenogramRelationshipType.parentChild), // estrutural
+        _r('a', 'e', GenogramRelationshipType.spouse), // estrutural
+      ]);
+      expect(em.length, 2);
+      expect(em.any((x) => x.kind == GEmotion.conflict), isTrue);
+      expect(em.any((x) => x.kind == GEmotion.close), isTrue);
+    });
+
     test('sem paciente na lista → null', () {
       final input = buildLayoutInput(
         people: [_p('Fa', gender: GenogramGender.male)],

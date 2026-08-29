@@ -91,6 +91,10 @@ final _data = GenogramData(
     _r('GpM', 'Mo', GenogramRelationshipType.parentChild),
     _r('GmM', 'Mo', GenogramRelationshipType.parentChild),
     _r('GpM', 'GmM', GenogramRelationshipType.spouse),
+    // Camada emocional (overlay):
+    _r('Fa', 'Mo', GenogramRelationshipType.conflict), // pai × mãe
+    _r('P', 'Mo', GenogramRelationshipType.close), // paciente × mãe
+    _r('P', 'Fa', GenogramRelationshipType.distant), // paciente × pai
   ],
 );
 

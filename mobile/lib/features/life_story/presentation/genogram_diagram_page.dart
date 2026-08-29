@@ -50,13 +50,18 @@ class _GenogramDiagramPageState extends ConsumerState<GenogramDiagramPage> {
     if (gdata != null && MotorGenogramDiagram.hasStructure(gdata)) {
       return Column(
         children: [
+          _motorControls(),
           Expanded(
             child: Container(
               width: double.infinity,
               color: const Color(0xFFF3F5F9),
-              child: MotorGenogramDiagram(data: gdata),
+              child: MotorGenogramDiagram(
+                data: gdata,
+                showEmotional: _showBonds,
+              ),
             ),
           ),
+          if (_showBonds) _bondLegend(),
           _note(),
         ],
       );
@@ -117,6 +122,23 @@ class _GenogramDiagramPageState extends ConsumerState<GenogramDiagramPage> {
           ],
         );
       },
+    );
+  }
+
+  Widget _motorControls() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      child: Align(
+        alignment: Alignment.centerLeft,
+        child: FilterChip(
+          label: const Text('Mostrar relações'),
+          selected: _showBonds,
+          onSelected: (v) => setState(() => _showBonds = v),
+          selectedColor: AppColors.turquoise.withValues(alpha: 0.18),
+          checkmarkColor: AppColors.turquoise,
+        ),
+      ),
     );
   }
 

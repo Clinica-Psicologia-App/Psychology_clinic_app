@@ -96,6 +96,7 @@ class _MotorGenogramPainter extends CustomPainter {
   static const _green = Color(0xFF2E7D6B);
   static const _ochre = Color(0xFFB5651D);
   static const _red = Color(0xFFB03A3A);
+  static const _care = Color(0xFFE0A400); // cuidador principal (destaque)
 
   static const _r = 22.0;
   static const _navy = Color(0xFF0D1B3D);
@@ -340,6 +341,16 @@ class _MotorGenogramPainter extends CustomPainter {
       ..strokeWidth = isIndex ? 2.6 : 2.2
       ..style = PaintingStyle.stroke;
 
+    // Cuidador(a) principal: halo âmbar atrás do símbolo (destaque de cuidado).
+    if (person?.isPrimaryCaregiver ?? false) {
+      canvas.drawCircle(
+          c,
+          _r + 9,
+          Paint()
+            ..color = _care.withValues(alpha: 0.18)
+            ..style = PaintingStyle.fill);
+    }
+
     if (isIndex) {
       final path = _diamond(c, _r);
       canvas.drawPath(path, fill);
@@ -351,6 +362,25 @@ class _MotorGenogramPainter extends CustomPainter {
       final rect = Rect.fromCenter(center: c, width: _r * 2, height: _r * 2);
       canvas.drawRect(rect, fill);
       canvas.drawRect(rect, stroke);
+    }
+
+    // Anel de cuidador: cheio para principal, fino para parcial.
+    if (person?.isPrimaryCaregiver ?? false) {
+      canvas.drawCircle(
+          c,
+          _r + 6,
+          Paint()
+            ..color = _care
+            ..strokeWidth = 2.4
+            ..style = PaintingStyle.stroke);
+    } else if (person?.isPartialCaregiver ?? false) {
+      canvas.drawCircle(
+          c,
+          _r + 6,
+          Paint()
+            ..color = _care.withValues(alpha: 0.55)
+            ..strokeWidth = 1.6
+            ..style = PaintingStyle.stroke);
     }
 
     // Idade dentro do símbolo.

@@ -22,7 +22,7 @@ import 'package:terapia_esquema/features/genogram/presentation/widgets/motor_gen
 final _t = DateTime(2024);
 
 GenogramPerson _p(String id, String name,
-        {GenogramGender? gender, String? rel, int? birth}) =>
+        {GenogramGender? gender, String? rel, int? birth, String? caregiver}) =>
     GenogramPerson(
       id: id,
       clinicId: 'c',
@@ -32,6 +32,7 @@ GenogramPerson _p(String id, String name,
       gender: gender,
       birthYear: birth,
       isDeceased: false,
+      caregiverRole: caregiver,
       isSensitive: false,
       createdAt: _t,
       updatedAt: _t,
@@ -55,8 +56,16 @@ GenogramRelationship _r(String a, String b, GenogramRelationshipType type,
 final _data = GenogramData(
   people: [
     _p('P', 'Bruno', gender: GenogramGender.male, rel: 'Paciente', birth: 1996),
-    _p('Fa', 'João', gender: GenogramGender.male, rel: 'Pai', birth: 1968),
-    _p('Mo', 'Carla', gender: GenogramGender.female, rel: 'Mãe', birth: 1970),
+    _p('Fa', 'João',
+        gender: GenogramGender.male,
+        rel: 'Pai',
+        birth: 1968,
+        caregiver: 'partial'),
+    _p('Mo', 'Carla',
+        gender: GenogramGender.female,
+        rel: 'Mãe',
+        birth: 1970,
+        caregiver: 'important'),
     _p('Ga', 'Ana', gender: GenogramGender.female, rel: 'Irmã', birth: 2000),
     _p('Gb', 'Beto', gender: GenogramGender.male, rel: 'Irmão', birth: 2000),
     _p('Ad', 'Caio', gender: GenogramGender.male, rel: 'Irmão', birth: 2005),

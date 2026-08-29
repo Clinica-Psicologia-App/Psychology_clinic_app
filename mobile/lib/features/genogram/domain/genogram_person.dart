@@ -13,6 +13,7 @@ class GenogramPerson {
     this.birthYear,
     this.deathYear,
     required this.isDeceased,
+    this.caregiverRole,
     this.notes,
     required this.isSensitive,
     required this.createdAt,
@@ -30,7 +31,17 @@ class GenogramPerson {
   final int? birthYear;
   final int? deathYear;
   final bool isDeceased;
+
+  /// Papel de cuidado na criação do paciente (§22): chave crua do banco
+  /// (`important` / `partial` / `no` / `dont_know`), sem acoplar ao enum de A.
+  final String? caregiverRole;
   final String? notes;
+
+  /// Cuidador(a) principal (teve papel importante) — destaque no genograma.
+  bool get isPrimaryCaregiver => caregiverRole == 'important';
+
+  /// Cuidador(a) parcial (em alguns períodos).
+  bool get isPartialCaregiver => caregiverRole == 'partial';
   final bool isSensitive;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -61,6 +72,7 @@ class GenogramPerson {
       birthYear: json['birth_year'] as int?,
       deathYear: json['death_year'] as int?,
       isDeceased: json['is_deceased'] as bool? ?? false,
+      caregiverRole: json['caregiver_role'] as String?,
       notes: json['notes'] as String?,
       isSensitive: json['is_sensitive'] as bool? ?? false,
       createdAt: DateTime.parse(json['created_at'] as String).toLocal(),

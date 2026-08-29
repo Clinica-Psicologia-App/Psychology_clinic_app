@@ -40,9 +40,12 @@ String normalizeRole(String? s) {
   return sb.toString();
 }
 
-enum _Kind { patient, mother, father, sibling, grandparent, child, unknown }
+enum _Kind { patient, mother, father, sibling, grandparent, child, partner, unknown }
 enum _Side { paternal, maternal, none }
 
+/// Classifica o papel. Reconhece tanto as CHAVES do enum (em inglês, como são
+/// gravadas: `mother`, `father`, `grandmother`, `sister`…) quanto texto livre
+/// em português (`Mãe`, `Pai`, `Avó paterna`…).
 ({_Kind kind, _Side side}) _classify(String? role) {
   final r = normalizeRole(role);
   final side = r.contains('patern')
@@ -51,15 +54,30 @@ enum _Side { paternal, maternal, none }
           ? _Side.maternal
           : _Side.none;
   if (r.contains('paciente')) return (kind: _Kind.patient, side: _Side.none);
-  if (r.contains('avo') || r.contains('avob')) {
+  // Avós antes de mãe/pai (grandmother contém "mother").
+  if (r.contains('grand') || r.contains('avo') || r.contains('avob')) {
     return (kind: _Kind.grandparent, side: side);
   }
-  if (r.contains('mae')) return (kind: _Kind.mother, side: _Side.none);
-  if (r.contains('irma')) return (kind: _Kind.sibling, side: _Side.none);
-  if (r.contains('filh')) return (kind: _Kind.child, side: _Side.none);
-  // "pai" por último para não colidir com "paciente"/"patern".
-  if (r == 'pai' || r.startsWith('pai ') || r.contains('pai/')) {
+  if (r == 'mother' || r.contains('mae')) {
+    return (kind: _Kind.mother, side: _Side.none);
+  }
+  // "father"/"pai" — exato, para não pegar "stepfather"/"paciente"/"patern".
+  if (r == 'father' || r == 'pai' || r.startsWith('pai ') || r.contains('pai/')) {
     return (kind: _Kind.father, side: _Side.none);
+  }
+  if (r == 'sister' || r == 'brother' || r.contains('irma')) {
+    return (kind: _Kind.sibling, side: _Side.none);
+  }
+  if (r == 'son' || r == 'daughter' || r.contains('filh')) {
+    return (kind: _Kind.child, side: _Side.none);
+  }
+  if (r == 'partner' ||
+      r.contains('conjuge') ||
+      r.contains('esposa') ||
+      r.contains('esposo') ||
+      r.contains('marido') ||
+      r.contains('parceir')) {
+    return (kind: _Kind.partner, side: _Side.none);
   }
   return (kind: _Kind.unknown, side: side);
 }
@@ -96,6 +114,7 @@ List<GEdgeProposal> proposeStructure({
   final mothers = <String>[];
   final siblings = <String>[];
   final children = <String>[];
+  final partners = <String>[];
   final gpPat = <String>[];
   final gpMat = <String>[];
 
@@ -112,6 +131,8 @@ List<GEdgeProposal> proposeStructure({
         siblings.add(p.id);
       case _Kind.child:
         children.add(p.id);
+      case _Kind.partner:
+        partners.add(p.id);
       case _Kind.grandparent:
         if (c.side == _Side.paternal) gpPat.add(p.id);
         if (c.side == _Side.maternal) gpMat.add(p.id);
@@ -154,6 +175,11 @@ List<GEdgeProposal> proposeStructure({
 
   for (final child in children) {
     proposePC(patient, child, '${name(child)} é filho(a) de ${name(patient)}');
+  }
+
+  for (final partner in partners) {
+    proposeSpouse(
+        patient, partner, '${name(patient)} e ${name(partner)} — casal');
   }
 
   // Avós: só quando o lado é explícito e o pai/mãe correspondente existe.

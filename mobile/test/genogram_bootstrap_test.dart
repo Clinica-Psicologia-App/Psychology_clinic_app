@@ -81,6 +81,30 @@ void main() {
       expect(ps.any((x) => x.edge.a == 'Gp' || x.edge.b == 'Gp'), isFalse);
     });
 
+    test('reconhece as CHAVES do enum em inglês (formato real do banco)', () {
+      final ps = proposeStructure(
+        people: const [
+          GBootstrapPerson('P', role: 'Paciente'),
+          GBootstrapPerson('Fa', role: 'father', sex: GSex.male),
+          GBootstrapPerson('Mo', role: 'mother', sex: GSex.female),
+          GBootstrapPerson('Si', role: 'brother'),
+          GBootstrapPerson('Fi', role: 'son'),
+          GBootstrapPerson('Sp', role: 'partner'),
+          GBootstrapPerson('Gp', role: 'grandfather', sex: GSex.male), // sem lado
+        ],
+        existing: const [],
+      );
+
+      expect(_has(ps, 'Fa', 'Mo', GEdgeType.spouse), isTrue);
+      expect(_has(ps, 'Fa', 'P', GEdgeType.parentChild), isTrue);
+      expect(_has(ps, 'Mo', 'P', GEdgeType.parentChild), isTrue);
+      expect(_has(ps, 'Fa', 'Si', GEdgeType.parentChild), isTrue);
+      expect(_has(ps, 'P', 'Fi', GEdgeType.parentChild), isTrue);
+      expect(_has(ps, 'P', 'Sp', GEdgeType.spouse), isTrue);
+      // avô sem lado explícito não é ligado
+      expect(ps.any((x) => x.edge.a == 'Gp' || x.edge.b == 'Gp'), isFalse);
+    });
+
     test('filho do paciente vira parent_child do paciente', () {
       final ps = proposeStructure(
         people: const [

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../genogram/presentation/genogram_routes.dart';
 import '../../genogram/presentation/widgets/motor_genogram_diagram.dart';
 import '../../genogram/providers/genogram_providers.dart';
+import '../../profile/domain/profile_role.dart';
 import '../providers/life_story_providers.dart';
 import 'widgets/genogram_diagram.dart';
 import '../../../shared/widgets/brand_loading.dart';
@@ -95,6 +98,7 @@ class _GenogramDiagramPageState extends ConsumerState<GenogramDiagramPage> {
         }
         return Column(
           children: [
+            _bootstrapHint(),
             _controls(),
             Expanded(
               child: Container(
@@ -113,6 +117,38 @@ class _GenogramDiagramPageState extends ConsumerState<GenogramDiagramPage> {
           ],
         );
       },
+    );
+  }
+
+  Widget _bootstrapHint() {
+    return Material(
+      color: const Color(0xFFEAF3F2),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
+        child: Row(
+          children: [
+            const Icon(Icons.account_tree_outlined,
+                size: 18, color: AppColors.turquoise),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                'Estrutura inferida do parentesco. Para a árvore por '
+                'linhagens, sugira os vínculos a partir dos papéis.',
+                style: TextStyle(fontSize: 12.5, color: AppColors.navy),
+              ),
+            ),
+            TextButton(
+              onPressed: () => context.push(
+                GenogramRoutes.staffBootstrap(
+                  role: ProfileRole.psychologist,
+                  patientId: widget.patientId,
+                ),
+              ),
+              child: const Text('Sugerir vínculos'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 

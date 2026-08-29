@@ -72,9 +72,10 @@ abstract final class GenogramRoutes {
   }) =>
       '${staffList(role: role, patientId: patientId)}/relationships/$relationshipId/edit';
 
-  static String staffBootstrap({
-    required ProfileRole role,
-    required String patientId,
-  }) =>
-      '${staffList(role: role, patientId: patientId)}/bootstrap';
+  // Bootstrap: rota STANDALONE (top-level), não aninhada sob a página do
+  // construtor — assim navegar do painel/diagrama (outro branch) não reconstrói
+  // a página-pai nem colide GlobalKey.
+  static const bootstrapByPath = '/psychologist/genogram-bootstrap/:patientId';
+  static String bootstrapFor(String patientId) =>
+      '/psychologist/genogram-bootstrap/$patientId';
 }

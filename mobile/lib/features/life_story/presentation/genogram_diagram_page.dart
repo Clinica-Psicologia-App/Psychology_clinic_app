@@ -6,7 +6,6 @@ import '../../../core/theme/app_colors.dart';
 import '../../genogram/presentation/genogram_routes.dart';
 import '../../genogram/presentation/widgets/motor_genogram_diagram.dart';
 import '../../genogram/providers/genogram_providers.dart';
-import '../../profile/domain/profile_role.dart';
 import '../providers/life_story_providers.dart';
 import 'widgets/genogram_diagram.dart';
 import '../../../shared/widgets/brand_loading.dart';
@@ -161,10 +160,7 @@ class _GenogramDiagramPageState extends ConsumerState<GenogramDiagramPage> {
             ),
             TextButton(
               onPressed: () => context.push(
-                GenogramRoutes.staffBootstrap(
-                  role: ProfileRole.psychologist,
-                  patientId: widget.patientId,
-                ),
+                GenogramRoutes.bootstrapFor(widget.patientId),
               ),
               child: const Text('Sugerir vínculos'),
             ),

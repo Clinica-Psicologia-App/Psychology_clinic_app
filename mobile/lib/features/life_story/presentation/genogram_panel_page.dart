@@ -124,10 +124,7 @@ class GenogramPanelPage extends ConsumerWidget {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: TextButton.icon(
                   onPressed: () => context.push(
-                    GenogramRoutes.staffBootstrap(
-                      role: ProfileRole.psychologist,
-                      patientId: patientId,
-                    ),
+                    GenogramRoutes.bootstrapFor(patientId),
                   ),
                   icon: const Icon(Icons.auto_fix_high_outlined, size: 18),
                   label: const Text('Sugerir vínculos a partir dos papéis'),

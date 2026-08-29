@@ -21,7 +21,9 @@ import '../../features/patient_library/presentation/patient_library_routes.dart'
 import '../../features/patient_library/presentation/admin_library_routes.dart';
 import '../../features/psychoeducation/presentation/psychoeducation_routes.dart';
 import '../../features/clinic_entitlements/presentation/admin_plans_page.dart';
+import '../../features/genogram/presentation/genogram_bootstrap_page.dart';
 import '../../features/genogram/presentation/genogram_route_helpers.dart';
+import '../../features/genogram/presentation/genogram_routes.dart';
 import '../../features/clinical_dashboard/presentation/clinical_dashboard_route_helpers.dart';
 import '../../features/clinical_reports/presentation/clinical_report_route_helpers.dart';
 import '../../features/clinics/presentation/clinic_routes.dart';
@@ -261,6 +263,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: LifeStoryRoutes.developmentalSynthesis,
         builder: (_, state) =>
             DevelopmentalSynthesisPage(patientId: state.extra as String),
+      ),
+      GoRoute(
+        path: GenogramRoutes.bootstrapByPath,
+        builder: (_, state) => GenogramBootstrapPage(
+          patientId: state.pathParameters['patientId']!,
+        ),
       ),
       GoRoute(
         path: LifeStoryRoutes.therapistPersonCard,

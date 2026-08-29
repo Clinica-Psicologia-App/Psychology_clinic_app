@@ -49,11 +49,16 @@ class GPlaced {
   /// `false` quando a pessoa não tem vínculo estrutural que a ligue ao foco.
   bool connected;
 
+  /// `true` se está na linha ancestral direta do foco (pai, avós…). Usado para
+  /// posicionar: ancestrais no lado interno, tios/tias no externo.
+  bool ancestor;
+
   GPlaced(
     this.id, {
     this.generation = 0,
     this.lineage = GLineage.unknown,
     this.connected = false,
+    this.ancestor = false,
   });
 }
 
@@ -220,6 +225,20 @@ GLayout buildGenogramStructure({
     if (pl.generation > 0) pl.lineage = GLineage.self;
   }
 
+  // Linha ancestral direta (spine): sobe do foco só pelos pais — NÃO inclui
+  // irmãos dos ancestrais (tios). Serve para o posicionamento colocar os
+  // ancestrais no lado interno e os tios/tias no externo.
+  {
+    final stack = <String>[...focusParents];
+    final seen = <String>{};
+    while (stack.isNotEmpty) {
+      final x = stack.removeLast();
+      if (!seen.add(x)) continue;
+      placed[x]!.ancestor = true;
+      stack.addAll(parentsOf[x]!);
+    }
+  }
+
   return GLayout(placed, couples, _siblingGroups(ids, parentsOf));
 }
 
@@ -264,13 +283,6 @@ class GDiagram {
   }
 }
 
-int _lineageOrder(GLineage l) => switch (l) {
-      GLineage.paternal => 0,
-      GLineage.self => 1,
-      GLineage.maternal => 2,
-      GLineage.unknown => 3,
-    };
-
 /// Converte a topologia em coordenadas do desenho bilateral: cada geração numa
 /// faixa horizontal (mais ancestral no topo), linhagem paterna à esquerda e
 /// materna à direita, casais adjacentes. Pessoas não-conectadas vão para uma
@@ -297,18 +309,36 @@ GDiagram positionGenogram(
   }
   final gens = byGen.keys.toList()..sort(); // ascendente: ancestral no topo
 
-  // Ordena cada faixa: por linhagem, mantendo casais adjacentes.
+  // Ordena cada faixa: linhagem paterna | própria | materna, com os ancestrais
+  // diretos no lado INTERNO (perto do centro) e os tios/tias no EXTERNO, e os
+  // casais adjacentes.
   final rowOrders = <int, List<String>>{};
   for (final g in gens) {
-    final people = byGen[g]!
-      ..sort((a, b) {
-        final lo = _lineageOrder(a.lineage).compareTo(_lineageOrder(b.lineage));
-        return lo != 0 ? lo : a.id.compareTo(b.id);
-      });
-    final inGen = {for (final p in people) p.id};
+    final people = byGen[g]!;
+    List<GPlaced> cluster(GLineage l, {required bool ancestorRight}) {
+      final list = people.where((p) => p.lineage == l).toList()
+        ..sort((a, b) {
+          final av = a.ancestor ? 1 : 0;
+          final bv = b.ancestor ? 1 : 0;
+          // paterna: ancestral por último (direita/interno).
+          // materna: ancestral primeiro (esquerda/interno).
+          final byAnc = ancestorRight ? av.compareTo(bv) : bv.compareTo(av);
+          return byAnc != 0 ? byAnc : a.id.compareTo(b.id);
+        });
+      return list;
+    }
+
+    final base = <GPlaced>[
+      ...cluster(GLineage.paternal, ancestorRight: true),
+      ...cluster(GLineage.self, ancestorRight: true),
+      ...cluster(GLineage.maternal, ancestorRight: false),
+      ...cluster(GLineage.unknown, ancestorRight: true),
+    ];
+
+    final inGen = {for (final p in base) p.id};
     final order = <String>[];
     final done = <String>{};
-    for (final p in people) {
+    for (final p in base) {
       if (done.contains(p.id)) continue;
       order.add(p.id);
       done.add(p.id);

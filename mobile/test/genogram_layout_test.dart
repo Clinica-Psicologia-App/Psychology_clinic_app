@@ -200,6 +200,35 @@ void main() {
       expect((d.byId('GpP')!.x - d.byId('GmP')!.x).abs(), 100);
     });
 
+    test('tia paterna fica no lado externo (à esquerda do pai)', () {
+      final layout = buildGenogramStructure(
+        focusId: 'F',
+        people: const [
+          GPerson('F'),
+          GPerson('Fa', sex: GSex.male),
+          GPerson('Mo', sex: GSex.female),
+          GPerson('GpP', sex: GSex.male),
+          GPerson('GmP', sex: GSex.female),
+          GPerson('Tia', sex: GSex.female),
+        ],
+        edges: const [
+          GEdge('Fa', 'F', GEdgeType.parentChild),
+          GEdge('Mo', 'F', GEdgeType.parentChild),
+          GEdge('Fa', 'Mo', GEdgeType.spouse),
+          GEdge('GpP', 'Fa', GEdgeType.parentChild),
+          GEdge('GmP', 'Fa', GEdgeType.parentChild),
+          GEdge('GpP', 'Tia', GEdgeType.parentChild),
+          GEdge('GmP', 'Tia', GEdgeType.parentChild),
+        ],
+      );
+      final d = positionGenogram(layout);
+      // Tia (externo) < Pai (interno) < Mãe
+      expect(d.byId('Tia')!.x, lessThan(d.byId('Fa')!.x));
+      expect(d.byId('Fa')!.x, lessThan(d.byId('Mo')!.x));
+      // Tia é paterna, então fica à esquerda da mãe (materna)
+      expect(d.byId('Tia')!.x, lessThan(d.byId('Mo')!.x));
+    });
+
     test('não-conectados vão para a faixa solta na base', () {
       final layout = buildGenogramStructure(
         focusId: 'F',

@@ -382,10 +382,13 @@ class _PsychologistWorkspace extends ConsumerWidget {
         // (ver _ProfileHeader.footer); aqui fica só o painel de notificações e
         // os grupos de módulos.
         const _PsychologistAlertsCard(),
-        const AppSectionHeader(
-          title: 'Carteira de pacientes',
-          subtitle: 'Cadastro, convites e plano de cuidado.',
-          accentColor: _WorkspaceAccents.management,
+        KeyedSubtree(
+          key: patientsCardKey,
+          child: const AppSectionHeader(
+            title: 'Carteira de pacientes',
+            subtitle: 'Cadastro, convites e plano de cuidado.',
+            accentColor: _WorkspaceAccents.management,
+          ),
         ),
         const SizedBox(height: AppSpacing.sm),
         MotionReveal(
@@ -394,16 +397,13 @@ class _PsychologistWorkspace extends ConsumerWidget {
             mediumColumns: 2,
             expandedColumns: 3,
             children: [
-              KeyedSubtree(
-                key: patientsCardKey,
-                child: ClinicalModuleCard(
-                  icon: Icons.people_outline,
-                  title: 'Pacientes',
-                  subtitle: 'Carteira clínica, detalhes e plano de cuidado',
-                  accentColor: _WorkspaceAccents.management,
-                  onTap: () => context.push(
-                    PatientRoutes.list(ProfileRole.psychologist),
-                  ),
+              ClinicalModuleCard(
+                icon: Icons.people_outline,
+                title: 'Pacientes',
+                subtitle: 'Carteira clínica, detalhes e plano de cuidado',
+                accentColor: _WorkspaceAccents.management,
+                onTap: () => context.push(
+                  PatientRoutes.list(ProfileRole.psychologist),
                 ),
               ),
               ClinicalModuleCard(

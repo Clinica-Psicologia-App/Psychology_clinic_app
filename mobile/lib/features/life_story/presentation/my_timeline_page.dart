@@ -247,7 +247,7 @@ class _TimelineTrail extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(20, 20, 20, 96),
+      padding: const EdgeInsets.fromLTRB(12, 20, 16, 96),
       itemCount: events.length + (showToday ? 1 : 0),
       itemBuilder: (context, i) {
         if (showToday && i == events.length) return const _TodayNode();
@@ -291,69 +291,149 @@ class _NoMomentsForPerson extends StatelessWidget {
   }
 }
 
+/// Cor e fundo tonal por fase da vida (Opção C).
+({Color accent, Color bg, Color text}) _chapterColors(LifeChapter? chapter) =>
+    switch (chapter) {
+      LifeChapter.earlyYears => (
+          accent: const Color(0xFFD85A30),
+          bg: const Color(0xFFFAECE7),
+          text: const Color(0xFF993C1D),
+        ),
+      LifeChapter.childhood => (
+          accent: const Color(0xFFD85A30),
+          bg: const Color(0xFFFAECE7),
+          text: const Color(0xFF993C1D),
+        ),
+      LifeChapter.adolescence => (
+          accent: const Color(0xFFBA7517),
+          bg: const Color(0xFFFAEEDA),
+          text: const Color(0xFF854F0B),
+        ),
+      LifeChapter.adulthood => (
+          accent: const Color(0xFF1D9E75),
+          bg: const Color(0xFFE1F5EE),
+          text: const Color(0xFF0F6E56),
+        ),
+      _ => (
+          accent: const Color(0xFF378ADD),
+          bg: const Color(0xFFE6F1FB),
+          text: const Color(0xFF185FA5),
+        ),
+    };
+
+/// Rótulo curto de idade (ex: "30a" ou "Adolescência").
+String _shortAgeLabel(LifeTimelineEvent event) {
+  if (event.agePrecision?.name == 'approximate') {
+    return event.lifeChapter?.label ?? '';
+  }
+  if (event.ageAtEvent != null) return '${event.ageAtEvent}a';
+  return event.lifeChapter?.label ?? '';
+}
+
 class _EventNode extends StatelessWidget {
   const _EventNode({required this.event, required this.isFirst});
   final LifeTimelineEvent event;
   final bool isFirst;
 
-  String get _ageLabel {
-    if (event.agePrecision?.name == 'approximate') {
-      return event.lifeChapter?.label ?? 'Idade aproximada';
-    }
-    if (event.ageAtEvent != null) return '${event.ageAtEvent} anos';
-    return event.lifeChapter?.label ?? '';
-  }
-
   @override
   Widget build(BuildContext context) {
+    final colors = _chapterColors(event.lifeChapter);
+    final ageLabel = _shortAgeLabel(event);
     final emotions = event.emotions.map((e) => e.label).join(' · ');
+    final category = event.categories.isNotEmpty
+        ? event.categories.first.label
+        : null;
+
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Coluna de idade — largura fixa alinhada à direita
+          SizedBox(
+            width: 46,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 4, right: 8),
+              child: Text(
+                ageLabel,
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: colors.text,
+                ),
+              ),
+            ),
+          ),
+          // Linha central: ponto + traço vertical
           Column(
             children: [
               Container(
-                width: 13,
-                height: 13,
-                margin: const EdgeInsets.only(top: 3),
-                decoration: const BoxDecoration(
-                  color: AppColors.turquoise,
+                width: 9,
+                height: 9,
+                margin: const EdgeInsets.only(top: 5),
+                decoration: BoxDecoration(
+                  color: colors.accent,
                   shape: BoxShape.circle,
                 ),
               ),
               Expanded(
-                child: Container(width: 2, color: AppColors.borderStrong),
+                child: Container(
+                  width: 1.5,
+                  color: colors.accent.withValues(alpha: 0.22),
+                  margin: const EdgeInsets.only(top: 3),
+                ),
               ),
             ],
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 10),
+          // Conteúdo
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 20),
+              padding: const EdgeInsets.only(bottom: 14),
               child: InkWell(
                 onTap: () => _showEventDetail(context, event),
                 borderRadius: BorderRadius.circular(8),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (_ageLabel.isNotEmpty)
-                      Text(_ageLabel,
-                          style: const TextStyle(
-                              color: AppColors.turquoise,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 12)),
                     const SizedBox(height: 2),
-                    Text(event.title,
-                        style: const TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.navy)),
+                    Text(
+                      event.title,
+                      style: const TextStyle(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.navy,
+                        height: 1.3,
+                      ),
+                    ),
                     if (emotions.isNotEmpty) ...[
-                      const SizedBox(height: 3),
-                      Text(emotions,
-                          style: const TextStyle(
-                              fontSize: 12.5, color: AppColors.textSecondary)),
+                      const SizedBox(height: 2),
+                      Text(
+                        emotions,
+                        style: const TextStyle(
+                          fontSize: 11.5,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                    if (category != null) ...[
+                      const SizedBox(height: 5),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: colors.bg,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          category,
+                          style: TextStyle(
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w500,
+                            color: colors.text,
+                          ),
+                        ),
+                      ),
                     ],
                   ],
                 ),
@@ -372,124 +452,295 @@ class _TodayNode extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
+        const SizedBox(width: 46),
         Container(
-          width: 13,
-          height: 13,
-          margin: const EdgeInsets.only(top: 3),
+          width: 9,
+          height: 9,
           decoration: const BoxDecoration(
             color: AppColors.navy,
             shape: BoxShape.circle,
           ),
         ),
-        const SizedBox(width: 14),
-        const Text('HOJE',
-            style: TextStyle(
-                color: AppColors.navy,
-                fontWeight: FontWeight.w800,
-                fontSize: 13,
-                letterSpacing: 1)),
+        const SizedBox(width: 10),
+        const Text(
+          'HOJE',
+          style: TextStyle(
+            color: AppColors.navy,
+            fontWeight: FontWeight.w800,
+            fontSize: 12,
+            letterSpacing: 1,
+          ),
+        ),
       ],
     );
   }
 }
 
-/// Relato completo do acontecimento (spec §15 — "abrir o relato completo"),
-/// com acesso ao "Aprofundar este momento".
+/// Relato completo do acontecimento — Opção C: minimalista com ações em lista.
 void _showEventDetail(BuildContext context, LifeTimelineEvent event) {
+  final chapter = event.lifeChapter;
+  final chapterColors = _chapterDetailColors(chapter);
+
   final ageLabel = event.agePrecision?.name == 'approximate'
-      ? (event.lifeChapter?.label ?? 'Idade aproximada')
+      ? (chapter?.label ?? 'Idade aproximada')
       : (event.ageAtEvent != null
           ? '${event.ageAtEvent} anos'
-          : (event.lifeChapter?.label ?? ''));
+          : (chapter?.label ?? ''));
+
+  final periodLabel = [
+    if (chapter != null) chapter.label,
+    if (ageLabel.isNotEmpty && ageLabel != chapter?.label) ageLabel,
+  ].join(' · ');
+
+  final emoText = event.emotions.isNotEmpty
+      ? event.emotions.map((e) => e.label).join(' · ')
+      : null;
 
   showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     backgroundColor: Colors.white,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
-    builder: (sheetContext) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (ageLabel.isNotEmpty)
-              Text(ageLabel,
-                  style: const TextStyle(
-                      color: AppColors.turquoise,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 13)),
-            const SizedBox(height: 2),
-            Text(event.title,
-                style: const TextStyle(
-                    fontSize: 19,
-                    fontWeight: FontWeight.w700,
-                    color: AppColors.navy)),
-            const SizedBox(height: 12),
-            if ((event.description ?? '').trim().isNotEmpty) ...[
-              Text(event.description!.trim(),
-                  style: const TextStyle(
-                      fontSize: 14,
-                      color: AppColors.textSecondary,
-                      height: 1.5)),
-              const SizedBox(height: 14),
-            ],
-            if (event.emotions.isNotEmpty)
-              _detailRow('Emoções',
-                  event.emotions.map((e) => e.label).join(' · ')),
-            if (event.categories.isNotEmpty)
-              _detailRow('Área da vida',
-                  event.categories.map((c) => c.label).join(' · ')),
-            if (event.needs.isNotEmpty)
-              _detailRow('Do que precisava',
-                  event.needs.map((n) => n.label).join(' · ')),
-            if ((event.meaning ?? '').trim().isNotEmpty)
-              _detailRow('Significado', event.meaning!.trim()),
-            if (event.stillInfluences != null)
-              _detailRow('Ainda influencia', event.stillInfluences!.label),
-            const SizedBox(height: 18),
-            FilledButton.icon(
-              onPressed: () {
-                Navigator.of(sheetContext).pop();
-                context.push(LifeStoryRoutes.deepen, extra: event);
-              },
-              icon: Icon(
-                  event.hasDeepenData ? Icons.edit_outlined : Icons.add,
-                  size: 18),
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.turquoise,
-                minimumSize: const Size.fromHeight(48),
+    builder: (sheetContext) {
+      return SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(18, 14, 18, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Handle
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 18),
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
               ),
-              label: Text(event.hasDeepenData
-                  ? 'Editar aprofundamento'
-                  : 'Aprofundar este momento'),
-            ),
-          ],
+              // Ícone do capítulo + período + título
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: chapterColors.bg,
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    child: Icon(chapterColors.icon,
+                        size: 22, color: chapterColors.accent),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (periodLabel.isNotEmpty)
+                          Text(periodLabel,
+                              style: TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: chapterColors.accent,
+                                  letterSpacing: .2)),
+                        const SizedBox(height: 3),
+                        Text(event.title,
+                            style: const TextStyle(
+                                fontSize: 19,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.navy,
+                                height: 1.2)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              // Descrição
+              if ((event.description ?? '').trim().isNotEmpty) ...[
+                const SizedBox(height: 14),
+                Text(event.description!.trim(),
+                    style: const TextStyle(
+                        fontSize: 14,
+                        color: AppColors.textSecondary,
+                        height: 1.55)),
+              ],
+              // Metadados inline (emoções, impacto, aprofundamento)
+              const SizedBox(height: 16),
+              _metaInline(Icons.sentiment_satisfied_alt_outlined,
+                  emoText ?? 'Nenhuma emoção registrada',
+                  muted: emoText == null),
+              if (event.emotionalImpact != null)
+                _metaInline(Icons.bar_chart_rounded,
+                    'Impacto ${event.emotionalImpact}/10'),
+              if (event.categories.isNotEmpty)
+                _metaInline(Icons.grid_view_rounded,
+                    event.categories.map((c) => c.label).join(' · ')),
+              if (event.needs.isNotEmpty)
+                _metaInline(Icons.volunteer_activism_outlined,
+                    event.needs.map((n) => n.label).join(' · ')),
+              if ((event.meaning ?? '').trim().isNotEmpty)
+                _metaInline(Icons.lightbulb_outline,
+                    '"${event.meaning!.trim()}"'),
+              if (event.stillInfluences != null)
+                _metaInline(Icons.refresh_rounded,
+                    'Ainda influencia: ${event.stillInfluences!.label}'),
+              // Separador
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Divider(height: 1, color: AppColors.border),
+              ),
+              // Ações em lista
+              _actionTile(
+                iconBg: const Color(0xFFE0F2F1),
+                icon: event.hasDeepenData
+                    ? Icons.edit_outlined
+                    : Icons.search_rounded,
+                iconColor: AppColors.turquoise,
+                label: event.hasDeepenData
+                    ? 'Editar aprofundamento'
+                    : 'Aprofundar este momento',
+                subtitle: event.hasDeepenData
+                    ? 'Ver ou alterar reflexões registradas'
+                    : 'Explorar com o psicólogo',
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  context.push(LifeStoryRoutes.deepen, extra: event);
+                },
+              ),
+              const SizedBox(height: 8),
+              _actionTile(
+                iconBg: const Color(0xFFEBF4FF),
+                icon: Icons.edit_note_rounded,
+                iconColor: AppColors.blue,
+                label: 'Editar acontecimento',
+                subtitle: 'Corrigir título, emoções ou descrição',
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  // TODO: rota de edição do evento
+                },
+              ),
+            ],
+          ),
         ),
-      ),
-    ),
+      );
+    },
   );
 }
 
-Widget _detailRow(String label, String value) => Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Column(
+/// Uma linha de metadado com ícone à esquerda.
+Widget _metaInline(IconData icon, String value, {bool muted = false}) =>
+    Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label.toUpperCase(),
-              style: const TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w700,
-                  color: AppColors.textMuted,
-                  letterSpacing: 0.5)),
-          const SizedBox(height: 2),
-          Text(value,
-              style: const TextStyle(fontSize: 13.5, color: AppColors.navy)),
+          Icon(icon, size: 16, color: AppColors.textMuted),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(value,
+                style: TextStyle(
+                    fontSize: 13.5,
+                    color: muted ? AppColors.textMuted : AppColors.textPrimary,
+                    height: 1.45)),
+          ),
         ],
       ),
     );
+
+/// Linha de ação (Opção C).
+Widget _actionTile({
+  required Color iconBg,
+  required IconData icon,
+  required Color iconColor,
+  required String label,
+  required String subtitle,
+  required VoidCallback onTap,
+}) =>
+    Material(
+      color: AppColors.background,
+      borderRadius: BorderRadius.circular(12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+          decoration: BoxDecoration(
+            border: Border.all(color: AppColors.border),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration:
+                    BoxDecoration(color: iconBg, borderRadius: BorderRadius.circular(10)),
+                child: Icon(icon, size: 18, color: iconColor),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label,
+                        style: const TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.textPrimary)),
+                    Text(subtitle,
+                        style: const TextStyle(
+                            fontSize: 11.5, color: AppColors.textMuted)),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right_rounded,
+                  size: 20, color: AppColors.textMuted),
+            ],
+          ),
+        ),
+      ),
+    );
+
+/// Cores e ícone para o ícone do capítulo no detalhe.
+({Color accent, Color bg, IconData icon}) _chapterDetailColors(
+    LifeChapter? chapter) =>
+    switch (chapter) {
+      LifeChapter.earlyYears => (
+          accent: const Color(0xFFD85A30),
+          bg: const Color(0xFFFFF0EB),
+          icon: Icons.child_care,
+        ),
+      LifeChapter.childhood => (
+          accent: const Color(0xFFD85A30),
+          bg: const Color(0xFFFFF0EB),
+          icon: Icons.directions_run,
+        ),
+      LifeChapter.adolescence => (
+          accent: const Color(0xFFBA7517),
+          bg: const Color(0xFFFFF8EC),
+          icon: Icons.school,
+        ),
+      LifeChapter.adulthood => (
+          accent: const Color(0xFF1D9E75),
+          bg: const Color(0xFFECFBF5),
+          icon: Icons.person,
+        ),
+      LifeChapter.today => (
+          accent: const Color(0xFF378ADD),
+          bg: const Color(0xFFEBF4FF),
+          icon: Icons.location_on,
+        ),
+      _ => (
+          accent: AppColors.textMuted,
+          bg: const Color(0xFFF5F5F5),
+          icon: Icons.help_outline,
+        ),
+    };

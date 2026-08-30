@@ -194,54 +194,261 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _question('Em qual período da sua vida você gostaria de começar?'),
+        _question('Em qual período da sua vida aconteceu?'),
         _hint('Comece pela lembrança que vier primeiro.'),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
+        // Grade 2×2 para os quatro capítulos principais
+        GridView.count(
+          crossAxisCount: 2,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisSpacing: 8,
+          mainAxisSpacing: 8,
+          childAspectRatio: 1.55,
           children: [
-            for (final c in kLifeChaptersInOrder)
-              _choiceChip(
-                label: c.label,
-                selected: _chapter == c,
-                onTap: () => setState(() => _chapter = _chapter == c ? null : c),
-              ),
+            _phaseCard(LifeChapter.earlyYears),
+            _phaseCard(LifeChapter.childhood),
+            _phaseCard(LifeChapter.adolescence),
+            _phaseCard(LifeChapter.adulthood),
           ],
         ),
-        const SizedBox(height: 22),
-        _label('Quantos anos você tinha?'),
+        const SizedBox(height: 8),
+        // Cards de largura total para as opções especiais
+        _phaseCardWide(LifeChapter.today),
         const SizedBox(height: 6),
-        Opacity(
-          opacity: _dontRememberAge ? 0.4 : 1,
-          child: TextField(
-            controller: _ageController,
-            enabled: !_dontRememberAge,
-            keyboardType: TextInputType.number,
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-              LengthLimitingTextInputFormatter(3),
+        _phaseCardWide(LifeChapter.cannotLocate),
+        const SizedBox(height: 24),
+        // Campo de idade — só aparece quando um capítulo foi selecionado
+        // e não é "Não consigo localizar" ou "Momento atual"
+        if (_chapter != null &&
+            _chapter != LifeChapter.cannotLocate &&
+            _chapter != LifeChapter.today) ...[
+          _label('Quantos anos você tinha?'),
+          const SizedBox(height: 8),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: Opacity(
+                  opacity: _dontRememberAge ? 0.4 : 1,
+                  child: TextField(
+                    controller: _ageController,
+                    enabled: !_dontRememberAge,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(3),
+                    ],
+                    onChanged: (_) => setState(() {}),
+                    decoration: _fieldDecoration(hint: 'Ex: 15'),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Text('anos',
+                  style: TextStyle(
+                      fontSize: 14, color: AppColors.textSecondary)),
             ],
-            onChanged: (_) => setState(() {}),
-            decoration: _fieldDecoration(hint: 'anos'),
           ),
-        ),
-        const SizedBox(height: 10),
-        _choiceChip(
-          label: 'Não lembro exatamente',
-          selected: _dontRememberAge,
-          onTap: () => setState(() => _dontRememberAge = !_dontRememberAge),
-        ),
+          const SizedBox(height: 10),
+          GestureDetector(
+            onTap: () => setState(() {
+              _dontRememberAge = !_dontRememberAge;
+              if (_dontRememberAge) _ageController.clear();
+            }),
+            child: Row(
+              children: [
+                Icon(
+                  _dontRememberAge
+                      ? Icons.check_circle
+                      : Icons.radio_button_unchecked,
+                  size: 18,
+                  color: _dontRememberAge
+                      ? AppColors.turquoise
+                      : AppColors.textMuted,
+                ),
+                const SizedBox(width: 7),
+                const Text('Não lembro exatamente',
+                    style: TextStyle(
+                        fontSize: 13, color: AppColors.textSecondary)),
+              ],
+            ),
+          ),
+        ],
       ],
     );
   }
+
+  /// Card de fase para a grade 2×2.
+  Widget _phaseCard(LifeChapter chapter) {
+    final meta = _chapterMeta(chapter);
+    final selected = _chapter == chapter;
+    return GestureDetector(
+      onTap: () => setState(() {
+        _chapter = _chapter == chapter ? null : chapter;
+        _dontRememberAge = false;
+        _ageController.clear();
+      }),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 140),
+        padding: const EdgeInsets.fromLTRB(12, 12, 8, 10),
+        decoration: BoxDecoration(
+          color: selected ? meta.bg : Colors.white,
+          border: Border.all(
+            color: selected ? meta.accent : AppColors.border,
+            width: selected ? 1.8 : 1,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(meta.icon, size: 22, color: meta.accent),
+            const SizedBox(height: 7),
+            Text(chapter.label,
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: selected ? meta.textColor : AppColors.navy)),
+            const SizedBox(height: 2),
+            Text(meta.ageRange,
+                style: TextStyle(
+                    fontSize: 10.5,
+                    color: selected
+                        ? meta.textColor.withValues(alpha: 0.7)
+                        : AppColors.textMuted)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Card de fase de largura total (linha inteira).
+  Widget _phaseCardWide(LifeChapter chapter) {
+    final meta = _chapterMeta(chapter);
+    final selected = _chapter == chapter;
+    return GestureDetector(
+      onTap: () => setState(() {
+        _chapter = _chapter == chapter ? null : chapter;
+        _dontRememberAge = false;
+        _ageController.clear();
+      }),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 140),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        decoration: BoxDecoration(
+          color: selected ? meta.bg : Colors.white,
+          border: Border.all(
+            color: selected ? meta.accent : AppColors.border,
+            width: selected ? 1.8 : 1,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Icon(meta.icon, size: 20, color: meta.accent),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(chapter.label,
+                      style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: selected ? meta.textColor : AppColors.navy)),
+                  if (meta.ageRange.isNotEmpty)
+                    Text(meta.ageRange,
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: selected
+                                ? meta.textColor.withValues(alpha: 0.7)
+                                : AppColors.textMuted)),
+                ],
+              ),
+            ),
+            if (selected)
+              Icon(Icons.check_circle, size: 18, color: meta.accent),
+          ],
+        ),
+      ),
+    );
+  }
+
+  ({
+    IconData icon,
+    Color accent,
+    Color bg,
+    Color textColor,
+    String ageRange,
+  }) _chapterMeta(LifeChapter chapter) => switch (chapter) {
+        LifeChapter.earlyYears => (
+            icon: Icons.child_care,
+            accent: const Color(0xFFD85A30),
+            bg: const Color(0xFFFFF0EB),
+            textColor: const Color(0xFF993C1D),
+            ageRange: '0 a 6 anos',
+          ),
+        LifeChapter.childhood => (
+            icon: Icons.directions_run,
+            accent: const Color(0xFFD85A30),
+            bg: const Color(0xFFFFF0EB),
+            textColor: const Color(0xFF993C1D),
+            ageRange: '7 a 11 anos',
+          ),
+        LifeChapter.adolescence => (
+            icon: Icons.school,
+            accent: const Color(0xFFBA7517),
+            bg: const Color(0xFFFFF8EC),
+            textColor: const Color(0xFF854F0B),
+            ageRange: '12 a 17 anos',
+          ),
+        LifeChapter.adulthood => (
+            icon: Icons.person,
+            accent: const Color(0xFF1D9E75),
+            bg: const Color(0xFFECFBF5),
+            textColor: const Color(0xFF0F6E56),
+            ageRange: '18 anos ou mais',
+          ),
+        LifeChapter.today => (
+            icon: Icons.location_on,
+            accent: const Color(0xFF378ADD),
+            bg: const Color(0xFFEBF4FF),
+            textColor: const Color(0xFF185FA5),
+            ageRange: 'O que está acontecendo agora',
+          ),
+        LifeChapter.cannotLocate => (
+            icon: Icons.help_outline,
+            accent: AppColors.textMuted,
+            bg: const Color(0xFFF5F5F5),
+            textColor: AppColors.textSecondary,
+            ageRange: '',
+          ),
+      };
 
   // ── Etapa 2 · O quê (§5) ─────────────────────────────────────────────────
   Widget _stepWhat(ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _question('Conte um acontecimento importante dessa época.'),
-        const SizedBox(height: 8),
+        _question('O que aconteceu nessa época?'),
+        _hint('Descreva do jeito que lembrar — sem pressa.'),
+        // Título primeiro — é o que aparece na linha do tempo
+        _label('Como você chamaria esse momento?'),
+        const SizedBox(height: 6),
+        TextField(
+          controller: _titleController,
+          onChanged: (_) => setState(() {}),
+          decoration: _fieldDecoration(hint: 'Ex.: Separação dos meus pais'),
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Este será o nome exibido na sua linha do tempo.',
+          style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+        ),
+        const SizedBox(height: 20),
+        _label('Conte o que aconteceu'),
+        const SizedBox(height: 6),
         TextField(
           controller: _descriptionController,
           maxLines: 4,
@@ -249,14 +456,6 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
             hint: 'Ex.: meus pais se separaram; mudei de cidade; '
                 'nasceu minha irmã; sofri bullying; entrei na faculdade...',
           ),
-        ),
-        const SizedBox(height: 22),
-        _label('Como você chamaria esse momento?'),
-        const SizedBox(height: 6),
-        TextField(
-          controller: _titleController,
-          onChanged: (_) => setState(() {}),
-          decoration: _fieldDecoration(hint: 'Ex.: Separação dos meus pais'),
         ),
       ],
     );
@@ -268,11 +467,11 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _question('Quem estava envolvido ou foi importante nesse acontecimento?'),
-        _hint('Pessoas que você já citou aparecem primeiro.'),
+        _question('Quem estava envolvido?'),
+        _hint('Opcional — selecione quem fez parte desse momento.'),
         peopleAsync.when(
           loading: () => const Padding(
-            padding: EdgeInsets.all(20),
+            padding: EdgeInsets.symmetric(vertical: 20),
             child: BrandLoader(),
           ),
           error: (e, _) => _hint('Não foi possível carregar as pessoas.'),
@@ -282,19 +481,30 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
             ],
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
         InkWell(
           onTap: _openAddPerson,
           borderRadius: BorderRadius.circular(10),
-          child: const Padding(
-            padding: EdgeInsets.symmetric(vertical: 10, horizontal: 4),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 4),
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.add, size: 18, color: AppColors.blue),
-                SizedBox(width: 6),
-                Text('Adicionar pessoa',
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFEBF4FF),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.add, size: 16, color: AppColors.blue),
+                ),
+                const SizedBox(width: 8),
+                const Text('Adicionar outra pessoa',
                     style: TextStyle(
-                        color: AppColors.blue, fontWeight: FontWeight.w600)),
+                        fontSize: 13,
+                        color: AppColors.blue,
+                        fontWeight: FontWeight.w500)),
               ],
             ),
           ),
@@ -311,25 +521,32 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
         onTap: () => setState(() {
           selected ? _selectedPeople.remove(p.id) : _selectedPeople.add(p.id);
         }),
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          padding: const EdgeInsets.all(10),
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 140),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           decoration: BoxDecoration(
-            color: selected ? const Color(0xFFF2FBFA) : Colors.white,
+            color: selected ? const Color(0xFFE1F5EE) : Colors.white,
             border: Border.all(
-                color: selected ? AppColors.turquoise : AppColors.border),
-            borderRadius: BorderRadius.circular(10),
+              color: selected ? const Color(0xFF1D9E75) : AppColors.border,
+              width: selected ? 1.5 : 1,
+            ),
+            borderRadius: BorderRadius.circular(12),
           ),
           child: Row(
             children: [
               CircleAvatar(
-                radius: 15,
-                backgroundColor: const Color(0xFFDDE7F7),
+                radius: 17,
+                backgroundColor: selected
+                    ? const Color(0xFF9FE1CB)
+                    : const Color(0xFFDDE7F7),
                 child: Text(p.initials,
-                    style: const TextStyle(
+                    style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: Color(0xFF2E5A9E))),
+                        color: selected
+                            ? const Color(0xFF0F6E56)
+                            : const Color(0xFF2E5A9E))),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -337,8 +554,12 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(p.fullName,
-                        style: const TextStyle(
-                            fontSize: 13, fontWeight: FontWeight.w500)),
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                            color: selected
+                                ? const Color(0xFF0F6E56)
+                                : AppColors.textPrimary)),
                     if (p.role != null)
                       Text(p.role!.label,
                           style: const TextStyle(
@@ -348,8 +569,10 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
               ),
               Icon(
                 selected ? Icons.check_circle : Icons.circle_outlined,
-                color: selected ? AppColors.turquoise : AppColors.borderStrong,
-                size: 20,
+                color: selected
+                    ? const Color(0xFF1D9E75)
+                    : AppColors.borderStrong,
+                size: 22,
               ),
             ],
           ),
@@ -375,11 +598,12 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
 
   // ── Etapa 4 · Como se sentiu (§9) ────────────────────────────────────────
   Widget _stepFelt(ThemeData theme) {
+    final selectedCount = _emotions.length;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _question('Quando isso aconteceu, como você se sentiu?'),
-        _hint('Selecione até três.'),
+        _question('Como você se sentiu?'),
+        _hint('Selecione até três emoções.'),
         Wrap(
           spacing: 8,
           runSpacing: 8,
@@ -391,7 +615,7 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
                 onTap: () => setState(() {
                   if (_emotions.contains(e)) {
                     _emotions.remove(e);
-                  } else if (_emotions.length < 3) {
+                  } else if (selectedCount < 3) {
                     _emotions.add(e);
                   }
                 }),
@@ -407,19 +631,60 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
           const SizedBox(height: 10),
           TextField(
             controller: _emotionOtherController,
-            decoration: _fieldDecoration(hint: 'Como você chamaria esse sentimento?'),
+            decoration:
+                _fieldDecoration(hint: 'Como você chamaria esse sentimento?'),
           ),
         ],
-        const SizedBox(height: 24),
-        _label('Quanto isso marcou você naquela época?'),
-        Slider(
-          value: _impact,
-          min: 0,
-          max: 10,
-          divisions: 10,
-          activeColor: AppColors.turquoise,
-          label: '${_impact.round()}',
-          onChanged: (v) => setState(() => _impact = v),
+        const SizedBox(height: 28),
+        _label('O quanto isso marcou você?'),
+        const SizedBox(height: 14),
+        // Valor de impacto em destaque
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: const Color(0xFFECFBF5),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF9FE1CB)),
+              ),
+              child: Center(
+                child: Text(
+                  '${_impact.round()}',
+                  style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF0F6E56)),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            const Padding(
+              padding: EdgeInsets.only(bottom: 6),
+              child: Text('/10',
+                  style: TextStyle(
+                      fontSize: 13, color: AppColors.textMuted)),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        SliderTheme(
+          data: SliderTheme.of(context).copyWith(
+            activeTrackColor: const Color(0xFF1D9E75),
+            inactiveTrackColor: const Color(0xFFD1EDE4),
+            thumbColor: const Color(0xFF1D9E75),
+            overlayColor: const Color(0x221D9E75),
+            trackHeight: 5,
+          ),
+          child: Slider(
+            value: _impact,
+            min: 0,
+            max: 10,
+            divisions: 10,
+            onChanged: (v) => setState(() => _impact = v),
+          ),
         ),
         const Padding(
           padding: EdgeInsets.symmetric(horizontal: 4),
@@ -439,62 +704,156 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
 
   // ── Revisão / salvar (§13) ───────────────────────────────────────────────
   Widget _stepReview(ThemeData theme) {
+    final chapterMeta = _chapter != null ? _chapterMeta(_chapter!) : null;
+    final accentColor = chapterMeta?.accent ?? AppColors.turquoise;
+    final bgColor = chapterMeta?.bg ?? const Color(0xFFE6F1FB);
+    final textColor = chapterMeta?.textColor ?? AppColors.navy;
+
     final ageText = _dontRememberAge
         ? 'Idade aproximada'
         : (_ageController.text.trim().isEmpty
             ? (_chapter?.label ?? '')
             : '${_ageController.text.trim()} anos');
+    final chapterLabel = _chapter?.label ?? '';
+    final headerLabel = [
+      if (chapterLabel.isNotEmpty) chapterLabel,
+      if (ageText.isNotEmpty && ageText != chapterLabel) ageText,
+    ].join(' · ');
+
     final emo = [
       ..._emotions.map((e) => e.label),
       if (_emotionOtherOn && _emotionOtherController.text.trim().isNotEmpty)
         _emotionOtherController.text.trim(),
     ].join(' · ');
 
+    final titleText = _titleController.text.trim().isEmpty
+        ? 'Sem título'
+        : _titleController.text.trim();
+    final desc = _descriptionController.text.trim();
+    final hasDesc = desc.isNotEmpty;
+    final hasEmo = emo.isNotEmpty;
+    final hasPeople = _selectedPeople.isNotEmpty;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _question('Pronto para adicionar este momento?'),
-        const SizedBox(height: 12),
+        _question('Tudo certo com esse momento?'),
+        _hint('Revise antes de adicionar à sua história.'),
+        // Card de revisão com header colorido (cor do capítulo)
         Container(
-          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
             color: Colors.white,
             border: Border.all(color: AppColors.border),
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
           ),
+          clipBehavior: Clip.hardEdge,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (ageText.isNotEmpty)
-                Text(ageText,
-                    style: const TextStyle(
-                        color: AppColors.turquoise,
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12)),
-              const SizedBox(height: 2),
-              Text(
-                _titleController.text.trim().isEmpty
-                    ? 'Sem título'
-                    : _titleController.text.trim(),
-                style: const TextStyle(
-                    fontSize: 15, fontWeight: FontWeight.w600),
+              // Header colorido
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                color: bgColor,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (headerLabel.isNotEmpty)
+                      Text(headerLabel,
+                          style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: textColor,
+                              letterSpacing: .3)),
+                    const SizedBox(height: 3),
+                    Text(titleText,
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: textColor)),
+                  ],
+                ),
               ),
-              if (emo.isNotEmpty) ...[
-                const SizedBox(height: 4),
-                Text(emo,
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.textSecondary)),
-              ],
-              if (_selectedPeople.isNotEmpty) ...[
-                const SizedBox(height: 2),
-                Text('${_selectedPeople.length} pessoa(s)',
-                    style: const TextStyle(
-                        fontSize: 12, color: AppColors.textMuted)),
-              ],
+              // Divisor
+              Divider(height: 1, color: accentColor.withValues(alpha: 0.2)),
+              // Linhas de detalhe
+              if (hasDesc) _reviewRow(Icons.notes_rounded, 'Descrição', desc),
+              if (hasEmo) _reviewRow(Icons.sentiment_satisfied_alt_outlined, 'Emoções', emo),
+              if (hasPeople)
+                _reviewRow(Icons.people_outline, 'Pessoas',
+                    '${_selectedPeople.length} pessoa${_selectedPeople.length > 1 ? 's' : ''}'),
+              _reviewRow(Icons.bar_chart_rounded, 'Impacto',
+                  '${_impact.round()} de 10'),
+              if (!hasDesc && !hasEmo && !hasPeople)
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(14, 12, 14, 12),
+                  child: Text('Apenas o período e o título foram registrados.',
+                      style: TextStyle(
+                          fontSize: 12, color: AppColors.textMuted)),
+                ),
             ],
           ),
         ),
+        const SizedBox(height: 20),
+        // Botão de salvar dentro do step (nav vai mostrar só "Voltar")
+        FilledButton(
+          onPressed: _titleController.text.trim().isNotEmpty && !_busy
+              ? _save
+              : null,
+          style: FilledButton.styleFrom(
+            backgroundColor: accentColor,
+            minimumSize: const Size.fromHeight(50),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          child: _busy
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child:
+                      CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+              : const Text('Adicionar à minha história',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+        ),
+        const SizedBox(height: 8),
+        const Center(
+          child: Text('Você pode editar depois tocando no evento.',
+              style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+        ),
       ],
+    );
+  }
+
+  Widget _reviewRow(IconData icon, String label, String value) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
+      decoration: const BoxDecoration(
+        border: Border(bottom: BorderSide(color: AppColors.border)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: AppColors.textMuted),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label,
+                    style: const TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.textMuted,
+                        letterSpacing: .4)),
+                const SizedBox(height: 1),
+                Text(value,
+                    style: const TextStyle(
+                        fontSize: 13, color: AppColors.textPrimary)),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -502,7 +861,8 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
   Widget _buildNav(ThemeData theme) {
     final isLast = _step == _stepCount - 1;
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+      padding: EdgeInsets.fromLTRB(
+          16, 10, 16, 16 + MediaQuery.paddingOf(context).bottom),
       decoration: const BoxDecoration(
         color: Colors.white,
         border: Border(top: BorderSide(color: AppColors.border)),
@@ -510,24 +870,22 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
       child: Row(
         children: [
           if (_step > 0)
-            TextButton(onPressed: _busy ? null : _back, child: const Text('Voltar')),
+            TextButton(
+                onPressed: _busy ? null : _back,
+                child: const Text('← Voltar')),
           const Spacer(),
-          FilledButton(
-            onPressed: (isLast ? _titleController.text.trim().isNotEmpty : _canAdvance) && !_busy
-                ? (isLast ? _save : _next)
-                : null,
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.navy,
-              minimumSize: const Size(120, 46),
+          // Na revisão o botão de salvar está no body — aqui só "Voltar"
+          if (!isLast)
+            FilledButton(
+              onPressed: _canAdvance && !_busy ? _next : null,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.navy,
+                minimumSize: const Size(120, 46),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24)),
+              ),
+              child: const Text('Avançar'),
             ),
-            child: _busy
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                        strokeWidth: 2, color: Colors.white))
-                : Text(isLast ? 'Adicionar à minha história' : 'Avançar'),
-          ),
         ],
       ),
     );

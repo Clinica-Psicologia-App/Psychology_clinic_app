@@ -292,7 +292,7 @@ class _MotorGenogramPainter extends CustomPainter {
       final parentY = parents.first.y;
       final childY = kids.first.y;
       final barY = (parentY + childY) / 2 + 20;
-      canvas.drawLine(Offset(midX, parentY + _r), Offset(midX, barY), paint);
+      canvas.drawLine(Offset(midX, parentY), Offset(midX, barY), paint);
       // A barra de irmãos cobre os filhos E o ponto de descida do casal, para
       // o traço nunca ficar solto quando o casal não fica exatamente em cima.
       final barLeft =

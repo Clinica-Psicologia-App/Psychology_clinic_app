@@ -99,8 +99,14 @@ class _PatientDetailsPageState extends ConsumerState<PatientDetailsPage> {
   Widget build(BuildContext context) {
     final asyncPatient = ref.watch(patientDetailProvider(widget.patientId));
 
+    // _PatientVitalsSummary retorna SizedBox.shrink() enquanto o provider não
+    // resolve → aguarda vitais antes de disparar para o spotlight ter alvo.
+    final vitalsReady = !_tourEnabled
+        ? true
+        : ref.watch(patientVitalsProvider(widget.patientId)).hasValue;
+
     if (_tourEnabled && !_tourRequested && asyncPatient.hasValue &&
-        asyncPatient.value != null) {
+        asyncPatient.value != null && vitalsReady) {
       _tourRequested = true;
       WidgetsBinding.instance.addPostFrameCallback((_) => _startTour());
     }

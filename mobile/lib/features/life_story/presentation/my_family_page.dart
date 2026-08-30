@@ -72,7 +72,9 @@ class _MyFamilyPageState extends ConsumerState<MyFamilyPage> {
     final theme = Theme.of(context);
     final topInset = MediaQuery.paddingOf(context).top;
 
-    if (!_tourRequested) {
+    // Aguarda o provider resolver para que o FAB já esteja na árvore quando
+    // o tour chegar no step "adicionar".
+    if (!_tourRequested && familyAsync.hasValue) {
       _tourRequested = true;
       WidgetsBinding.instance.addPostFrameCallback((_) => _startTour());
     }

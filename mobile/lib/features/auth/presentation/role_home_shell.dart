@@ -125,12 +125,6 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
   final _patientPlanKey = GlobalKey();
   bool _autoTourRequested = false;
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _startAutoTour());
-  }
-
   CoachTour? _homeTour() {
     switch (widget.role) {
       case ProfileRole.psychologist:
@@ -143,10 +137,9 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
   }
 
   Future<void> _startAutoTour() async {
-    if (!mounted || _autoTourRequested) return;
+    if (!mounted) return;
     final tour = _homeTour();
     if (tour == null) return;
-    _autoTourRequested = true;
     await ref.read(coachControllerProvider.notifier).startTour(context, tour);
   }
 
@@ -218,6 +211,30 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
 
   @override
   Widget build(BuildContext context) {
+    // Tour do psicólogo: os 3 widgets-alvo são sempre renderizados → dispara
+    // assim que o build ocorre pela primeira vez.
+    if (widget.role == ProfileRole.psychologist && !_autoTourRequested) {
+      _autoTourRequested = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) => _startAutoTour());
+    }
+
+    // Tour do paciente: _PatientNextStep retorna SizedBox.shrink() enquanto
+    // os providers não resolvem. Aguarda todos antes de disparar.
+    if (widget.role == ProfileRole.patient && !_autoTourRequested) {
+      const listCtx = QuestionnaireListContext(role: ProfileRole.patient);
+      final patientIdAsync = ref.watch(questionnairePatientIdProvider(listCtx));
+      final questReady = ref.watch(questionnairesListProvider(listCtx)).hasValue;
+      final checkInReady = !ref.watch(todayCheckInProvider).isLoading;
+      final patientId = patientIdAsync.valueOrNull;
+      final statusReady = patientId == null
+          ? false
+          : ref.watch(questionnairePatientStatusProvider(patientId)).hasValue;
+      if (patientIdAsync.hasValue && questReady && checkInReady && statusReady) {
+        _autoTourRequested = true;
+        WidgetsBinding.instance.addPostFrameCallback((_) => _startAutoTour());
+      }
+    }
+
     // Canopy full-bleed no topo (ele reserva o inset da status bar); o
     // conteúdo flui abaixo, com a largura máxima responsiva de sempre.
     final header = widget.role == ProfileRole.patient

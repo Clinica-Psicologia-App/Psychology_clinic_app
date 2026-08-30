@@ -62,12 +62,11 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
             pose: MascotPose.wave,
             targetKey: _tabBarKey,
           ),
-          CoachStep(
+          const CoachStep(
             id: 'o-que-tem',
             text:
                 'Panorama traz a visão geral; Esquemas, os instrumentos; Histórico, as aplicações concluídas.',
             pose: MascotPose.point,
-            targetKey: _tabBarKey,
           ),
           const CoachStep(
             id: 'liberar-dashboard',

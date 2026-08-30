@@ -287,7 +287,8 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                     child: _PatientProgressSummary(),
                   ),
                   const SizedBox(height: AppSpacing.xl),
-                  const AppSectionHeader(
+                  AppSectionHeader(
+                    key: _patientSpacesKey,
                     title: 'Seus espaços',
                     subtitle: 'Escolha por onde continuar agora.',
                     accentColor: _WorkspaceAccents.clinical,
@@ -301,7 +302,6 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                     // nesta sessão para o resumo do profissional. Em telas largas
                     // os 3 cabem numa linha só.
                     child: ResponsiveGrid(
-                      key: _patientSpacesKey,
                       compactColumns: 1,
                       mediumColumns: 3,
                       expandedColumns: 3,
@@ -335,7 +335,8 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xl),
-                  const AppSectionHeader(
+                  AppSectionHeader(
+                    key: _patientPlanKey,
                     title: 'Sua continuidade',
                     subtitle:
                         'O caminho completo do seu acompanhamento, no seu ritmo.',
@@ -344,7 +345,6 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                   MotionReveal(
                     delay: const Duration(milliseconds: 180),
                     child: ClinicalModuleCard(
-                      key: _patientPlanKey,
                       icon: Icons.route_outlined,
                       title: 'Meu plano terapêutico',
                       subtitle:

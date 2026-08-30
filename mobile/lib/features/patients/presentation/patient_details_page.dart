@@ -51,10 +51,10 @@ class _PatientDetailsPageState extends ConsumerState<PatientDetailsPage> {
 
   bool get _tourEnabled => widget.role == ProfileRole.psychologist;
 
-  CoachTour _tour() => CoachTour(
+  CoachTour _tour() => const CoachTour(
         id: 'tour_ficha_paciente',
         steps: [
-          const CoachStep(
+          CoachStep(
             id: 'intro',
             text:
                 'Esta é a ficha completa do paciente. Deixa eu te mostrar os '
@@ -67,7 +67,6 @@ class _PatientDetailsPageState extends ConsumerState<PatientDetailsPage> {
                 'Gere aqui um relatório clínico em PDF, com as seções revisadas '
                 'por você antes de compartilhar.',
             pose: MascotPose.point,
-            targetKey: _reportKey,
           ),
           CoachStep(
             id: 'genograma',
@@ -75,7 +74,6 @@ class _PatientDetailsPageState extends ConsumerState<PatientDetailsPage> {
                 'Abra o Genograma para ver a família, os vínculos e os padrões '
                 'que o paciente registrou.',
             pose: MascotPose.point,
-            targetKey: _genogramKey,
           ),
           CoachStep(
             id: 'resumo',
@@ -83,7 +81,6 @@ class _PatientDetailsPageState extends ConsumerState<PatientDetailsPage> {
                 'O Resumo rápido mostra último check-in, metas ativas e '
                 'questionários. Toque em cada número para ir direto ao módulo. 🙂',
             pose: MascotPose.celebrate,
-            targetKey: _vitalsKey,
           ),
         ],
       );

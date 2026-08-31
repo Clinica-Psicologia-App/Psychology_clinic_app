@@ -86,4 +86,10 @@ abstract final class GenogramRoutes {
       '/psychologist/genogram-person-edit/:patientId/:personId';
   static String personEditFor(String patientId, String personId) =>
       '/psychologist/genogram-person-edit/$patientId/$personId';
+
+  // Criação de vínculo STANDALONE — mesmo padrão de personEditByPath.
+  static const relationshipCreateByPath =
+      '/psychologist/genogram-relationship-create/:patientId';
+  static String relationshipCreateFor(String patientId) =>
+      '/psychologist/genogram-relationship-create/$patientId';
 }

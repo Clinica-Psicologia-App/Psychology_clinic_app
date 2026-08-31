@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../genogram/domain/genogram_layout_adapter.dart';
 import '../../genogram/presentation/genogram_routes.dart';
 import '../../genogram/presentation/widgets/motor_genogram_diagram.dart';
 import '../../genogram/providers/genogram_providers.dart';
@@ -52,9 +53,11 @@ class _GenogramDiagramPageState extends ConsumerState<GenogramDiagramPage> {
 
     final gdata = gdataAsync.valueOrNull;
     if (gdata != null && MotorGenogramDiagram.hasStructure(gdata)) {
+      final hasEmotional =
+          emotionalRelations(gdata.relationships).isNotEmpty;
       return Column(
         children: [
-          _motorControls(),
+          _motorControls(hasEmotional: hasEmotional),
           Expanded(
             child: Container(
               width: double.infinity,
@@ -141,10 +144,18 @@ class _GenogramDiagramPageState extends ConsumerState<GenogramDiagramPage> {
     ref.invalidate(genogramDataForPatientProvider(widget.patientId));
   }
 
-  Widget _motorControls() {
+  Future<void> _openRelationshipCreate() async {
+    await context.push(
+      GenogramRoutes.relationshipCreateFor(widget.patientId),
+    );
+    if (!mounted) return;
+    ref.invalidate(genogramDataForPatientProvider(widget.patientId));
+  }
+
+  Widget _motorControls({required bool hasEmotional}) {
     return Container(
       color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+      padding: const EdgeInsets.fromLTRB(12, 6, 4, 6),
       child: Row(
         children: [
           FilterChip(
@@ -154,11 +165,23 @@ class _GenogramDiagramPageState extends ConsumerState<GenogramDiagramPage> {
             selectedColor: AppColors.turquoise.withValues(alpha: 0.18),
             checkmarkColor: AppColors.turquoise,
           ),
-          const SizedBox(width: 10),
-          const Expanded(
-            child: Text(
-              'Toque numa pessoa para ver/editar.',
-              style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
+          const SizedBox(width: 6),
+          if (_showBonds && !hasEmotional)
+            const Expanded(
+              child: Text(
+                'Sem vínculos. Adicione um →',
+                style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+              ),
+            )
+          else
+            const Spacer(),
+          TextButton.icon(
+            onPressed: _openRelationshipCreate,
+            icon: const Icon(Icons.add_rounded, size: 16),
+            label: const Text('Vínculo'),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.turquoise,
+              textStyle: const TextStyle(fontSize: 13),
             ),
           ),
         ],

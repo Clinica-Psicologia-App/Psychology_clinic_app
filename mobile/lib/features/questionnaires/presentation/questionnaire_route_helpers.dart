@@ -24,6 +24,7 @@ List<RouteBase> questionnaireRoutesFor({
         role: role,
         patientId:
             nestedPatient ? state.pathParameters[patientIdPathParam] : null,
+        attachmentOnly: state.extra == 'attachment',
       ),
       routes: [
         GoRoute(

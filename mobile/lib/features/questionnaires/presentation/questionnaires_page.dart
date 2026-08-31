@@ -33,10 +33,14 @@ class QuestionnairesPage extends ConsumerStatefulWidget {
     super.key,
     required this.role,
     this.patientId,
+    this.attachmentOnly = false,
   });
 
   final ProfileRole role;
   final String? patientId;
+
+  /// `true` → mostra só instrumentos de apego; `false` → exclui apego (esquemas YP/YSQ etc.).
+  final bool attachmentOnly;
 
   @override
   ConsumerState<QuestionnairesPage> createState() => _QuestionnairesPageState();
@@ -91,7 +95,9 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
 
     final title = widget.role == ProfileRole.patient
         ? 'Questionários'
-        : 'Questionários do paciente';
+        : widget.attachmentOnly
+            ? 'Apego'
+            : 'Esquemas';
 
     // Paciente usa AppScaffold simples; psicólogo usa AppCanopyScaffold com
     // header teal imersivo.
@@ -131,9 +137,28 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
             WidgetsBinding.instance
                 .addPostFrameCallback((_) => _startTour());
           }
-          return _buildStaffTabs(patientId);
+          return widget.attachmentOnly
+              ? _buildAttachmentView(patientId)
+              : _buildStaffTabs(patientId);
         },
       ),
+    );
+  }
+
+  // ── Visão do psicólogo: modo Apego (sem abas, só lista filtrada) ─────────
+  Widget _buildAttachmentView(String patientId) {
+    final patientAsync = ref.watch(patientDetailProvider(patientId));
+    return Column(
+      children: [
+        _QuestionnairesHeroHeader(
+          patientAsync: patientAsync,
+          onBack: () => context.pop(),
+          onTourTap: () {},
+        ),
+        Expanded(
+          child: _buildInstrumentsList(patientId, includeHeader: false),
+        ),
+      ],
     );
   }
 
@@ -309,65 +334,70 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
           ? 'Nenhum instrumento habilitado para você.'
           : 'Nenhum questionário disponível no momento.',
       emptyIcon: Icons.assignment_outlined,
-      dataBuilder: (items) => RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(questionnairesListProvider(_listContext));
-          ref.invalidate(questionnairePatientStatusProvider(patientId));
-          if (isStaff) ref.invalidate(patientAssignmentIdsProvider(patientId));
-          await ref.read(questionnairesListProvider(_listContext).future);
-        },
-        child: ListView.builder(
-          padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.xxxl),
-          itemCount: items.length + 1,
-          itemBuilder: (context, index) {
-            if (index == 0) {
-              if (!isStaff && includeHeader) {
-                return Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.xl),
-                  child: _QuestionnairesHeader(
-                    role: widget.role,
-                    staffPatientHeader: staffPatientHeader,
-                    availableCount: items.length,
+      dataBuilder: (allItems) {
+        final items = widget.attachmentOnly
+            ? allItems.where((q) => q.isAttachmentStyles).toList()
+            : allItems.where((q) => !q.isAttachmentStyles).toList();
+        return RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(questionnairesListProvider(_listContext));
+            ref.invalidate(questionnairePatientStatusProvider(patientId));
+            if (isStaff) ref.invalidate(patientAssignmentIdsProvider(patientId));
+            await ref.read(questionnairesListProvider(_listContext).future);
+          },
+          child: ListView.builder(
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.xxxl),
+            itemCount: items.length + 1,
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                if (!isStaff && includeHeader) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.xl),
+                    child: _QuestionnairesHeader(
+                      role: widget.role,
+                      staffPatientHeader: staffPatientHeader,
+                      availableCount: items.length,
+                    ),
+                  );
+                }
+                return const Padding(
+                  padding: EdgeInsets.only(bottom: AppSpacing.sm),
+                  child: AppSectionHeader(
+                    title: 'Esquemas do paciente',
+                    subtitle:
+                        'Toque em um esquema para ver o dashboard individual. Use "Liberar" para o paciente poder responder.',
                   ),
                 );
               }
-              return const Padding(
-                padding: EdgeInsets.only(bottom: AppSpacing.sm),
-                child: AppSectionHeader(
-                  title: 'Esquemas do paciente',
-                  subtitle:
-                      'Toque em um esquema para ver o dashboard individual. Use "Liberar" para o paciente poder responder.',
+
+              final q = items[index - 1];
+              final canApply = q.canStart(
+                allowUnvalidated: EnvConfig.allowsUnvalidatedInstruments,
+              );
+              return MotionReveal(
+                delay: staggerDelay(index - 1),
+                child: QuestionnaireListTile(
+                  questionnaire: q,
+                  enabled: isStaff || canApply,
+                  showStaffDetails: isStaff,
+                  patientStatus: statusMap[q.id],
+                  onTap: (isStaff || canApply)
+                      ? () => _onQuestionnaireTap(q, patientId)
+                      : null,
+                  footer: isStaff
+                      ? _ReleaseToggle(
+                          patientId: patientId,
+                          questionnaireId: q.id,
+                          released: releasedIds.contains(q.id),
+                        )
+                      : null,
                 ),
               );
-            }
-
-            final q = items[index - 1];
-            final canApply = q.canStart(
-              allowUnvalidated: EnvConfig.allowsUnvalidatedInstruments,
-            );
-            return MotionReveal(
-              delay: staggerDelay(index - 1),
-              child: QuestionnaireListTile(
-                questionnaire: q,
-                enabled: isStaff || canApply,
-                showStaffDetails: isStaff,
-                patientStatus: statusMap[q.id],
-                onTap: (isStaff || canApply)
-                    ? () => _onQuestionnaireTap(q, patientId)
-                    : null,
-                footer: isStaff
-                    ? _ReleaseToggle(
-                        patientId: patientId,
-                        questionnaireId: q.id,
-                        released: releasedIds.contains(q.id),
-                      )
-                    : null,
-              ),
-            );
-          },
-        ),
-      ),
+            },
+          ),
+        );
+      },
     );
   }
 

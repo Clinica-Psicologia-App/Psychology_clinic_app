@@ -206,6 +206,7 @@ class FutureModulesSection extends ConsumerWidget {
               'questionnaires',
               () => context.push(
                 QuestionnaireRoutes.list(role: role, patientId: patientId),
+                extra: 'attachment',
               ),
             ),
           ),

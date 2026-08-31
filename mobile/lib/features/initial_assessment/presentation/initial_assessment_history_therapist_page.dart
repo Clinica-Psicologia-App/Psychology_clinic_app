@@ -13,9 +13,9 @@ import '../domain/timeline_entry.dart';
 import '../providers/patient_history_providers.dart';
 import 'widgets/timeline_event_editor.dart';
 
-/// Tela 2 do fluxo Conhecer na lente do terapeuta.
-/// Layout "Tiras": capítulos como bandas coloridas, eventos como linhas
-/// compactas que expandem para revelar detalhes e campo de comentário.
+/// Tela 2 do fluxo Conhecer — lente do terapeuta.
+/// Layout Tiras: capítulos em bandas coloridas, eventos como linhas compactas.
+/// Toque num evento → bottom sheet com detalhes + comentário clínico editável.
 class InitialAssessmentHistoryTherapistPage extends ConsumerStatefulWidget {
   const InitialAssessmentHistoryTherapistPage({
     super.key,
@@ -28,14 +28,12 @@ class InitialAssessmentHistoryTherapistPage extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<InitialAssessmentHistoryTherapistPage> createState() =>
-      _InitialAssessmentHistoryTherapistPageState();
+      _State();
 }
 
-class _InitialAssessmentHistoryTherapistPageState
-    extends ConsumerState<InitialAssessmentHistoryTherapistPage> {
+class _State extends ConsumerState<InitialAssessmentHistoryTherapistPage> {
+  // Controladores de comentário por evento — persistem entre aberturas do sheet.
   final Map<String, TextEditingController> _comments = {};
-  bool _saving = false;
-  String? _expandedId;
 
   InitialAssessmentContext get _ctx =>
       InitialAssessmentContext(role: widget.role, patientId: widget.patientId);
@@ -61,34 +59,32 @@ class _InitialAssessmentHistoryTherapistPageState
     return (entry.clinicalComment ?? '').trim().isNotEmpty;
   }
 
-  void _toggleExpand(String id) {
-    setState(() => _expandedId = _expandedId == id ? null : id);
+  Future<void> _saveNote(TimelineEntry entry, String comment) async {
+    final repo = ref.read(patientHistoryRepositoryProvider);
+    await repo.saveEntryNote(
+      patientId: widget.patientId,
+      eventId: entry.id,
+      clinicalComment: comment,
+    );
+    ref.invalidate(patientHistoryProvider(_ctx));
   }
 
-  Future<void> _saveComments(PatientHistory history) async {
-    setState(() => _saving = true);
-    final repo = ref.read(patientHistoryRepositoryProvider);
-    try {
-      for (final entry in history.entries) {
-        final controller = _comments[entry.id];
-        if (controller == null) continue;
-        await repo.saveEntryNote(
-          patientId: widget.patientId,
-          eventId: entry.id,
-          clinicalComment: controller.text,
-        );
-      }
-      ref.invalidate(patientHistoryProvider(_ctx));
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Comentários salvos.')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      showErrorBanner(context, e);
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
+  Future<void> _openDetail(
+      BuildContext context, TimelineEntry entry, LifeChapter? chapter) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) => _EventDetailSheet(
+        entry: entry,
+        chapter: chapter,
+        commentController: _commentFor(entry),
+        ctx: _ctx,
+        onSave: (comment) => _saveNote(entry, comment),
+      ),
+    );
+    // Atualiza o ponto de status da tira após fechar o sheet.
+    if (mounted) setState(() {});
   }
 
   @override
@@ -142,32 +138,7 @@ class _InitialAssessmentHistoryTherapistPageState
             child: AsyncStateBody<PatientHistory>(
               asyncValue: async,
               onRetry: () => ref.invalidate(patientHistoryProvider(_ctx)),
-              dataBuilder: (history) => Stack(
-                children: [
-                  _buildList(history),
-                  Positioned(
-                    left: 16,
-                    right: 16,
-                    bottom: 16,
-                    child: FilledButton.icon(
-                      onPressed:
-                          _saving ? null : () => _saveComments(history),
-                      style: FilledButton.styleFrom(
-                          backgroundColor: AppColors.turquoise),
-                      icon: _saving
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                  strokeWidth: 2, color: Colors.white),
-                            )
-                          : const Icon(Icons.check),
-                      label:
-                          Text(_saving ? 'Salvando...' : 'Salvar comentários'),
-                    ),
-                  ),
-                ],
-              ),
+              dataBuilder: _buildList,
             ),
           ),
         ],
@@ -210,21 +181,8 @@ class _InitialAssessmentHistoryTherapistPageState
         rows.add(_EventStrip(
           entry: entry,
           chapter: chapter,
-          isExpanded: _expandedId == entry.id,
           hasComment: _hasComment(entry),
-          onTap: () => _toggleExpand(entry.id),
-        ));
-        rows.add(AnimatedSize(
-          duration: const Duration(milliseconds: 200),
-          curve: Curves.easeOut,
-          child: _expandedId == entry.id
-              ? _ExpandedContent(
-                  entry: entry,
-                  chapter: chapter,
-                  controller: _commentFor(entry),
-                  ctx: _ctx,
-                )
-              : const SizedBox.shrink(),
+          onTap: () => _openDetail(context, entry, chapter),
         ));
       }
     }
@@ -237,14 +195,14 @@ class _InitialAssessmentHistoryTherapistPageState
     }
 
     return ListView(
-      padding: const EdgeInsets.only(bottom: 96),
+      padding: const EdgeInsets.only(bottom: 24),
       children: rows,
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Paleta por capítulo
+// Paleta + ícone por capítulo
 // ─────────────────────────────────────────────────────────────────────────────
 
 ({Color accent, Color bg, Color text, IconData icon}) _chapterMeta(
@@ -330,7 +288,7 @@ class _ChapterBand extends StatelessWidget {
                     color: m.text),
               ),
             ),
-            if (count > 0) ...[
+            if (count > 0)
               Container(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
@@ -338,15 +296,12 @@ class _ChapterBand extends StatelessWidget {
                   color: m.accent.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Text(
-                  '$count',
-                  style: TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.w700,
-                      color: m.text),
-                ),
+                child: Text('$count',
+                    style: TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.w700,
+                        color: m.text)),
               ),
-            ],
             IconButton(
               icon: Icon(Icons.add, size: 18, color: m.accent),
               onPressed: onAdd,
@@ -368,14 +323,12 @@ class _EventStrip extends StatelessWidget {
   const _EventStrip({
     required this.entry,
     required this.chapter,
-    required this.isExpanded,
     required this.hasComment,
     required this.onTap,
   });
 
   final TimelineEntry entry;
   final LifeChapter? chapter;
-  final bool isExpanded;
   final bool hasComment;
   final VoidCallback onTap;
 
@@ -386,11 +339,9 @@ class _EventStrip extends StatelessWidget {
         entry.ageAtEvent != null ? '${entry.ageAtEvent}a' : '—';
 
     return DecoratedBox(
-      decoration: BoxDecoration(
-        color: isExpanded ? const Color(0xFFF5F8FF) : Colors.white,
-        border: const Border(
-          bottom: BorderSide(color: Color(0xFFEEF2F8)),
-        ),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(bottom: BorderSide(color: Color(0xFFEEF2F8))),
       ),
       child: Material(
         color: Colors.transparent,
@@ -401,19 +352,15 @@ class _EventStrip extends StatelessWidget {
               children: [
                 Container(width: 4, color: m.accent),
                 const SizedBox(width: 10),
-                // Idade
                 SizedBox(
                   width: 26,
-                  child: Text(
-                    ageLabel,
-                    style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        color: m.text),
-                  ),
+                  child: Text(ageLabel,
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: m.text)),
                 ),
                 const SizedBox(width: 8),
-                // Título
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 13),
@@ -427,7 +374,7 @@ class _EventStrip extends StatelessWidget {
                     ),
                   ),
                 ),
-                // Ponto de status da anotação
+                // Ponto de status: turquesa = tem anotação, cinza = sem
                 Container(
                   width: 7,
                   height: 7,
@@ -439,24 +386,16 @@ class _EventStrip extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                // Impacto
                 if (entry.emotionalImpact != null)
-                  Text(
-                    '${entry.emotionalImpact}',
-                    style: const TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w700,
-                        color: AppColors.textSecondary),
-                  ),
+                  Text('${entry.emotionalImpact}',
+                      style: const TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textSecondary)),
+                const SizedBox(width: 8),
+                const Icon(Icons.chevron_right_rounded,
+                    size: 18, color: AppColors.textMuted),
                 const SizedBox(width: 6),
-                Icon(
-                  isExpanded
-                      ? Icons.keyboard_arrow_up_rounded
-                      : Icons.keyboard_arrow_down_rounded,
-                  size: 18,
-                  color: AppColors.textMuted,
-                ),
-                const SizedBox(width: 10),
               ],
             ),
           ),
@@ -467,135 +406,276 @@ class _EventStrip extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Conteúdo expandido
+// Bottom sheet de detalhe + comentário clínico
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _ExpandedContent extends StatelessWidget {
-  const _ExpandedContent({
+class _EventDetailSheet extends StatefulWidget {
+  const _EventDetailSheet({
     required this.entry,
     required this.chapter,
-    required this.controller,
+    required this.commentController,
     required this.ctx,
+    required this.onSave,
   });
 
   final TimelineEntry entry;
   final LifeChapter? chapter;
-  final TextEditingController controller;
+  final TextEditingController commentController;
   final InitialAssessmentContext ctx;
+  final Future<void> Function(String comment) onSave;
+
+  @override
+  State<_EventDetailSheet> createState() => _EventDetailSheetState();
+}
+
+class _EventDetailSheetState extends State<_EventDetailSheet> {
+  bool _saving = false;
+
+  Future<void> _handleSave() async {
+    setState(() => _saving = true);
+    try {
+      await widget.onSave(widget.commentController.text);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Comentário salvo.')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      showErrorBanner(context, e);
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final m = _chapterMeta(chapter);
+    final entry = widget.entry;
+    final m = _chapterMeta(widget.chapter);
     final beliefs = entry.beliefs.map((b) => b.label).join(' · ');
+    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: const Color(0xFFF5F8FF),
-        border: Border(
-          left: BorderSide(color: m.accent.withValues(alpha: .35), width: 3),
-          bottom: BorderSide(color: m.accent.withValues(alpha: .15)),
-        ),
+    return Container(
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
       ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 8, 14, 12),
+      padding: EdgeInsets.fromLTRB(20, 14, 20, 20 + bottomInset),
+      child: SingleChildScrollView(
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Handle
+            Center(
+              child: Container(
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Fase + botão editar
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: m.bg,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(m.icon, size: 13, color: m.accent),
+                      const SizedBox(width: 5),
+                      Text(
+                        widget.chapter?.label ?? 'Outros',
+                        style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: m.text),
+                      ),
+                    ],
+                  ),
+                ),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    showTimelineEventEditor(
+                        context: context,
+                        ctx: widget.ctx,
+                        entry: entry);
+                  },
+                  icon: const Icon(Icons.edit_outlined, size: 14),
+                  label: const Text('Editar'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.textMuted,
+                    textStyle: const TextStyle(fontSize: 12),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            // Título
+            Text(
+              entry.title,
+              style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.navy,
+                  height: 1.2),
+            ),
+            const SizedBox(height: 6),
+
+            // Metadados: idade · impacto
+            if (entry.ageAtEvent != null || entry.emotionalImpact != null)
+              Wrap(
+                spacing: 16,
+                children: [
+                  if (entry.ageAtEvent != null)
+                    _MetaChip(
+                        icon: Icons.cake_outlined,
+                        label: '${entry.ageAtEvent} anos'),
+                  if (entry.emotionalImpact != null)
+                    _MetaChip(
+                        icon: Icons.bar_chart_rounded,
+                        label: 'Impacto ${entry.emotionalImpact}/10'),
+                ],
+              ),
+
+            // Descrição
             if ((entry.description ?? '').trim().isNotEmpty) ...[
+              const SizedBox(height: 12),
               Text(
                 entry.description!.trim(),
                 style: const TextStyle(
-                    fontSize: 12,
+                    fontSize: 14,
                     color: AppColors.textSecondary,
-                    height: 1.45),
+                    height: 1.55),
               ),
-              const SizedBox(height: 7),
             ],
+
+            // Crenças
             if (beliefs.isNotEmpty) ...[
+              const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.only(left: 8),
+                padding: const EdgeInsets.only(left: 10),
                 decoration: BoxDecoration(
-                  border: Border(
-                      left: BorderSide(color: m.accent, width: 2)),
+                  border: Border(left: BorderSide(color: m.accent, width: 2.5)),
                 ),
                 child: Text(
                   beliefs,
                   style: TextStyle(
-                      fontSize: 11.5,
+                      fontSize: 13,
                       fontStyle: FontStyle.italic,
                       color: m.text,
-                      height: 1.4),
+                      height: 1.45),
                 ),
               ),
-              const SizedBox(height: 8),
             ],
-            // Campo de comentário clínico
+
+            // Divisor com rótulo
+            const SizedBox(height: 20),
+            const Row(
+              children: [
+                Expanded(child: Divider()),
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 10),
+                  child: Text(
+                    'COMENTÁRIO CLÍNICO',
+                    style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: .6,
+                        color: AppColors.turquoise),
+                  ),
+                ),
+                Expanded(child: Divider()),
+              ],
+            ),
+            const SizedBox(height: 12),
+
+            // Campo de anotação
             Container(
               decoration: BoxDecoration(
                 color: const Color(0xFFF0FCFA),
                 border: Border.all(color: const Color(0xFF9EDDDA)),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(10),
               ),
-              padding: const EdgeInsets.fromLTRB(10, 6, 10, 8),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'COMENTÁRIO CLÍNICO',
-                    style: TextStyle(
-                        fontSize: 9,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: .5,
-                        color: AppColors.turquoise),
-                  ),
-                  const SizedBox(height: 4),
-                  TextField(
-                    controller: controller,
-                    minLines: 2,
-                    maxLines: 5,
-                    style: const TextStyle(
-                        fontSize: 12.5, color: AppColors.navy),
-                    decoration: const InputDecoration(
-                      isDense: true,
-                      hintText: 'Adicionar comentário…',
-                      hintStyle: TextStyle(
-                          color: AppColors.textMuted, fontSize: 12.5),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                  ),
-                ],
+              padding: const EdgeInsets.fromLTRB(14, 10, 14, 12),
+              child: TextField(
+                controller: widget.commentController,
+                minLines: 3,
+                maxLines: 8,
+                autofocus: false,
+                style: const TextStyle(
+                    fontSize: 14, color: AppColors.navy, height: 1.5),
+                decoration: const InputDecoration(
+                  isDense: true,
+                  hintText: 'Adicionar anotação clínica…',
+                  hintStyle: TextStyle(
+                      color: AppColors.textMuted, fontSize: 14),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.zero,
+                ),
               ),
             ),
-            const SizedBox(height: 6),
-            // Botão editar evento
-            Align(
-              alignment: Alignment.centerRight,
-              child: InkWell(
-                onTap: () => showTimelineEventEditor(
-                    context: context, ctx: ctx, entry: entry),
-                borderRadius: BorderRadius.circular(6),
-                child: const Padding(
-                  padding:
-                      EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.edit_outlined,
-                          size: 13, color: AppColors.textMuted),
-                      SizedBox(width: 4),
-                      Text('Editar evento',
-                          style: TextStyle(
-                              fontSize: 11,
-                              color: AppColors.textMuted)),
-                    ],
-                  ),
+            const SizedBox(height: 14),
+
+            // Botão salvar
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: _saving ? null : _handleSave,
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppColors.turquoise,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
+                icon: _saving
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.check),
+                label: Text(_saving ? 'Salvando...' : 'Salvar comentário'),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _MetaChip extends StatelessWidget {
+  const _MetaChip({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: AppColors.textMuted),
+        const SizedBox(width: 4),
+        Text(label,
+            style: const TextStyle(
+                fontSize: 13, color: AppColors.textSecondary)),
+      ],
     );
   }
 }

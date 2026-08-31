@@ -20,7 +20,6 @@ import '../../../patient_problems/presentation/patient_problem_routes.dart';
 import '../../../personality_reference/presentation/personality_reference_routes.dart';
 import '../../../profile/domain/profile_role.dart';
 import '../../../questionnaires/presentation/questionnaire_routes.dart';
-import '../../../results/presentation/result_routes.dart';
 import '../../../therapy_goals/presentation/therapy_goal_routes.dart';
 import '../../../therapy_resources/presentation/therapy_resource_routes.dart';
 
@@ -207,21 +206,6 @@ class FutureModulesSection extends ConsumerWidget {
               'questionnaires',
               () => context.push(
                 QuestionnaireRoutes.list(role: role, patientId: patientId),
-              ),
-            ),
-          ),
-          _ModuleSpec(
-            icon: Icons.analytics_outlined,
-            title: 'Dashboard Clínico',
-            subtitle: gatedSubtitle(
-              featureKey: 'reports',
-              subtitle: 'Resultados consolidados e perfil esquemático.',
-            ),
-            accentColor: AppColors.cyan,
-            onTap: gatedTap(
-              'reports',
-              () => context.push(
-                ResultRoutes.list(role: role, patientId: patientId),
               ),
             ),
           ),

@@ -212,11 +212,15 @@ class _PersonCard extends StatelessWidget {
         onTap: () =>
             showGenogramPersonEditor(context: context, ctx: ctx, person: person),
         borderRadius: BorderRadius.circular(12),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(width: 4, color: accent),
-            Expanded(
+        // IntrinsicHeight limita a altura do Row: sem ele, dentro da ListView
+        // (maxHeight infinito) o CrossAxisAlignment.stretch estoura com
+        // "BoxConstraints forces an infinite height" e a lista inteira falha.
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(width: 4, color: accent),
+              Expanded(
               child: Padding(
                 padding:
                     const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -291,7 +295,8 @@ class _PersonCard extends StatelessWidget {
                 ),
               ),
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );

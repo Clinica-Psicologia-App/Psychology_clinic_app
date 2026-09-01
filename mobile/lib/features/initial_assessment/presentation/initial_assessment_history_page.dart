@@ -78,6 +78,7 @@ class _ChapterSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final accent = _chapterAccentColor(chapter);
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: Column(
@@ -89,11 +90,13 @@ class _ChapterSection extends StatelessWidget {
                 ?.copyWith(fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 8),
-          for (final entry in entries) _EventCard(ctx: ctx, entry: entry),
+          if (entries.isNotEmpty)
+            _RailEntryList(ctx: ctx, entries: entries, accentColor: accent),
           const SizedBox(height: 4),
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
+              style: TextButton.styleFrom(foregroundColor: accent),
               onPressed: () => showTimelineEventEditor(
                 context: context,
                 ctx: ctx,
@@ -127,17 +130,112 @@ class _UnchapteredSection extends StatelessWidget {
               ?.copyWith(fontWeight: FontWeight.w700),
         ),
         const SizedBox(height: 8),
-        for (final entry in entries) _EventCard(ctx: ctx, entry: entry),
+        _RailEntryList(
+          ctx: ctx,
+          entries: entries,
+          accentColor: const Color(0xFF64748B),
+        ),
       ],
     );
   }
 }
 
-class _EventCard extends StatelessWidget {
-  const _EventCard({required this.ctx, required this.entry});
+class _RailEntryList extends StatelessWidget {
+  const _RailEntryList({
+    required this.ctx,
+    required this.entries,
+    required this.accentColor,
+  });
+
+  final InitialAssessmentContext ctx;
+  final List<TimelineEntry> entries;
+  final Color accentColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        for (var i = 0; i < entries.length; i++)
+          _RailEntryNode(
+            ctx: ctx,
+            entry: entries[i],
+            accentColor: accentColor,
+            isLast: i == entries.length - 1,
+          ),
+      ],
+    );
+  }
+}
+
+class _RailEntryNode extends StatelessWidget {
+  const _RailEntryNode({
+    required this.ctx,
+    required this.entry,
+    required this.accentColor,
+    required this.isLast,
+  });
 
   final InitialAssessmentContext ctx;
   final TimelineEntry entry;
+  final Color accentColor;
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 18,
+            child: Column(
+              children: [
+                const SizedBox(height: 14),
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: accentColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                if (!isLast)
+                  Expanded(
+                    child: Container(
+                      width: 1.5,
+                      margin: const EdgeInsets.only(top: 4),
+                      color: accentColor.withValues(alpha: 0.22),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Padding(
+              padding: EdgeInsets.only(left: 6, bottom: isLast ? 0 : 10),
+              child: _EventCard(
+                ctx: ctx,
+                entry: entry,
+                accentColor: accentColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _EventCard extends StatelessWidget {
+  const _EventCard({
+    required this.ctx,
+    required this.entry,
+    required this.accentColor,
+  });
+
+  final InitialAssessmentContext ctx;
+  final TimelineEntry entry;
+  final Color accentColor;
 
   Color _impactColor(int value) {
     if (value >= 7) return AppColors.error;
@@ -149,7 +247,6 @@ class _EventCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ClayCard(
-      margin: const EdgeInsets.only(bottom: 10),
       child: InkWell(
         onTap: () => showTimelineEventEditor(
           context: context,
@@ -157,6 +254,11 @@ class _EventCard extends StatelessWidget {
           entry: entry,
         ),
         borderRadius: BorderRadius.circular(12),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(width: 3, color: accentColor),
+            Expanded(
         child: Padding(
           padding: const EdgeInsets.all(14),
           child: Column(
@@ -237,7 +339,18 @@ class _EventCard extends StatelessWidget {
             ],
           ),
         ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
+
+Color _chapterAccentColor(LifeChapter chapter) => switch (chapter) {
+      LifeChapter.childhood => const Color(0xFFD85A30),
+      LifeChapter.adolescence => const Color(0xFFBA7517),
+      LifeChapter.adulthood => const Color(0xFF1D9E75),
+      LifeChapter.maturity => const Color(0xFF378ADD),
+      LifeChapter.today => const Color(0xFF6B46C1),
+    };

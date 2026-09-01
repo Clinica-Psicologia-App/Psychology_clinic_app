@@ -339,7 +339,7 @@ class _EventNode extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = _chapterColors(event.lifeChapter);
     final ageLabel = _shortAgeLabel(event);
-    final emotions = event.emotions.map((e) => e.label).join(' · ');
+    final emotions = event.emotions.map((e) => '${e.emoji} ${e.label}').join('  ');
     final category = event.categories.isNotEmpty
         ? event.categories.first.label
         : null;
@@ -574,9 +574,46 @@ void _showEventDetail(BuildContext context, LifeTimelineEvent event) {
               ],
               // Metadados inline (emoções, impacto, aprofundamento)
               const SizedBox(height: 16),
-              _metaInline(Icons.sentiment_satisfied_alt_outlined,
-                  emoText ?? 'Nenhuma emoção registrada',
-                  muted: emoText == null),
+              if (event.emotions.isEmpty)
+                _metaInline(Icons.sentiment_satisfied_alt_outlined,
+                    'Nenhuma emoção registrada',
+                    muted: true)
+              else
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 6,
+                    children: event.emotions
+                        .map(
+                          (e) => Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 5),
+                            decoration: BoxDecoration(
+                              color: AppColors.background,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(e.emoji,
+                                    style: const TextStyle(fontSize: 16)),
+                                const SizedBox(width: 5),
+                                Text(
+                                  e.label,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                        .toList(),
+                  ),
+                ),
               if (event.emotionalImpact != null)
                 _metaInline(Icons.bar_chart_rounded,
                     'Impacto ${event.emotionalImpact}/10'),

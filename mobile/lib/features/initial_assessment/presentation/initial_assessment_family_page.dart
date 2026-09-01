@@ -180,55 +180,169 @@ class _PersonCard extends StatelessWidget {
   final InitialAssessmentContext ctx;
   final GenogramPersonEntry person;
 
+  Color _accentFor(BondQuality? q) => switch (q) {
+        BondQuality.affectionate => const Color(0xFF1D9E75),
+        BondQuality.conflictual => const Color(0xFFDC2626),
+        BondQuality.distant => const Color(0xFFBA7517),
+        BondQuality.ambivalent => const Color(0xFF7B5CF6),
+        BondQuality.broken => const Color(0xFF64748B),
+        null => AppColors.turquoise,
+      };
+
+  String _initials() {
+    final parts = person.fullName.trim().split(RegExp(r'\s+'));
+    final first = parts[0];
+    if (parts.length == 1) {
+      return first.length >= 2
+          ? first.substring(0, 2).toUpperCase()
+          : first.toUpperCase();
+    }
+    return '${first[0]}${parts[1][0]}'.toUpperCase();
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final meta = <String>[
-      if ((person.relationshipToPatient ?? '').isNotEmpty)
-        person.relationshipToPatient!,
-      if (person.bondQuality != null) person.bondQuality!.label,
-      if (person.emotionalPresence != null)
-        'Presença ${person.emotionalPresence}/10',
-    ];
+    final accent = _accentFor(person.bondQuality);
 
     return ClayCard(
-      margin: const EdgeInsets.only(bottom: 10),
+      margin: const EdgeInsets.only(bottom: 8),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => showGenogramPersonEditor(
-            context: context, ctx: ctx, person: person),
+        onTap: () =>
+            showGenogramPersonEditor(context: context, ctx: ctx, person: person),
         borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  if (person.isCaregiver == true)
-                    const Padding(
-                      padding: EdgeInsets.only(right: 6),
-                      child: Icon(Icons.volunteer_activism_outlined,
-                          size: 16, color: AppColors.turquoise),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(width: 4, color: accent),
+            Expanded(
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Avatar
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(
+                          _initials(),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: accent,
+                          ),
+                        ),
+                      ),
                     ),
-                  Expanded(
-                    child: Text(person.fullName,
-                        style: theme.textTheme.titleSmall
-                            ?.copyWith(fontWeight: FontWeight.w600)),
-                  ),
-                  if (person.isDeceased)
-                    Icon(Icons.local_florist_outlined,
-                        size: 15, color: theme.colorScheme.onSurfaceVariant),
-                ],
-              ),
-              if (meta.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 2),
-                  child: Text(meta.join(' · '),
-                      style: theme.textTheme.labelSmall
-                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+                    const SizedBox(width: 10),
+                    // Info
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  person.fullName,
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w600),
+                                ),
+                              ),
+                              if (person.isDeceased)
+                                Padding(
+                                  padding: const EdgeInsets.only(left: 4),
+                                  child: Icon(Icons.local_florist_outlined,
+                                      size: 14,
+                                      color:
+                                          theme.colorScheme.onSurfaceVariant),
+                                ),
+                            ],
+                          ),
+                          if ((person.relationshipToPatient ?? '').isNotEmpty)
+                            Text(
+                              person.relationshipToPatient!,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant),
+                            ),
+                          if (person.emotionalPresence != null) ...[
+                            const SizedBox(height: 5),
+                            _PresenceDots(
+                                value: person.emotionalPresence!,
+                                color: accent),
+                          ],
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Badge
+                    if (person.bondQuality != null)
+                      _BondBadge(
+                          quality: person.bondQuality!, accent: accent),
+                  ],
                 ),
-            ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PresenceDots extends StatelessWidget {
+  const _PresenceDots({required this.value, required this.color});
+
+  final int value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: List.generate(5, (i) {
+        final filled = i * 2 < value;
+        return Container(
+          width: 6,
+          height: 6,
+          margin: const EdgeInsets.only(right: 3),
+          decoration: BoxDecoration(
+            color: filled ? color : AppColors.border,
+            shape: BoxShape.circle,
           ),
+        );
+      }),
+    );
+  }
+}
+
+class _BondBadge extends StatelessWidget {
+  const _BondBadge({required this.quality, required this.accent});
+
+  final BondQuality quality;
+  final Color accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        quality.label,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: accent,
         ),
       ),
     );

@@ -309,6 +309,7 @@ class _InitialAssessmentPatientPageState
                     ),
                   const SizedBox(height: 12),
                   ClayCard(
+                    margin: const EdgeInsets.only(bottom: 10),
                     child: ListTile(
                       leading: const Icon(Icons.history_edu_outlined),
                       title: const Text('Minha História'),
@@ -320,6 +321,7 @@ class _InitialAssessmentPatientPageState
                     ),
                   ),
                   ClayCard(
+                    margin: const EdgeInsets.only(bottom: 10),
                     child: ListTile(
                       leading: const Icon(Icons.family_restroom_outlined),
                       title: const Text('Minha Família'),

@@ -191,10 +191,21 @@ class _GenogramPersonEditorState extends ConsumerState<_GenogramPersonEditor> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                _isEditing ? 'Editar pessoa' : 'Adicionar pessoa',
-                style: theme.textTheme.titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w700),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _isEditing ? 'Editar pessoa' : 'Adicionar pessoa',
+                      style: theme.textTheme.titleLarge
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Fechar',
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               // ── Dados básicos ──────────────────────────────────────────

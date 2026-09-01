@@ -111,6 +111,21 @@ extension TimelineEmotionMeta on TimelineEmotion {
         TimelineEmotion.proud => 'Orgulhoso(a)',
         TimelineEmotion.safe => 'Seguro(a)',
       };
+
+  String get emoji => switch (this) {
+        TimelineEmotion.sad => '😢',
+        TimelineEmotion.afraid => '😨',
+        TimelineEmotion.angry => '😠',
+        TimelineEmotion.alone => '🥺',
+        TimelineEmotion.ashamed => '😳',
+        TimelineEmotion.guilty => '😔',
+        TimelineEmotion.confused => '😕',
+        TimelineEmotion.relieved => '😮',
+        TimelineEmotion.happy => '😄',
+        TimelineEmotion.loved => '🥰',
+        TimelineEmotion.proud => '😊',
+        TimelineEmotion.safe => '🤗',
+      };
 }
 
 const List<TimelineEmotion> kTimelineEmotionsInOrder = TimelineEmotion.values;

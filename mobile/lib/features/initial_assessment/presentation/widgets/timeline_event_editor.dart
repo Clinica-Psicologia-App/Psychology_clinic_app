@@ -115,7 +115,11 @@ class _TimelineEventEditorState extends ConsumerState<_TimelineEventEditor> {
           isSensitive: _isSensitive,
         );
       }
-      if (mounted) Navigator.of(context).pop();
+      if (mounted) {
+        final nav = Navigator.of(context);
+        nav.pop(); // fecha o editor
+        if (nav.canPop()) nav.pop(); // volta à tela anterior
+      }
     } catch (e) {
       if (mounted) showErrorBanner(context, e);
     } finally {
@@ -170,10 +174,23 @@ class _TimelineEventEditorState extends ConsumerState<_TimelineEventEditor> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                _isEditing ? 'Editar acontecimento' : 'Novo acontecimento',
-                style: theme.textTheme.titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w700),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _isEditing
+                          ? 'Editar acontecimento'
+                          : 'Novo acontecimento',
+                      style: theme.textTheme.titleLarge
+                          ?.copyWith(fontWeight: FontWeight.w700),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Fechar',
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<LifeChapter>(

@@ -211,72 +211,89 @@ class _InitialAssessmentPatientPageState
               ListView(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
                 children: [
-                  _blocoHeader(
+                  _stepsIndicator(context),
+                  const SizedBox(height: 18),
+                  _section(
                     context,
-                    'Conhecendo você',
-                    'Antes de começarmos, queremos conhecer um pouco sobre você.',
-                  ),
-                  if ((_fullName ?? '').isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: InputDecorator(
-                        decoration: const InputDecoration(
-                          labelText: 'Nome',
-                          helperText: 'Para alterar, fale com seu psicólogo.',
+                    icon: Icons.waving_hand_outlined,
+                    accent: AppColors.turquoise,
+                    title: 'Conhecendo você',
+                    subtitle:
+                        'Antes de começarmos, queremos conhecer um pouco sobre você.',
+                    children: [
+                      if ((_fullName ?? '').isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: InputDecorator(
+                            decoration: const InputDecoration(
+                              labelText: 'Nome',
+                              helperText:
+                                  'Para alterar, fale com seu psicólogo.',
+                              prefixIcon: Icon(Icons.lock_outline, size: 18),
+                            ),
+                            child: Text(_fullName!),
+                          ),
                         ),
-                        child: Text(_fullName!),
+                      _field(_preferredName, 'Como prefere ser chamado(a)?'),
+                      _birthDateField(context),
+                      _field(_occupation, 'Profissão'),
+                      _field(_livesWith, 'Com quem você mora?'),
+                      _switchTile(
+                        'Tem filhos?',
+                        _hasChildren,
+                        (v) => setState(() => _hasChildren = v),
                       ),
-                    ),
-                  _field(_preferredName, 'Como prefere ser chamado(a)?'),
-                  _birthDateField(context),
-                  _field(_occupation, 'Profissão'),
-                  _field(_livesWith, 'Com quem você mora?'),
-                  _switchTile(
-                    'Tem filhos?',
-                    _hasChildren,
-                    (v) => setState(() => _hasChildren = v),
+                      _switchTile(
+                        'Faz uso de medicação?',
+                        _usesMedication,
+                        (v) => setState(() => _usesMedication = v),
+                      ),
+                      if (_usesMedication)
+                        _field(_medicationNotes, 'Qual medicação? (opcional)'),
+                      _switchTile(
+                        'Tem acompanhamento psiquiátrico?',
+                        _psychiatricFollowup,
+                        (v) => setState(() => _psychiatricFollowup = v),
+                      ),
+                      if (_psychiatricFollowup)
+                        _field(_psychiatristNotes,
+                            'Detalhes do acompanhamento (opcional)'),
+                      _field(
+                        _importantToKnow,
+                        'Existe algo importante sobre você que gostaria que seu '
+                        'terapeuta soubesse?',
+                      ),
+                    ],
                   ),
-                  _switchTile(
-                    'Faz uso de medicação?',
-                    _usesMedication,
-                    (v) => setState(() => _usesMedication = v),
-                  ),
-                  if (_usesMedication)
-                    _field(_medicationNotes, 'Qual medicação? (opcional)'),
-                  _switchTile(
-                    'Tem acompanhamento psiquiátrico?',
-                    _psychiatricFollowup,
-                    (v) => setState(() => _psychiatricFollowup = v),
-                  ),
-                  if (_psychiatricFollowup)
-                    _field(_psychiatristNotes,
-                        'Detalhes do acompanhamento (opcional)'),
-                  _field(
-                    _importantToKnow,
-                    'Existe algo importante sobre você que gostaria que seu '
-                    'terapeuta soubesse?',
-                  ),
-                  const SizedBox(height: 24),
-                  _blocoHeader(
+                  _section(
                     context,
-                    'O que está acontecendo?',
-                    'Conte um pouco sobre o que está acontecendo na sua vida e o '
-                        'que fez você procurar terapia neste momento.',
+                    icon: Icons.chat_bubble_outline,
+                    accent: AppColors.blue,
+                    title: 'O que está acontecendo?',
+                    subtitle:
+                        'Conte um pouco sobre o que está acontecendo na sua vida '
+                        'e o que fez você procurar terapia neste momento.',
+                    children: [
+                      _field(_reason, 'O que fez você procurar terapia agora?'),
+                      _field(_duration, 'Há quanto tempo isso acontece?'),
+                      _field(_discomfort, 'O que mais incomoda hoje?'),
+                      _field(_expectations,
+                          'O que espera que seja diferente após a terapia?'),
+                      _field(_relatedEvent,
+                          'Existe algum acontecimento importante relacionado a isso?'),
+                    ],
                   ),
-                  _field(_reason, 'O que fez você procurar terapia agora?'),
-                  _field(_duration, 'Há quanto tempo isso acontece?'),
-                  _field(_discomfort, 'O que mais incomoda hoje?'),
-                  _field(_expectations,
-                      'O que espera que seja diferente após a terapia?'),
-                  _field(_relatedEvent,
-                      'Existe algum acontecimento importante relacionado a isso?'),
-                  const SizedBox(height: 24),
-                  _blocoHeader(
+                  _sectionHeader(
                     context,
-                    'Como está sua vida hoje?',
-                    'As pessoas costumam viver momentos diferentes em cada área '
-                        'da vida. Avalie como você percebe cada uma delas neste momento.',
+                    icon: Icons.spa_outlined,
+                    accent: AppColors.purple,
+                    title: 'Como está sua vida hoje?',
+                    subtitle:
+                        'As pessoas costumam viver momentos diferentes em cada '
+                        'área da vida. Avalie como você percebe cada uma delas '
+                        'neste momento.',
                   ),
+                  const SizedBox(height: 14),
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16),
                     child: DecoratedBox(
@@ -357,20 +374,106 @@ class _InitialAssessmentPatientPageState
     );
   }
 
-  Widget _blocoHeader(BuildContext context, String title, String subtitle) {
+  /// Indicador simples das 3 partes da tela.
+  Widget _stepsIndicator(BuildContext context) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+    const labels = ['Sobre você', 'O que houve', 'Sua vida'];
+    return Row(
+      children: [
+        for (var i = 0; i < labels.length; i++) ...[
+          if (i > 0) const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              children: [
+                Container(
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.turquoise,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  labels[i],
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 9.5,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// Cabeçalho de seção: ícone tintado + título + subtítulo.
+  Widget _sectionHeader(
+    BuildContext context, {
+    required IconData icon,
+    required Color accent,
+    required String title,
+    required String subtitle,
+  }) {
+    final theme = Theme.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: accent.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(11),
+          ),
+          child: Icon(icon, size: 18, color: accent),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title,
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(fontWeight: FontWeight.w800)),
+              const SizedBox(height: 2),
+              Text(subtitle,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant, height: 1.35)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  /// Seção em card: cabeçalho + campos.
+  Widget _section(
+    BuildContext context, {
+    required IconData icon,
+    required Color accent,
+    required String title,
+    required String subtitle,
+    required List<Widget> children,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 6),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.5)),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title,
-              style: theme.textTheme.titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 4),
-          Text(subtitle,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant, height: 1.4)),
+          _sectionHeader(context,
+              icon: icon, accent: accent, title: title, subtitle: subtitle),
+          const SizedBox(height: 14),
+          ...children,
         ],
       ),
     );

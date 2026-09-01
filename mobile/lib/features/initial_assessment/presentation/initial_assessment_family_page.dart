@@ -83,6 +83,52 @@ class _InitialAssessmentFamilyPageState
     }
   }
 
+  /// Seção em card: cabeçalho com ícone + conteúdo.
+  Widget _section({
+    required IconData icon,
+    required Color accent,
+    required String title,
+    required List<Widget> children,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.fromLTRB(14, 13, 14, 14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border:
+            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 17, color: accent),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(title,
+                    style: theme.textTheme.titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w800)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...children,
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(patientFamilyProvider(_ctx));
@@ -119,37 +165,50 @@ class _InitialAssessmentFamilyPageState
                   label: const Text('Adicionar pessoa'),
                 ),
               ),
-              const SizedBox(height: 24),
-              _ClimateSection(
-                selected: _climate,
-                onToggle: (t) => setState(() {
-                  if (!_climate.remove(t)) _climate.add(t);
-                }),
+              const SizedBox(height: 20),
+              _section(
+                icon: Icons.home_outlined,
+                accent: AppColors.turquoise,
+                title: 'Na sua família era comum...',
+                children: [
+                  _ClimateSection(
+                    selected: _climate,
+                    onToggle: (t) => setState(() {
+                      if (!_climate.remove(t)) _climate.add(t);
+                    }),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _climateOtherCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Outro clima familiar (opcional)',
+                      isDense: true,
+                    ),
+                  ),
+                ],
+              ),
+              _section(
+                icon: Icons.account_tree_outlined,
+                accent: AppColors.purple,
+                title: 'Existe histórico na sua família de...',
+                children: [
+                  _PatternsSection(
+                    selected: _patterns,
+                    onToggle: (p) => setState(() {
+                      if (!_patterns.remove(p)) _patterns.add(p);
+                    }),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _patternsOtherCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Outro padrão transgeracional (opcional)',
+                      isDense: true,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 8),
-              TextField(
-                controller: _climateOtherCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Outro clima familiar (opcional)',
-                  isDense: true,
-                ),
-              ),
-              const SizedBox(height: 20),
-              _PatternsSection(
-                selected: _patterns,
-                onToggle: (p) => setState(() {
-                  if (!_patterns.remove(p)) _patterns.add(p);
-                }),
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _patternsOtherCtrl,
-                decoration: const InputDecoration(
-                  labelText: 'Outro padrão transgeracional (opcional)',
-                  isDense: true,
-                ),
-              ),
-              const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
@@ -362,26 +421,16 @@ class _ClimateSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
       children: [
-        Text('Na sua família era comum...',
-            style: theme.textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.w700)),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final trait in FamilyClimateTrait.values)
-              FilterChip(
-                label: Text(trait.label),
-                selected: selected.contains(trait),
-                onSelected: (_) => onToggle(trait),
-              ),
-          ],
-        ),
+        for (final trait in FamilyClimateTrait.values)
+          FilterChip(
+            label: Text(trait.label),
+            selected: selected.contains(trait),
+            onSelected: (_) => onToggle(trait),
+          ),
       ],
     );
   }
@@ -395,26 +444,16 @@ class _PatternsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
       children: [
-        Text('Existe histórico na sua família de...',
-            style: theme.textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.w700)),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final pattern in TransgenerationalPattern.values)
-              FilterChip(
-                label: Text(pattern.label),
-                selected: selected.contains(pattern),
-                onSelected: (_) => onToggle(pattern),
-              ),
-          ],
-        ),
+        for (final pattern in TransgenerationalPattern.values)
+          FilterChip(
+            label: Text(pattern.label),
+            selected: selected.contains(pattern),
+            onSelected: (_) => onToggle(pattern),
+          ),
       ],
     );
   }

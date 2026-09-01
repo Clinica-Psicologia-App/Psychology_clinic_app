@@ -6,6 +6,7 @@ import '../../../core/network/edge_api_client.dart';
 import '../../../core/supabase/supabase_bootstrap.dart';
 import '../domain/create_patient_request.dart';
 import '../domain/patient.dart';
+import '../domain/patient_data_completion.dart';
 import '../domain/patient_vitals.dart';
 import '../domain/psychologist_alert.dart';
 import '../domain/psychologist_option.dart';
@@ -296,6 +297,25 @@ access_profile:profiles!patients_profile_id_fkey(is_active, avatar_type, avatar_
       final data = await _client.rpc('get_psychologist_alerts');
       final json = Map<String, dynamic>.from(data as Map);
       return PsychologistAlert.fromRpcJson(json);
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  /// Preenchimento da avaliação inicial + questionários por paciente do
+  /// psicólogo logado. Um único RPC agregado (evita N+1 na lista).
+  Future<Map<String, PatientDataCompletion>>
+      fetchPatientsDataCompletion() async {
+    try {
+      final rows = await _client.rpc('get_patients_data_completion') as List;
+      final result = <String, PatientDataCompletion>{};
+      for (final row in rows) {
+        final c = PatientDataCompletion.fromJson(
+          Map<String, dynamic>.from(row as Map),
+        );
+        result[c.patientId] = c;
+      }
+      return result;
     } catch (e) {
       throw mapToAppException(e);
     }

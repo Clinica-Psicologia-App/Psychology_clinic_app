@@ -9,6 +9,7 @@ import '../../../../shared/widgets/clay_card.dart';
 import '../../../profile/domain/profile_role.dart';
 import '../../../profile/presentation/widgets/user_avatar.dart';
 import '../../domain/patient.dart';
+import '../../domain/patient_data_completion.dart';
 
 class PatientListTile extends StatelessWidget {
   const PatientListTile({
@@ -17,6 +18,7 @@ class PatientListTile extends StatelessWidget {
     required this.onTap,
     this.hasPendingResultsRelease = false,
     this.checkinMissingDays,
+    this.dataCompletion,
   });
 
   final Patient patient;
@@ -27,6 +29,10 @@ class PatientListTile extends StatelessWidget {
 
   /// Dias sem check-in (de psychologistAlertsProvider). Null = sem alerta.
   final int? checkinMissingDays;
+
+  /// Preenchimento da avaliação inicial + questionários. Null = sem dado
+  /// (paciente/lista ainda carregando, ou visão do paciente).
+  final PatientDataCompletion? dataCompletion;
 
   Color _ringColor(ThemeData theme) {
     if (!patient.isActive) return theme.colorScheme.outline;
@@ -135,6 +141,18 @@ class PatientListTile extends StatelessWidget {
                   filledDays: filledDays,
                   fillColor: barColor,
                 ),
+              ),
+
+            // ── Preenchimento da avaliação inicial + questionários ────────
+            if (patient.isActive && dataCompletion != null)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  0,
+                  AppSpacing.md,
+                  AppSpacing.sm,
+                ),
+                child: _DataCompletionSection(completion: dataCompletion!),
               ),
 
             // ── Footer com ações contextuais ─────────────────────────────
@@ -456,6 +474,144 @@ class _Segment extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Preenchimento da avaliação inicial + questionários (anel + checklist)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _DataCompletionSection extends StatelessWidget {
+  const _DataCompletionSection({required this.completion});
+
+  final PatientDataCompletion completion;
+
+  Color get _accent {
+    if (completion.isComplete) return AppColors.success;
+    if (completion.filledSections == 0) return AppColors.error;
+    return AppColors.warning;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accent = _accent;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Divider(
+          height: 1,
+          thickness: 0.5,
+          color: theme.colorScheme.outline.withValues(alpha: 0.6),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Anel de progresso com a porcentagem.
+            SizedBox(
+              width: 44,
+              height: 44,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox(
+                    width: 44,
+                    height: 44,
+                    child: CircularProgressIndicator(
+                      value: completion.fraction,
+                      strokeWidth: 5,
+                      strokeCap: StrokeCap.round,
+                      backgroundColor: accent.withValues(alpha: 0.15),
+                      valueColor: AlwaysStoppedAnimation<Color>(accent),
+                    ),
+                  ),
+                  Text(
+                    '${completion.percent}%',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: accent,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            // Rótulo + chips das seções.
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Preenchimento dos dados',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 10,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Wrap(
+                    spacing: 5,
+                    runSpacing: 5,
+                    children: [
+                      for (final s in completion.sections)
+                        _SectionChip(label: s.label, done: s.done),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _SectionChip extends StatelessWidget {
+  const _SectionChip({required this.label, required this.done});
+
+  final String label;
+  final bool done;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = done ? AppColors.success : theme.colorScheme.onSurfaceVariant;
+    final bg = done
+        ? AppColors.successContainer
+        : theme.colorScheme.outline.withValues(alpha: 0.18);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            done ? Icons.check_rounded : Icons.remove_rounded,
+            size: 11,
+            color: color,
+          ),
+          const SizedBox(width: 3),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

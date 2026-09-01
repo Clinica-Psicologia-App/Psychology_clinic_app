@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/patients_repository.dart';
 import '../domain/create_patient_request.dart';
 import '../domain/patient.dart';
+import '../domain/patient_data_completion.dart';
 import '../domain/patient_vitals.dart';
 import '../domain/psychologist_alert.dart';
 import '../domain/psychologist_option.dart';
@@ -58,6 +59,13 @@ final patientsPendingResultsReleaseProvider =
   return ref
       .read(patientsRepositoryProvider)
       .fetchPatientIdsPendingResultsRelease();
+});
+
+/// Preenchimento (avaliação inicial + questionários) por paciente — alimenta o
+/// anel de progresso na lista de pacientes. Mapa por patientId.
+final patientsDataCompletionProvider =
+    FutureProvider<Map<String, PatientDataCompletion>>((ref) {
+  return ref.read(patientsRepositoryProvider).fetchPatientsDataCompletion();
 });
 
 final patientVitalsProvider =

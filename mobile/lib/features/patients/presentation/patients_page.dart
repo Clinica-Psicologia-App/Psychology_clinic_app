@@ -45,6 +45,10 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
         ? ref.watch(patientsPendingResultsReleaseProvider).valueOrNull
         : null;
 
+    final dataCompletionMap = widget.role == ProfileRole.psychologist
+        ? ref.watch(patientsDataCompletionProvider).valueOrNull
+        : null;
+
     final checkinMissingMap = <String, int>{};
     if (widget.role == ProfileRole.psychologist) {
       final alerts = ref.watch(psychologistAlertsProvider).valueOrNull ?? [];
@@ -214,6 +218,7 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
                         hasPendingResultsRelease:
                             pendingReleaseIds?.contains(patient.id) ?? false,
                         checkinMissingDays: checkinMissingMap[patient.id],
+                        dataCompletion: dataCompletionMap?[patient.id],
                         onTap: () => context.push(
                           PatientRoutes.detail(widget.role, patient.id),
                         ),

@@ -18,6 +18,7 @@ Future<void> showGenogramPersonEditor({
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
+    backgroundColor: AppColors.background,
     builder: (_) => _GenogramPersonEditor(ctx: ctx, person: person),
   );
 }
@@ -208,125 +209,166 @@ class _GenogramPersonEditorState extends ConsumerState<_GenogramPersonEditor> {
                 ],
               ),
               const SizedBox(height: 16),
-              // ── Dados básicos ──────────────────────────────────────────
-              TextField(
-                controller: _fullName,
-                decoration: const InputDecoration(labelText: 'Nome'),
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: _relationship,
-                decoration: const InputDecoration(
-                  labelText: 'Grau de parentesco (ex.: Mãe, Irmão)',
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
+
+              // ── Seção: sobre a pessoa ───────────────────────────────────
+              _section(
+                icon: Icons.person_outline,
+                title: 'Sobre a pessoa',
                 children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      initialValue: _gender,
-                      decoration: const InputDecoration(labelText: 'Gênero'),
-                      items: const [
-                        DropdownMenuItem(
-                            value: 'female', child: Text('Feminino')),
-                        DropdownMenuItem(
-                            value: 'male', child: Text('Masculino')),
-                        DropdownMenuItem(value: 'other', child: Text('Outro')),
-                        DropdownMenuItem(
-                            value: 'unknown', child: Text('Não informado')),
-                      ],
-                      onChanged: (v) => setState(() => _gender = v),
+                  TextField(
+                    controller: _fullName,
+                    decoration: const InputDecoration(labelText: 'Nome'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _relationship,
+                    decoration: const InputDecoration(
+                      labelText: 'Grau de parentesco (ex.: Mãe, Irmão)',
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  SizedBox(
-                    width: 90,
-                    child: TextField(
-                      controller: _age,
-                      keyboardType: TextInputType.number,
-                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                      decoration: const InputDecoration(labelText: 'Idade'),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: DropdownButtonFormField<String>(
+                          initialValue: _gender,
+                          decoration:
+                              const InputDecoration(labelText: 'Gênero'),
+                          items: const [
+                            DropdownMenuItem(
+                                value: 'female', child: Text('Feminino')),
+                            DropdownMenuItem(
+                                value: 'male', child: Text('Masculino')),
+                            DropdownMenuItem(
+                                value: 'other', child: Text('Outro')),
+                            DropdownMenuItem(
+                                value: 'unknown', child: Text('Não informado')),
+                          ],
+                          onChanged: (v) => setState(() => _gender = v),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      SizedBox(
+                        width: 90,
+                        child: TextField(
+                          controller: _age,
+                          keyboardType: TextInputType.number,
+                          inputFormatters: [
+                            FilteringTextInputFormatter.digitsOnly
+                          ],
+                          decoration:
+                              const InputDecoration(labelText: 'Idade'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  SwitchListTile(
+                    value: _isDeceased,
+                    onChanged: (v) => setState(() => _isDeceased = v),
+                    title: const Text('É falecido(a)?'),
+                    secondary: const Icon(Icons.spa_outlined),
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                  ),
+                  SwitchListTile(
+                    value: _isSensitive,
+                    onChanged: (v) => setState(() => _isSensitive = v),
+                    title: const Text('Conteúdo sensível'),
+                    subtitle: const Text(
+                      'Informações sobre esta pessoa são delicadas.',
                     ),
+                    secondary: const Icon(Icons.lock_outline),
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
                   ),
                 ],
               ),
-              SwitchListTile(
-                value: _isDeceased,
-                onChanged: (v) => setState(() => _isDeceased = v),
-                title: const Text('É falecido(a)?'),
-                contentPadding: EdgeInsets.zero,
-                dense: true,
-              ),
-              SwitchListTile(
-                value: _isSensitive,
-                onChanged: (v) => setState(() => _isSensitive = v),
-                title: const Text('Conteúdo sensível'),
-                subtitle: const Text(
-                  'Indica que informações sobre esta pessoa são delicadas.',
-                ),
-                secondary: const Icon(Icons.lock_outline),
-                contentPadding: EdgeInsets.zero,
-                dense: true,
-              ),
-              const Divider(height: 24),
-              // ── Camada emocional ───────────────────────────────────────
-              SwitchListTile(
-                value: _isCaregiver,
-                onChanged: (v) => setState(() => _isCaregiver = v),
-                title: const Text(
-                    'Participou da sua criação ou foi sua cuidadora?'),
-                contentPadding: EdgeInsets.zero,
-                dense: true,
-              ),
-              const SizedBox(height: 8),
-              _label('Como você descreveria sua relação com essa pessoa?'),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
+
+              // ── Seção: a relação ────────────────────────────────────────
+              _section(
+                icon: Icons.diversity_1_outlined,
+                title: 'A relação',
                 children: [
-                  for (final q in BondQuality.values)
-                    ChoiceChip(
-                      label: Text(q.label),
-                      selected: _bond == q,
-                      onSelected: (sel) =>
-                          setState(() => _bond = sel ? q : null),
-                    ),
+                  SwitchListTile(
+                    value: _isCaregiver,
+                    onChanged: (v) => setState(() => _isCaregiver = v),
+                    title: const Text(
+                        'Participou da sua criação ou foi sua cuidadora?'),
+                    contentPadding: EdgeInsets.zero,
+                    dense: true,
+                  ),
+                  const SizedBox(height: 8),
+                  _label('Como você descreveria sua relação com essa pessoa?'),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      for (final q in BondQuality.values)
+                        ChoiceChip(
+                          label: Text(q.label),
+                          selected: _bond == q,
+                          onSelected: (sel) =>
+                              setState(() => _bond = sel ? q : null),
+                        ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  _presenceRow(theme),
                 ],
               ),
-              const SizedBox(height: 12),
-              _presenceRow(theme),
-              const SizedBox(height: 8),
-              _multiSelect<CaregiverTrait>(
-                'Como essa pessoa costumava agir com você?',
-                CaregiverTrait.values,
-                _traits,
-                (e) => e.label,
+
+              // ── Seção: como agia com você ───────────────────────────────
+              _section(
+                icon: Icons.forum_outlined,
+                title: 'Como agia com você',
+                children: [
+                  _chipsWrap<CaregiverTrait>(
+                    CaregiverTrait.values,
+                    _traits,
+                    (e) => e.label,
+                  ),
+                  _otherField(_traitsOther),
+                ],
               ),
-              _otherField(_traitsOther),
-              const SizedBox(height: 8),
-              _multiSelect<CaregiverNeed>(
-                'Quando estava com essa pessoa, geralmente se sentia...',
-                CaregiverNeed.values,
-                _feltNeeds,
-                (e) => e.label,
+
+              // ── Seção: necessidades emocionais ──────────────────────────
+              _section(
+                icon: Icons.favorite_outline,
+                title: 'Necessidades emocionais',
+                children: [
+                  _multiSelect<CaregiverNeed>(
+                    'Quando estava com essa pessoa, geralmente se sentia...',
+                    CaregiverNeed.values,
+                    _feltNeeds,
+                    (e) => e.label,
+                  ),
+                  const SizedBox(height: 12),
+                  _multiSelect<CaregiverNeed>(
+                    'O que você mais gostaria de ter recebido dessa pessoa?',
+                    CaregiverNeed.values,
+                    _wishedNeeds,
+                    (e) => e.label,
+                  ),
+                ],
+              ),
+
+              // ── Seção: acontecimentos ───────────────────────────────────
+              _section(
+                icon: Icons.push_pin_outlined,
+                title: 'Acontecimentos',
+                children: [
+                  _multiSelect<LinkedEvent>(
+                    'Existe algum acontecimento importante relacionado a essa '
+                    'pessoa?',
+                    LinkedEvent.values,
+                    _events,
+                    (e) => e.label,
+                  ),
+                  _otherField(_eventsOther),
+                ],
               ),
               const SizedBox(height: 8),
-              _multiSelect<CaregiverNeed>(
-                'O que você mais gostaria de ter recebido dessa pessoa?',
-                CaregiverNeed.values,
-                _wishedNeeds,
-                (e) => e.label,
-              ),
-              const SizedBox(height: 8),
-              _multiSelect<LinkedEvent>(
-                'Existe algum acontecimento importante relacionado a essa pessoa?',
-                LinkedEvent.values,
-                _events,
-                (e) => e.label,
-              ),
-              _otherField(_eventsOther),
-              const SizedBox(height: 20),
               Row(
                 children: [
                   if (_isEditing)
@@ -354,6 +396,46 @@ class _GenogramPersonEditorState extends ConsumerState<_GenogramPersonEditor> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _section({
+    required IconData icon,
+    required String title,
+    required List<Widget> children,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: theme.colorScheme.outline.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: theme.colorScheme.primary),
+              const SizedBox(width: 7),
+              Text(
+                title.toUpperCase(),
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.4,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          ...children,
+        ],
       ),
     );
   }
@@ -404,20 +486,28 @@ class _GenogramPersonEditorState extends ConsumerState<_GenogramPersonEditor> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _label(title),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final option in options)
-              FilterChip(
-                label: Text(label(option)),
-                selected: selected.contains(option),
-                onSelected: (_) => setState(() {
-                  if (!selected.remove(option)) selected.add(option);
-                }),
-              ),
-          ],
-        ),
+        _chipsWrap<E>(options, selected, label),
+      ],
+    );
+  }
+
+  Widget _chipsWrap<E>(
+    List<E> options,
+    Set<E> selected,
+    String Function(E) label,
+  ) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final option in options)
+          FilterChip(
+            label: Text(label(option)),
+            selected: selected.contains(option),
+            onSelected: (_) => setState(() {
+              if (!selected.remove(option)) selected.add(option);
+            }),
+          ),
       ],
     );
   }

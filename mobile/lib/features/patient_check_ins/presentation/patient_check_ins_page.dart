@@ -29,9 +29,13 @@ class PatientCheckInsPage extends ConsumerWidget {
         data: (today) {
           if (today != null) {
             return FloatingActionButton.extended(
-              onPressed: () => context.push(
-                PatientCheckInRoutes.patientEdit(today.id),
-              ),
+              onPressed: () async {
+                await context.push(
+                  PatientCheckInRoutes.patientEdit(today.id),
+                );
+                ref.read(myPatientCheckInsProvider.notifier).refresh();
+                ref.invalidate(todayCheckInProvider);
+              },
               icon: const Icon(Icons.edit),
               label: const Text('Editar check-in de hoje'),
             );

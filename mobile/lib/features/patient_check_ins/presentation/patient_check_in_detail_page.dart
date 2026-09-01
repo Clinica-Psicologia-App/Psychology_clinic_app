@@ -116,9 +116,12 @@ class PatientCheckInDetailPage extends ConsumerWidget {
                 Padding(
                   padding: const EdgeInsets.all(AppSpacing.md),
                   child: FilledButton.icon(
-                    onPressed: () => context.push(
-                      PatientCheckInRoutes.patientEdit(checkInId),
-                    ),
+                    onPressed: () async {
+                      await context.push(
+                        PatientCheckInRoutes.patientEdit(checkInId),
+                      );
+                      ref.invalidate(patientCheckInDetailProvider(checkInId));
+                    },
                     icon: const Icon(Icons.edit_outlined),
                     label: const Text('Editar check-in de hoje'),
                   ),

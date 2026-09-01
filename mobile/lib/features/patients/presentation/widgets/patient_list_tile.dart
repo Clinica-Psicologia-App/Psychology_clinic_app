@@ -52,6 +52,18 @@ class PatientListTile extends StatelessWidget {
     return (7 - missing).clamp(0, 7);
   }
 
+  Color _completionColor(PatientDataCompletion c) {
+    if (c.isComplete) return AppColors.success;
+    if (c.filledSections == 0) return AppColors.error;
+    return AppColors.warning;
+  }
+
+  String _checkinSubtitle() {
+    if (checkinMissingDays == null) return 'Em dia esta semana';
+    if (checkinMissingDays! >= 999) return 'Nunca fez check-in';
+    return '${checkinMissingDays!} dias sem check-in';
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -61,6 +73,17 @@ class PatientListTile extends StatelessWidget {
         : filledDays >= 4
             ? AppColors.warning
             : AppColors.error;
+    final stripColor = _ringColor(theme);
+    final completion = dataCompletion;
+
+    final statusLabel = patient.isActive
+        ? (patient.accessStatus?.label ?? 'Ativo')
+        : 'Inativo';
+    final statusColor =
+        patient.isActive ? AppColors.success : theme.colorScheme.onSurfaceVariant;
+    final statusBg = patient.isActive
+        ? AppColors.successContainer
+        : theme.colorScheme.outline.withValues(alpha: 0.2);
 
     return Padding(
       padding: const EdgeInsets.symmetric(
@@ -68,14 +91,18 @@ class PatientListTile extends StatelessWidget {
         vertical: AppSpacing.xs,
       ),
       child: ClayCard(
+        clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // ── Topo: avatar + nome + chips ──────────────────────────────
+            // ── Faixa de status (saúde do acompanhamento) ─────────────────
+            Container(height: 4, color: stripColor),
+
+            // ── Topo: avatar + nome + status ─────────────────────────────
             InkWell(
               onTap: onTap,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.md,
@@ -86,7 +113,7 @@ class PatientListTile extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _StatusRingAvatar(patient: patient, ringColor: _ringColor(theme)),
+                    _StatusRingAvatar(patient: patient, ringColor: stripColor),
                     const SizedBox(width: AppSpacing.sm),
                     Expanded(
                       child: Column(
@@ -110,10 +137,10 @@ class PatientListTile extends StatelessWidget {
                             ),
                           ],
                           const SizedBox(height: AppSpacing.xs),
-                          _StatusChipsRow(
-                            patient: patient,
-                            hasPendingResultsRelease: hasPendingResultsRelease,
-                            checkinMissingDays: checkinMissingDays,
+                          _MiniChip(
+                            label: statusLabel,
+                            color: statusColor,
+                            bg: statusBg,
                           ),
                         ],
                       ),
@@ -128,35 +155,47 @@ class PatientListTile extends StatelessWidget {
               ),
             ),
 
-            // ── Barra de check-ins semanal ────────────────────────────────
-            if (patient.isActive)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  0,
-                  AppSpacing.md,
-                  AppSpacing.sm,
-                ),
-                child: _WeekCheckinBar(
+            if (patient.isActive) ...[
+              Divider(
+                height: 1,
+                thickness: 0.5,
+                color: theme.colorScheme.outline.withValues(alpha: 0.5),
+              ),
+              // ── Métrica: check-ins da semana ──────────────────────────
+              _MetricRow(
+                icon: Icons.schedule_rounded,
+                accent: barColor,
+                title: 'Check-ins esta semana',
+                subtitle: _checkinSubtitle(),
+                valueText: '$filledDays/7',
+                content: _WeekCheckinBar(
                   filledDays: filledDays,
                   fillColor: barColor,
                 ),
               ),
 
-            // ── Preenchimento da avaliação inicial + questionários ────────
-            if (patient.isActive && dataCompletion != null)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  0,
-                  AppSpacing.md,
-                  AppSpacing.sm,
+              // ── Métrica: preenchimento dos dados ──────────────────────
+              if (completion != null) ...[
+                Divider(
+                  height: 1,
+                  thickness: 0.5,
+                  color: theme.colorScheme.outline.withValues(alpha: 0.5),
                 ),
-                child: _DataCompletionSection(completion: dataCompletion!),
-              ),
+                _MetricRow(
+                  icon: Icons.assignment_turned_in_outlined,
+                  accent: _completionColor(completion),
+                  title: 'Preenchimento dos dados',
+                  subtitle: completion.isComplete
+                      ? 'Tudo preenchido'
+                      : 'Falta: ${completion.sections.where((s) => !s.done).map((s) => s.label).join(', ')}',
+                  valueText: '${completion.percent}%',
+                  content: _CompletionSegments(completion: completion),
+                ),
+              ],
+            ],
 
             // ── Footer com ações contextuais ─────────────────────────────
-            Divider(height: 1, thickness: 0.5, color: Theme.of(context).colorScheme.outline),
+            Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline),
             _CardFooter(
               hasPendingResultsRelease: hasPendingResultsRelease,
               checkinMissingDays: checkinMissingDays,
@@ -166,6 +205,131 @@ class PatientListTile extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Linha de métrica: ícone + título/subtítulo + valor, com conteúdo abaixo
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _MetricRow extends StatelessWidget {
+  const _MetricRow({
+    required this.icon,
+    required this.accent,
+    required this.title,
+    required this.subtitle,
+    required this.valueText,
+    required this.content,
+  });
+
+  final IconData icon;
+  final Color accent;
+  final String title;
+  final String subtitle;
+  final String valueText;
+  final Widget content;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.md,
+        AppSpacing.sm,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(9),
+                ),
+                child: Icon(icon, size: 16, color: accent),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12,
+                      ),
+                    ),
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontSize: 10,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Text(
+                valueText,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: accent,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.only(left: 38),
+            child: content,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Segmentos de preenchimento (6 seções)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _CompletionSegments extends StatelessWidget {
+  const _CompletionSegments({required this.completion});
+
+  final PatientDataCompletion completion;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final sections = completion.sections;
+    return Row(
+      children: [
+        for (var i = 0; i < sections.length; i++) ...[
+          if (i > 0) const SizedBox(width: 3),
+          Expanded(
+            child: Container(
+              height: 6,
+              decoration: BoxDecoration(
+                color: sections[i].done
+                    ? AppColors.success
+                    : theme.colorScheme.outline.withValues(alpha: 0.25),
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
@@ -218,68 +382,19 @@ class _StatusRingAvatar extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Chips de status + alerta
+// Chip de status
 // ─────────────────────────────────────────────────────────────────────────────
-
-class _StatusChipsRow extends StatelessWidget {
-  const _StatusChipsRow({
-    required this.patient,
-    required this.hasPendingResultsRelease,
-    required this.checkinMissingDays,
-  });
-
-  final Patient patient;
-  final bool hasPendingResultsRelease;
-  final int? checkinMissingDays;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final statusLabel =
-        patient.isActive ? (patient.accessStatus?.label ?? 'Ativo') : 'Inativo';
-    final statusColor = patient.isActive ? AppColors.success : theme.colorScheme.onSurfaceVariant;
-    final statusBg =
-        patient.isActive ? AppColors.successContainer : theme.colorScheme.outline.withValues(alpha: 0.2);
-
-    return Wrap(
-      spacing: AppSpacing.xxs,
-      runSpacing: AppSpacing.xxs,
-      children: [
-        _MiniChip(label: statusLabel, color: statusColor, bg: statusBg),
-        if (hasPendingResultsRelease)
-          const _MiniChip(
-            label: 'Resultado pendente',
-            color: AppColors.info,
-            bg: AppColors.infoContainer,
-            icon: Icons.fact_check_outlined,
-          ),
-        if (checkinMissingDays != null && checkinMissingDays! >= 3)
-          _MiniChip(
-            label: checkinMissingDays! >= 999
-                ? 'Nunca fez check-in'
-                : '${checkinMissingDays!} dias sem check-in',
-            color: checkinMissingDays! >= 5 ? AppColors.error : AppColors.warning,
-            bg: checkinMissingDays! >= 5
-                ? AppColors.errorContainer
-                : AppColors.warningContainer,
-          ),
-      ],
-    );
-  }
-}
 
 class _MiniChip extends StatelessWidget {
   const _MiniChip({
     required this.label,
     required this.color,
     required this.bg,
-    this.icon,
   });
 
   final String label;
   final Color color;
   final Color bg;
-  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -292,10 +407,6 @@ class _MiniChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (icon != null) ...[
-            Icon(icon, size: 10, color: color),
-            const SizedBox(width: 3),
-          ],
           Text(
             label,
             style: TextStyle(
@@ -353,55 +464,25 @@ class _WeekCheckinBarState extends State<_WeekCheckinBar>
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final todayIndex = DateTime.now().weekday - 1; // 0=seg, 6=dom
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
+    // Apenas os 7 segmentos com o rótulo do dia abaixo de cada um. O título e
+    // a contagem "x/7" ficam na linha da métrica (cabeçalho da seção).
+    return Row(
       children: [
-        // Label + contagem
-        Row(
-          children: [
-            Text(
-              'Check-ins esta semana',
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.3,
-                fontSize: 10,
-              ),
+        for (var i = 0; i < 7; i++) ...[
+          if (i > 0) const SizedBox(width: 3),
+          Expanded(
+            child: _Segment(
+              label: _dayLabels[i],
+              isToday: i == todayIndex,
+              isFilled: i < widget.filledDays,
+              fillColor: widget.fillColor,
+              controller: _ctrl,
+              index: i,
             ),
-            const Spacer(),
-            Text(
-              '${widget.filledDays} / 7',
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: widget.fillColor,
-                fontWeight: FontWeight.w800,
-                fontSize: 11,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        // 7 segmentos
-        Row(
-          children: [
-            for (var i = 0; i < 7; i++) ...[
-              if (i > 0) const SizedBox(width: 3),
-              Expanded(
-                child: _Segment(
-                  label: _dayLabels[i],
-                  isToday: i == todayIndex,
-                  isFilled: i < widget.filledDays,
-                  fillColor: widget.fillColor,
-                  controller: _ctrl,
-                  index: i,
-                ),
-              ),
-            ],
-          ],
-        ),
+          ),
+        ],
       ],
     );
   }
@@ -474,144 +555,6 @@ class _Segment extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Preenchimento da avaliação inicial + questionários (anel + checklist)
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _DataCompletionSection extends StatelessWidget {
-  const _DataCompletionSection({required this.completion});
-
-  final PatientDataCompletion completion;
-
-  Color get _accent {
-    if (completion.isComplete) return AppColors.success;
-    if (completion.filledSections == 0) return AppColors.error;
-    return AppColors.warning;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final accent = _accent;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Divider(
-          height: 1,
-          thickness: 0.5,
-          color: theme.colorScheme.outline.withValues(alpha: 0.6),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Anel de progresso com a porcentagem.
-            SizedBox(
-              width: 44,
-              height: 44,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  SizedBox(
-                    width: 44,
-                    height: 44,
-                    child: CircularProgressIndicator(
-                      value: completion.fraction,
-                      strokeWidth: 5,
-                      strokeCap: StrokeCap.round,
-                      backgroundColor: accent.withValues(alpha: 0.15),
-                      valueColor: AlwaysStoppedAnimation<Color>(accent),
-                    ),
-                  ),
-                  Text(
-                    '${completion.percent}%',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      fontWeight: FontWeight.w800,
-                      color: accent,
-                      fontSize: 11,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            // Rótulo + chips das seções.
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Preenchimento dos dados',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 10,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Wrap(
-                    spacing: 5,
-                    runSpacing: 5,
-                    children: [
-                      for (final s in completion.sections)
-                        _SectionChip(label: s.label, done: s.done),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _SectionChip extends StatelessWidget {
-  const _SectionChip({required this.label, required this.done});
-
-  final String label;
-  final bool done;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = done ? AppColors.success : theme.colorScheme.onSurfaceVariant;
-    final bg = done
-        ? AppColors.successContainer
-        : theme.colorScheme.outline.withValues(alpha: 0.18);
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            done ? Icons.check_rounded : Icons.remove_rounded,
-            size: 11,
-            color: color,
-          ),
-          const SizedBox(width: 3),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

@@ -238,7 +238,8 @@ class _EmptyInvite extends StatelessWidget {
   }
 }
 
-/// Trilha vertical dos acontecimentos (spec §15).
+/// Trilha vertical dos acontecimentos (spec §15), agrupada por fase da vida:
+/// cada capítulo ganha um cabeçalho e os acontecimentos viram cards ricos.
 class _TimelineTrail extends StatelessWidget {
   const _TimelineTrail({required this.events, this.showToday = true});
   final List<LifeTimelineEvent> events;
@@ -246,19 +247,33 @@ class _TimelineTrail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Monta a lista de "linhas": um cabeçalho quando a fase muda em relação ao
+    // evento anterior + os cards. Como a ordem chega agrupada por fase (mesma
+    // fase adjacente), o consecutivo já produz um cabeçalho por capítulo.
+    final rows = <Widget>[];
+    LifeChapter? current;
+    bool sawAny = false;
+    for (final event in events) {
+      final chapter = event.lifeChapter;
+      if (!sawAny || chapter != current) {
+        rows.add(_ChapterHeaderNode(chapter: chapter));
+        current = chapter;
+        sawAny = true;
+      }
+      rows.add(_EventCardNode(event: event));
+    }
+    if (showToday) rows.add(const _TodayNode());
+
     return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(12, 20, 16, 96),
-      itemCount: events.length + (showToday ? 1 : 0),
-      itemBuilder: (context, i) {
-        if (showToday && i == events.length) return const _TodayNode();
-        return _EventNode(
-          event: events[i],
-          isFirst: i == 0,
-        );
-      },
+      padding: const EdgeInsets.fromLTRB(12, 18, 16, 100),
+      itemCount: rows.length,
+      itemBuilder: (context, i) => rows[i],
     );
   }
 }
+
+/// Largura da coluna da trilha (dot/linha) à esquerda dos cards.
+const double _kRailWidth = 30;
 
 /// Estado vazio quando uma pessoa ainda não tem acontecimentos ligados.
 class _NoMomentsForPerson extends StatelessWidget {
@@ -330,113 +345,84 @@ String _shortAgeLabel(LifeTimelineEvent event) {
   return event.lifeChapter?.label ?? '';
 }
 
-class _EventNode extends StatelessWidget {
-  const _EventNode({required this.event, required this.isFirst});
-  final LifeTimelineEvent event;
-  final bool isFirst;
+/// Cabeçalho de capítulo (fase da vida): selo na trilha + nome + faixa etária.
+class _ChapterHeaderNode extends StatelessWidget {
+  const _ChapterHeaderNode({required this.chapter});
+  final LifeChapter? chapter;
 
   @override
   Widget build(BuildContext context) {
-    final colors = _chapterColors(event.lifeChapter);
-    final ageLabel = _shortAgeLabel(event);
-    final emotions = event.emotions.map((e) => '${e.emoji} ${e.label}').join('  ');
-    final category = event.categories.isNotEmpty
-        ? event.categories.first.label
-        : null;
+    final colors = _chapterColors(chapter);
+    final detail = _chapterDetailColors(chapter);
+    final name = chapter?.label ?? 'Outros momentos';
+    final range = _chapterRange(chapter);
 
     return IntrinsicHeight(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Coluna de idade — largura fixa alinhada à direita
           SizedBox(
-            width: 46,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 4, right: 8),
-              child: Text(
-                ageLabel,
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: colors.text,
+            width: _kRailWidth,
+            child: Stack(
+              children: [
+                // Linha vertical contínua (atrás do selo).
+                Positioned(
+                  left: (_kRailWidth - 3) / 2,
+                  top: 0,
+                  bottom: 0,
+                  width: 3,
+                  child: Container(color: colors.accent.withValues(alpha: 0.28)),
                 ),
-              ),
+                // Selo do capítulo.
+                Positioned(
+                  left: (_kRailWidth - 24) / 2,
+                  top: 0,
+                  child: Container(
+                    width: 24,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      color: colors.accent,
+                      shape: BoxShape.circle,
+                      border:
+                          Border.all(color: AppColors.background, width: 3),
+                    ),
+                    child: Icon(detail.icon, size: 12, color: Colors.white),
+                  ),
+                ),
+              ],
             ),
           ),
-          // Linha central: ponto + traço vertical
-          Column(
-            children: [
-              Container(
-                width: 9,
-                height: 9,
-                margin: const EdgeInsets.only(top: 5),
-                decoration: BoxDecoration(
-                  color: colors.accent,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              Expanded(
-                child: Container(
-                  width: 1.5,
-                  color: colors.accent.withValues(alpha: 0.22),
-                  margin: const EdgeInsets.only(top: 3),
-                ),
-              ),
-            ],
-          ),
           const SizedBox(width: 10),
-          // Conteúdo
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.only(bottom: 14),
-              child: InkWell(
-                onTap: () => _showEventDetail(context, event),
-                borderRadius: BorderRadius.circular(8),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 2),
-                    Text(
-                      event.title,
-                      style: const TextStyle(
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.navy,
-                        height: 1.3,
+              padding: const EdgeInsets.only(top: 2, bottom: 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.baseline,
+                textBaseline: TextBaseline.alphabetic,
+                children: [
+                  Flexible(
+                    child: Text(
+                      name.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                        color: colors.text,
                       ),
                     ),
-                    if (emotions.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        emotions,
-                        style: const TextStyle(
-                          fontSize: 11.5,
-                          color: AppColors.textSecondary,
-                        ),
+                  ),
+                  if (range.isNotEmpty) ...[
+                    const SizedBox(width: 8),
+                    Text(
+                      range,
+                      style: const TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textMuted,
                       ),
-                    ],
-                    if (category != null) ...[
-                      const SizedBox(height: 5),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 7, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: colors.bg,
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: Text(
-                          category,
-                          style: TextStyle(
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w500,
-                            color: colors.text,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ],
-                ),
+                ],
               ),
             ),
           ),
@@ -446,6 +432,268 @@ class _EventNode extends StatelessWidget {
   }
 }
 
+/// Card rico de um acontecimento na trilha (densidade completa).
+class _EventCardNode extends StatelessWidget {
+  const _EventCardNode({required this.event});
+  final LifeTimelineEvent event;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = _chapterColors(event.lifeChapter);
+    final ageLabel = _shortAgeLabel(event);
+    final impact = event.emotionalImpact;
+    final category =
+        event.categories.isNotEmpty ? event.categories.first.label : null;
+    final meaning = (event.meaning ?? '').trim();
+
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Trilha: linha contínua + nó do evento.
+          SizedBox(
+            width: _kRailWidth,
+            child: Stack(
+              children: [
+                Positioned(
+                  left: (_kRailWidth - 3) / 2,
+                  top: 0,
+                  bottom: 0,
+                  width: 3,
+                  child: Container(color: colors.accent.withValues(alpha: 0.28)),
+                ),
+                Positioned(
+                  left: (_kRailWidth - 14) / 2,
+                  top: 12,
+                  child: Container(
+                    width: 14,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: colors.accent, width: 3),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.navy.withValues(alpha: 0.15),
+                          blurRadius: 3,
+                          offset: const Offset(0, 1),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Material(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(13),
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: () => _showEventDetail(context, event),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(13),
+                      border: Border.all(color: const Color(0xFFE4EAF3)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Container(height: 3, color: colors.accent),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  if (ageLabel.isNotEmpty) ...[
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: colors.bg,
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Text(
+                                        ageLabel,
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w800,
+                                          color: colors.text,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                  ],
+                                  Expanded(
+                                    child: Text(
+                                      event.title,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
+                                        color: AppColors.navy,
+                                        height: 1.3,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              if ((event.description ?? '').trim().isNotEmpty) ...[
+                                const SizedBox(height: 6),
+                                Text(
+                                  event.description!.trim(),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: AppColors.textSecondary,
+                                    height: 1.4,
+                                  ),
+                                ),
+                              ],
+                              if (event.emotions.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                Wrap(
+                                  spacing: 5,
+                                  runSpacing: 5,
+                                  children: [
+                                    for (final e in event.emotions)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.surfaceTint,
+                                          borderRadius:
+                                              BorderRadius.circular(20),
+                                        ),
+                                        child: Text(
+                                          '${e.emoji} ${e.label}',
+                                          style: const TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ],
+                              if (impact != null) ...[
+                                const SizedBox(height: 9),
+                                Row(
+                                  children: [
+                                    const Text(
+                                      'Impacto',
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.w600,
+                                        color: AppColors.textMuted,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: ClipRRect(
+                                        borderRadius: BorderRadius.circular(3),
+                                        child: LinearProgressIndicator(
+                                          value: (impact / 10).clamp(0.0, 1.0),
+                                          minHeight: 5,
+                                          backgroundColor: _impactColor(impact)
+                                              .withValues(alpha: 0.15),
+                                          color: _impactColor(impact),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      '$impact/10',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        fontWeight: FontWeight.w800,
+                                        color: _impactColor(impact),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                              if (category != null || meaning.isNotEmpty) ...[
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    if (category != null)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 8, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: colors.bg,
+                                          borderRadius:
+                                              BorderRadius.circular(6),
+                                        ),
+                                        child: Text(
+                                          category,
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w600,
+                                            color: colors.text,
+                                          ),
+                                        ),
+                                      ),
+                                    if (meaning.isNotEmpty)
+                                      Expanded(
+                                        child: Padding(
+                                          padding: EdgeInsets.only(
+                                              left: category != null ? 8 : 0),
+                                          child: Text(
+                                            '"$meaning"',
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: const TextStyle(
+                                              fontSize: 10.5,
+                                              fontStyle: FontStyle.italic,
+                                              color: AppColors.textMuted,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Color _impactColor(int v) {
+    if (v >= 7) return AppColors.error;
+    if (v >= 4) return AppColors.warning;
+    return AppColors.success;
+  }
+}
+
+/// Faixa etária aproximada de cada capítulo, exibida no cabeçalho.
+String _chapterRange(LifeChapter? chapter) => switch (chapter) {
+      LifeChapter.earlyYears => '0 – 5 anos',
+      LifeChapter.childhood => '6 – 12 anos',
+      LifeChapter.adolescence => '13 – 17 anos',
+      LifeChapter.adulthood => '18+ anos',
+      _ => '',
+    };
+
 class _TodayNode extends StatelessWidget {
   const _TodayNode();
 
@@ -454,23 +702,35 @@ class _TodayNode extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        const SizedBox(width: 46),
-        Container(
-          width: 9,
-          height: 9,
-          decoration: const BoxDecoration(
-            color: AppColors.navy,
-            shape: BoxShape.circle,
+        SizedBox(
+          width: _kRailWidth,
+          child: Center(
+            child: Container(
+              width: 18,
+              height: 18,
+              decoration: BoxDecoration(
+                color: AppColors.navy,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.background, width: 3),
+              ),
+            ),
           ),
         ),
         const SizedBox(width: 10),
-        const Text(
-          'HOJE',
-          style: TextStyle(
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+          decoration: BoxDecoration(
             color: AppColors.navy,
-            fontWeight: FontWeight.w800,
-            fontSize: 12,
-            letterSpacing: 1,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Text(
+            'HOJE',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 11,
+              letterSpacing: 1,
+            ),
           ),
         ),
       ],
@@ -493,10 +753,6 @@ void _showEventDetail(BuildContext context, LifeTimelineEvent event) {
     if (chapter != null) chapter.label,
     if (ageLabel.isNotEmpty && ageLabel != chapter?.label) ageLabel,
   ].join(' · ');
-
-  final emoText = event.emotions.isNotEmpty
-      ? event.emotions.map((e) => e.label).join(' · ')
-      : null;
 
   showModalBottomSheet<void>(
     context: context,

@@ -308,7 +308,13 @@ List<ConsolidatedDomainGroup> buildConsolidatedDomainGroups(
 
   for (final domain in kYsqDomains) {
     final schemas = rows.where((r) => r.domainCode == domain.code).toList()
-      ..sort((a, b) => (a.schemaOrder ?? 0).compareTo(b.schemaOrder ?? 0));
+      // Dentro de cada domínio: maior score primeiro. Empate mantém a ordem
+      // canônica do esquema para estabilidade.
+      ..sort((a, b) {
+        final byScore = b.score.compareTo(a.score);
+        if (byScore != 0) return byScore;
+        return (a.schemaOrder ?? 0).compareTo(b.schemaOrder ?? 0);
+      });
     if (schemas.isEmpty) continue;
     groups.add(
       ConsolidatedDomainGroup(

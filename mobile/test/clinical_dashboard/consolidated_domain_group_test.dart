@@ -71,8 +71,8 @@ void main() {
   });
 
   group('agrupamento por domínio', () {
-    test('preserva a ordem canônica, não a de pontuação', () {
-      // Scores propositalmente invertidos em relação à ordem canônica.
+    test('ordena por score decrescente dentro do domínio', () {
+      // Scores propositalmente fora da ordem canônica.
       final rows = [
         rowFor('YSQ_SCHEMA_SOCIAL_ISOLATION', 5.0),
         rowFor('YSQ_SCHEMA_ABANDONMENT_INSTABILITY', 4.2),
@@ -81,6 +81,21 @@ void main() {
       final groups = buildConsolidatedDomainGroups(rows);
 
       expect(groups, hasLength(1));
+      expect(groups.single.schemas.map((s) => s.code).toList(), [
+        'YSQ_SCHEMA_SOCIAL_ISOLATION',
+        'YSQ_SCHEMA_EMOTIONAL_DEPRIVATION',
+        'YSQ_SCHEMA_ABANDONMENT_INSTABILITY',
+      ]);
+    });
+
+    test('empate de score mantém a ordem canônica do esquema', () {
+      final rows = [
+        rowFor('YSQ_SCHEMA_SOCIAL_ISOLATION', 4.5),
+        rowFor('YSQ_SCHEMA_ABANDONMENT_INSTABILITY', 4.5),
+        rowFor('YSQ_SCHEMA_EMOTIONAL_DEPRIVATION', 4.5),
+      ];
+      final groups = buildConsolidatedDomainGroups(rows);
+
       expect(groups.single.schemas.map((s) => s.code).toList(), [
         'YSQ_SCHEMA_ABANDONMENT_INSTABILITY',
         'YSQ_SCHEMA_EMOTIONAL_DEPRIVATION',

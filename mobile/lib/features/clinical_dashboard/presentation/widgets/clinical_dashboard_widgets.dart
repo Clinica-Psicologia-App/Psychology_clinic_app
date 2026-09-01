@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/theme/app_animations.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_gradients.dart';
+import '../../../../core/theme/app_severity.dart';
 import '../../../../shared/widgets/clinical_kpi_chip.dart';
 import '../../../../shared/widgets/homologation_ui.dart';
 import 'clinical_dashboard_shared_widgets.dart';
@@ -124,10 +126,12 @@ class _InstrumentDashboardCardState extends State<InstrumentDashboardCard> {
               ),
               const SizedBox(height: 12),
               ...scoresShown.asMap().entries.map(
-                    (entry) => HorizontalScoreBar(
+                    (entry) => _PriorityScoreRow(
                       rank: entry.key + 1,
                       row: entry.value,
                       maxScore: panel.barMaxScore,
+                      accentColor: theme.colorScheme.primary,
+                      isLast: entry.key == scoresShown.length - 1,
                     ),
                   ),
               if (panel.hasMoreScores) ...[
@@ -181,10 +185,12 @@ class _InstrumentDashboardCardState extends State<InstrumentDashboardCard> {
                 if (_showDomains) ...[
                   const SizedBox(height: 8),
                   ...panel.domainRows.asMap().entries.map(
-                        (entry) => HorizontalScoreBar(
+                        (entry) => _PriorityScoreRow(
                           rank: entry.key + 1,
                           row: entry.value,
                           maxScore: panel.barMaxScore,
+                          accentColor: theme.colorScheme.primary,
+                          isLast: entry.key == panel.domainRows.length - 1,
                         ),
                       ),
                 ],
@@ -725,8 +731,11 @@ class ClinicalExecutiveHeader extends StatelessWidget {
         ? loc.formatFullDate(summary.latestClinicalUpdateAt!.toLocal())
         : 'Sem atualização clínica registrada';
     final checkInLabel = summary.latestCheckIn != null
-        ? summary.latestCheckIn!.summaryLine
+        ? '${loc.formatShortDate(summary.latestCheckIn!.checkedInAt.toLocal())} · ${summary.latestCheckIn!.summaryLine}'
         : 'Sem check-in';
+    final lastQuestLabel = summary.latestQuestionnaireAt != null
+        ? loc.formatShortDate(summary.latestQuestionnaireAt!.toLocal())
+        : 'Sem aplicação';
 
     return ClayCard(
       margin: const EdgeInsets.only(bottom: 16),
@@ -778,35 +787,69 @@ class ClinicalExecutiveHeader extends StatelessWidget {
             ),
           ),
           // ── Indicadores (KPIs) com acento por métrica ───────────────────
+          // Grade de 2 colunas com altura igual por linha; o último ocupa a
+          // linha inteira, para não deixar a borda direita irregular.
           Padding(
             padding: const EdgeInsets.all(16),
-            child: Wrap(
-              spacing: 10,
-              runSpacing: 10,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _SummaryChip(
-                  label: 'Problemas ativos',
-                  value: '${summary.openProblemsCount}',
-                  icon: Icons.report_problem_outlined,
-                  accentColor: AppColors.warning,
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: _SummaryChip(
+                          label: 'Problemas ativos',
+                          value: '${summary.openProblemsCount}',
+                          icon: Icons.report_problem_outlined,
+                          accentColor: AppColors.warning,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _SummaryChip(
+                          label: 'Objetivos ativos',
+                          value: '${summary.activeGoalsCount}',
+                          icon: Icons.flag_outlined,
+                          accentColor: AppColors.success,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                _SummaryChip(
-                  label: 'Objetivos ativos',
-                  value: '${summary.activeGoalsCount}',
-                  icon: Icons.flag_outlined,
-                  accentColor: AppColors.success,
+                const SizedBox(height: 10),
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: _SummaryChip(
+                          label: 'Resultados',
+                          value: '${summary.structuredResultCount}',
+                          icon: Icons.analytics_outlined,
+                          accentColor: AppColors.blue,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _SummaryChip(
+                          label: 'Último check-in',
+                          value: checkInLabel,
+                          icon: Icons.monitor_heart_outlined,
+                          accentColor: AppColors.turquoise,
+                          animateFromZero: false,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
+                const SizedBox(height: 10),
                 _SummaryChip(
-                  label: 'Resultados',
-                  value: '${summary.structuredResultCount}',
-                  icon: Icons.analytics_outlined,
-                  accentColor: AppColors.blue,
-                ),
-                _SummaryChip(
-                  label: 'Último check-in',
-                  value: checkInLabel,
-                  icon: Icons.monitor_heart_outlined,
-                  accentColor: AppColors.turquoise,
+                  label: 'Último questionário',
+                  value: lastQuestLabel,
+                  icon: Icons.quiz_outlined,
+                  accentColor: AppColors.purple,
                   animateFromZero: false,
                 ),
               ],
@@ -856,25 +899,33 @@ class ClinicalPriorityGrid extends StatelessWidget {
             final cards = <Widget>[
               _PriorityMiniCard(
                 title: 'Top esquemas YSQ',
-                icon: Icons.psychology_outlined,
+                subtitle: 'Esquemas iniciais desadaptativos',
+                icon: Icons.center_focus_strong,
+                accentColor: AppColors.blue,
                 rows: summary.topSchemas,
                 emptyMessage: 'Sem YSQ concluído',
               ),
               _PriorityMiniCard(
                 title: 'Top modos YAMI',
-                icon: Icons.self_improvement_outlined,
+                subtitle: 'Modos esquemáticos',
+                icon: Icons.psychology_outlined,
+                accentColor: AppColors.purple,
                 rows: summary.topModes,
                 emptyMessage: 'Sem YAMI concluído',
               ),
               _PriorityMiniCard(
                 title: 'Estilos de apego',
+                subtitle: 'Padrões de vínculo afetivo',
                 icon: Icons.favorite_border,
+                accentColor: AppColors.cyan,
                 rows: summary.topAttachment,
                 emptyMessage: 'Sem apego concluído',
               ),
               _PriorityMiniCard(
                 title: 'Enfrentamento',
+                subtitle: 'Estratégias de enfrentamento',
                 icon: Icons.shield_outlined,
+                accentColor: AppColors.turquoise,
                 rows: summary.topCoping,
                 emptyMessage: 'Sem YCI/YRAI concluído',
               ),
@@ -921,12 +972,16 @@ class _PriorityMiniCard extends StatelessWidget {
     required this.icon,
     required this.rows,
     required this.emptyMessage,
+    required this.accentColor,
+    this.subtitle,
   });
 
   final String title;
   final IconData icon;
   final List<ClinicalDashboardScoreRow> rows;
   final String emptyMessage;
+  final Color accentColor;
+  final String? subtitle;
 
   @override
   Widget build(BuildContext context) {
@@ -943,21 +998,42 @@ class _PriorityMiniCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
           children: [
+            // ── Cabeçalho: ícone temático + título (+ subtítulo) ──────────
             Row(
               children: [
-                Icon(icon, size: 18, color: theme.colorScheme.primary),
-                const SizedBox(width: 8),
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: accentColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Icon(icon, size: 18, color: accentColor),
+                ),
+                const SizedBox(width: 10),
                 Expanded(
-                  child: Text(
-                    title,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      if (subtitle != null)
+                        Text(
+                          subtitle!,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 12),
             if (rows.isEmpty)
               Align(
                 alignment: Alignment.centerLeft,
@@ -971,21 +1047,142 @@ class _PriorityMiniCard extends StatelessWidget {
             else
               Column(
                 mainAxisSize: MainAxisSize.min,
-                children: rows
-                    .take(3)
-                    .map(
-                      (row) => Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: HorizontalScoreBar(
-                          row: row,
-                          maxScore: maxScore,
-                        ),
-                      ),
-                    )
-                    .toList(),
+                children: [
+                  for (final entry in rows.take(3).toList().asMap().entries)
+                    _PriorityScoreRow(
+                      row: entry.value,
+                      rank: entry.key + 1,
+                      maxScore: maxScore,
+                      accentColor: accentColor,
+                      isLast: entry.key == rows.take(3).length - 1,
+                    ),
+                ],
               ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// Linha dos cards de prioridade, em colunas alinhadas: rank · nome/código ·
+/// score (dígitos tabulares) e, abaixo, uma barra fina com o estado ao lado.
+class _PriorityScoreRow extends StatelessWidget {
+  const _PriorityScoreRow({
+    required this.row,
+    required this.rank,
+    required this.maxScore,
+    required this.accentColor,
+    required this.isLast,
+  });
+
+  final ClinicalDashboardScoreRow row;
+  final int rank;
+  final double maxScore;
+  final Color accentColor;
+  final bool isLast;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final safeMax = maxScore > 0 ? maxScore : 1.0;
+    final fraction = (row.score / safeMax).clamp(0.0, 1.0);
+    final duration = AppAnimations.resolve(context, AppAnimations.bar);
+    final severity = AppSeverity.fromColorKey(row.severityColorKey);
+    final barColor = severity.hasSeverity ? severity.color : accentColor;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: isLast ? 0 : 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(
+                width: 15,
+                child: Text(
+                  '$rank',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      row.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        height: 1.2,
+                      ),
+                    ),
+                    if (row.code.isNotEmpty)
+                      Text(
+                        row.code,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          letterSpacing: 0.2,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                row.score.toStringAsFixed(2),
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  fontFeatures: const [FontFeature.tabularFigures()],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Padding(
+            padding: const EdgeInsets.only(left: 23),
+            child: Row(
+              children: [
+                Expanded(
+                  child: TweenAnimationBuilder<double>(
+                    duration: duration,
+                    curve: AppAnimations.standardCurve,
+                    tween: Tween(begin: 0, end: fraction),
+                    builder: (context, value, _) {
+                      return LinearProgressIndicator(
+                        value: value,
+                        minHeight: 6,
+                        borderRadius: BorderRadius.circular(999),
+                        backgroundColor: barColor.withValues(alpha: 0.12),
+                        color: barColor,
+                      );
+                    },
+                  ),
+                ),
+                if (row.hasSeverity) ...[
+                  const SizedBox(width: 8),
+                  Icon(Icons.check_circle, size: 12, color: barColor),
+                  const SizedBox(width: 3),
+                  Text(
+                    row.severityLabel!,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: barColor,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1006,7 +1203,8 @@ class ClinicalRecentSignalsCard extends StatelessWidget {
     final hasCheckIn = summary.latestCheckIn != null;
     final hasEvents = summary.hasRelevantEvents;
     final hasProblems = summary.highlightedProblems.isNotEmpty;
-    final isEmpty = !hasCheckIn && !hasEvents && !hasProblems;
+    final hasGoals = summary.highlightedGoals.isNotEmpty;
+    final isEmpty = !hasCheckIn && !hasEvents && !hasProblems && !hasGoals;
 
     return ClayCard(
       margin: const EdgeInsets.only(bottom: 16),
@@ -1036,6 +1234,25 @@ class ClinicalRecentSignalsCard extends StatelessWidget {
                   value:
                       '${loc.formatFullDate(summary.latestCheckIn!.checkedInAt.toLocal())} · '
                       '${summary.latestCheckIn!.summaryLine}',
+                ),
+                const SizedBox(height: 8),
+              ],
+              if (hasGoals) ...[
+                Text(
+                  'Objetivos ativos',
+                  style: theme.textTheme.titleSmall,
+                ),
+                const SizedBox(height: 6),
+                ...summary.highlightedGoals.map(
+                  (goal) => _CaseListTile(
+                    icon: Icons.flag_outlined,
+                    title: goal.title,
+                    subtitle: [
+                      goal.status.label,
+                      if (goal.targetDate != null)
+                        'Meta: ${loc.formatShortDate(goal.targetDate!)}',
+                    ].join(' · '),
+                  ),
                 ),
                 const SizedBox(height: 8),
               ],
@@ -1487,33 +1704,11 @@ class ConsolidatedSchemaProfileCard extends ConsumerWidget {
             ),
           ),
 
-          // ── Dica de interação (só para o psicólogo) ────────────────────
+          // ── Tutorial de ativação (só para o psicólogo) ─────────────────
           if (isStaff)
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 10, 14, 0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Padding(
-                    padding: EdgeInsets.only(top: 1),
-                    child: Icon(Icons.touch_app_outlined,
-                        size: 13, color: AppColors.purple),
-                  ),
-                  const SizedBox(width: 5),
-                  // Expanded: sem ele a dica estoura o Row quando a fonte do
-                  // sistema está ampliada ou a tela é estreita.
-                  Expanded(
-                    child: Text(
-                      'Toque em qualquer esquema para ativar ou desativar',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.purple.withValues(alpha: 0.75),
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              child: _ActivationTutorial(),
             ),
 
           // ── Corpo: um bloco por domínio, em ordem canônica ──────────────
@@ -1655,10 +1850,8 @@ class _DomainSection extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  // Ordem canônica de Young, já aplicada em
-                  // buildConsolidatedDomainGroups — não reordenar por score
-                  // aqui: dentro do domínio a sequência é clínica, validada
-                  // com a psicóloga responsável.
+                  // Ordem decrescente por score dentro do domínio, já aplicada
+                  // em buildConsolidatedDomainGroups — não reordenar aqui.
                   ...domain.schemas.map(
                     (schema) => _SchemaBarRow(
                       schema: schema,
@@ -1953,20 +2146,6 @@ class _ConsolidatedActivationSheetState
     }
   }
 
-  Future<void> _deactivate() async {
-    setState(() => _saving = true);
-    try {
-      await ref
-          .read(
-              manageSchemaActivationProvider(widget.schema.responseId).notifier)
-          .deactivate(widget.schema.code);
-      widget.onChanged?.call();
-      if (mounted) Navigator.of(context).pop();
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -2042,42 +2221,21 @@ class _ConsolidatedActivationSheetState
               textCapitalization: TextCapitalization.sentences,
             ),
             const SizedBox(height: 16),
-            Row(
-              children: [
-                if (_isPsiActivated)
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _saving ? null : _deactivate,
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.error,
-                        side: const BorderSide(color: AppColors.error),
-                      ),
-                      child: _saving
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Desativar'),
-                    ),
-                  ),
-                if (_isPsiActivated) const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: _saving ? null : _save,
-                    child: _saving
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
-                        : Text(_isPsiActivated ? 'Salvar' : 'Ativar'),
-                  ),
-                ),
-              ],
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: _saving ? null : _save,
+                child: _saving
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text(_isPsiActivated ? 'Salvar observação' : 'Ativar'),
+              ),
             ),
           ] else ...[
             const SizedBox(height: 12),
@@ -2114,6 +2272,100 @@ class _ConsolidatedActivationSheetState
 }
 
 // ── Widgets auxiliares ──────────────────────────────────────────────────────
+
+/// Explica ao psicólogo como funciona a ativação de esquemas: o sistema ativa
+/// os de pontuação alta (fixos) e ele pode *acrescentar* ativações manuais.
+/// Deixa explícito que aqui ele apenas ativa — nada é desativado.
+class _ActivationTutorial extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    Widget line({
+      required Widget marker,
+      required String lead,
+      required String rest,
+    }) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SizedBox(width: 16, child: Center(child: marker)),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text.rich(
+                TextSpan(
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface,
+                    height: 1.35,
+                  ),
+                  children: [
+                    TextSpan(
+                      text: '$lead ',
+                      style: const TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    TextSpan(text: rest),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceTintPurple,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.purple.withValues(alpha: 0.18)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.lightbulb_outline,
+                  size: 15, color: AppColors.purple),
+              const SizedBox(width: 6),
+              Text(
+                'Como funciona a ativação',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.purple,
+                ),
+              ),
+            ],
+          ),
+          line(
+            marker: const Text('●',
+                style: TextStyle(color: AppColors.error, fontSize: 13)),
+            lead: 'Automático:',
+            rest: 'esquemas com pontuação 4,0 ou mais já entram ativados pelo '
+                'sistema (em vermelho). Essa ativação é fixa e não pode ser '
+                'removida.',
+          ),
+          line(
+            marker: const Text('◎',
+                style: TextStyle(color: AppColors.purple, fontSize: 13)),
+            lead: 'Manual:',
+            rest: 'toque em qualquer outro esquema para ativá-lo quando o caso '
+                'clínico indicar. Você pode registrar uma observação.',
+          ),
+          line(
+            marker: const Icon(Icons.lock_outline,
+                size: 13, color: AppColors.textMuted),
+            lead: 'Importante:',
+            rest: 'aqui você apenas ativa esquemas — nenhum esquema é '
+                'desativado.',
+          ),
+        ],
+      ),
+    );
+  }
+}
 
 class _SchemaCountBadge extends StatelessWidget {
   const _SchemaCountBadge({

@@ -115,9 +115,9 @@ void main() {
     expect(find.text('2 ativos'), findsOneWidget);
   });
 
-  testWidgets('mantém a ordem canônica dentro do domínio, não a de score',
+  testWidgets('ordena por score decrescente dentro do domínio',
       (tester) async {
-    // Isolamento (ordem 4) tem score maior que Abandono (ordem 0).
+    // Isolamento (ordem 4) tem score maior que Abandono (ordem 0): deve subir.
     await _pump(
       tester,
       data: _dataWith([
@@ -130,7 +130,7 @@ void main() {
     final abandono = tester.getTopLeft(find.text('Abandono/Instabilidade')).dy;
     final isolamento =
         tester.getTopLeft(find.text('Isolamento social/Alienação')).dy;
-    expect(abandono, lessThan(isolamento));
+    expect(isolamento, lessThan(abandono));
   });
 
   testWidgets('mostra legenda de símbolos apenas para o paciente',

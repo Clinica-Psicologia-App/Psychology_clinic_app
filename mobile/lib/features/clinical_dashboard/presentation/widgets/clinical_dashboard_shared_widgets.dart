@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_animations.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_severity.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../shared/widgets/severity_indicator.dart';
@@ -197,14 +196,13 @@ class AnimatedClinicalScoreBar extends StatelessWidget {
               curve: AppAnimations.standardCurve,
               tween: Tween(begin: 0, end: fraction),
               builder: (context, value, _) {
-                return ClipRRect(
-                  borderRadius: AppRadius.smAll,
-                  child: LinearProgressIndicator(
-                    value: value,
-                    minHeight: 10,
-                    backgroundColor: theme.colorScheme.surfaceContainerHighest,
-                    color: _barColor(theme, row),
-                  ),
+                final barColor = _barColor(theme, row);
+                return LinearProgressIndicator(
+                  value: value,
+                  minHeight: 8,
+                  borderRadius: BorderRadius.circular(999),
+                  backgroundColor: barColor.withValues(alpha: 0.12),
+                  color: barColor,
                 );
               },
             ),

@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_severity.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../profile/domain/profile_role.dart';
+import 'mental_map_routes.dart';
+import '../domain/case_conceptualization.dart';
 import '../domain/mental_map_case_summary.dart';
 import '../domain/mental_map_data.dart';
 import '../domain/mental_map_score_highlight.dart';
+import '../providers/case_conceptualization_providers.dart';
 import '../providers/mental_map_providers.dart';
 
 /// Síntese "Conceitualização de caso" (módulo Síntese, lente do terapeuta).
@@ -37,6 +41,19 @@ class CaseConceptualizationPage extends ConsumerWidget {
       accent: AppColors.navy,
       actions: [
         IconButton(
+          tooltip: 'Editar campos do terapeuta',
+          onPressed: () async {
+            await context.push(
+              MentalMapRoutes.staffCaseConceptualizationEdit(
+                role: role,
+                patientId: patientId,
+              ),
+            );
+            ref.invalidate(caseConceptualizationProvider(patientId));
+          },
+          icon: const Icon(Icons.edit_outlined),
+        ),
+        IconButton(
           tooltip: 'Atualizar',
           onPressed: () => ref.invalidate(staffMentalMapProvider(ctx)),
           icon: const Icon(Icons.refresh),
@@ -48,16 +65,20 @@ class CaseConceptualizationPage extends ConsumerWidget {
         emptyMessage:
             'Ainda não há dados clínicos suficientes para montar a síntese.',
         emptyIcon: Icons.summarize_outlined,
-        dataBuilder: (data) => _Body(data: data),
+        dataBuilder: (data) => _Body(
+          data: data,
+          concept: ref.watch(caseConceptualizationProvider(patientId)).valueOrNull,
+        ),
       ),
     );
   }
 }
 
 class _Body extends StatelessWidget {
-  const _Body({required this.data});
+  const _Body({required this.data, this.concept});
 
   final MentalMapData data;
+  final CaseConceptualization? concept;
 
   @override
   Widget build(BuildContext context) {
@@ -105,14 +126,16 @@ class _Body extends StatelessWidget {
                 ),
         ),
 
-        // 7. Origens — necessidades não atendidas (a preencher).
-        const _Section(
+        // 7. Origens — necessidades não atendidas (campos do terapeuta).
+        _Section(
           number: '7',
           title: 'Origens · necessidades não atendidas',
-          child: _Placeholder(
-            'Avaliação das necessidades essenciais (0–5), origem e esquemas '
-            '— a preencher.',
-          ),
+          child: (concept?.hasAnyNeed ?? false)
+              ? _NeedsList(concept: concept!)
+              : const _Placeholder(
+                  'Avaliação das necessidades essenciais (0–5), origem e '
+                  'esquemas — a preencher.',
+                ),
         ),
 
         // 8. Esquemas centrais
@@ -133,22 +156,24 @@ class _Body extends StatelessWidget {
               : _highlightChips(core.topModes),
         ),
 
-        // 10. Sequência de modos (a preencher).
-        const _Section(
+        // 10. Sequência de modos (campos do terapeuta).
+        _Section(
           number: '10',
           title: 'Sequência de modos',
-          child: _Placeholder(
-            'Gatilho → sequência de modos — a preencher.',
-          ),
+          child: (concept?.hasAnySequence ?? false)
+              ? _SequencesList(concept: concept!)
+              : const _Placeholder('Gatilho → sequência de modos — a preencher.'),
         ),
 
-        // 11. Relação terapêutica (a preencher).
-        const _Section(
+        // 11. Relação terapêutica (campos do terapeuta).
+        _Section(
           number: '11',
           title: 'Relação terapêutica',
-          child: _Placeholder(
-            'Colaboração e vínculo de reparentalização (1–5) — a preencher.',
-          ),
+          child: (concept?.hasRelationship ?? false)
+              ? _RelationshipView(rel: concept!.relationship)
+              : const _Placeholder(
+                  'Colaboração e vínculo de reparentalização (1–5) — a preencher.',
+                ),
         ),
 
         // 12. Objetivos da terapia
@@ -490,6 +515,234 @@ class _GoalRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// 7.2 — necessidades avaliadas (nota 0–5/X + origem + esquemas).
+class _NeedsList extends StatelessWidget {
+  const _NeedsList({required this.concept});
+
+  final CaseConceptualization concept;
+
+  Color _ratingColor(String? r) {
+    final v = int.tryParse(r ?? '');
+    if (v == null) return AppColors.textMuted; // 'X' ou vazio
+    if (v <= 1) return AppColors.error;
+    if (v <= 3) return AppColors.warning;
+    return AppColors.success;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final labels = {for (final n in kCoreNeeds) n.key: n.label};
+    final filled = concept.unmetNeeds.where((u) => !u.isEmpty).toList();
+
+    return Column(
+      children: [
+        for (var i = 0; i < filled.length; i++)
+          Padding(
+            padding: EdgeInsets.only(bottom: i == filled.length - 1 ? 0 : 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 26,
+                  alignment: Alignment.center,
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  decoration: BoxDecoration(
+                    color: _ratingColor(filled[i].rating).withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  child: Text(
+                    (filled[i].rating == null || filled[i].rating!.isEmpty)
+                        ? '–'
+                        : filled[i].rating!,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                      color: _ratingColor(filled[i].rating),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        labels[filled[i].needKey] ?? filled[i].needKey,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      if ((filled[i].origin ?? '').trim().isNotEmpty)
+                        Text(
+                          'Origem: ${filled[i].origin!.trim()}',
+                          style: theme.textTheme.labelSmall
+                              ?.copyWith(color: AppColors.textSecondary, height: 1.4),
+                        ),
+                      if ((filled[i].schemas ?? '').trim().isNotEmpty)
+                        Text(
+                          'Esquemas: ${filled[i].schemas!.trim()}',
+                          style: theme.textTheme.labelSmall
+                              ?.copyWith(color: AppColors.purple, height: 1.4),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// 10 — sequências de modos preenchidas.
+class _SequencesList extends StatelessWidget {
+  const _SequencesList({required this.concept});
+
+  final CaseConceptualization concept;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final seqs = concept.modeSequences.where((s) => !s.isEmpty).toList();
+
+    Widget line(String label, String? value) {
+      if ((value ?? '').trim().isEmpty) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.only(top: 3),
+        child: RichText(
+          text: TextSpan(
+            style: theme.textTheme.labelSmall
+                ?.copyWith(color: AppColors.textSecondary, height: 1.4),
+            children: [
+              TextSpan(
+                text: '$label ',
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+              TextSpan(text: value!.trim()),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        for (var i = 0; i < seqs.length; i++)
+          Container(
+            margin: EdgeInsets.only(bottom: i == seqs.length - 1 ? 0 : 8),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceTint,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  (seqs[i].trigger ?? '').trim().isEmpty
+                      ? 'Sequência ${i + 1}'
+                      : 'Gatilho: ${seqs[i].trigger!.trim()}',
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(fontWeight: FontWeight.w800, color: AppColors.navy),
+                ),
+                line('Modos:', seqs[i].activatedModes),
+                line('Enfrentamento:', seqs[i].copingMode),
+                line('Sequência:', seqs[i].sequence),
+                line('Efeito:', seqs[i].effect),
+                line('Perpetua:', seqs[i].perpetuation),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+/// 11 — relação terapêutica (colaboração + vínculo + reações).
+class _RelationshipView extends StatelessWidget {
+  const _RelationshipView({required this.rel});
+
+  final TherapeuticRelationship rel;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    Widget meter(String label, int? value) {
+      final v = (value ?? 0).clamp(0, 5);
+      final color = v >= 4
+          ? AppColors.success
+          : v >= 3
+              ? AppColors.warning
+              : AppColors.error;
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 96,
+              child: Text(label,
+                  style: theme.textTheme.labelSmall
+                      ?.copyWith(color: AppColors.textSecondary)),
+            ),
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(3),
+                child: LinearProgressIndicator(
+                  value: value == null ? 0 : v / 5,
+                  minHeight: 5,
+                  backgroundColor: color.withValues(alpha: 0.15),
+                  color: color,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              value == null ? '—' : '$v/5',
+              style: theme.textTheme.labelSmall
+                  ?.copyWith(fontWeight: FontWeight.w800, color: color),
+            ),
+          ],
+        ),
+      );
+    }
+
+    Widget note(String label, String? value) {
+      if ((value ?? '').trim().isEmpty) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: RichText(
+          text: TextSpan(
+            style: theme.textTheme.labelSmall
+                ?.copyWith(color: AppColors.textSecondary, height: 1.4),
+            children: [
+              TextSpan(
+                  text: '$label ',
+                  style: const TextStyle(fontWeight: FontWeight.w700)),
+              TextSpan(text: value!.trim()),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (rel.collaborationRating != null)
+          meter('Colaboração', rel.collaborationRating),
+        if (rel.bondRating != null) meter('Vínculo', rel.bondRating),
+        note('Colaboração:', rel.collaborationNotes),
+        note('Vínculo:', rel.bondNotes),
+        note('Reações do terapeuta:', rel.therapistReactions),
+      ],
     );
   }
 }

@@ -30,4 +30,12 @@ abstract final class MentalMapRoutes {
         throw ArgumentError('Conceitualização de caso é exclusiva do psicólogo');
     }
   }
+
+  /// Edição dos campos do terapeuta da Conceitualização de caso.
+  static String staffCaseConceptualizationEdit({
+    required ProfileRole role,
+    required String patientId,
+  }) {
+    return '${staffCaseConceptualization(role: role, patientId: patientId)}/edit';
+  }
 }

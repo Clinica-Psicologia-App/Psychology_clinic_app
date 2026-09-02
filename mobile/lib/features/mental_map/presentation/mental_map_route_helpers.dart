@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../../profile/domain/profile_role.dart';
+import 'case_conceptualization_edit_page.dart';
 import 'case_conceptualization_page.dart';
 import 'patient_mental_map_page.dart';
 
@@ -28,6 +29,15 @@ List<RouteBase> staffPatientMentalMapRoutes({required ProfileRole role}) {
         role: role,
         patientId: state.pathParameters['patientId']!,
       ),
+      routes: [
+        GoRoute(
+          path: 'edit',
+          builder: (context, state) => CaseConceptualizationEditPage(
+            role: role,
+            patientId: state.pathParameters['patientId']!,
+          ),
+        ),
+      ],
     ),
   ];
 }

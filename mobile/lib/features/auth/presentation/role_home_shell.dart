@@ -269,6 +269,11 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                     assessmentSectionKey: _assessmentSectionKey,
                   ),
                 if (widget.role == ProfileRole.patient) ...[
+                  const MotionReveal(
+                    delay: Duration(milliseconds: 40),
+                    child: _PatientMoodPulse(),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
                   MotionReveal(
                     delay: const Duration(milliseconds: 60),
                     child: KeyedSubtree(
@@ -277,73 +282,86 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.xl),
-                  const AppSectionHeader(
-                    title: 'Seu progresso',
-                    subtitle: 'Um resumo simples de como você está indo.',
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
                   const MotionReveal(
-                    delay: Duration(milliseconds: 100),
-                    child: _PatientProgressSummary(),
-                  ),
-                  const SizedBox(height: AppSpacing.xl),
-                  AppSectionHeader(
-                    key: _patientSpacesKey,
-                    title: 'Seus espaços',
-                    subtitle: 'Escolha por onde continuar agora.',
-                    accentColor: _WorkspaceAccents.clinical,
+                    delay: Duration(milliseconds: 130),
+                    child: AppSectionHeader(
+                      title: 'Seu progresso',
+                      subtitle: 'Um resumo simples de como você está indo.',
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
+                  const _PatientProgressSummary(),
+                  const SizedBox(height: AppSpacing.xl),
                   MotionReveal(
-                    delay: const Duration(milliseconds: 140),
-                    // Coluna única no celular: com 3 cards e 2 colunas, um deles
-                    // sempre fica sozinho numa linha, ocupando só metade da
-                    // largura — o mesmo problema de item órfão já corrigido antes
-                    // nesta sessão para o resumo do profissional. Em telas largas
-                    // os 3 cabem numa linha só.
-                    child: ResponsiveGrid(
-                      compactColumns: 1,
-                      mediumColumns: 3,
-                      expandedColumns: 3,
-                      children: [
-                        _PatientExploreCard(
+                    delay: const Duration(milliseconds: 300),
+                    child: AppSectionHeader(
+                      key: _patientSpacesKey,
+                      title: 'Seus espaços',
+                      subtitle: 'Escolha por onde continuar agora.',
+                      accentColor: _WorkspaceAccents.clinical,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  // Coluna única no celular: com 3 cards e 2 colunas, um deles
+                  // sempre fica sozinho numa linha, ocupando só metade da
+                  // largura — problema de item órfão já corrigido nesta sessão.
+                  // Em telas largas os 3 cabem numa linha só. Cada card entra
+                  // com um pequeno atraso em cascata.
+                  ResponsiveGrid(
+                    compactColumns: 1,
+                    mediumColumns: 3,
+                    expandedColumns: 3,
+                    children: [
+                      MotionReveal(
+                        delay: const Duration(milliseconds: 340),
+                        child: _PatientExploreCard(
                           icon: Icons.hub_outlined,
                           title: 'Mapa mental',
                           subtitle: 'Uma visão geral do que já conversamos.',
-                          accentColor: _WorkspaceAccents.clinical,
+                          accentColor: AppColors.purple,
                           onTap: () =>
                               context.push(MentalMapRoutes.patientList),
                         ),
-                        _PatientExploreCard(
+                      ),
+                      MotionReveal(
+                        delay: const Duration(milliseconds: 400),
+                        child: _PatientExploreCard(
                           icon: Icons.menu_book_outlined,
                           title: 'Biblioteca',
                           subtitle:
                               'Materiais e exercícios pensados para você.',
-                          accentColor: _WorkspaceAccents.clinical,
+                          accentColor: const Color(0xFF1D9E75),
                           onTap: () =>
                               context.push(TherapyResourceRoutes.patientList),
                         ),
-                        _PatientExploreCard(
+                      ),
+                      MotionReveal(
+                        delay: const Duration(milliseconds: 460),
+                        child: _PatientExploreCard(
                           icon: Icons.monitor_heart_outlined,
                           title: 'Monitor diário',
-                          subtitle: 'Humor, rotina e como você tem se sentido.',
-                          accentColor: _WorkspaceAccents.management,
+                          subtitle:
+                              'Humor, rotina e como você tem se sentido.',
+                          accentColor: AppColors.cyan,
                           onTap: () =>
                               context.push(DailyMonitorRoutes.patientList),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: AppSpacing.xl),
-                  AppSectionHeader(
-                    key: _patientPlanKey,
-                    title: 'Sua continuidade',
-                    subtitle:
-                        'O caminho completo do seu acompanhamento, no seu ritmo.',
+                  MotionReveal(
+                    delay: const Duration(milliseconds: 520),
+                    child: AppSectionHeader(
+                      key: _patientPlanKey,
+                      title: 'Sua continuidade',
+                      subtitle:
+                          'O caminho completo do seu acompanhamento, no seu ritmo.',
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   MotionReveal(
-                    delay: const Duration(milliseconds: 180),
+                    delay: const Duration(milliseconds: 560),
                     child: ClinicalModuleCard(
                       icon: Icons.route_outlined,
                       title: 'Meu plano terapêutico',
@@ -819,6 +837,139 @@ class _PatientGreetingHeader extends StatelessWidget {
 
 /// Próximo passo concreto do paciente: questionário aguardando resposta,
 /// check-in do dia ainda não feito, ou reconhecimento de que está em dia.
+/// Pulso emocional: mostra o último check-in (carinha + como estava) e convida
+/// ao check-in de hoje. Conexão emocional logo na abertura da home.
+class _PatientMoodPulse extends ConsumerWidget {
+  const _PatientMoodPulse();
+
+  static const _faces = ['😭', '😞', '😐', '🙂', '😄'];
+  static const _words = [
+    'muito para baixo',
+    'para baixo',
+    'neutro(a)',
+    'bem',
+    'muito bem'
+  ];
+
+  String _relativeDay(DateTime dt) {
+    final now = DateTime.now();
+    final d0 = DateTime(now.year, now.month, now.day);
+    final d1 = DateTime(dt.year, dt.month, dt.day);
+    final days = d0.difference(d1).inDays;
+    if (days <= 0) return 'Hoje';
+    if (days == 1) return 'Ontem';
+    return 'Há $days dias';
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final list = ref.watch(myPatientCheckInsProvider).valueOrNull;
+    // Enquanto carrega, não ocupa espaço (evita pulo de layout).
+    if (list == null) return const SizedBox.shrink();
+
+    final latest = list.isEmpty ? null : list.first;
+    final today = latest != null && latest.isToday;
+    final mood = latest?.moodScore;
+    final idx = mood == null ? 2 : ((mood / 10) * 4).round().clamp(0, 4);
+    final face = mood == null ? '🙂' : _faces[idx];
+
+    final String title;
+    final String subtitle;
+    final String ctaLabel;
+
+    if (latest == null) {
+      title = 'Como você está hoje?';
+      subtitle = 'Um check-in rápido ajuda no seu acompanhamento. Leva 1 minuto.';
+      ctaLabel = 'Check-in';
+    } else if (today) {
+      title = 'Check-in de hoje feito 💚';
+      subtitle = mood == null
+          ? 'Obrigado por se cuidar hoje.'
+          : 'Você registrou que está ${_words[idx]}.';
+      ctaLabel = 'Abrir';
+    } else {
+      final rel = _relativeDay(latest.checkedInAt.toLocal());
+      title = mood == null
+          ? 'E hoje, como você está?'
+          : '$rel você estava ${_words[idx]}';
+      subtitle = 'E hoje, como você se sente?';
+      ctaLabel = 'Check-in';
+    }
+
+    final detailId = today ? latest.id : null;
+    Future<void> onCta() async {
+      if (detailId != null) {
+        await context.push(PatientCheckInRoutes.patientDetail(detailId));
+      } else {
+        await context.push(PatientCheckInRoutes.patientCreate);
+      }
+      ref.read(myPatientCheckInsProvider.notifier).refresh();
+      ref.invalidate(todayCheckInProvider);
+    }
+
+    return ClayCard(
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: AppColors.turquoise.withValues(alpha: 0.25)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: const BoxDecoration(
+                color: AppColors.surfaceTintTurquoise,
+                shape: BoxShape.circle,
+              ),
+              alignment: Alignment.center,
+              child: Text(face, style: const TextStyle(fontSize: 26)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: theme.textTheme.titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w800),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                      height: 1.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 8),
+            FilledButton(
+              onPressed: onCta,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.turquoise,
+                foregroundColor: Colors.white,
+                visualDensity: VisualDensity.compact,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+              ),
+              child: Text(ctaLabel,
+                  style: const TextStyle(
+                      fontSize: 12, fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _PatientNextStep extends ConsumerWidget {
   const _PatientNextStep();
 
@@ -950,64 +1101,80 @@ class _PatientExploreCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final dark = Color.lerp(accentColor, const Color(0xFF0D1B3D), 0.42)!;
 
     return MotionSurface(
       onTap: onTap,
       borderRadius: AppRadius.xlAll,
-      child: ClayCard(
-        accentColor: accentColor,
-        shape: RoundedRectangleBorder(borderRadius: AppRadius.xlAll),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: AppRadius.xlAll,
         clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: AppRadius.xlAll,
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            // Ícone à esquerda, texto à direita: a mesma disposição se
-            // adapta bem tanto à largura inteira (celular, coluna única)
-            // quanto a uma célula de grade mais estreita (tablet e
-            // desktop) — um layout empilhado (ícone em cima) sobra vazio
-            // demais quando esticado à largura inteira do celular.
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: accentColor.withValues(alpha: 0.14),
-                    shape: BoxShape.circle,
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [accentColor, dark],
+            ),
+            borderRadius: AppRadius.xlAll,
+            boxShadow: [
+              BoxShadow(
+                color: accentColor.withValues(alpha: 0.28),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: AppRadius.xlAll,
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 50,
+                    height: 50,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.22),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(icon, color: Colors.white, size: 25),
                   ),
-                  child: Icon(icon, color: accentColor, size: 26),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        title,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          color: theme.colorScheme.onSurface,
-                          fontWeight: FontWeight.w700,
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          title,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: AppSpacing.xxs),
-                      Text(
-                        subtitle,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                          height: 1.35,
+                        const SizedBox(height: AppSpacing.xxs),
+                        Text(
+                          subtitle,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: Colors.white.withValues(alpha: 0.85),
+                            height: 1.35,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 6),
+                  Icon(Icons.chevron_right_rounded,
+                      color: Colors.white.withValues(alpha: 0.8), size: 20),
+                ],
+              ),
             ),
           ),
         ),
@@ -1099,23 +1266,22 @@ class _PatientMetricsPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClayCard(
-      shape: RoundedRectangleBorder(borderRadius: AppRadius.xlAll),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.xs,
-          vertical: AppSpacing.md,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            for (var i = 0; i < metrics.length; i++) ...[
-              if (i > 0)
-                Container(width: 1, height: 64, color: Theme.of(context).colorScheme.outline),
-              Expanded(child: _PatientMetricCell(metric: metrics[i])),
-            ],
+    // IntrinsicHeight limita a altura: sem ele, o stretch dentro da ListView
+    // (altura infinita) estoura com "BoxConstraints forces an infinite height".
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var i = 0; i < metrics.length; i++) ...[
+            if (i > 0) const SizedBox(width: 8),
+            Expanded(
+              child: MotionReveal(
+                delay: Duration(milliseconds: 160 + 55 * i),
+                child: _PatientMetricCell(metric: metrics[i]),
+              ),
+            ),
           ],
-        ),
+        ],
       ),
     );
   }
@@ -1137,53 +1303,61 @@ class _PatientMetricCell extends StatelessWidget {
     return Semantics(
       button: true,
       label: '${metric.label}: ${metric.value}',
-      child: InkWell(
-        onTap: metric.onTap,
-        borderRadius: AppRadius.mdAll,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.xxs,
-            vertical: AppSpacing.xs,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: metric.accent.withValues(alpha: 0.14),
-                  shape: BoxShape.circle,
+      child: Material(
+        color: theme.colorScheme.surface,
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: AppRadius.mdAll,
+          side: BorderSide(
+              color: theme.colorScheme.outline.withValues(alpha: 0.5)),
+        ),
+        child: InkWell(
+          onTap: metric.onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.xs,
+              vertical: AppSpacing.md,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: metric.accent.withValues(alpha: 0.14),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(metric.icon, size: 18, color: metric.accent),
                 ),
-                child: Icon(metric.icon, size: 18, color: metric.accent),
-              ),
-              const SizedBox(height: AppSpacing.xs),
-              TweenAnimationBuilder<int>(
-                duration: duration,
-                curve: AppAnimations.standardCurve,
-                tween: IntTween(begin: 0, end: metric.value),
-                builder: (context, animated, _) {
-                  return Text(
-                    '$animated',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      color: theme.colorScheme.onSurface,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: AppSpacing.xxs),
-              Text(
-                metric.label,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+                const SizedBox(height: AppSpacing.xs),
+                TweenAnimationBuilder<int>(
+                  duration: duration,
+                  curve: AppAnimations.standardCurve,
+                  tween: IntTween(begin: 0, end: metric.value),
+                  builder: (context, animated, _) {
+                    return Text(
+                      '$animated',
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        color: metric.accent,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    );
+                  },
                 ),
-              ),
-            ],
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  metric.label,
+                  textAlign: TextAlign.center,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

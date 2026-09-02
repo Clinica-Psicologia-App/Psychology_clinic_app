@@ -6,10 +6,12 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_severity.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
+import '../../../shared/widgets/error_banner.dart';
 import '../../initial_assessment/domain/initial_assessment.dart';
 import '../../initial_assessment/domain/life_area.dart';
 import '../../initial_assessment/providers/initial_assessment_providers.dart';
 import '../../profile/domain/profile_role.dart';
+import 'case_conceptualization_pdf.dart';
 import 'mental_map_routes.dart';
 import '../domain/case_conceptualization.dart';
 import '../domain/mental_map_case_summary.dart';
@@ -43,6 +45,35 @@ class CaseConceptualizationPage extends ConsumerWidget {
       title: 'Conceitualização de caso',
       accent: AppColors.navy,
       actions: [
+        IconButton(
+          tooltip: 'Exportar PDF',
+          onPressed: () async {
+            final data = ref.read(staffMentalMapProvider(ctx)).valueOrNull;
+            if (data == null) {
+              showErrorBanner(
+                context,
+                'Aguarde os dados carregarem para exportar.',
+              );
+              return;
+            }
+            try {
+              await CaseConceptualizationPdf.shareOrPrint(
+                data: data,
+                concept:
+                    ref.read(caseConceptualizationProvider(patientId)).valueOrNull,
+                assessment: ref
+                    .read(initialAssessmentProvider(
+                      InitialAssessmentContext(
+                          role: role, patientId: patientId),
+                    ))
+                    .valueOrNull,
+              );
+            } catch (e) {
+              if (context.mounted) showErrorBanner(context, e);
+            }
+          },
+          icon: const Icon(Icons.picture_as_pdf_outlined),
+        ),
         IconButton(
           tooltip: 'Editar campos do terapeuta',
           onPressed: () async {

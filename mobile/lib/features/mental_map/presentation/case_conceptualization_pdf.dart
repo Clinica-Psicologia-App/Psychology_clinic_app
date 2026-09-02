@@ -2,6 +2,7 @@
 // ignore_for_file: prefer_const_constructors
 import 'dart:typed_data';
 
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -48,14 +49,17 @@ class CaseConceptualizationPdf {
     CaseConceptualization? concept,
     InitialAssessment? assessment,
   }) async {
-    // Fonte Unicode (Roboto) cobre acentos e símbolos como "→"; se a rede
-    // falhar, cai na Helvetica padrão (Latin-1 — acentos ainda funcionam).
+    // Poppins empacotada (mesma tipografia do app), 100% offline. DejaVu Sans
+    // como fallback cobre símbolos que o Poppins não tem (setas "→" etc.).
     pw.ThemeData? theme;
     try {
+      Future<pw.Font> load(String f) async =>
+          pw.Font.ttf(await rootBundle.load('assets/fonts/$f'));
       theme = pw.ThemeData.withFont(
-        base: await PdfGoogleFonts.robotoRegular(),
-        bold: await PdfGoogleFonts.robotoBold(),
-        italic: await PdfGoogleFonts.robotoItalic(),
+        base: await load('Poppins-Regular.ttf'),
+        bold: await load('Poppins-Bold.ttf'),
+        italic: await load('Poppins-Italic.ttf'),
+        fontFallback: [await load('DejaVuSans.ttf')],
       );
     } catch (_) {
       theme = null;

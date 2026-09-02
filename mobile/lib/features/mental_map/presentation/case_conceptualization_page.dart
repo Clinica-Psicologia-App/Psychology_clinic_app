@@ -6,6 +6,9 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_severity.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
+import '../../initial_assessment/domain/initial_assessment.dart';
+import '../../initial_assessment/domain/life_area.dart';
+import '../../initial_assessment/providers/initial_assessment_providers.dart';
 import '../../profile/domain/profile_role.dart';
 import 'mental_map_routes.dart';
 import '../domain/case_conceptualization.dart';
@@ -67,7 +70,13 @@ class CaseConceptualizationPage extends ConsumerWidget {
         emptyIcon: Icons.summarize_outlined,
         dataBuilder: (data) => _Body(
           data: data,
-          concept: ref.watch(caseConceptualizationProvider(patientId)).valueOrNull,
+          concept:
+              ref.watch(caseConceptualizationProvider(patientId)).valueOrNull,
+          assessment: ref
+              .watch(initialAssessmentProvider(
+                InitialAssessmentContext(role: role, patientId: patientId),
+              ))
+              .valueOrNull,
         ),
       ),
     );
@@ -75,10 +84,11 @@ class CaseConceptualizationPage extends ConsumerWidget {
 }
 
 class _Body extends StatelessWidget {
-  const _Body({required this.data, this.concept});
+  const _Body({required this.data, this.concept, this.assessment});
 
   final MentalMapData data;
   final CaseConceptualization? concept;
+  final InitialAssessment? assessment;
 
   @override
   Widget build(BuildContext context) {
@@ -98,13 +108,11 @@ class _Body extends StatelessWidget {
           child: _motivo(context, summary),
         ),
 
-        // 5. Funcionamento — depende de avaliação por área (a preencher).
-        const _Section(
+        // 5. Funcionamento — áreas da vida (do fluxo Conhecer, escala 1–10).
+        _Section(
           number: '5',
           title: 'Funcionamento · áreas da vida',
-          child: _Placeholder(
-            'Avaliação das 5 áreas da vida (1–6) — a preencher.',
-          ),
+          child: _lifeAreas(),
         ),
 
         // 6. Problemas de vida
@@ -280,6 +288,71 @@ class _Body extends StatelessWidget {
           ),
       ],
     );
+  }
+
+  Widget _lifeAreas() {
+    final a = assessment;
+    final rated = a == null
+        ? const <(LifeArea, int)>[]
+        : [
+            for (final area in kLifeAreasInOrder)
+              if (a.lifeAreaFor(area).score != null)
+                (area, a.lifeAreaFor(area).score!),
+          ];
+    if (rated.isEmpty) {
+      return const _Placeholder('Áreas da vida ainda não avaliadas.');
+    }
+    return Builder(builder: (context) {
+      final theme = Theme.of(context);
+      Color tone(int s) => s >= 7
+          ? AppColors.success
+          : s >= 4
+              ? AppColors.warning
+              : AppColors.error;
+      return Column(
+        children: [
+          for (var i = 0; i < rated.length; i++)
+            Padding(
+              padding: EdgeInsets.only(bottom: i == rated.length - 1 ? 0 : 9),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          rated[i].$1.label,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.textPrimary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      Text(
+                        '${rated[i].$2}/10',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: tone(rated[i].$2),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(3),
+                    child: LinearProgressIndicator(
+                      value: (rated[i].$2 / 10).clamp(0.0, 1.0),
+                      minHeight: 5,
+                      backgroundColor: tone(rated[i].$2).withValues(alpha: 0.15),
+                      color: tone(rated[i].$2),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      );
+    });
   }
 
   Widget _highlightChips(List<MentalMapScoreHighlight> items) {

@@ -17,6 +17,7 @@ import '../domain/case_conceptualization.dart';
 import '../domain/mental_map_case_summary.dart';
 import '../domain/mental_map_data.dart';
 import '../domain/mental_map_score_highlight.dart';
+import '../domain/schema_mode_catalog.dart';
 import '../providers/case_conceptualization_providers.dart';
 import '../providers/mental_map_providers.dart';
 
@@ -214,7 +215,7 @@ class _Body extends StatelessWidget {
           title: 'Modos',
           child: core.topModes.isEmpty
               ? const _Placeholder('Sem YAMI concluído.')
-              : _highlightChips(core.topModes),
+              : _ModesList(modes: core.topModes),
         ),
 
         // 10. Sequência de modos (campos do terapeuta).
@@ -970,6 +971,107 @@ class _RelationshipView extends StatelessWidget {
         note('Colaboração:', rel.collaborationNotes),
         note('Vínculo:', rel.bondNotes),
         note('Reações do terapeuta:', rel.therapistReactions),
+      ],
+    );
+  }
+}
+
+/// 9 — modos priorizados do YAMI, com categoria e função (catálogo de ST).
+class _ModesList extends StatelessWidget {
+  const _ModesList({required this.modes});
+
+  final List<MentalMapScoreHighlight> modes;
+
+  static Color _color(String key) => switch (key) {
+        'blue' => AppColors.blue,
+        'warning' => AppColors.warning,
+        'error' => AppColors.error,
+        'success' => AppColors.success,
+        _ => AppColors.cyan,
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      children: [
+        for (var i = 0; i < modes.length; i++)
+          Builder(builder: (context) {
+            final h = modes[i];
+            final info = schemaModeInfoForCode(h.code);
+            final color =
+                info == null ? AppColors.cyan : _color(info.category.colorKey);
+            return Padding(
+              padding: EdgeInsets.only(bottom: i == modes.length - 1 ? 0 : 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 4,
+                    height: 34,
+                    margin: const EdgeInsets.only(top: 2, right: 10),
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                info?.name ?? h.name,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                            if (h.scoreLabel != null &&
+                                h.scoreLabel!.trim().isNotEmpty &&
+                                h.scoreLabel != '-') ...[
+                              const SizedBox(width: 8),
+                              Text(
+                                h.scoreLabel!,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: color,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        if (info != null) ...[
+                          const SizedBox(height: 1),
+                          Text(
+                            info.category.label,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.3,
+                              color: color,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            info.description,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: AppColors.textSecondary,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
       ],
     );
   }

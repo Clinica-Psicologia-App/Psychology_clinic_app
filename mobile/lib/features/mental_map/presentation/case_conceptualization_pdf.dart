@@ -12,6 +12,8 @@ import '../../initial_assessment/domain/life_area.dart';
 import '../domain/case_conceptualization.dart';
 import '../domain/mental_map_case_summary.dart';
 import '../domain/mental_map_data.dart';
+import '../domain/mental_map_score_highlight.dart';
+import '../domain/schema_mode_catalog.dart';
 
 /// Exporta a Conceitualização de caso como um PDF estruturado (multipágina),
 /// no formato do formulário padrão. Espelha o que a tela de síntese mostra —
@@ -158,10 +160,7 @@ class CaseConceptualizationPdf {
             'Modos',
             core.topModes.isEmpty
                 ? _placeholder('Sem YAMI concluído.')
-                : _chips([
-                    for (final h in core.topModes)
-                      h.scoreLabel == null ? h.name : '${h.name} · ${h.scoreLabel}',
-                  ]),
+                : _modes(core.topModes),
           ),
 
           // 10. Sequência de modos (terapeuta)
@@ -646,6 +645,84 @@ class CaseConceptualizationPdf {
           ],
         ),
       );
+
+  static PdfColor _modeColor(String key) => switch (key) {
+        'blue' => _blue,
+        'warning' => _warning,
+        'error' => _error,
+        'success' => _success,
+        _ => PdfColor.fromInt(0xFF17A2B8),
+      };
+
+  static List<pw.Widget> _modes(List<MentalMapScoreHighlight> modes) => [
+        for (var i = 0; i < modes.length; i++)
+          () {
+            final h = modes[i];
+            final info = schemaModeInfoForCode(h.code);
+            final color = info == null
+                ? const PdfColor.fromInt(0xFF17A2B8)
+                : _modeColor(info.category.colorKey);
+            final hasScore = h.scoreLabel != null &&
+                h.scoreLabel!.trim().isNotEmpty &&
+                h.scoreLabel != '-';
+            return pw.Container(
+              margin: pw.EdgeInsets.only(bottom: i == modes.length - 1 ? 0 : 9),
+              child: pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Container(
+                    width: 3,
+                    height: 30,
+                    margin: const pw.EdgeInsets.only(top: 1, right: 8),
+                    decoration: pw.BoxDecoration(
+                      color: color,
+                      borderRadius: pw.BorderRadius.circular(2),
+                    ),
+                  ),
+                  pw.Expanded(
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Row(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            pw.Expanded(
+                              child: pw.Text(info?.name ?? h.name,
+                                  style: pw.TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: pw.FontWeight.bold,
+                                      color: _navy)),
+                            ),
+                            if (hasScore) ...[
+                              pw.SizedBox(width: 8),
+                              pw.Text(h.scoreLabel!,
+                                  style: pw.TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: pw.FontWeight.bold,
+                                      color: color)),
+                            ],
+                          ],
+                        ),
+                        if (info != null) ...[
+                          pw.Text(info.category.label,
+                              style: pw.TextStyle(
+                                  fontSize: 8,
+                                  letterSpacing: 0.3,
+                                  fontWeight: pw.FontWeight.bold,
+                                  color: color)),
+                          pw.SizedBox(height: 1),
+                          pw.Text(info.description,
+                              style: const pw.TextStyle(
+                                  fontSize: 9, color: _secondary, lineSpacing: 2)),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }(),
+      ];
 
   static List<pw.Widget> _chips(List<String> items) => [
         pw.Wrap(

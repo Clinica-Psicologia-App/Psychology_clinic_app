@@ -48,9 +48,19 @@ void main() {
         ],
         topModes: [
           MentalMapScoreHighlight(
-              name: 'Protetor Desligado', code: 'PD', kind: 'mode'),
+              name: 'Protetor Desligado',
+              code: 'YAMI_MODE_14',
+              kind: 'schema',
+              scoreLabel: 'alto'),
           MentalMapScoreHighlight(
-              name: 'Crítico Punitivo', code: 'CP', kind: 'mode'),
+              name: 'Criança Vulnerável',
+              code: 'YAMI_MODE_04',
+              kind: 'schema',
+              scoreLabel: 'moderado'),
+          MentalMapScoreHighlight(
+              name: 'Pais Exigentes e Críticos',
+              code: 'YAMI_MODE_05',
+              kind: 'schema'),
         ],
         topProblemsByIntensity: [],
         attachmentStyles: [],

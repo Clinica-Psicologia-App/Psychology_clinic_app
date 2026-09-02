@@ -168,17 +168,96 @@ class TherapeuticRelationship {
   }
 }
 
+/// Impressões gerais (seção 3) — como o cliente se apresenta, inicial e atual.
+class GeneralImpressions {
+  const GeneralImpressions({this.initial, this.current});
+  final String? initial;
+  final String? current;
+
+  bool get isEmpty =>
+      (initial ?? '').trim().isEmpty && (current ?? '').trim().isEmpty;
+
+  factory GeneralImpressions.fromJson(Map<String, dynamic> j) =>
+      GeneralImpressions(
+        initial: j['initial'] as String?,
+        current: j['current'] as String?,
+      );
+
+  Map<String, dynamic> toJson() {
+    String? t(String? v) => (v ?? '').trim().isEmpty ? null : v!.trim();
+    return {
+      if (t(initial) != null) 'initial': t(initial),
+      if (t(current) != null) 'current': t(current),
+    };
+  }
+}
+
+/// Um diagnóstico (seção 4).
+class DiagnosisItem {
+  const DiagnosisItem({this.name, this.code});
+  final String? name;
+  final String? code;
+
+  bool get isEmpty =>
+      (name ?? '').trim().isEmpty && (code ?? '').trim().isEmpty;
+
+  factory DiagnosisItem.fromJson(Map<String, dynamic> j) => DiagnosisItem(
+        name: j['name'] as String?,
+        code: j['code'] as String?,
+      );
+
+  Map<String, dynamic> toJson() {
+    String? t(String? v) => (v ?? '').trim().isEmpty ? null : v!.trim();
+    return {
+      if (t(name) != null) 'name': t(name),
+      if (t(code) != null) 'code': t(code),
+    };
+  }
+}
+
+/// Perspectiva diagnóstica (seção 4): sistema (CID-11/DSM-5-TR) + diagnósticos.
+class Diagnosis {
+  const Diagnosis({this.system, this.items = const []});
+  final String? system;
+  final List<DiagnosisItem> items;
+
+  bool get isEmpty =>
+      (system ?? '').trim().isEmpty && items.every((d) => d.isEmpty);
+
+  factory Diagnosis.fromJson(Map<String, dynamic> j) => Diagnosis(
+        system: j['system'] as String?,
+        items: [
+          for (final e in (j['items'] as List?) ?? const [])
+            DiagnosisItem.fromJson(Map<String, dynamic>.from(e as Map)),
+        ],
+      );
+
+  Map<String, dynamic> toJson() {
+    final list = [for (final d in items) if (!d.isEmpty) d.toJson()];
+    return {
+      if ((system ?? '').trim().isNotEmpty) 'system': system!.trim(),
+      if (list.isNotEmpty) 'items': list,
+    };
+  }
+}
+
 /// Documento completo (uma linha por paciente).
 class CaseConceptualization {
   const CaseConceptualization({
     required this.unmetNeeds,
     required this.modeSequences,
     required this.relationship,
+    this.generalImpressions = const GeneralImpressions(),
+    this.diagnosis = const Diagnosis(),
+    this.additionalComments,
   });
 
   final List<UnmetNeed> unmetNeeds;
   final List<ModeSequence> modeSequences;
   final TherapeuticRelationship relationship;
+  final GeneralImpressions generalImpressions;
+  final Diagnosis diagnosis;
+  final String? additionalComments;
 
   /// Documento vazio (nenhuma linha ainda) — todas as necessidades em branco.
   factory CaseConceptualization.empty() => CaseConceptualization(
@@ -198,11 +277,16 @@ class CaseConceptualization {
   bool get hasAnyNeed => unmetNeeds.any((u) => !u.isEmpty);
   bool get hasAnySequence => modeSequences.any((s) => !s.isEmpty);
   bool get hasRelationship => !relationship.isEmpty;
+  bool get hasGeneralImpressions => !generalImpressions.isEmpty;
+  bool get hasDiagnosis => !diagnosis.isEmpty;
+  bool get hasComments => (additionalComments ?? '').trim().isNotEmpty;
 
   factory CaseConceptualization.fromJson(Map<String, dynamic> j) {
     final needsRaw = (j['unmet_needs'] as List?) ?? const [];
     final seqRaw = (j['mode_sequences'] as List?) ?? const [];
     final rel = (j['therapeutic_relationship'] as Map?) ?? const {};
+    final gi = (j['general_impressions'] as Map?) ?? const {};
+    final dx = (j['diagnosis'] as Map?) ?? const {};
 
     // Mescla o que veio do banco sobre as 9 chaves fixas, preservando a ordem.
     final byKey = <String, UnmetNeed>{
@@ -220,6 +304,10 @@ class CaseConceptualization {
       ],
       relationship:
           TherapeuticRelationship.fromJson(Map<String, dynamic>.from(rel)),
+      generalImpressions:
+          GeneralImpressions.fromJson(Map<String, dynamic>.from(gi)),
+      diagnosis: Diagnosis.fromJson(Map<String, dynamic>.from(dx)),
+      additionalComments: j['additional_comments'] as String?,
     );
   }
 

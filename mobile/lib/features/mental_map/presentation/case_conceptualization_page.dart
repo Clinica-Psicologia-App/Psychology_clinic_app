@@ -108,6 +108,28 @@ class _Body extends StatelessWidget {
           child: _motivo(context, summary),
         ),
 
+        // 3. Impressões gerais (campos do terapeuta).
+        _Section(
+          number: '3',
+          title: 'Impressões gerais',
+          child: (concept?.hasGeneralImpressions ?? false)
+              ? _impressions(concept!.generalImpressions)
+              : const _Placeholder(
+                  'Como o cliente se apresenta (inicial/atual) — a preencher.',
+                ),
+        ),
+
+        // 4. Perspectiva diagnóstica (campos do terapeuta).
+        _Section(
+          number: '4',
+          title: 'Perspectiva diagnóstica',
+          child: (concept?.hasDiagnosis ?? false)
+              ? _diagnosisView(concept!.diagnosis)
+              : const _Placeholder(
+                  'Sistema (CID-11/DSM-5) e diagnósticos — a preencher.',
+                ),
+        ),
+
         // 5. Funcionamento — áreas da vida (do fluxo Conhecer, escala 1–10).
         _Section(
           number: '5',
@@ -201,8 +223,110 @@ class _Body extends StatelessWidget {
                   ],
                 ),
         ),
+
+        // 13. Comentários adicionais (campo do terapeuta).
+        _Section(
+          number: '13',
+          title: 'Comentários adicionais',
+          child: (concept?.hasComments ?? false)
+              ? Text(
+                  concept!.additionalComments!.trim(),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.textPrimary,
+                        height: 1.45,
+                      ),
+                )
+              : const _Placeholder('Sem comentários adicionais.'),
+        ),
       ],
     );
+  }
+
+  Widget _impressions(GeneralImpressions g) {
+    return Builder(builder: (context) {
+      final theme = Theme.of(context);
+      Widget part(String label, String? value) {
+        if ((value ?? '').trim().isEmpty) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(label.toUpperCase(),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.textMuted,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 9,
+                  )),
+              const SizedBox(height: 2),
+              Text(value!.trim(),
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: AppColors.textPrimary, height: 1.45)),
+            ],
+          ),
+        );
+      }
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          part('Inicialmente', g.initial),
+          part('Atualmente', g.current),
+        ],
+      );
+    });
+  }
+
+  Widget _diagnosisView(Diagnosis d) {
+    return Builder(builder: (context) {
+      final theme = Theme.of(context);
+      final items = d.items.where((e) => !e.isEmpty).toList();
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if ((d.system ?? '').trim().isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceTintBlue,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  d.system!.trim(),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.blue,
+                  ),
+                ),
+              ),
+            ),
+          for (final e in items)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 5),
+              child: RichText(
+                text: TextSpan(
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: AppColors.textPrimary, height: 1.4),
+                  children: [
+                    TextSpan(
+                      text: (e.name ?? '').trim(),
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    if ((e.code ?? '').trim().isNotEmpty)
+                      TextSpan(
+                        text: '  ·  ${e.code!.trim()}',
+                        style: const TextStyle(color: AppColors.textMuted),
+                      ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      );
+    });
   }
 
   Widget _hero(BuildContext context) {

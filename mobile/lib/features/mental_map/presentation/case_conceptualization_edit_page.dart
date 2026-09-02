@@ -126,6 +126,12 @@ class _EditState extends ConsumerState<_EditForm> {
   late final TextEditingController _collabNotes;
   late final TextEditingController _bondNotes;
   late final TextEditingController _therapistReactions;
+  // 3 · impressões gerais / 4 · diagnóstico / 13 · comentários
+  late final TextEditingController _impInitial;
+  late final TextEditingController _impCurrent;
+  String? _dxSystem;
+  late final List<(TextEditingController, TextEditingController)> _dxItems;
+  late final TextEditingController _comments;
   bool _saving = false;
 
   @override
@@ -157,6 +163,24 @@ class _EditState extends ConsumerState<_EditForm> {
     _bondNotes = TextEditingController(text: rel.bondNotes ?? '');
     _therapistReactions =
         TextEditingController(text: rel.therapistReactions ?? '');
+
+    _impInitial =
+        TextEditingController(text: data.generalImpressions.initial ?? '');
+    _impCurrent =
+        TextEditingController(text: data.generalImpressions.current ?? '');
+    _dxSystem = data.diagnosis.system;
+    _dxItems = [
+      for (var i = 0; i < 4; i++)
+        () {
+          final it =
+              i < data.diagnosis.items.length ? data.diagnosis.items[i] : null;
+          return (
+            TextEditingController(text: it?.name ?? ''),
+            TextEditingController(text: it?.code ?? ''),
+          );
+        }()
+    ];
+    _comments = TextEditingController(text: data.additionalComments ?? '');
   }
 
   @override
@@ -170,6 +194,13 @@ class _EditState extends ConsumerState<_EditForm> {
     _collabNotes.dispose();
     _bondNotes.dispose();
     _therapistReactions.dispose();
+    _impInitial.dispose();
+    _impCurrent.dispose();
+    for (final p in _dxItems) {
+      p.$1.dispose();
+      p.$2.dispose();
+    }
+    _comments.dispose();
     super.dispose();
   }
 
@@ -193,6 +224,18 @@ class _EditState extends ConsumerState<_EditForm> {
         bondNotes: _bondNotes.text,
         therapistReactions: _therapistReactions.text,
       ),
+      generalImpressions: GeneralImpressions(
+        initial: _impInitial.text,
+        current: _impCurrent.text,
+      ),
+      diagnosis: Diagnosis(
+        system: _dxSystem,
+        items: [
+          for (final p in _dxItems)
+            DiagnosisItem(name: p.$1.text, code: p.$2.text),
+        ],
+      ),
+      additionalComments: _comments.text,
     );
     try {
       await ref
@@ -221,6 +264,65 @@ class _EditState extends ConsumerState<_EditForm> {
           ListView(
             padding: const EdgeInsets.fromLTRB(14, 14, 14, 96),
             children: [
+              _card(
+                icon: Icons.visibility_outlined,
+                title: '3 · Impressões gerais',
+                subtitle: 'Como o cliente se apresenta nas sessões.',
+                children: [
+                  _field(_impInitial, 'Inicialmente'),
+                  _field(_impCurrent, 'Atualmente'),
+                ],
+              ),
+              _card(
+                icon: Icons.medical_information_outlined,
+                title: '4 · Perspectiva diagnóstica',
+                subtitle: 'Sistema e diagnósticos principais.',
+                children: [
+                  Wrap(
+                    spacing: 6,
+                    children: [
+                      for (final s in const ['CID-11', 'DSM-5-TR'])
+                        ChoiceChip(
+                          label: Text(s),
+                          selected: _dxSystem == s,
+                          onSelected: (sel) =>
+                              setState(() => _dxSystem = sel ? s : null),
+                        ),
+                    ],
+                  ),
+                  for (var i = 0; i < _dxItems.length; i++)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            flex: 3,
+                            child: TextField(
+                              controller: _dxItems[i].$1,
+                              textCapitalization: TextCapitalization.sentences,
+                              decoration: InputDecoration(
+                                labelText: 'Diagnóstico ${i + 1}',
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            flex: 1,
+                            child: TextField(
+                              controller: _dxItems[i].$2,
+                              decoration: const InputDecoration(
+                                labelText: 'Código',
+                                isDense: true,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
+              ),
               _card(
                 icon: Icons.spa_outlined,
                 title: '7 · Necessidades não atendidas',
@@ -258,6 +360,14 @@ class _EditState extends ConsumerState<_EditForm> {
                   const SizedBox(height: 8),
                   _field(_therapistReactions,
                       'Reações do terapeuta ao cliente'),
+                ],
+              ),
+              _card(
+                icon: Icons.notes_outlined,
+                title: '13 · Comentários adicionais',
+                subtitle: 'Qualquer nota ou explicação extra.',
+                children: [
+                  _field(_comments, 'Comentários'),
                 ],
               ),
             ],

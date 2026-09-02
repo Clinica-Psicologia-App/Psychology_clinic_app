@@ -87,7 +87,13 @@ class _IntensityRingNode extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const accent = AppColors.moduleMonitor;
+    final accent = intensity == null
+        ? AppColors.moduleMonitor
+        : intensity! >= 7
+            ? AppColors.error
+            : intensity! >= 4
+                ? AppColors.warning
+                : AppColors.success;
     return SizedBox(
       width: 44,
       height: 44,
@@ -113,7 +119,7 @@ class _IntensityRingNode extends StatelessWidget {
           Container(
             width: 24,
             height: 24,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: accent,
             ),

@@ -6,10 +6,8 @@ import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
-import '../../../shared/widgets/app_page_header.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
-import '../../../shared/widgets/status_chip.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../domain/daily_monitor.dart';
 import '../domain/daily_monitor_input.dart';
@@ -212,112 +210,75 @@ class _CreateDailyMonitorPageState
               AppSpacing.xxl,
             ),
             children: [
-              AppPageHeader(
-                icon: Icons.edit_note_outlined,
-                title:
-                    widget.isEdit ? 'Editar monitor diário' : 'Monitor diário',
-                subtitle:
-                    'Registre emoções, gatilhos e respostas do dia para observar padrões ao longo da terapia.',
-                metadata: [
-                  StatusChip(
-                    label: 'Hoje: ${_todayLabel()}',
-                    tone: AppStatusTone.info,
-                    icon: Icons.today_outlined,
+              _introHeader(context),
+              const SizedBox(height: 16),
+              _section(
+                context,
+                icon: Icons.mood_outlined,
+                accent: AppColors.cyan,
+                title: 'Estado emocional',
+                subtitle: 'Como você se percebeu emocionalmente hoje.',
+                children: [
+                  TextFormField(
+                    controller: _moodController,
+                    decoration: const InputDecoration(
+                      labelText: 'Humor / estado emocional',
+                      hintText: 'Como você está se sentindo?',
+                    ),
+                    maxLines: 2,
+                    textCapitalization: TextCapitalization.sentences,
                   ),
-                  StatusChip(
-                    label: _intensity == null
-                        ? 'Sem intensidade'
-                        : 'Intensidade $_intensity',
-                    tone: _intensity == null
-                        ? AppStatusTone.neutral
-                        : AppStatusTone.warning,
-                    icon: Icons.speed_outlined,
+                  const SizedBox(height: 16),
+                  _intensityField(context),
+                ],
+              ),
+              _section(
+                context,
+                icon: Icons.bolt_outlined,
+                accent: AppColors.blue,
+                title: 'Gatilhos e respostas',
+                subtitle: 'O que ativou a emoção e como você respondeu.',
+                children: [
+                  TextFormField(
+                    controller: _triggersController,
+                    decoration: const InputDecoration(
+                      labelText: 'Gatilhos',
+                      hintText: 'Situações ou pensamentos que impactaram',
+                    ),
+                    maxLines: 3,
+                    textCapitalization: TextCapitalization.sentences,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    controller: _behaviorsController,
+                    decoration: const InputDecoration(
+                      labelText: 'Comportamentos',
+                      hintText: 'O que você fez ou evitou fazer',
+                    ),
+                    maxLines: 3,
+                    textCapitalization: TextCapitalization.sentences,
                   ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.lg),
-              const AppSectionHeader(
-                title: 'Estado emocional',
-                subtitle:
-                    'Descreva brevemente como você se percebeu emocionalmente hoje.',
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              TextFormField(
-                controller: _moodController,
-                decoration: const InputDecoration(
-                  labelText: 'Humor / estado emocional',
-                  hintText: 'Como você está se sentindo?',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 2,
-                textCapitalization: TextCapitalization.sentences,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                'Intensidade (1 a 10)',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              Slider(
-                value: (_intensity ?? 5).toDouble(),
-                min: 1,
-                max: 10,
-                divisions: 9,
-                label: '${_intensity ?? 5}',
-                onChanged: (v) => setState(() => _intensity = v.round()),
-              ),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () => setState(() => _intensity = null),
-                  child: const Text('Limpar intensidade'),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              const AppSectionHeader(
-                title: 'Gatilhos e respostas',
-                subtitle:
-                    'Registre o que ativou a emoção e como você respondeu na prática.',
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              TextFormField(
-                controller: _triggersController,
-                decoration: const InputDecoration(
-                  labelText: 'Gatilhos',
-                  hintText: 'Situações ou pensamentos que impactaram',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-                textCapitalization: TextCapitalization.sentences,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              TextFormField(
-                controller: _behaviorsController,
-                decoration: const InputDecoration(
-                  labelText: 'Comportamentos',
-                  hintText: 'O que você fez ou evitou fazer',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-                textCapitalization: TextCapitalization.sentences,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              const AppSectionHeader(
+              _section(
+                context,
+                icon: Icons.sticky_note_2_outlined,
+                accent: AppColors.purple,
                 title: 'Contexto adicional',
-                subtitle:
-                    'Inclua sono, acontecimentos importantes ou qualquer nota útil sobre o dia.',
+                subtitle: 'Sono, acontecimentos ou qualquer nota útil do dia.',
+                children: [
+                  TextFormField(
+                    controller: _observationsController,
+                    decoration: const InputDecoration(
+                      labelText: 'Observações',
+                      hintText: 'Sono, notas gerais ou contexto do dia',
+                    ),
+                    maxLines: 3,
+                    textCapitalization: TextCapitalization.sentences,
+                  ),
+                ],
               ),
-              const SizedBox(height: AppSpacing.sm),
-              TextFormField(
-                controller: _observationsController,
-                decoration: const InputDecoration(
-                  labelText: 'Observações',
-                  hintText: 'Sono, notas gerais ou contexto do dia',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-                textCapitalization: TextCapitalization.sentences,
-              ),
-              const SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: 8),
               FilledButton.icon(
                 onPressed: _saving ? null : _save,
                 icon: _saving
@@ -334,6 +295,175 @@ class _CreateDailyMonitorPageState
           ),
         ),
       ),
+    );
+  }
+
+  Widget _introHeader(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: AppColors.cyan.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(Icons.edit_note_outlined,
+              size: 20, color: AppColors.cyan),
+        ),
+        const SizedBox(width: 11),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.isEdit ? 'Editar registro' : 'Monitor de hoje',
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                'Registre emoções, gatilhos e respostas do dia — ${_todayLabel()}.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant, height: 1.35),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _section(
+    BuildContext context, {
+    required IconData icon,
+    required Color accent,
+    required String title,
+    required String subtitle,
+    required List<Widget> children,
+  }) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border:
+            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, size: 17, color: accent),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(title,
+                        style: theme.textTheme.titleSmall
+                            ?.copyWith(fontWeight: FontWeight.w800)),
+                    const SizedBox(height: 1),
+                    Text(subtitle,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            height: 1.3)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          ...children,
+        ],
+      ),
+    );
+  }
+
+  Widget _intensityField(BuildContext context) {
+    final theme = Theme.of(context);
+    final set = _intensity != null;
+    final value = _intensity ?? 5;
+    final tone = value >= 7
+        ? AppColors.error
+        : value >= 4
+            ? AppColors.warning
+            : AppColors.success;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text('Intensidade',
+                style: theme.textTheme.labelLarge
+                    ?.copyWith(fontWeight: FontWeight.w700, fontSize: 12)),
+            const Spacer(),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 2),
+              decoration: BoxDecoration(
+                color: set
+                    ? tone.withValues(alpha: 0.14)
+                    : theme.colorScheme.outline.withValues(alpha: 0.18),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                set ? '$value / 10' : 'Sem intensidade',
+                style: theme.textTheme.labelMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: set ? tone : theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ],
+        ),
+        Slider(
+          value: value.toDouble(),
+          min: 1,
+          max: 10,
+          divisions: 9,
+          activeColor: set ? tone : null,
+          label: '$value',
+          onChanged: (v) => setState(() => _intensity = v.round()),
+        ),
+        Row(
+          children: [
+            Text('Leve',
+                style: theme.textTheme.labelSmall
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+            const Spacer(),
+            Text('Intenso',
+                style: theme.textTheme.labelSmall
+                    ?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+          ],
+        ),
+        if (set)
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () => setState(() => _intensity = null),
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                minimumSize: const Size(0, 32),
+              ),
+              child: const Text('Limpar intensidade'),
+            ),
+          ),
+      ],
     );
   }
 

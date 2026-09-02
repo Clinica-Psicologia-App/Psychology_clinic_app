@@ -16,4 +16,18 @@ abstract final class MentalMapRoutes {
         throw ArgumentError('Use patientList para role patient');
     }
   }
+
+  /// Síntese "Conceitualização de caso" (módulo Síntese, lente do terapeuta).
+  static String staffCaseConceptualization({
+    required ProfileRole role,
+    required String patientId,
+  }) {
+    switch (role) {
+      case ProfileRole.psychologist:
+        return '/psychologist/patients/$patientId/case-conceptualization';
+      case ProfileRole.platformAdmin:
+      case ProfileRole.patient:
+        throw ArgumentError('Conceitualização de caso é exclusiva do psicólogo');
+    }
+  }
 }

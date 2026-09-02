@@ -151,12 +151,17 @@ class FutureModulesSection extends ConsumerWidget {
             accentColor: AppColors.cyan,
             onTap: null,
           ),
-          const _ModuleSpec(
+          _ModuleSpec(
             icon: Icons.summarize_outlined,
             title: 'Síntese',
-            subtitle: 'Em breve',
+            subtitle: 'Conceitualização de caso.',
             accentColor: AppColors.cyan,
-            onTap: null,
+            onTap: () => context.push(
+              MentalMapRoutes.staffCaseConceptualization(
+                role: role,
+                patientId: patientId,
+              ),
+            ),
           ),
         ],
       ),

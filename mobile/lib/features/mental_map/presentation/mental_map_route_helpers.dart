@@ -1,6 +1,7 @@
 import 'package:go_router/go_router.dart';
 
 import '../../profile/domain/profile_role.dart';
+import 'case_conceptualization_page.dart';
 import 'patient_mental_map_page.dart';
 
 List<RouteBase> patientMentalMapRoutes() {
@@ -17,6 +18,13 @@ List<RouteBase> staffPatientMentalMapRoutes({required ProfileRole role}) {
     GoRoute(
       path: 'mental-map',
       builder: (context, state) => StaffPatientMentalMapPage(
+        role: role,
+        patientId: state.pathParameters['patientId']!,
+      ),
+    ),
+    GoRoute(
+      path: 'case-conceptualization',
+      builder: (context, state) => CaseConceptualizationPage(
         role: role,
         patientId: state.pathParameters['patientId']!,
       ),

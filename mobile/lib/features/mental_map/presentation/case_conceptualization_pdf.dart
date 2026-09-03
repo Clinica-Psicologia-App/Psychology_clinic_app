@@ -14,6 +14,7 @@ import '../domain/mental_map_case_summary.dart';
 import '../domain/mental_map_data.dart';
 import '../domain/mental_map_goal_summary.dart';
 import '../domain/mental_map_score_highlight.dart';
+import '../domain/schema_catalog.dart';
 import '../domain/schema_mode_catalog.dart';
 
 /// Exporta a Conceitualização de caso como um PDF estruturado (multipágina),
@@ -141,10 +142,7 @@ class CaseConceptualizationPdf {
             'Esquemas centrais',
             core.topSchemas.isEmpty
                 ? _placeholder('Sem YSQ concluído.')
-                : _chips([
-                    for (final h in core.topSchemas)
-                      h.scoreLabel == null ? h.name : '${h.name} · ${h.scoreLabel}',
-                  ]),
+                : _schemas(core.topSchemas),
           ),
 
           // 9. Modos
@@ -849,24 +847,86 @@ class CaseConceptualizationPdf {
           }(),
       ];
 
-  static List<pw.Widget> _chips(List<String> items) => [
-        pw.Wrap(
-          spacing: 6,
-          runSpacing: 6,
-          children: [
-            for (final t in items)
-              pw.Container(
-                padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: pw.BoxDecoration(
-                  color: _tint,
-                  borderRadius: pw.BorderRadius.circular(20),
-                ),
-                child: pw.Text(t,
-                    style: pw.TextStyle(
-                        fontSize: 9, fontWeight: pw.FontWeight.bold, color: _navy)),
+  static PdfColor _catColor(String key) => switch (key) {
+        'blue' => _blue,
+        'warning' => _warning,
+        'error' => _error,
+        'success' => _success,
+        'purple' => _purple,
+        'cyan' => const PdfColor.fromInt(0xFF17A2B8),
+        _ => const PdfColor.fromInt(0xFF17A2B8),
+      };
+
+  /// 8 — esquemas priorizados do YSQ, com domínio e descrição (catálogo de ST).
+  static List<pw.Widget> _schemas(List<MentalMapScoreHighlight> schemas) => [
+        for (var i = 0; i < schemas.length; i++)
+          () {
+            final h = schemas[i];
+            final info = schemaInfoForCode(h.code);
+            final color = info == null
+                ? const PdfColor.fromInt(0xFF17A2B8)
+                : _catColor(info.domain.colorKey);
+            final hasScore = h.scoreLabel != null &&
+                h.scoreLabel!.trim().isNotEmpty &&
+                h.scoreLabel != '-';
+            return pw.Container(
+              margin:
+                  pw.EdgeInsets.only(bottom: i == schemas.length - 1 ? 0 : 9),
+              child: pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.start,
+                children: [
+                  pw.Container(
+                    width: 3,
+                    height: 30,
+                    margin: const pw.EdgeInsets.only(top: 1, right: 8),
+                    decoration: pw.BoxDecoration(
+                      color: color,
+                      borderRadius: pw.BorderRadius.circular(2),
+                    ),
+                  ),
+                  pw.Expanded(
+                    child: pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Row(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            pw.Expanded(
+                              child: pw.Text(info?.name ?? h.name,
+                                  style: pw.TextStyle(
+                                      fontSize: 10,
+                                      fontWeight: pw.FontWeight.bold,
+                                      color: _navy)),
+                            ),
+                            if (hasScore) ...[
+                              pw.SizedBox(width: 8),
+                              pw.Text(h.scoreLabel!,
+                                  style: pw.TextStyle(
+                                      fontSize: 9,
+                                      fontWeight: pw.FontWeight.bold,
+                                      color: color)),
+                            ],
+                          ],
+                        ),
+                        if (info != null) ...[
+                          pw.Text(info.domain.label,
+                              style: pw.TextStyle(
+                                  fontSize: 8,
+                                  letterSpacing: 0.3,
+                                  fontWeight: pw.FontWeight.bold,
+                                  color: color)),
+                          pw.SizedBox(height: 1),
+                          pw.Text(info.description,
+                              style: const pw.TextStyle(
+                                  fontSize: 9, color: _secondary, lineSpacing: 2)),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
               ),
-          ],
-        ),
+            );
+          }(),
       ];
 
   /// Barra proporcional [value]/[max] (evita depender de widgets de gráfico).

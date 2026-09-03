@@ -34,17 +34,20 @@ void main() {
       clinicalCore: const MentalMapClinicalCore(
         topSchemas: [
           MentalMapScoreHighlight(
-              name: 'Padrões inflexíveis',
-              code: 'PI',
+              name: 'Padrões inflexíveis/Crítica exagerada',
+              code: 'YSQ_SCHEMA_UNRELENTING_STANDARDS',
               kind: 'schema',
-              scoreLabel: 'alto',
-              severityColorKey: 'error'),
+              scoreLabel: 'alto'),
           MentalMapScoreHighlight(
               name: 'Autossacrifício',
-              code: 'AS',
+              code: 'YSQ_SCHEMA_SELF_SACRIFICE',
               kind: 'schema',
-              scoreLabel: 'moderado',
-              severityColorKey: 'warning'),
+              scoreLabel: 'moderado'),
+          MentalMapScoreHighlight(
+              name: 'Privação emocional',
+              code: 'YSQ_SCHEMA_EMOTIONAL_DEPRIVATION',
+              kind: 'schema',
+              scoreLabel: 'alto'),
         ],
         topModes: [
           MentalMapScoreHighlight(

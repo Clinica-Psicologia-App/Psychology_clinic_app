@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_severity.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../../shared/widgets/error_banner.dart';
@@ -18,6 +17,7 @@ import '../domain/mental_map_case_summary.dart';
 import '../domain/mental_map_data.dart';
 import '../domain/mental_map_goal_summary.dart';
 import '../domain/mental_map_score_highlight.dart';
+import '../domain/schema_catalog.dart';
 import '../domain/schema_mode_catalog.dart';
 import '../providers/case_conceptualization_providers.dart';
 import '../providers/mental_map_providers.dart';
@@ -202,7 +202,7 @@ class _Body extends StatelessWidget {
           title: 'Esquemas centrais',
           child: core.topSchemas.isEmpty
               ? const _Placeholder('Sem YSQ concluído.')
-              : _highlightChips(core.topSchemas),
+              : _SchemasList(schemas: core.topSchemas),
         ),
 
         // 9. Modos
@@ -503,34 +503,6 @@ class _Body extends StatelessWidget {
     });
   }
 
-  Widget _highlightChips(List<MentalMapScoreHighlight> items) {
-    return Wrap(
-      spacing: 6,
-      runSpacing: 6,
-      children: [
-        for (final h in items)
-          Builder(builder: (context) {
-            final sev = AppSeverity.fromColorKey(h.severityColorKey);
-            final color = sev.hasSeverity ? sev.color : AppColors.cyan;
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-              decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                h.scoreLabel == null ? h.name : '${h.name} · ${h.scoreLabel}',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: color,
-                ),
-              ),
-            );
-          }),
-      ],
-    );
-  }
 }
 
 class _Section extends StatelessWidget {
@@ -819,6 +791,109 @@ class _GoalRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+Color _catColor(String key) => switch (key) {
+      'blue' => AppColors.blue,
+      'warning' => AppColors.warning,
+      'error' => AppColors.error,
+      'success' => AppColors.success,
+      'purple' => AppColors.purple,
+      'cyan' => AppColors.cyan,
+      _ => AppColors.cyan,
+    };
+
+/// 8 — esquemas priorizados do YSQ, com domínio e descrição (catálogo de ST).
+class _SchemasList extends StatelessWidget {
+  const _SchemasList({required this.schemas});
+
+  final List<MentalMapScoreHighlight> schemas;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      children: [
+        for (var i = 0; i < schemas.length; i++)
+          Builder(builder: (context) {
+            final h = schemas[i];
+            final info = schemaInfoForCode(h.code);
+            final color =
+                info == null ? AppColors.cyan : _catColor(info.domain.colorKey);
+            return Padding(
+              padding: EdgeInsets.only(bottom: i == schemas.length - 1 ? 0 : 10),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 4,
+                    height: 34,
+                    margin: const EdgeInsets.only(top: 2, right: 10),
+                    decoration: BoxDecoration(
+                      color: color,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                info?.name ?? h.name,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                            if (h.scoreLabel != null &&
+                                h.scoreLabel!.trim().isNotEmpty &&
+                                h.scoreLabel != '-') ...[
+                              const SizedBox(width: 8),
+                              Text(
+                                h.scoreLabel!,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: color,
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                        if (info != null) ...[
+                          const SizedBox(height: 1),
+                          Text(
+                            info.domain.label,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontSize: 9,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.3,
+                              color: color,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            info.description,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: AppColors.textSecondary,
+                              height: 1.4,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+      ],
     );
   }
 }

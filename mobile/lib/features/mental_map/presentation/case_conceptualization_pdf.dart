@@ -132,16 +132,8 @@ class CaseConceptualizationPdf {
                   ],
           ),
 
-          // 7. Origens — necessidades não atendidas (terapeuta)
-          _section(
-            '7',
-            'Origens · necessidades não atendidas',
-            (concept?.hasAnyNeed ?? false)
-                ? _needs(concept!)
-                : _placeholder(
-                    'Avaliação das necessidades essenciais (0–5), origem e '
-                    'esquemas — a preencher.'),
-          ),
+          // 7. Origens infantis e adolescentes dos problemas atuais (terapeuta)
+          _section('7', 'Origens infantis e adolescentes', _origins(concept)),
 
           // 8. Esquemas centrais
           _section(
@@ -404,6 +396,82 @@ class CaseConceptualizationPdf {
             ],
           ),
         ),
+    ];
+  }
+
+  static List<pw.Widget> _origins(CaseConceptualization? concept) {
+    final o = concept?.origins;
+
+    pw.Widget subLabel(String number, String title) => pw.Padding(
+          padding: const pw.EdgeInsets.only(bottom: 3),
+          child: pw.RichText(
+            text: pw.TextSpan(
+              children: [
+                pw.TextSpan(
+                    text: '$number ',
+                    style: pw.TextStyle(
+                        fontSize: 8.5,
+                        fontWeight: pw.FontWeight.bold,
+                        color: _navy)),
+                pw.TextSpan(
+                    text: title.toUpperCase(),
+                    style: pw.TextStyle(
+                        fontSize: 8,
+                        letterSpacing: 0.3,
+                        fontWeight: pw.FontWeight.bold,
+                        color: _muted)),
+              ],
+            ),
+          ),
+        );
+
+    pw.Widget freeText(String? v, String placeholder) =>
+        (v ?? '').trim().isEmpty
+            ? pw.Text(placeholder,
+                style: pw.TextStyle(
+                    fontSize: 9.5,
+                    color: _muted,
+                    fontStyle: pw.FontStyle.italic))
+            : pw.Text(v!.trim(),
+                style: const pw.TextStyle(
+                    fontSize: 10, color: _navy, lineSpacing: 3));
+
+    pw.Widget block(String number, String title, List<pw.Widget> content) =>
+        pw.Container(
+          margin: const pw.EdgeInsets.only(bottom: 10),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [subLabel(number, title), ...content],
+          ),
+        );
+
+    return [
+      block('7.1', 'Descrição geral da história inicial', [
+        freeText(o?.earlyHistory,
+            'Resumo da infância/adolescência — a preencher.')
+      ]),
+      block(
+        '7.2',
+        'Avaliação das necessidades essenciais não atendidas',
+        (concept?.hasAnyNeed ?? false)
+            ? _needs(concept!)
+            : [
+                pw.Text(
+                    'Necessidades essenciais (0–5), origem e esquemas — a preencher.',
+                    style: pw.TextStyle(
+                        fontSize: 9.5,
+                        color: _muted,
+                        fontStyle: pw.FontStyle.italic))
+              ],
+      ),
+      block('7.3', 'Possíveis fatores temperamentais/biológicos', [
+        freeText(o?.temperament,
+            'Facetas do temperamento e fatores biológicos — a preencher.')
+      ]),
+      block('7.4', 'Possíveis fatores culturais, étnicos e religiosos', [
+        freeText(o?.cultural,
+            'Normas culturais, étnicas e religiosas relevantes — a preencher.')
+      ]),
     ];
   }
 

@@ -168,6 +168,41 @@ class TherapeuticRelationship {
   }
 }
 
+/// Origens (seção 7) — subseções de texto livre do terapeuta. 7.2
+/// (necessidades) mora em [UnmetNeed]; aqui ficam 7.1, 7.3 e 7.4.
+class CaseOrigins {
+  const CaseOrigins({this.earlyHistory, this.temperament, this.cultural});
+
+  /// 7.1 — Descrição geral da história inicial.
+  final String? earlyHistory;
+
+  /// 7.3 — Possíveis fatores temperamentais/biológicos.
+  final String? temperament;
+
+  /// 7.4 — Possíveis fatores culturais, étnicos e religiosos.
+  final String? cultural;
+
+  bool get isEmpty =>
+      (earlyHistory ?? '').trim().isEmpty &&
+      (temperament ?? '').trim().isEmpty &&
+      (cultural ?? '').trim().isEmpty;
+
+  factory CaseOrigins.fromJson(Map<String, dynamic> j) => CaseOrigins(
+        earlyHistory: j['early_history'] as String?,
+        temperament: j['temperament'] as String?,
+        cultural: j['cultural'] as String?,
+      );
+
+  Map<String, dynamic> toJson() {
+    String? t(String? v) => (v ?? '').trim().isEmpty ? null : v!.trim();
+    return {
+      if (t(earlyHistory) != null) 'early_history': t(earlyHistory),
+      if (t(temperament) != null) 'temperament': t(temperament),
+      if (t(cultural) != null) 'cultural': t(cultural),
+    };
+  }
+}
+
 /// Impressões gerais (seção 3) — como o cliente se apresenta, inicial e atual.
 class GeneralImpressions {
   const GeneralImpressions({this.initial, this.current});
@@ -249,6 +284,7 @@ class CaseConceptualization {
     required this.relationship,
     this.generalImpressions = const GeneralImpressions(),
     this.diagnosis = const Diagnosis(),
+    this.origins = const CaseOrigins(),
     this.additionalComments,
   });
 
@@ -257,6 +293,7 @@ class CaseConceptualization {
   final TherapeuticRelationship relationship;
   final GeneralImpressions generalImpressions;
   final Diagnosis diagnosis;
+  final CaseOrigins origins;
   final String? additionalComments;
 
   /// Documento vazio (nenhuma linha ainda) — todas as necessidades em branco.
@@ -279,6 +316,7 @@ class CaseConceptualization {
   bool get hasRelationship => !relationship.isEmpty;
   bool get hasGeneralImpressions => !generalImpressions.isEmpty;
   bool get hasDiagnosis => !diagnosis.isEmpty;
+  bool get hasOrigins => !origins.isEmpty;
   bool get hasComments => (additionalComments ?? '').trim().isNotEmpty;
 
   factory CaseConceptualization.fromJson(Map<String, dynamic> j) {
@@ -287,6 +325,7 @@ class CaseConceptualization {
     final rel = (j['therapeutic_relationship'] as Map?) ?? const {};
     final gi = (j['general_impressions'] as Map?) ?? const {};
     final dx = (j['diagnosis'] as Map?) ?? const {};
+    final org = (j['origins'] as Map?) ?? const {};
 
     // Mescla o que veio do banco sobre as 9 chaves fixas, preservando a ordem.
     final byKey = <String, UnmetNeed>{
@@ -307,6 +346,7 @@ class CaseConceptualization {
       generalImpressions:
           GeneralImpressions.fromJson(Map<String, dynamic>.from(gi)),
       diagnosis: Diagnosis.fromJson(Map<String, dynamic>.from(dx)),
+      origins: CaseOrigins.fromJson(Map<String, dynamic>.from(org)),
       additionalComments: j['additional_comments'] as String?,
     );
   }

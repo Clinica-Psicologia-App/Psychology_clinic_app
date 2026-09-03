@@ -189,16 +189,11 @@ class _Body extends StatelessWidget {
                 ),
         ),
 
-        // 7. Origens — necessidades não atendidas (campos do terapeuta).
+        // 7. Origens infantis e adolescentes dos problemas atuais.
         _Section(
           number: '7',
-          title: 'Origens · necessidades não atendidas',
-          child: (concept?.hasAnyNeed ?? false)
-              ? _NeedsList(concept: concept!)
-              : const _Placeholder(
-                  'Avaliação das necessidades essenciais (0–5), origem e '
-                  'esquemas — a preencher.',
-                ),
+          title: 'Origens infantis e adolescentes',
+          child: _OriginsSection(concept: concept),
         ),
 
         // 8. Esquemas centrais
@@ -824,6 +819,112 @@ class _GoalRow extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// 7 — origens: 7.1 história inicial, 7.2 necessidades, 7.3 temperamento,
+/// 7.4 fatores culturais (títulos fiéis ao formulário padrão).
+class _OriginsSection extends StatelessWidget {
+  const _OriginsSection({required this.concept});
+
+  final CaseConceptualization? concept;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final o = concept?.origins;
+
+    Widget subLabel(String number, String title) => Padding(
+          padding: const EdgeInsets.only(bottom: 4),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('$number ',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.navy,
+                  )),
+              Expanded(
+                child: Text(title.toUpperCase(),
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontSize: 9,
+                      letterSpacing: 0.3,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.textMuted,
+                    )),
+              ),
+            ],
+          ),
+        );
+
+    Widget text(String? v) => Text(
+          v!.trim(),
+          style: theme.textTheme.bodySmall
+              ?.copyWith(color: AppColors.textPrimary, height: 1.45),
+        );
+
+    Widget placeholder(String t) => Text(
+          t,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: AppColors.textMuted,
+            fontStyle: FontStyle.italic,
+            height: 1.4,
+          ),
+        );
+
+    Widget block(String number, String title, Widget content) => Padding(
+          padding: const EdgeInsets.only(bottom: 12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [subLabel(number, title), content],
+          ),
+        );
+
+    final hasEarly = (o?.earlyHistory ?? '').trim().isNotEmpty;
+    final hasTemp = (o?.temperament ?? '').trim().isNotEmpty;
+    final hasCultural = (o?.cultural ?? '').trim().isNotEmpty;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        block(
+          '7.1',
+          'Descrição geral da história inicial',
+          hasEarly
+              ? text(o!.earlyHistory)
+              : placeholder('Resumo da infância/adolescência — a preencher.'),
+        ),
+        block(
+          '7.2',
+          'Avaliação das necessidades essenciais não atendidas',
+          (concept?.hasAnyNeed ?? false)
+              ? _NeedsList(concept: concept!)
+              : placeholder(
+                  'Necessidades essenciais (0–5), origem e esquemas — a preencher.'),
+        ),
+        block(
+          '7.3',
+          'Possíveis fatores temperamentais/biológicos',
+          hasTemp
+              ? text(o!.temperament)
+              : placeholder(
+                  'Facetas do temperamento e fatores biológicos — a preencher.'),
+        ),
+        Padding(
+          padding: EdgeInsets.zero,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              subLabel('7.4', 'Possíveis fatores culturais, étnicos e religiosos'),
+              hasCultural
+                  ? text(o!.cultural)
+                  : placeholder(
+                      'Normas culturais, étnicas e religiosas relevantes — a preencher.'),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

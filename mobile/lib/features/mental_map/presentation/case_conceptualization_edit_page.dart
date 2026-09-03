@@ -132,6 +132,11 @@ class _EditState extends ConsumerState<_EditForm> {
   String? _dxSystem;
   late final List<(TextEditingController, TextEditingController)> _dxItems;
   late final TextEditingController _comments;
+
+  // 7 · origens (7.1 história inicial, 7.3 temperamento, 7.4 cultural)
+  late final TextEditingController _earlyHistory;
+  late final TextEditingController _temperament;
+  late final TextEditingController _cultural;
   bool _saving = false;
 
   @override
@@ -181,6 +186,11 @@ class _EditState extends ConsumerState<_EditForm> {
         }()
     ];
     _comments = TextEditingController(text: data.additionalComments ?? '');
+
+    final o = data.origins;
+    _earlyHistory = TextEditingController(text: o.earlyHistory ?? '');
+    _temperament = TextEditingController(text: o.temperament ?? '');
+    _cultural = TextEditingController(text: o.cultural ?? '');
   }
 
   @override
@@ -201,6 +211,9 @@ class _EditState extends ConsumerState<_EditForm> {
       p.$2.dispose();
     }
     _comments.dispose();
+    _earlyHistory.dispose();
+    _temperament.dispose();
+    _cultural.dispose();
     super.dispose();
   }
 
@@ -234,6 +247,11 @@ class _EditState extends ConsumerState<_EditForm> {
           for (final p in _dxItems)
             DiagnosisItem(name: p.$1.text, code: p.$2.text),
         ],
+      ),
+      origins: CaseOrigins(
+        earlyHistory: _earlyHistory.text,
+        temperament: _temperament.text,
+        cultural: _cultural.text,
       ),
       additionalComments: _comments.text,
     );
@@ -324,8 +342,15 @@ class _EditState extends ConsumerState<_EditForm> {
                 ],
               ),
               _card(
+                icon: Icons.history_edu_outlined,
+                title: '7.1 · Descrição geral da história inicial',
+                subtitle:
+                    'Aspectos da infância/adolescência e experiências adversas que contribuíram para os problemas atuais.',
+                children: [_field(_earlyHistory, 'História inicial')],
+              ),
+              _card(
                 icon: Icons.spa_outlined,
-                title: '7 · Necessidades não atendidas',
+                title: '7.2 · Necessidades não atendidas',
                 subtitle: 'Nota 0–5 (ou X = insuficiente), origem e esquemas.',
                 children: [
                   for (var i = 0; i < _needs.length; i++) ...[
@@ -333,6 +358,20 @@ class _EditState extends ConsumerState<_EditForm> {
                     _needBlock(_needs[i]),
                   ],
                 ],
+              ),
+              _card(
+                icon: Icons.psychology_alt_outlined,
+                title: '7.3 · Fatores temperamentais/biológicos',
+                subtitle:
+                    'Facetas do temperamento e fatores biológicos relevantes (ver Guia de Conceitualização).',
+                children: [_field(_temperament, 'Temperamento / biológico')],
+              ),
+              _card(
+                icon: Icons.diversity_3_outlined,
+                title: '7.4 · Fatores culturais, étnicos e religiosos',
+                subtitle:
+                    'Normas e atitudes da origem étnica, religiosa e comunitária que tiveram papel nos problemas.',
+                children: [_field(_cultural, 'Fatores culturais')],
               ),
               _card(
                 icon: Icons.account_tree_outlined,

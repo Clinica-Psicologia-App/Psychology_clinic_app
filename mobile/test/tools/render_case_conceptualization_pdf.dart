@@ -148,6 +148,13 @@ void main() {
         ],
       ),
       additionalComments: 'Reavaliar conceitualização após 10 sessões.',
+      origins: CaseOrigins(
+        earlyHistory:
+            'Pais emocionalmente distantes; cobrança escolar intensa desde cedo.',
+        temperament: 'Sensível, introvertida, alta reatividade ao estresse.',
+        cultural:
+            'Ambiente familiar com forte ênfase em desempenho e status social.',
+      ),
     );
 
     final assessment = InitialAssessment(

@@ -51,6 +51,7 @@ import '../../features/life_story/presentation/person_clinical_card_page.dart';
 import '../../features/life_story/presentation/my_timeline_page.dart';
 import '../../features/life_story/presentation/timeline_event_flow_page.dart';
 import '../../features/patient_problems/presentation/patient_problem_route_helpers.dart';
+import '../../features/personality_assessment/presentation/personality_assessment_route_helpers.dart';
 import '../../features/personality_reference/presentation/personality_reference_route_helpers.dart';
 import '../../features/therapy_goals/presentation/therapy_goal_route_helpers.dart';
 import '../../features/patients/presentation/create_patient_page.dart';
@@ -552,6 +553,7 @@ List<RouteBase> _staffPatientRoutes(ProfileRole role) {
             ...staffPatientLibraryRoutes(role: role),
             ...staffClinicalDashboardRoutes(role: role),
             ...staffPersonalityReferenceRoutes(role: role),
+            ...staffPersonalityAssessmentRoutes(role: role),
             ...staffClinicalReportRoutes(role: role),
           ],
         ),

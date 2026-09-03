@@ -17,7 +17,7 @@ import '../../../patient_library/presentation/patient_library_routes.dart';
 import '../../../psychoeducation/presentation/psychoeducation_routes.dart';
 import '../../../patient_check_ins/presentation/patient_check_in_routes.dart';
 import '../../../patient_problems/presentation/patient_problem_routes.dart';
-import '../../../personality_reference/presentation/personality_reference_routes.dart';
+import '../../../personality_assessment/presentation/personality_assessment_routes.dart';
 import '../../../profile/domain/profile_role.dart';
 import '../../../questionnaires/presentation/questionnaire_routes.dart';
 import '../../../therapy_goals/presentation/therapy_goal_routes.dart';
@@ -190,10 +190,10 @@ class FutureModulesSection extends ConsumerWidget {
           _ModuleSpec(
             icon: Icons.psychology_alt_outlined,
             title: 'Personalidade',
-            subtitle: 'Fatores, facetas e leituras clínicas.',
+            subtitle: 'Registro de resultados (NEO PI-R), perfil e facetas.',
             accentColor: AppColors.purple,
             onTap: () => context.push(
-              PersonalityReferenceRoutes.staffList(
+              PersonalityAssessmentRoutes.staffList(
                 role: role,
                 patientId: patientId,
               ),

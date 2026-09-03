@@ -12,6 +12,7 @@ import '../../initial_assessment/domain/life_area.dart';
 import '../domain/case_conceptualization.dart';
 import '../domain/mental_map_case_summary.dart';
 import '../domain/mental_map_data.dart';
+import '../domain/mental_map_goal_summary.dart';
 import '../domain/mental_map_score_highlight.dart';
 import '../domain/schema_mode_catalog.dart';
 
@@ -190,8 +191,7 @@ class CaseConceptualizationPdf {
                 ? _placeholder('Nenhum objetivo ativo.')
                 : [
                     for (var i = 0; i < data.activeGoals.length; i++)
-                      _goal(i + 1, data.activeGoals[i].title,
-                          data.activeGoals[i].targetDateLabel),
+                      _goal(i + 1, data.activeGoals[i]),
                   ],
           ),
 
@@ -615,36 +615,56 @@ class CaseConceptualizationPdf {
         ),
       );
 
-  static pw.Widget _goal(int index, String title, String? meta) => pw.Padding(
-        padding: const pw.EdgeInsets.only(bottom: 6),
-        child: pw.Row(
-          crossAxisAlignment: pw.CrossAxisAlignment.start,
-          children: [
-            pw.Container(
-              width: 15,
-              height: 15,
-              alignment: pw.Alignment.center,
-              decoration: const pw.BoxDecoration(color: _tint, shape: pw.BoxShape.circle),
-              child: pw.Text('$index',
-                  style: pw.TextStyle(
-                      fontSize: 8, fontWeight: pw.FontWeight.bold, color: _blue)),
+  static pw.Widget _goal(int index, MentalMapGoalSummary g) {
+    final prazoColor = g.isOverdue ? _error : _muted;
+    return pw.Padding(
+      padding: const pw.EdgeInsets.only(bottom: 7),
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Container(
+            width: 15,
+            height: 15,
+            alignment: pw.Alignment.center,
+            decoration:
+                const pw.BoxDecoration(color: _tint, shape: pw.BoxShape.circle),
+            child: pw.Text('$index',
+                style: pw.TextStyle(
+                    fontSize: 8, fontWeight: pw.FontWeight.bold, color: _blue)),
+          ),
+          pw.SizedBox(width: 7),
+          pw.Expanded(
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Text(g.title,
+                    style: pw.TextStyle(
+                        fontSize: 10,
+                        fontWeight: pw.FontWeight.bold,
+                        color: _navy,
+                        lineSpacing: 2)),
+                if ((g.description ?? '').trim().isNotEmpty)
+                  pw.Text(g.description!.trim(),
+                      style: const pw.TextStyle(
+                          fontSize: 9, color: _secondary, lineSpacing: 2)),
+                if ((g.targetDateLabel ?? '').trim().isNotEmpty)
+                  pw.Text(
+                      g.isOverdue
+                          ? 'Prazo vencido · ${g.targetDateLabel}'
+                          : 'Prazo: ${g.targetDateLabel}',
+                      style: pw.TextStyle(
+                          fontSize: 8.5,
+                          color: prazoColor,
+                          fontWeight: g.isOverdue
+                              ? pw.FontWeight.bold
+                              : pw.FontWeight.normal)),
+              ],
             ),
-            pw.SizedBox(width: 7),
-            pw.Expanded(
-              child: pw.Column(
-                crossAxisAlignment: pw.CrossAxisAlignment.start,
-                children: [
-                  pw.Text(title,
-                      style: const pw.TextStyle(fontSize: 10, color: _navy, lineSpacing: 2)),
-                  if ((meta ?? '').trim().isNotEmpty)
-                    pw.Text(meta!.trim(),
-                        style: const pw.TextStyle(fontSize: 8.5, color: _muted)),
-                ],
-              ),
-            ),
-          ],
-        ),
-      );
+          ),
+        ],
+      ),
+    );
+  }
 
   static PdfColor _modeColor(String key) => switch (key) {
         'blue' => _blue,

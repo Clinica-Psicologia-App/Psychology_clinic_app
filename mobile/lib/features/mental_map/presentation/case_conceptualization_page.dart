@@ -16,6 +16,7 @@ import 'mental_map_routes.dart';
 import '../domain/case_conceptualization.dart';
 import '../domain/mental_map_case_summary.dart';
 import '../domain/mental_map_data.dart';
+import '../domain/mental_map_goal_summary.dart';
 import '../domain/mental_map_score_highlight.dart';
 import '../domain/schema_mode_catalog.dart';
 import '../providers/case_conceptualization_providers.dart';
@@ -247,11 +248,7 @@ class _Body extends StatelessWidget {
               : Column(
                   children: [
                     for (var i = 0; i < data.activeGoals.length; i++)
-                      _GoalRow(
-                        index: i + 1,
-                        title: data.activeGoals[i].title,
-                        meta: data.activeGoals[i].targetDateLabel,
-                      ),
+                      _GoalRow(index: i + 1, goal: data.activeGoals[i]),
                   ],
                 ),
         ),
@@ -692,17 +689,17 @@ class _BulletRow extends StatelessWidget {
 }
 
 class _GoalRow extends StatelessWidget {
-  const _GoalRow({required this.index, required this.title, this.meta});
+  const _GoalRow({required this.index, required this.goal});
 
   final int index;
-  final String title;
-  final String? meta;
+  final MentalMapGoalSummary goal;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final prazoColor = goal.isOverdue ? AppColors.error : AppColors.textMuted;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 7),
+      padding: const EdgeInsets.only(bottom: 9),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -729,16 +726,48 @@ class _GoalRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.textPrimary, height: 1.4),
-                ),
-                if ((meta ?? '').isNotEmpty)
-                  Text(
-                    meta!,
-                    style: theme.textTheme.labelSmall
-                        ?.copyWith(color: AppColors.textMuted),
+                  goal.title,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
+                    height: 1.4,
                   ),
+                ),
+                if ((goal.description ?? '').isNotEmpty) ...[
+                  const SizedBox(height: 1),
+                  Text(
+                    goal.description!,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: AppColors.textSecondary,
+                      height: 1.4,
+                    ),
+                  ),
+                ],
+                if ((goal.targetDateLabel ?? '').isNotEmpty) ...[
+                  const SizedBox(height: 3),
+                  Row(
+                    children: [
+                      Icon(
+                        goal.isOverdue
+                            ? Icons.event_busy_outlined
+                            : Icons.event_outlined,
+                        size: 12,
+                        color: prazoColor,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        goal.isOverdue
+                            ? 'Prazo vencido · ${goal.targetDateLabel}'
+                            : 'Prazo: ${goal.targetDateLabel}',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: prazoColor,
+                          fontWeight:
+                              goal.isOverdue ? FontWeight.w700 : FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),

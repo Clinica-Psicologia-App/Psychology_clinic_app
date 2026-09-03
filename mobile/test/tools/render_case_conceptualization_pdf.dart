@@ -85,10 +85,17 @@ void main() {
         MentalMapGoalSummary(
             id: '1',
             title: 'Dizer não a demandas fora do horário',
-            statusLabel: 'ativo',
-            targetDateLabel: 'até nov/2026'),
+            statusLabel: 'Ativo',
+            description:
+                'Praticar recusas assertivas com o chefe, começando por 1 pedido/semana.',
+            targetDateLabel: '30/11/2026'),
         MentalMapGoalSummary(
-            id: '2', title: 'Retomar contato com amigos', statusLabel: 'ativo'),
+            id: '2',
+            title: 'Retomar contato com amigos',
+            statusLabel: 'Ativo',
+            description: 'Marcar um encontro presencial por mês.',
+            targetDateLabel: '15/07/2026',
+            isOverdue: true),
       ],
       recentMonitors: const [],
       recentTimelineEvents: const [],

@@ -105,6 +105,7 @@ class MentalMapRepository {
         .toList();
 
     final goals = await _goals.listForPatient(patientId);
+    final today = DateTime.now();
     final activeGoals = goals
         .where((g) => g.status == TherapyGoalStatus.active)
         .map(
@@ -112,8 +113,15 @@ class MentalMapRepository {
             id: g.id,
             title: g.title,
             statusLabel: g.status.label,
+            description: (g.description ?? '').trim().isEmpty
+                ? null
+                : g.description!.trim(),
             targetDateLabel:
                 g.targetDate != null ? _formatDate(g.targetDate!) : null,
+            isOverdue: g.targetDate != null &&
+                DateTime(g.targetDate!.year, g.targetDate!.month,
+                        g.targetDate!.day)
+                    .isBefore(DateTime(today.year, today.month, today.day)),
           ),
         )
         .toList();

@@ -366,11 +366,19 @@ class CaseConceptualizationPdf {
           ];
     if (rated.isEmpty) return _placeholder('Áreas da vida ainda não avaliadas.');
 
-    PdfColor tone(int s) => s >= 7 ? _success : (s >= 4 ? _warning : _error);
-    return [
-      for (final r in rated)
-        pw.Padding(
-          padding: const pw.EdgeInsets.only(bottom: 7),
+    PdfColor tone(num s) => s >= 7 ? _success : (s >= 4 ? _warning : _error);
+
+    final byGroup = <FunctioningGroup, List<(LifeArea, int)>>{};
+    for (final r in rated) {
+      byGroup.putIfAbsent(r.$1.group, () => []).add(r);
+    }
+    final groups = [
+      for (final g in FunctioningGroup.values)
+        if (byGroup.containsKey(g)) g,
+    ];
+
+    pw.Widget areaRow((LifeArea, int) r, bool last) => pw.Padding(
+          padding: pw.EdgeInsets.only(bottom: last ? 0 : 6),
           child: pw.Column(
             crossAxisAlignment: pw.CrossAxisAlignment.start,
             children: [
@@ -393,7 +401,45 @@ class CaseConceptualizationPdf {
               _bar(r.$2, 10, tone(r.$2)),
             ],
           ),
-        ),
+        );
+
+    return [
+      for (var gi = 0; gi < groups.length; gi++)
+        () {
+          final items = byGroup[groups[gi]]!;
+          final avg =
+              items.map((e) => e.$2).reduce((x, y) => x + y) / items.length;
+          final avgLabel = avg == avg.roundToDouble()
+              ? '${avg.toInt()}'
+              : avg.toStringAsFixed(1);
+          return pw.Container(
+            margin: pw.EdgeInsets.only(bottom: gi == groups.length - 1 ? 0 : 12),
+            child: pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.Row(
+                  mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                  children: [
+                    pw.Text(groups[gi].label.toUpperCase(),
+                        style: pw.TextStyle(
+                            fontSize: 8,
+                            letterSpacing: 0.3,
+                            fontWeight: pw.FontWeight.bold,
+                            color: _navy)),
+                    pw.Text('média $avgLabel/10',
+                        style: pw.TextStyle(
+                            fontSize: 8.5,
+                            fontWeight: pw.FontWeight.bold,
+                            color: tone(avg))),
+                  ],
+                ),
+                pw.SizedBox(height: 5),
+                for (var i = 0; i < items.length; i++)
+                  areaRow(items[i], i == items.length - 1),
+              ],
+            ),
+          );
+        }(),
     ];
   }
 

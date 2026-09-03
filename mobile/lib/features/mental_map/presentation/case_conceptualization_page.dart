@@ -450,59 +450,114 @@ class _Body extends StatelessWidget {
     if (rated.isEmpty) {
       return const _Placeholder('Áreas da vida ainda não avaliadas.');
     }
+
+    // Agrupa nos domínios clínicos de funcionamento (visão do terapeuta).
+    final byGroup = <FunctioningGroup, List<(LifeArea, int)>>{};
+    for (final r in rated) {
+      byGroup.putIfAbsent(r.$1.group, () => []).add(r);
+    }
+    final groups = [
+      for (final g in FunctioningGroup.values)
+        if (byGroup.containsKey(g)) g,
+    ];
+
     return Builder(builder: (context) {
       final theme = Theme.of(context);
-      Color tone(int s) => s >= 7
+      Color tone(num s) => s >= 7
           ? AppColors.success
           : s >= 4
               ? AppColors.warning
               : AppColors.error;
+
+      Widget areaRow((LifeArea, int) e, bool last) => Padding(
+            padding: EdgeInsets.only(bottom: last ? 0 : 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        e.$1.label,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.textPrimary,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '${e.$2}/10',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: tone(e.$2),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(3),
+                  child: LinearProgressIndicator(
+                    value: (e.$2 / 10).clamp(0.0, 1.0),
+                    minHeight: 5,
+                    backgroundColor: tone(e.$2).withValues(alpha: 0.15),
+                    color: tone(e.$2),
+                  ),
+                ),
+              ],
+            ),
+          );
+
       return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          for (var i = 0; i < rated.length; i++)
-            Padding(
-              padding: EdgeInsets.only(bottom: i == rated.length - 1 ? 0 : 9),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          rated[i].$1.label,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: AppColors.textPrimary,
-                            fontWeight: FontWeight.w600,
+          for (var gi = 0; gi < groups.length; gi++)
+            Builder(builder: (context) {
+              final items = byGroup[groups[gi]]!;
+              final avg =
+                  items.map((e) => e.$2).reduce((x, y) => x + y) / items.length;
+              final avgLabel = avg == avg.roundToDouble()
+                  ? '${avg.toInt()}'
+                  : avg.toStringAsFixed(1);
+              return Padding(
+                padding:
+                    EdgeInsets.only(bottom: gi == groups.length - 1 ? 0 : 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            groups[gi].label,
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              fontSize: 9,
+                              letterSpacing: 0.3,
+                              fontWeight: FontWeight.w800,
+                              color: AppColors.navy,
+                            ),
                           ),
                         ),
-                      ),
-                      Text(
-                        '${rated[i].$2}/10',
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          fontWeight: FontWeight.w800,
-                          color: tone(rated[i].$2),
+                        Text(
+                          'média $avgLabel/10',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: tone(avg),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(3),
-                    child: LinearProgressIndicator(
-                      value: (rated[i].$2 / 10).clamp(0.0, 1.0),
-                      minHeight: 5,
-                      backgroundColor: tone(rated[i].$2).withValues(alpha: 0.15),
-                      color: tone(rated[i].$2),
+                      ],
                     ),
-                  ),
-                ],
-              ),
-            ),
+                    const SizedBox(height: 6),
+                    for (var i = 0; i < items.length; i++)
+                      areaRow(items[i], i == items.length - 1),
+                  ],
+                ),
+              );
+            }),
         ],
       );
     });
   }
-
 }
 
 class _Section extends StatelessWidget {

@@ -293,4 +293,23 @@ class PersonalityAssessment {
       ),
     );
   }
+
+  /// Versão vinda da view do paciente (`patient_shared_personality`): só
+  /// perfil (sem escores, sem síntese/integração).
+  factory PersonalityAssessment.fromPatientView(Map<String, dynamic> j) {
+    DateTime? date(dynamic v) => v == null ? null : DateTime.parse(v as String);
+    final updated = date(j['updated_at'])?.toLocal() ?? DateTime.now();
+    return PersonalityAssessment(
+      id: j['id'] as String,
+      patientId: j['patient_id'] as String,
+      instrument: (j['instrument'] as String?) ?? 'NEO_PI_R',
+      results: PersonalityResults.fromJson(
+        Map<String, dynamic>.from((j['results'] as Map?) ?? const {}),
+      ),
+      createdAt: updated,
+      updatedAt: updated,
+      appliedOn: date(j['applied_on']),
+      sharedWithPatient: true,
+    );
+  }
 }

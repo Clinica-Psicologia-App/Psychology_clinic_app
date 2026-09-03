@@ -2,6 +2,9 @@ import '../../profile/domain/profile_role.dart';
 
 /// Rotas do módulo Avaliação → Personalidade (camada terapeuta).
 abstract final class PersonalityAssessmentRoutes {
+  /// Perfis compartilhados, vistos pelo paciente.
+  static const patientShared = '/patient/personality';
+
   static String _base(ProfileRole role, String patientId) {
     switch (role) {
       case ProfileRole.psychologist:

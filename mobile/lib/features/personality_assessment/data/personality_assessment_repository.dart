@@ -117,6 +117,36 @@ class PersonalityAssessmentRepository {
     }
   }
 
+  /// Liga/desliga o compartilhamento do perfil com o paciente (Fase 3).
+  Future<void> setShared({required String id, required bool shared}) async {
+    try {
+      await _client.from('personality_assessments').update({
+        'updated_by': _client.auth.currentUser?.id,
+        'shared_with_patient': shared,
+      }).eq('id', id);
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  /// Lista os perfis que o terapeuta compartilhou com o paciente logado
+  /// (via view isolada: só classificação, sem escores/síntese).
+  Future<List<PersonalityAssessment>> listSharedForCurrentPatient() async {
+    try {
+      final rows = await _client
+          .from('patient_shared_personality')
+          .select()
+          .order('applied_on', ascending: false, nullsFirst: false);
+      return [
+        for (final r in (rows as List))
+          PersonalityAssessment.fromPatientView(
+              Map<String, dynamic>.from(r as Map)),
+      ];
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
   Future<void> delete(String id) async {
     try {
       await _client.from('personality_assessments').delete().eq('id', id);

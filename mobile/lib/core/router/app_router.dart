@@ -422,6 +422,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             patientTherapyResourceRoutes() +
             patientLibraryRoutes() +
             psychoeducationPatientRoutes() +
+            patientPersonalityAssessmentRoutes() +
             patientDailyMonitorRoutes(),
       ),
     ],

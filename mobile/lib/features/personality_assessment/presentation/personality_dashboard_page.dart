@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
+import '../../../shared/widgets/error_banner.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/personality_assessment.dart';
 import '../domain/personality_instrument.dart';
@@ -88,8 +89,10 @@ class _Body extends StatelessWidget {
       children: [
         _header(context),
         const SizedBox(height: 12),
+        ProfilePanel(assessment: assessment),
+        const SizedBox(height: 4),
         for (final d in def.domains)
-          _DomainCard(
+          DomainCard(
             domain: d,
             result: assessment.results.forDomain(d.code),
           ),
@@ -116,6 +119,11 @@ class _Body extends StatelessWidget {
                 ? 'Editar síntese e integração'
                 : 'Adicionar síntese clínica',
           ),
+        ),
+        const SizedBox(height: 10),
+        _ShareToggle(
+          assessmentId: assessmentId,
+          shared: assessment.sharedWithPatient,
         ),
       ],
     );
@@ -330,6 +338,203 @@ class _Body extends StatelessWidget {
   }
 }
 
+/// Toggle de compartilhamento do perfil com o paciente (opt-in do terapeuta).
+class _ShareToggle extends ConsumerStatefulWidget {
+  const _ShareToggle({required this.assessmentId, required this.shared});
+
+  final String assessmentId;
+  final bool shared;
+
+  @override
+  ConsumerState<_ShareToggle> createState() => _ShareToggleState();
+}
+
+class _ShareToggleState extends ConsumerState<_ShareToggle> {
+  bool _busy = false;
+
+  Future<void> _toggle(bool value) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      await ref
+          .read(personalityAssessmentRepositoryProvider)
+          .setShared(id: widget.assessmentId, shared: value);
+      ref.invalidate(personalityAssessmentByIdProvider(widget.assessmentId));
+    } catch (e) {
+      if (mounted) showErrorBanner(context, e);
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(13),
+        border:
+            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.5)),
+      ),
+      child: SwitchListTile(
+        value: widget.shared,
+        onChanged: _busy ? null : _toggle,
+        activeThumbColor: AppColors.purple,
+        secondary: const Icon(Icons.visibility_outlined, color: AppColors.purple),
+        title: const Text('Compartilhar perfil com o paciente'),
+        subtitle: Text(
+          widget.shared
+              ? 'Visível ao paciente (só as faixas, sem números nem sua síntese).'
+              : 'Não visível ao paciente. Ative para liberar o perfil.',
+          style: theme.textTheme.labelSmall?.copyWith(color: AppColors.textMuted),
+        ),
+      ),
+    );
+  }
+}
+
+/// Painel consolidado do perfil: os 5 domínios numa escala compartilhada de
+/// 5 faixas (Muito baixo → Muito alto), com um marcador por domínio. É apenas
+/// uma representação dos dados informados — não uma nova interpretação.
+class ProfilePanel extends StatelessWidget {
+  const ProfilePanel({super.key, required this.assessment});
+
+  final PersonalityAssessment assessment;
+
+  static const _bands = ['Mto baixo', 'Baixo', 'Médio', 'Alto', 'Mto alto'];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final def = assessment.instrumentDef;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(13),
+        border:
+            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Perfil nos Cinco Grandes Fatores',
+              style:
+                  theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
+          const SizedBox(height: 12),
+          // Cabeçalho das faixas alinhado à área do gráfico (rótulo = flex 4).
+          Row(
+            children: [
+              const Expanded(flex: 4, child: SizedBox()),
+              Expanded(
+                flex: 8,
+                child: Row(
+                  children: [
+                    for (final b in _bands)
+                      Expanded(
+                        child: Text(
+                          b,
+                          textAlign: TextAlign.center,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontSize: 7.5,
+                            color: AppColors.textMuted,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          for (final d in def.domains)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 5),
+              child: Row(
+                children: [
+                  Expanded(
+                    flex: 4,
+                    child: Text(
+                      d.label,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  Expanded(
+                    flex: 8,
+                    child: _ProfileTrack(
+                      level: assessment.results.forDomain(d.code).overall.level,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Trilha de 5 faixas com um marcador (ponto) na faixa da classificação.
+class _ProfileTrack extends StatelessWidget {
+  const _ProfileTrack({required this.level});
+
+  final PersonalityLevel? level;
+
+  @override
+  Widget build(BuildContext context) {
+    const n = 5;
+    return SizedBox(
+      height: 16,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Row(
+            children: [
+              for (var i = 0; i < n; i++)
+                Expanded(
+                  child: Container(
+                    height: 6,
+                    margin: EdgeInsets.only(right: i == n - 1 ? 0 : 2),
+                    decoration: BoxDecoration(
+                      color: AppColors.purple.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          if (level != null)
+            Row(
+              children: [
+                for (var i = 0; i < n; i++)
+                  Expanded(
+                    child: Center(
+                      child: i == level!.position
+                          ? Container(
+                              width: 14,
+                              height: 14,
+                              decoration: const BoxDecoration(
+                                color: AppColors.purple,
+                                shape: BoxShape.circle,
+                              ),
+                            )
+                          : const SizedBox(height: 14),
+                    ),
+                  ),
+              ],
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Faixa de 5 níveis (Muito baixo → Muito alto), marcando a classificação.
 class LevelFaixa extends StatelessWidget {
   const LevelFaixa({super.key, required this.level});
@@ -359,17 +564,17 @@ class LevelFaixa extends StatelessWidget {
   }
 }
 
-class _DomainCard extends StatefulWidget {
-  const _DomainCard({required this.domain, required this.result});
+class DomainCard extends StatefulWidget {
+  const DomainCard({super.key, required this.domain, required this.result});
 
   final PersonalityDomain domain;
   final DomainResult result;
 
   @override
-  State<_DomainCard> createState() => _DomainCardState();
+  State<DomainCard> createState() => DomainCardState();
 }
 
-class _DomainCardState extends State<_DomainCard> {
+class DomainCardState extends State<DomainCard> {
   bool _open = false;
 
   String _scoreText(num? s) => s == null ? '' : '  ·  $s';

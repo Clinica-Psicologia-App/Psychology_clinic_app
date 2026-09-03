@@ -1,10 +1,21 @@
 import 'package:go_router/go_router.dart';
 
 import '../../profile/domain/profile_role.dart';
+import 'patient_personality_page.dart';
 import 'personality_assessment_form_page.dart';
 import 'personality_assessment_list_page.dart';
 import 'personality_dashboard_page.dart';
 import 'personality_synthesis_page.dart';
+
+/// Rota do paciente para ver perfis compartilhados (`/patient/personality`).
+List<RouteBase> patientPersonalityAssessmentRoutes() {
+  return [
+    GoRoute(
+      path: 'personality',
+      builder: (context, state) => const PatientPersonalityPage(),
+    ),
+  ];
+}
 
 /// Sub-rotas de Personalidade dentro de `/psychologist/patients/:patientId`.
 List<RouteBase> staffPersonalityAssessmentRoutes({required ProfileRole role}) {

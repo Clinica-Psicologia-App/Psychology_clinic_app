@@ -21,3 +21,11 @@ final personalityAssessmentByIdProvider =
     FutureProvider.family<PersonalityAssessment?, String>((ref, id) {
   return ref.read(personalityAssessmentRepositoryProvider).getById(id);
 });
+
+/// Perfis compartilhados com o paciente logado (view isolada).
+final patientSharedPersonalityProvider =
+    FutureProvider<List<PersonalityAssessment>>((ref) {
+  return ref
+      .read(personalityAssessmentRepositoryProvider)
+      .listSharedForCurrentPatient();
+});

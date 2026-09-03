@@ -126,6 +126,9 @@ class _EditState extends ConsumerState<_EditForm> {
   late final TextEditingController _collabNotes;
   late final TextEditingController _bondNotes;
   late final TextEditingController _therapistReactions;
+  // 2 · motivo (complemento do terapeuta)
+  late final TextEditingController _motivoNotes;
+
   // 3 · impressões gerais / 4 · diagnóstico / 13 · comentários
   late final TextEditingController _impInitial;
   late final TextEditingController _impCurrent;
@@ -187,6 +190,8 @@ class _EditState extends ConsumerState<_EditForm> {
     ];
     _comments = TextEditingController(text: data.additionalComments ?? '');
 
+    _motivoNotes = TextEditingController(text: data.motivoNotes ?? '');
+
     final o = data.origins;
     _earlyHistory = TextEditingController(text: o.earlyHistory ?? '');
     _temperament = TextEditingController(text: o.temperament ?? '');
@@ -211,6 +216,7 @@ class _EditState extends ConsumerState<_EditForm> {
       p.$2.dispose();
     }
     _comments.dispose();
+    _motivoNotes.dispose();
     _earlyHistory.dispose();
     _temperament.dispose();
     _cultural.dispose();
@@ -253,6 +259,7 @@ class _EditState extends ConsumerState<_EditForm> {
         temperament: _temperament.text,
         cultural: _cultural.text,
       ),
+      motivoNotes: _motivoNotes.text,
       additionalComments: _comments.text,
     );
     try {
@@ -282,6 +289,13 @@ class _EditState extends ConsumerState<_EditForm> {
           ListView(
             padding: const EdgeInsets.fromLTRB(14, 14, 14, 96),
             children: [
+              _card(
+                icon: Icons.chat_bubble_outline,
+                title: '2 · Motivo da terapia',
+                subtitle:
+                    'Complemento seu ao motivo/queixa (contexto e demandas já vêm do Mapa mental).',
+                children: [_field(_motivoNotes, 'Complemento do terapeuta')],
+              ),
               _card(
                 icon: Icons.visibility_outlined,
                 title: '3 · Impressões gerais',

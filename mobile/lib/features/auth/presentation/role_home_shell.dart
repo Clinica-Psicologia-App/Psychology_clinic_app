@@ -29,6 +29,7 @@ import '../../patient_check_ins/presentation/patient_check_in_routes.dart';
 import '../../patient_check_ins/providers/patient_check_ins_providers.dart';
 import '../../patient_journey/presentation/patient_journey_routes.dart';
 import '../../personality_assessment/presentation/personality_assessment_routes.dart';
+import '../../personality_assessment/providers/personality_assessment_providers.dart';
 import '../../patient_invitations/domain/patient_invitation.dart';
 import '../../patient_invitations/providers/patient_invitations_providers.dart';
 import '../../patient_invitations/presentation/patient_invitation_routes.dart';
@@ -236,6 +237,13 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
       }
     }
 
+    // Card de Personalidade só aparece se o terapeuta já compartilhou algo.
+    final hasSharedPersonality = widget.role == ProfileRole.patient &&
+        ref.watch(patientSharedPersonalityProvider).maybeWhen(
+              data: (list) => list.isNotEmpty,
+              orElse: () => false,
+            );
+
     // Canopy full-bleed no topo (ele reserva o inset da status bar); o
     // conteúdo flui abaixo, com a largura máxima responsiva de sempre.
     final header = widget.role == ProfileRole.patient
@@ -373,19 +381,21 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                       onTap: () => context.push(PatientJourneyRoutes.journey),
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.sm),
-                  MotionReveal(
-                    delay: const Duration(milliseconds: 600),
-                    child: ClinicalModuleCard(
-                      icon: Icons.psychology_alt_outlined,
-                      title: 'Personalidade',
-                      subtitle:
-                          'Resultados que seu psicólogo compartilhou com você.',
-                      accentColor: AppColors.purple,
-                      onTap: () =>
-                          context.push(PersonalityAssessmentRoutes.patientShared),
+                  if (hasSharedPersonality) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    MotionReveal(
+                      delay: const Duration(milliseconds: 600),
+                      child: ClinicalModuleCard(
+                        icon: Icons.psychology_alt_outlined,
+                        title: 'Personalidade',
+                        subtitle:
+                            'Resultados que seu psicólogo compartilhou com você.',
+                        accentColor: AppColors.purple,
+                        onTap: () => context
+                            .push(PersonalityAssessmentRoutes.patientShared),
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ],
             ),

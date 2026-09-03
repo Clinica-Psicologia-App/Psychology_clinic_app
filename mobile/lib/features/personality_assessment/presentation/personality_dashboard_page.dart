@@ -25,6 +25,40 @@ class PersonalityDashboardPage extends ConsumerWidget {
   final String patientId;
   final String assessmentId;
 
+  Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Excluir avaliação?'),
+        content: const Text(
+            'Esta ação remove permanentemente o registro desta avaliação de '
+            'personalidade (resultados, síntese e integração). Não pode ser '
+            'desfeita.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Excluir'),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+    try {
+      await ref
+          .read(personalityAssessmentRepositoryProvider)
+          .delete(assessmentId);
+      ref.invalidate(personalityAssessmentsProvider(patientId));
+      if (context.mounted) context.pop(true);
+    } catch (e) {
+      if (context.mounted) showErrorBanner(context, e);
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(personalityAssessmentByIdProvider(assessmentId));
@@ -45,6 +79,11 @@ class PersonalityDashboardPage extends ConsumerWidget {
             ref.invalidate(personalityAssessmentByIdProvider(assessmentId));
           },
           icon: const Icon(Icons.edit_outlined),
+        ),
+        IconButton(
+          tooltip: 'Excluir avaliação',
+          onPressed: () => _confirmDelete(context, ref),
+          icon: const Icon(Icons.delete_outline),
         ),
       ],
       body: AsyncStateBody<PersonalityAssessment?>(

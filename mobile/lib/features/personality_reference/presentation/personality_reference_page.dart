@@ -80,8 +80,10 @@ class StaffPersonalityReferencePage extends StatelessWidget {
                             ),
                             const SizedBox(height: 6),
                             Text(
-                              'Este conteúdo funciona como apoio de leitura clínica para a equipe. '
-                              'Não é um questionário respondido pelo paciente nesta versão do app.',
+                              'Psicoeducação genérica de apoio à leitura clínica da equipe — '
+                              'não é o relatório nem a interpretação oficial de nenhum '
+                              'instrumento. Não substitui a correção autorizada, cujos '
+                              'resultados devem ser registrados em Avaliação → Personalidade.',
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyMedium

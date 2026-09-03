@@ -93,7 +93,7 @@ class CaseConceptualizationPdf {
           pw.SizedBox(height: 16),
 
           // 2. Motivo da terapia
-          _section('2', 'Motivo da terapia', _motivo(summary)),
+          _section('2', 'Motivo da terapia', _motivo(summary, concept?.motivoNotes)),
 
           // 3. Impressões gerais (terapeuta)
           _section(
@@ -299,11 +299,12 @@ class CaseConceptualizationPdf {
       ];
 
   // ── Conteúdos ──────────────────────────────────────────────────────────
-  static List<pw.Widget> _motivo(MentalMapCaseSummary s) {
+  static List<pw.Widget> _motivo(MentalMapCaseSummary s, String? therapistNote) {
     final parts = <(String, String?)>[
       ('Contexto de vida atual', s.currentLifeContext),
       ('Demandas terapêuticas', s.therapyDemands),
       ('Resumo da queixa', s.intakeSummary),
+      ('Complemento do terapeuta', therapistNote),
     ].where((e) => (e.$2 ?? '').trim().isNotEmpty).toList();
     if (parts.isEmpty) return _placeholder('Motivo/queixa ainda não registrado.');
     return [for (final p in parts) _labeledBlock(p.$1, p.$2!.trim())];

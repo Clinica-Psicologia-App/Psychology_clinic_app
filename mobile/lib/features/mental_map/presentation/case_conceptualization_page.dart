@@ -9,6 +9,9 @@ import '../../../shared/widgets/error_banner.dart';
 import '../../initial_assessment/domain/initial_assessment.dart';
 import '../../initial_assessment/domain/life_area.dart';
 import '../../initial_assessment/providers/initial_assessment_providers.dart';
+import '../../personality_assessment/domain/personality_assessment.dart';
+import '../../personality_assessment/presentation/personality_assessment_routes.dart';
+import '../../personality_assessment/providers/personality_assessment_providers.dart';
 import '../../profile/domain/profile_role.dart';
 import 'case_conceptualization_pdf.dart';
 import 'mental_map_routes.dart';
@@ -102,6 +105,8 @@ class CaseConceptualizationPage extends ConsumerWidget {
             'Ainda não há dados clínicos suficientes para montar a síntese.',
         emptyIcon: Icons.summarize_outlined,
         dataBuilder: (data) => _Body(
+          role: role,
+          patientId: patientId,
           data: data,
           concept:
               ref.watch(caseConceptualizationProvider(patientId)).valueOrNull,
@@ -110,6 +115,9 @@ class CaseConceptualizationPage extends ConsumerWidget {
                 InitialAssessmentContext(role: role, patientId: patientId),
               ))
               .valueOrNull,
+          personalityIntegrations:
+              ref.watch(personalityIntegrationsProvider(patientId)).valueOrNull ??
+                  const [],
         ),
       ),
     );
@@ -117,11 +125,21 @@ class CaseConceptualizationPage extends ConsumerWidget {
 }
 
 class _Body extends StatelessWidget {
-  const _Body({required this.data, this.concept, this.assessment});
+  const _Body({
+    required this.role,
+    required this.patientId,
+    required this.data,
+    this.concept,
+    this.assessment,
+    this.personalityIntegrations = const [],
+  });
 
+  final ProfileRole role;
+  final String patientId;
   final MentalMapData data;
   final CaseConceptualization? concept;
   final InitialAssessment? assessment;
+  final List<PersonalityAssessment> personalityIntegrations;
 
   @override
   Widget build(BuildContext context) {
@@ -133,12 +151,20 @@ class _Body extends StatelessWidget {
       children: [
         _hero(context),
         const SizedBox(height: 12),
+        if (personalityIntegrations.isNotEmpty) ...[
+          _PersonalityLink(
+            role: role,
+            patientId: patientId,
+            items: personalityIntegrations,
+          ),
+          const SizedBox(height: 12),
+        ],
 
         // 2. Motivo da terapia
         _Section(
           number: '2',
           title: 'Motivo da terapia',
-          child: _motivo(context, summary),
+          child: _motivo(context, summary, concept?.motivoNotes),
         ),
 
         // 3. Impressões gerais (campos do terapeuta).
@@ -396,11 +422,13 @@ class _Body extends StatelessWidget {
     );
   }
 
-  Widget _motivo(BuildContext context, MentalMapCaseSummary s) {
+  Widget _motivo(
+      BuildContext context, MentalMapCaseSummary s, String? therapistNote) {
     final parts = <({String label, String? value})>[
       (label: 'Contexto de vida atual', value: s.currentLifeContext),
       (label: 'Demandas terapêuticas', value: s.therapyDemands),
       (label: 'Resumo da queixa', value: s.intakeSummary),
+      (label: 'Complemento do terapeuta', value: therapistNote),
     ].where((e) => (e.value ?? '').trim().isNotEmpty).toList();
 
     if (parts.isEmpty) {
@@ -626,6 +654,114 @@ class _Section extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(12, 11, 12, 12),
             child: child,
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Cross-referência: avaliações de personalidade que o terapeuta marcou como
+/// relevantes para a conceitualização (só-leitura; abre o módulo).
+class _PersonalityLink extends StatelessWidget {
+  const _PersonalityLink({
+    required this.role,
+    required this.patientId,
+    required this.items,
+  });
+
+  final ProfileRole role;
+  final String patientId;
+  final List<PersonalityAssessment> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceTintBlue,
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(color: AppColors.blue.withValues(alpha: 0.25)),
+      ),
+      padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.psychology_alt_outlined,
+                  size: 18, color: AppColors.blue),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text('Avaliação de personalidade',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w800, color: AppColors.blue)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          for (final a in items)
+            InkWell(
+              borderRadius: BorderRadius.circular(8),
+              onTap: () => context.push(
+                PersonalityAssessmentRoutes.staffDetail(
+                  role: role,
+                  patientId: patientId,
+                  assessmentId: a.id,
+                ),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 5),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            '${a.instrumentDef.name}'
+                            '${a.integration.status == null ? '' : ' · ${a.integration.status!.label}'}',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary),
+                          ),
+                        ),
+                        const Icon(Icons.chevron_right,
+                            size: 18, color: AppColors.textMuted),
+                      ],
+                    ),
+                    if (a.integration.links.isNotEmpty) ...[
+                      const SizedBox(height: 5),
+                      Wrap(
+                        spacing: 5,
+                        runSpacing: 5,
+                        children: [
+                          for (final l in a.integration.links)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withValues(alpha: 0.7),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(l.label,
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.blue)),
+                            ),
+                        ],
+                      ),
+                    ],
+                    if ((a.integration.note ?? '').trim().isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(a.integration.note!.trim(),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                              color: AppColors.textSecondary, height: 1.4)),
+                    ],
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );

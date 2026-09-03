@@ -285,6 +285,7 @@ class CaseConceptualization {
     this.generalImpressions = const GeneralImpressions(),
     this.diagnosis = const Diagnosis(),
     this.origins = const CaseOrigins(),
+    this.motivoNotes,
     this.additionalComments,
   });
 
@@ -294,6 +295,9 @@ class CaseConceptualization {
   final GeneralImpressions generalImpressions;
   final Diagnosis diagnosis;
   final CaseOrigins origins;
+
+  /// Seção 2 — complemento do terapeuta ao motivo/queixa.
+  final String? motivoNotes;
   final String? additionalComments;
 
   /// Documento vazio (nenhuma linha ainda) — todas as necessidades em branco.
@@ -317,6 +321,7 @@ class CaseConceptualization {
   bool get hasGeneralImpressions => !generalImpressions.isEmpty;
   bool get hasDiagnosis => !diagnosis.isEmpty;
   bool get hasOrigins => !origins.isEmpty;
+  bool get hasMotivoNotes => (motivoNotes ?? '').trim().isNotEmpty;
   bool get hasComments => (additionalComments ?? '').trim().isNotEmpty;
 
   factory CaseConceptualization.fromJson(Map<String, dynamic> j) {
@@ -347,6 +352,7 @@ class CaseConceptualization {
           GeneralImpressions.fromJson(Map<String, dynamic>.from(gi)),
       diagnosis: Diagnosis.fromJson(Map<String, dynamic>.from(dx)),
       origins: CaseOrigins.fromJson(Map<String, dynamic>.from(org)),
+      motivoNotes: j['motivo_notes'] as String?,
       additionalComments: j['additional_comments'] as String?,
     );
   }

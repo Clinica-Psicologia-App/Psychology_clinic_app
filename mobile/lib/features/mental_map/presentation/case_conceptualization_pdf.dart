@@ -647,7 +647,43 @@ class CaseConceptualizationPdf {
                   pw.Text(g.description!.trim(),
                       style: const pw.TextStyle(
                           fontSize: 9, color: _secondary, lineSpacing: 2)),
-                if ((g.targetDateLabel ?? '').trim().isNotEmpty)
+                pw.SizedBox(height: 3),
+                pw.Row(
+                  children: [
+                    pw.Expanded(child: _bar(g.progress, 100, _blue)),
+                    pw.SizedBox(width: 8),
+                    pw.Text('${g.progress}%',
+                        style: pw.TextStyle(
+                            fontSize: 8.5,
+                            fontWeight: pw.FontWeight.bold,
+                            color: _blue)),
+                  ],
+                ),
+                if (g.linkedLabels.isNotEmpty) ...[
+                  pw.SizedBox(height: 4),
+                  pw.Wrap(
+                    spacing: 4,
+                    runSpacing: 4,
+                    children: [
+                      for (final l in g.linkedLabels)
+                        pw.Container(
+                          padding: const pw.EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: pw.BoxDecoration(
+                            color: _tint,
+                            borderRadius: pw.BorderRadius.circular(20),
+                          ),
+                          child: pw.Text(l,
+                              style: pw.TextStyle(
+                                  fontSize: 8,
+                                  fontWeight: pw.FontWeight.bold,
+                                  color: _blue)),
+                        ),
+                    ],
+                  ),
+                ],
+                if ((g.targetDateLabel ?? '').trim().isNotEmpty) ...[
+                  pw.SizedBox(height: 3),
                   pw.Text(
                       g.isOverdue
                           ? 'Prazo vencido · ${g.targetDateLabel}'
@@ -658,6 +694,7 @@ class CaseConceptualizationPdf {
                           fontWeight: g.isOverdue
                               ? pw.FontWeight.bold
                               : pw.FontWeight.normal)),
+                ],
               ],
             ),
           ),

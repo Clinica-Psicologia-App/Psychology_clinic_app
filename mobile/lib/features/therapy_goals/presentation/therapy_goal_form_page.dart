@@ -10,7 +10,10 @@ import '../../../shared/widgets/app_page_header.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/status_chip.dart';
+import '../../mental_map/domain/mental_map_score_highlight.dart';
+import '../../mental_map/providers/mental_map_providers.dart';
 import '../../profile/domain/profile_role.dart';
+import '../domain/linked_schema.dart';
 import '../domain/therapy_goal.dart';
 import '../domain/therapy_goal_input.dart';
 import '../domain/therapy_goal_status.dart';
@@ -44,8 +47,13 @@ class _TherapyGoalFormPageState extends ConsumerState<TherapyGoalFormPage> {
 
   DateTime? _targetDate;
   TherapyGoalStatus _status = TherapyGoalStatus.active;
+  int _progress = 0;
+  List<LinkedSchema> _links = [];
+  String? _loadedPatientId;
   bool _saving = false;
   bool _loaded = false;
+
+  String? get _effectivePatientId => _loadedPatientId ?? widget.patientId;
 
   @override
   void dispose() {
@@ -62,6 +70,9 @@ class _TherapyGoalFormPageState extends ConsumerState<TherapyGoalFormPage> {
     _descriptionController.text = input.description ?? '';
     _targetDate = input.targetDate;
     _status = goal.status;
+    _progress = goal.progress;
+    _links = List.of(goal.linkedSchemas);
+    _loadedPatientId = goal.patientId;
   }
 
   TherapyGoalInput _buildInput() {
@@ -71,6 +82,8 @@ class _TherapyGoalFormPageState extends ConsumerState<TherapyGoalFormPage> {
       targetDate: widget.isStaff ? _targetDate : null,
       status:
           widget.isStaff || widget.isEdit ? _status : TherapyGoalStatus.active,
+      progress: _progress,
+      linkedSchemas: _links,
     );
   }
 
@@ -178,6 +191,127 @@ class _TherapyGoalFormPageState extends ConsumerState<TherapyGoalFormPage> {
     return _buildForm(context);
   }
 
+  Widget _progressField(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text('Progresso', style: theme.textTheme.titleSmall),
+            const Spacer(),
+            Text(
+              '$_progress%',
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: AppColors.turquoise,
+              ),
+            ),
+          ],
+        ),
+        Slider(
+          value: _progress.toDouble(),
+          min: 0,
+          max: 100,
+          divisions: 20,
+          label: '$_progress%',
+          onChanged: (v) => setState(() => _progress = v.round()),
+        ),
+      ],
+    );
+  }
+
+  Widget _linksField(BuildContext context) {
+    final theme = Theme.of(context);
+    final patientId = _effectivePatientId;
+    Widget wrapCard(Widget child) => Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+                color: theme.colorScheme.outline.withValues(alpha: 0.5)),
+          ),
+          child: child,
+        );
+
+    if (patientId == null) {
+      return wrapCard(Text(
+        'Esquemas e modos ficam disponíveis quando o objetivo está vinculado a um paciente.',
+        style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+      ));
+    }
+
+    final async = ref.watch(
+      staffMentalMapProvider(
+        StaffMentalMapContext(role: widget.role, patientId: patientId),
+      ),
+    );
+
+    return async.when(
+      loading: () => wrapCard(Row(
+        children: [
+          const SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+          const SizedBox(width: 10),
+          Text('Carregando esquemas e modos...',
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: AppColors.textMuted)),
+        ],
+      )),
+      error: (_, __) => wrapCard(Text(
+        'Não foi possível carregar os esquemas/modos do paciente.',
+        style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+      )),
+      data: (data) {
+        final core = data.clinicalCore;
+        final options = <MentalMapScoreHighlight>[
+          ...core.topSchemas,
+          ...core.topModes,
+        ];
+        // Mantém vínculos já salvos mesmo que não estejam entre os "top".
+        final byCode = {for (final o in options) o.code: o.name};
+        for (final l in _links) {
+          byCode.putIfAbsent(l.code, () => l.name);
+        }
+
+        if (byCode.isEmpty) {
+          return wrapCard(Text(
+            'Sem esquemas (YSQ) ou modos (YAMI) concluídos para este paciente ainda.',
+            style:
+                theme.textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+          ));
+        }
+
+        bool isSel(String code) => _links.any((l) => l.code == code);
+        return wrapCard(Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final entry in byCode.entries)
+              FilterChip(
+                label: Text(entry.value),
+                selected: isSel(entry.key),
+                onSelected: (sel) {
+                  setState(() {
+                    _links = [..._links.where((l) => l.code != entry.key)];
+                    if (sel) {
+                      _links.add(
+                          LinkedSchema(code: entry.key, name: entry.value));
+                    }
+                  });
+                },
+              ),
+          ],
+        ));
+      },
+    );
+  }
+
   Widget _buildForm(BuildContext context) {
     return AppScaffold(
       title: widget.isEdit ? 'Editar objetivo' : 'Novo objetivo',
@@ -272,6 +406,16 @@ class _TherapyGoalFormPageState extends ConsumerState<TherapyGoalFormPage> {
                       child: const Text('Remover data alvo'),
                     ),
                   ),
+                const SizedBox(height: AppSpacing.lg),
+                const AppSectionHeader(
+                  title: 'Progresso e vínculos',
+                  subtitle:
+                      'Acompanhe o avanço e conecte o objetivo aos esquemas e modos que ele endereça.',
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                _progressField(context),
+                const SizedBox(height: AppSpacing.md),
+                _linksField(context),
               ],
               if (widget.isStaff && widget.isEdit) ...[
                 const SizedBox(height: AppSpacing.sm),

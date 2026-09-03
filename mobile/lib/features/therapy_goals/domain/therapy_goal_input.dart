@@ -1,4 +1,5 @@
-﻿import 'therapy_goal.dart';
+﻿import 'linked_schema.dart';
+import 'therapy_goal.dart';
 import 'therapy_goal_status.dart';
 
 class TherapyGoalInput {
@@ -7,6 +8,8 @@ class TherapyGoalInput {
     this.description,
     this.targetDate,
     this.status,
+    this.progress = 0,
+    this.linkedSchemas = const [],
   });
 
   final String title;
@@ -14,13 +17,36 @@ class TherapyGoalInput {
   final DateTime? targetDate;
   final TherapyGoalStatus? status;
 
+  /// Progresso 0–100 (clampado ao serializar).
+  final int progress;
+
+  /// Esquemas/modos vinculados (código + nome).
+  final List<LinkedSchema> linkedSchemas;
+
   factory TherapyGoalInput.fromGoal(TherapyGoal goal) {
     return TherapyGoalInput(
       title: goal.title,
       description: goal.description,
       targetDate: goal.targetDate,
       status: goal.status,
+      progress: goal.progress,
+      linkedSchemas: goal.linkedSchemas,
     );
+  }
+
+  int get _progressClamped => progress < 0 ? 0 : (progress > 100 ? 100 : progress);
+
+  List<Map<String, dynamic>> get _linksClean {
+    final seen = <String>{};
+    final out = <Map<String, dynamic>>[];
+    for (final l in linkedSchemas) {
+      final code = l.code.trim();
+      final name = l.name.trim();
+      if (name.isEmpty && code.isEmpty) continue;
+      final key = code.isNotEmpty ? code : name;
+      if (seen.add(key)) out.add({'code': code, 'name': name});
+    }
+    return out;
   }
 
   String? validate() {
@@ -50,6 +76,8 @@ class TherapyGoalInput {
       'description': _nullableTrim(description),
       if (targetDate != null) 'target_date': _formatDate(targetDate!),
       'status': (status ?? TherapyGoalStatus.active).storageValue,
+      'progress': _progressClamped,
+      'linked_schemas': _linksClean,
     };
   }
 
@@ -60,6 +88,8 @@ class TherapyGoalInput {
       'description': _nullableTrim(description),
       'target_date': targetDate != null ? _formatDate(targetDate!) : null,
       if (status != null) 'status': status!.storageValue,
+      'progress': _progressClamped,
+      'linked_schemas': _linksClean,
     };
   }
 

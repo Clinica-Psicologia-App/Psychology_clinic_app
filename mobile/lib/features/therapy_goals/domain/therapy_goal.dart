@@ -1,3 +1,4 @@
+import 'linked_schema.dart';
 import 'therapy_goal_status.dart';
 
 class TherapyGoal {
@@ -11,6 +12,8 @@ class TherapyGoal {
     required this.status,
     this.targetDate,
     this.completedAt,
+    this.progress = 0,
+    this.linkedSchemas = const [],
     required this.createdAt,
     required this.updatedAt,
   });
@@ -24,6 +27,12 @@ class TherapyGoal {
   final TherapyGoalStatus status;
   final DateTime? targetDate;
   final DateTime? completedAt;
+
+  /// Progresso em porcentagem (0–100).
+  final int progress;
+
+  /// Esquemas/modos que o objetivo endereça (código + nome).
+  final List<LinkedSchema> linkedSchemas;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -40,6 +49,8 @@ class TherapyGoal {
       status: therapyGoalStatusFromStorage(json['status'] as String?),
       targetDate: _parseDate(json['target_date']),
       completedAt: _parseDateTime(json['completed_at']),
+      progress: (json['progress'] as num?)?.toInt() ?? 0,
+      linkedSchemas: LinkedSchema.listFromJson(json['linked_schemas']),
       createdAt: _parseDateTime(json['created_at'])!,
       updatedAt: _parseDateTime(json['updated_at'])!,
     );

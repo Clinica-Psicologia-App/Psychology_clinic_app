@@ -14,7 +14,7 @@ class TherapyGoalsRepository {
   final SupabaseClient _client;
 
   static const _select =
-      'id, clinic_id, patient_id, created_by, title, description, status, target_date, completed_at, created_at, updated_at';
+      'id, clinic_id, patient_id, created_by, title, description, status, target_date, completed_at, progress, linked_schemas, created_at, updated_at';
 
   Future<String> getPatientIdForCurrentProfile() async {
     try {

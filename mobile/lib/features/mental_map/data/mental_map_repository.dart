@@ -122,6 +122,11 @@ class MentalMapRepository {
                 DateTime(g.targetDate!.year, g.targetDate!.month,
                         g.targetDate!.day)
                     .isBefore(DateTime(today.year, today.month, today.day)),
+            progress: g.progress,
+            linkedLabels: [
+              for (final l in g.linkedSchemas)
+                if (l.name.trim().isNotEmpty) l.name.trim(),
+            ],
           ),
         )
         .toList();

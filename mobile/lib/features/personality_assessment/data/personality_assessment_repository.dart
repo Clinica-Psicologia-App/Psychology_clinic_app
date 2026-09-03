@@ -15,7 +15,8 @@ class PersonalityAssessmentRepository {
 
   static const _select =
       'id, clinic_id, patient_id, instrument, applied_on, application_form, '
-      'protocol_validity, results, shared_with_patient, created_at, updated_at';
+      'protocol_validity, results, shared_with_patient, clinical_synthesis, '
+      'conceptualization_integration, created_at, updated_at';
 
   Future<List<PersonalityAssessment>> listForPatient(String patientId) async {
     try {
@@ -93,6 +94,23 @@ class PersonalityAssessmentRepository {
         'application_form': _nullableTrim(applicationForm),
         'protocol_validity': protocolValidity?.code,
         'results': results.toJson(),
+      }).eq('id', id);
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
+  /// Salva a síntese clínica + integração à conceitualização (Fase 2).
+  Future<void> saveSynthesis({
+    required String id,
+    required ClinicalSynthesis synthesis,
+    required ConceptualizationIntegration integration,
+  }) async {
+    try {
+      await _client.from('personality_assessments').update({
+        'updated_by': _client.auth.currentUser?.id,
+        'clinical_synthesis': synthesis.toJson(),
+        'conceptualization_integration': integration.toJson(),
       }).eq('id', id);
     } catch (e) {
       throw mapToAppException(e);

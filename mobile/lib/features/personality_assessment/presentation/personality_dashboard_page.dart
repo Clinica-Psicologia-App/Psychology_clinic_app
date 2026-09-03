@@ -55,7 +55,12 @@ class PersonalityDashboardPage extends ConsumerWidget {
           if (a == null) {
             return const Center(child: Text('Avaliação não encontrada.'));
           }
-          return _Body(assessment: a);
+          return _Body(
+            assessment: a,
+            role: role,
+            patientId: patientId,
+            assessmentId: assessmentId,
+          );
         },
       ),
     );
@@ -63,9 +68,17 @@ class PersonalityDashboardPage extends ConsumerWidget {
 }
 
 class _Body extends StatelessWidget {
-  const _Body({required this.assessment});
+  const _Body({
+    required this.assessment,
+    required this.role,
+    required this.patientId,
+    required this.assessmentId,
+  });
 
   final PersonalityAssessment assessment;
+  final ProfileRole role;
+  final String patientId;
+  final String assessmentId;
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +93,178 @@ class _Body extends StatelessWidget {
             domain: d,
             result: assessment.results.forDomain(d.code),
           ),
+        const SizedBox(height: 6),
+        _synthesisSection(context),
+        _integrationSection(context),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: AppColors.purple,
+            side: const BorderSide(color: AppColors.purple),
+            minimumSize: const Size.fromHeight(44),
+          ),
+          onPressed: () => context.push(
+            PersonalityAssessmentRoutes.staffSynthesis(
+              role: role,
+              patientId: patientId,
+              assessmentId: assessmentId,
+            ),
+          ),
+          icon: const Icon(Icons.edit_note_outlined),
+          label: Text(
+            assessment.hasSynthesis || assessment.hasIntegration
+                ? 'Editar síntese e integração'
+                : 'Adicionar síntese clínica',
+          ),
+        ),
       ],
+    );
+  }
+
+  Widget _sectionCard(BuildContext context,
+      {required IconData icon, required String title, required Widget child}) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 9),
+      padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(13),
+        border:
+            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 18, color: AppColors.purple),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(title,
+                    style: theme.textTheme.titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w800)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _synthesisSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final s = assessment.synthesis;
+    Widget block(String label, String? value) {
+      if ((value ?? '').trim().isEmpty) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label.toUpperCase(),
+                style: theme.textTheme.labelSmall?.copyWith(
+                  fontSize: 9,
+                  letterSpacing: 0.3,
+                  fontWeight: FontWeight.w700,
+                  color: AppColors.textMuted,
+                )),
+            const SizedBox(height: 2),
+            Text(value!.trim(),
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: AppColors.textPrimary, height: 1.45)),
+          ],
+        ),
+      );
+    }
+
+    return _sectionCard(
+      context,
+      icon: Icons.psychology_outlined,
+      title: 'Síntese clínica',
+      child: assessment.hasSynthesis
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                block('O que o perfil ajuda a compreender', s.understanding),
+                block('Aspectos clinicamente relevantes', s.relevant),
+                block('Recursos identificados', s.resources),
+                block('Vulnerabilidades identificadas', s.vulnerabilities),
+                block('Hipóteses a explorar em sessão', s.hypotheses),
+              ],
+            )
+          : Text('Ainda não preenchida.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.textMuted,
+                fontStyle: FontStyle.italic,
+              )),
+    );
+  }
+
+  Widget _integrationSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final i = assessment.integration;
+    return _sectionCard(
+      context,
+      icon: Icons.hub_outlined,
+      title: 'Integração à conceitualização',
+      child: assessment.hasIntegration
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (i.status != null)
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceTintBlue,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(i.status!.label,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.blue,
+                        )),
+                  ),
+                if (i.links.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 5,
+                    runSpacing: 5,
+                    children: [
+                      for (final l in i.links)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.purple.withValues(alpha: 0.10),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(l.label,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.purple,
+                              )),
+                        ),
+                    ],
+                  ),
+                ],
+                if ((i.note ?? '').trim().isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(i.note!.trim(),
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: AppColors.textPrimary, height: 1.45)),
+                ],
+              ],
+            )
+          : Text('Ainda não avaliada.',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: AppColors.textMuted,
+                fontStyle: FontStyle.italic,
+              )),
     );
   }
 

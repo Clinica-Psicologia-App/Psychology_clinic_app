@@ -19,6 +19,135 @@ enum ProtocolValidity {
   }
 }
 
+/// Síntese clínica do terapeuta sobre o perfil (campos livres). Fase 2.
+class ClinicalSynthesis {
+  const ClinicalSynthesis({
+    this.understanding,
+    this.relevant,
+    this.resources,
+    this.vulnerabilities,
+    this.hypotheses,
+  });
+
+  /// O que este perfil ajuda a compreender sobre o paciente?
+  final String? understanding;
+
+  /// Aspectos que parecem clinicamente relevantes.
+  final String? relevant;
+
+  /// Recursos identificados.
+  final String? resources;
+
+  /// Vulnerabilidades identificadas.
+  final String? vulnerabilities;
+
+  /// Hipóteses a explorar em sessão.
+  final String? hypotheses;
+
+  bool get isEmpty =>
+      [understanding, relevant, resources, vulnerabilities, hypotheses]
+          .every((v) => (v ?? '').trim().isEmpty);
+
+  factory ClinicalSynthesis.fromJson(Map<String, dynamic> j) =>
+      ClinicalSynthesis(
+        understanding: j['understanding'] as String?,
+        relevant: j['relevant'] as String?,
+        resources: j['resources'] as String?,
+        vulnerabilities: j['vulnerabilities'] as String?,
+        hypotheses: j['hypotheses'] as String?,
+      );
+
+  Map<String, dynamic> toJson() {
+    String? t(String? v) => (v ?? '').trim().isEmpty ? null : v!.trim();
+    return {
+      if (t(understanding) != null) 'understanding': t(understanding),
+      if (t(relevant) != null) 'relevant': t(relevant),
+      if (t(resources) != null) 'resources': t(resources),
+      if (t(vulnerabilities) != null) 'vulnerabilities': t(vulnerabilities),
+      if (t(hypotheses) != null) 'hypotheses': t(hypotheses),
+    };
+  }
+}
+
+/// Se/como o perfil se relaciona com a conceitualização do paciente. Fase 2.
+enum IntegrationStatus {
+  yes('yes', 'Sim'),
+  notYet('not_yet', 'Ainda não'),
+  notRelevant('not_relevant', 'Não considero relevante neste momento');
+
+  const IntegrationStatus(this.code, this.label);
+  final String code;
+  final String label;
+
+  static IntegrationStatus? fromCode(String? code) {
+    if (code == null) return null;
+    for (final s in IntegrationStatus.values) {
+      if (s.code == code) return s;
+    }
+    return null;
+  }
+}
+
+/// A que aspectos da conceitualização o perfil se relaciona.
+enum IntegrationLink {
+  history('history', 'História de vida'),
+  temperament('temperament', 'Temperamento/predisposições'),
+  schemas('schemas', 'Esquemas'),
+  modes('modes', 'Modos'),
+  coping('coping', 'Estratégias de enfrentamento'),
+  interpersonal('interpersonal', 'Padrões interpessoais'),
+  resources('resources', 'Recursos do paciente'),
+  goals('goals', 'Objetivos terapêuticos');
+
+  const IntegrationLink(this.code, this.label);
+  final String code;
+  final String label;
+
+  static IntegrationLink? fromCode(String? code) {
+    for (final l in IntegrationLink.values) {
+      if (l.code == code) return l;
+    }
+    return null;
+  }
+}
+
+class ConceptualizationIntegration {
+  const ConceptualizationIntegration({
+    this.status,
+    this.links = const {},
+    this.note,
+  });
+
+  final IntegrationStatus? status;
+  final Set<IntegrationLink> links;
+  final String? note;
+
+  bool get isEmpty =>
+      status == null && links.isEmpty && (note ?? '').trim().isEmpty;
+
+  factory ConceptualizationIntegration.fromJson(Map<String, dynamic> j) {
+    final raw = (j['links'] as List?) ?? const [];
+    return ConceptualizationIntegration(
+      status: IntegrationStatus.fromCode(j['status'] as String?),
+      links: {
+        for (final e in raw)
+          if (IntegrationLink.fromCode(e?.toString()) != null)
+            IntegrationLink.fromCode(e.toString())!,
+      },
+      note: j['note'] as String?,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    String? t(String? v) => (v ?? '').trim().isEmpty ? null : v!.trim();
+    return {
+      if (status != null) 'status': status!.code,
+      if (links.isNotEmpty) 'links': [for (final l in links) l.code],
+      if (t(note) != null) 'note': t(note),
+    };
+  }
+}
+
 /// Resultado de um domínio ou faceta: número (livre) + classificação.
 class ScoreEntry {
   const ScoreEntry({this.score, this.level});
@@ -118,6 +247,8 @@ class PersonalityAssessment {
     this.applicationForm,
     this.protocolValidity,
     this.sharedWithPatient = false,
+    this.synthesis = const ClinicalSynthesis(),
+    this.integration = const ConceptualizationIntegration(),
   });
 
   final String id;
@@ -130,8 +261,13 @@ class PersonalityAssessment {
   final String? applicationForm;
   final ProtocolValidity? protocolValidity;
   final bool sharedWithPatient;
+  final ClinicalSynthesis synthesis;
+  final ConceptualizationIntegration integration;
 
   PersonalityInstrument get instrumentDef => instrumentForCode(instrument);
+
+  bool get hasSynthesis => !synthesis.isEmpty;
+  bool get hasIntegration => !integration.isEmpty;
 
   factory PersonalityAssessment.fromJson(Map<String, dynamic> j) {
     DateTime? date(dynamic v) => v == null ? null : DateTime.parse(v as String);
@@ -148,6 +284,13 @@ class PersonalityAssessment {
       applicationForm: j['application_form'] as String?,
       protocolValidity: ProtocolValidity.fromCode(j['protocol_validity'] as String?),
       sharedWithPatient: (j['shared_with_patient'] as bool?) ?? false,
+      synthesis: ClinicalSynthesis.fromJson(
+        Map<String, dynamic>.from((j['clinical_synthesis'] as Map?) ?? const {}),
+      ),
+      integration: ConceptualizationIntegration.fromJson(
+        Map<String, dynamic>.from(
+            (j['conceptualization_integration'] as Map?) ?? const {}),
+      ),
     );
   }
 }

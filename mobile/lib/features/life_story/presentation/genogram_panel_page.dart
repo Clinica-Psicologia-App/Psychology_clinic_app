@@ -84,6 +84,13 @@ class GenogramPanelPage extends ConsumerWidget {
           return ListView(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
             children: [
+              // O diagrama é o protagonista desta tela — fica no topo, como
+              // destaque, e não escondido dentro do bloco de estrutura.
+              _GenogramHeroCard(
+                patientId: patientId,
+                peopleCount: people.length,
+              ),
+              const SizedBox(height: 12),
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: FilledButton.icon(
@@ -235,6 +242,85 @@ class _PersonPill extends StatelessWidget {
   }
 }
 
+/// Ação principal da tela: abrir o genograma em diagrama. Card de destaque
+/// para não competir de igual para igual com as ações secundárias.
+class _GenogramHeroCard extends StatelessWidget {
+  const _GenogramHeroCard({
+    required this.patientId,
+    required this.peopleCount,
+  });
+
+  final String patientId;
+  final int peopleCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => context.push(
+          LifeStoryRoutes.genogramDiagram,
+          extra: patientId,
+        ),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [AppColors.turquoise, AppColors.navy],
+            ),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          padding: const EdgeInsets.all(18),
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: const Icon(Icons.account_tree_outlined,
+                    color: Colors.white, size: 24),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Ver genograma gráfico',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      peopleCount == 0
+                          ? 'Monte a árvore familiar em diagrama.'
+                          : 'Árvore familiar e vínculos em diagrama · '
+                              '$peopleCount ${peopleCount == 1 ? "pessoa" : "pessoas"}',
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: const Color(0xFFCDE9E1), height: 1.35),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Icon(Icons.arrow_forward, color: Colors.white, size: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _StructureBlock extends StatelessWidget {
   const _StructureBlock({required this.people, required this.patientId});
   final List<FamilyPerson> people;
@@ -247,29 +333,10 @@ class _StructureBlock extends StatelessWidget {
       subtitle: '${people.length} '
           '${people.length == 1 ? "pessoa identificada" : "pessoas identificadas"}. '
           'Toque para abrir o cartão da pessoa.',
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          OutlinedButton.icon(
-            onPressed: () => context.push(
-              LifeStoryRoutes.genogramDiagram,
-              extra: patientId,
-            ),
-            icon: const Icon(Icons.account_tree_outlined, size: 18),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.navy,
-              side: const BorderSide(color: AppColors.border),
-              minimumSize: const Size.fromHeight(44),
-            ),
-            label: const Text('Ver genograma gráfico'),
-          ),
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [for (final p in people) _PersonPill(person: p)],
-          ),
-        ],
+      child: Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: [for (final p in people) _PersonPill(person: p)],
       ),
     );
   }

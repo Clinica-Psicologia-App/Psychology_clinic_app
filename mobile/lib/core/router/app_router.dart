@@ -35,7 +35,9 @@ import '../../features/initial_assessment/presentation/initial_assessment_route_
 import '../../features/mental_map/presentation/mental_map_route_helpers.dart';
 import '../../features/patient_infographic/presentation/patient_infographic_route_helpers.dart';
 import '../../features/patient_check_ins/presentation/patient_check_in_route_helpers.dart';
+import '../../features/patient_timeline/presentation/patient_timeline_event_detail_page.dart';
 import '../../features/patient_timeline/presentation/patient_timeline_route_helpers.dart';
+import '../../features/patient_timeline/presentation/patient_timeline_routes.dart';
 import '../../features/life_story/domain/family_context.dart';
 import '../../features/life_story/domain/family_person.dart';
 import '../../features/life_story/domain/life_timeline_event.dart';
@@ -288,6 +290,16 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           role: ProfileRole.psychologist,
           patientId: state.pathParameters['patientId']!,
           personId: state.pathParameters['personId']!,
+        ),
+      ),
+      // Acontecimento STANDALONE: alcançável a partir da ficha da pessoa (que
+      // também é de topo) sem reentrar no shell — ver comentário na rota.
+      GoRoute(
+        path: PatientTimelineRoutes.staffDetailByPath,
+        builder: (_, state) => PatientTimelineEventDetailPage(
+          role: ProfileRole.psychologist,
+          patientId: state.pathParameters['patientId']!,
+          eventId: state.pathParameters['eventId']!,
         ),
       ),
       GoRoute(

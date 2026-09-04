@@ -4,6 +4,15 @@ abstract final class PatientTimelineRoutes {
   static const patientList = '/patient/timeline';
   static const patientCreate = '/patient/timeline/new';
 
+  // Detalhe do acontecimento STANDALONE (topo-nível), mesmo padrão das rotas
+  // standalone do genograma. Usado quando se chega pela ficha da pessoa, que
+  // também é de topo: empurrar a rota aninhada dali reentraria no shell e
+  // duplicaria a página dele na pilha (crash de GlobalKey no Navigator).
+  static const staffDetailByPath =
+      '/psychologist/timeline-event/:patientId/:eventId';
+  static String staffDetailFor(String patientId, String eventId) =>
+      '/psychologist/timeline-event/$patientId/$eventId';
+
   static String patientDetail(String eventId) => '/patient/timeline/$eventId';
 
   static String patientEdit(String eventId) =>

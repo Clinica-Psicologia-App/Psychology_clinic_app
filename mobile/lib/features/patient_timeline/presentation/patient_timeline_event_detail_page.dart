@@ -152,10 +152,11 @@ class _RelatedPersonLink extends ConsumerWidget {
           onPressed: () => context.push(
             role == ProfileRole.patient
                 ? GenogramRoutes.patientPersonDetail(person.id)
-                : GenogramRoutes.staffPersonDetail(
-                    role: role,
-                    patientId: patientId ?? person.patientId,
-                    personId: person.id,
+                // Rota STANDALONE pelo mesmo motivo do caminho de ida: evita
+                // reentrar no shell e duplicar a página dele na pilha.
+                : GenogramRoutes.personDetailFor(
+                    patientId ?? person.patientId,
+                    person.id,
                   ),
           ),
           icon: const Icon(Icons.account_tree_outlined),

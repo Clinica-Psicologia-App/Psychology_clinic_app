@@ -311,10 +311,12 @@ class _PersonTimelineSection extends ConsumerWidget {
     await context.push(
       role == ProfileRole.patient
           ? PatientTimelineRoutes.patientDetail(event.id)
-          : PatientTimelineRoutes.staffDetail(
-              role: role,
-              patientId: patientId ?? person.patientId,
-              eventId: event.id,
+          // Rota STANDALONE: esta ficha é de topo (aberta pelo diagrama). Usar
+          // a rota aninhada aqui reentraria no shell, duplicando a página dele
+          // na pilha — crash de GlobalKey no Navigator.
+          : PatientTimelineRoutes.staffDetailFor(
+              patientId ?? person.patientId,
+              event.id,
             ),
     );
   }

@@ -78,10 +78,18 @@ class PatientTimelineEventDetailPage extends ConsumerWidget {
                     AppSpacing.md,
                     AppSpacing.sm,
                   ),
-                  child: _RelatedPersonLink(
-                    role: role,
-                    patientId: patientId,
-                    personId: event.relatedPersonIds.first,
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      for (final personId in event.relatedPersonIds)
+                        _RelatedPersonLink(
+                          role: role,
+                          patientId: patientId,
+                          personId: personId,
+                        ),
+                    ],
                   ),
                 ),
               Padding(

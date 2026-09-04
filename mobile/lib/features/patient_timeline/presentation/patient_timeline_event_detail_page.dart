@@ -4,7 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../shared/widgets/app_motion.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../genogram/presentation/genogram_routes.dart';
+import '../../genogram/providers/genogram_providers.dart';
 import '../../profile/domain/profile_role.dart';
 import '../providers/patient_timeline_providers.dart';
 import 'patient_timeline_routes.dart';
@@ -67,6 +70,20 @@ class PatientTimelineEventDetailPage extends ConsumerWidget {
                   child: TimelineEventDetailBody(event: event),
                 ),
               ),
+              if (event.relatedPersonIds.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    0,
+                    AppSpacing.md,
+                    AppSpacing.sm,
+                  ),
+                  child: _RelatedPersonLink(
+                    role: role,
+                    patientId: patientId,
+                    personId: event.relatedPersonIds.first,
+                  ),
+                ),
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: FilledButton.icon(
@@ -106,6 +123,45 @@ class PatientTimelineEventDetailPage extends ConsumerWidget {
           );
         },
       ),
+    );
+  }
+}
+
+/// Atalho para a pessoa do genograma vinculada a este evento.
+class _RelatedPersonLink extends ConsumerWidget {
+  const _RelatedPersonLink({
+    required this.role,
+    required this.patientId,
+    required this.personId,
+  });
+
+  final ProfileRole role;
+  final String? patientId;
+  final String personId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final personAsync = ref.watch(genogramPersonDetailProvider(personId));
+
+    return personAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (person) {
+        if (person == null) return const SizedBox.shrink();
+        return OutlinedButton.icon(
+          onPressed: () => context.push(
+            role == ProfileRole.patient
+                ? GenogramRoutes.patientPersonDetail(person.id)
+                : GenogramRoutes.staffPersonDetail(
+                    role: role,
+                    patientId: patientId ?? person.patientId,
+                    personId: person.id,
+                  ),
+          ),
+          icon: const Icon(Icons.account_tree_outlined),
+          label: Text('Ver no genograma: ${person.displayName}'),
+        );
+      },
     );
   }
 }

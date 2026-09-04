@@ -62,3 +62,34 @@ final patientTimelineEventDetailProvider =
     FutureProvider.family<PatientTimelineEvent?, String>((ref, id) {
   return ref.read(patientTimelineRepositoryProvider).getById(id);
 });
+
+class TimelineEventsForPersonContext {
+  const TimelineEventsForPersonContext({
+    required this.patientId,
+    required this.personId,
+  });
+
+  final String patientId;
+  final String personId;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is TimelineEventsForPersonContext &&
+          patientId == other.patientId &&
+          personId == other.personId;
+
+  @override
+  int get hashCode => Object.hash(patientId, personId);
+}
+
+/// Eventos da linha do tempo vinculados a uma pessoa específica do genograma.
+final timelineEventsForPersonProvider = FutureProvider.autoDispose
+    .family<List<PatientTimelineEvent>, TimelineEventsForPersonContext>(
+  (ref, ctx) {
+    return ref.read(patientTimelineRepositoryProvider).listForPerson(
+          patientId: ctx.patientId,
+          personId: ctx.personId,
+        );
+  },
+);

@@ -138,12 +138,14 @@ class _GenogramDiagramPageState extends ConsumerState<GenogramDiagramPage> {
     );
   }
 
-  /// Toque num símbolo do motor → abre a edição STANDALONE daquela pessoa
+  /// Toque num símbolo do motor → abre o detalhe STANDALONE daquela pessoa
   /// (rota de topo, não reconstrói StaffPatientGenogramPage — evita o crash de
-  /// GlobalKey ao cruzar de branch). Ao voltar, revalida os dados do diagrama.
+  /// GlobalKey ao cruzar de branch), com os vínculos e a linha do tempo dela.
+  /// Da tela de detalhe dá para editar ou ir direto a um evento registrado.
+  /// Ao voltar, revalida os dados do diagrama.
   Future<void> _openPerson(String personId) async {
     await context.push(
-      GenogramRoutes.personEditFor(widget.patientId, personId),
+      GenogramRoutes.personDetailFor(widget.patientId, personId),
     );
     if (!mounted) return;
     ref.invalidate(genogramDataForPatientProvider(widget.patientId));

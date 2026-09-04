@@ -7,6 +7,10 @@ import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../patient_timeline/domain/patient_timeline_event.dart';
+import '../../patient_timeline/presentation/patient_timeline_routes.dart';
+import '../../patient_timeline/presentation/widgets/patient_timeline_widgets.dart';
+import '../../patient_timeline/providers/patient_timeline_providers.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/genogram_data.dart';
 import '../domain/genogram_gender.dart';
@@ -105,11 +109,11 @@ class _PersonDetailBody extends ConsumerWidget {
     return genogramAsync.when(
       loading: () => const BrandLoader(),
       error: (_, __) => const Center(child: Text('Erro ao carregar relações.')),
-      data: (data) => _buildContent(context, data),
+      data: (data) => _buildContent(context, ref, data),
     );
   }
 
-  Widget _buildContent(BuildContext context, GenogramData data) {
+  Widget _buildContent(BuildContext context, WidgetRef ref, GenogramData data) {
     final linked =
         data.relationships.where((r) => r.involvesPerson(person.id)).toList();
 
@@ -183,6 +187,17 @@ class _PersonDetailBody extends ConsumerWidget {
                       onTap: () => _openRelationship(context, r.id),
                     ),
                   ),
+                const SizedBox(height: AppSpacing.xl),
+                const AppSectionHeader(
+                  title: 'Linha do tempo',
+                  subtitle: 'Acontecimentos registrados desta pessoa.',
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                _PersonTimelineSection(
+                  person: person,
+                  role: role,
+                  patientId: patientId,
+                ),
               ],
             ),
           ),
@@ -190,13 +205,17 @@ class _PersonDetailBody extends ConsumerWidget {
             padding: const EdgeInsets.all(AppSpacing.md),
             child: FilledButton.icon(
               onPressed: () async {
+                // Rota STANDALONE para editar: esta tela de detalhe também é
+                // aberta a partir do diagrama (rota de topo, fora da árvore
+                // de StaffPatientGenogramPage) — usar sempre a edição
+                // standalone evita reconstruir aquele branch e o crash de
+                // GlobalKey que isso causava.
                 final updated = await context.push<bool>(
                   role == ProfileRole.patient
                       ? GenogramRoutes.patientPersonEdit(person.id)
-                      : GenogramRoutes.staffPersonEdit(
-                          role: role,
-                          patientId: patientId!,
-                          personId: person.id,
+                      : GenogramRoutes.personEditFor(
+                          patientId ?? person.patientId,
+                          person.id,
                         ),
                 );
                 if (updated == true) onChanged();
@@ -221,5 +240,82 @@ class _PersonDetailBody extends ConsumerWidget {
             ),
     );
     onChanged();
+  }
+}
+
+/// Eventos da linha do tempo vinculados a esta pessoa — permite ao
+/// psicólogo ir direto do genograma ao(s) acontecimento(s) registrado(s).
+class _PersonTimelineSection extends ConsumerWidget {
+  const _PersonTimelineSection({
+    required this.person,
+    required this.role,
+    required this.patientId,
+  });
+
+  final GenogramPerson person;
+  final ProfileRole role;
+  final String? patientId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final eventsAsync = ref.watch(
+      timelineEventsForPersonProvider(
+        TimelineEventsForPersonContext(
+          patientId: person.patientId,
+          personId: person.id,
+        ),
+      ),
+    );
+
+    return eventsAsync.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+        child: Center(child: BrandLoader()),
+      ),
+      error: (_, __) => const AppInfoCard(
+        title: 'Erro ao carregar a linha do tempo',
+        body: 'Não foi possível carregar os eventos desta pessoa.',
+        icon: Icons.error_outline,
+        tone: AppInfoCardTone.error,
+      ),
+      data: (events) {
+        if (events.isEmpty) {
+          return const AppInfoCard(
+            title: 'Nenhum evento vinculado',
+            body:
+                'Nenhum acontecimento da linha do tempo está associado a '
+                'esta pessoa ainda. É possível vincular ao editar um evento.',
+            icon: Icons.event_note_outlined,
+          );
+        }
+
+        return Column(
+          children: [
+            for (var i = 0; i < events.length; i++)
+              PatientTimelineEventTile(
+                event: events[i],
+                isFirst: i == 0,
+                isLast: i == events.length - 1,
+                onTap: () => _openEvent(context, events[i]),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _openEvent(
+    BuildContext context,
+    PatientTimelineEvent event,
+  ) async {
+    await context.push(
+      role == ProfileRole.patient
+          ? PatientTimelineRoutes.patientDetail(event.id)
+          : PatientTimelineRoutes.staffDetail(
+              role: role,
+              patientId: patientId ?? person.patientId,
+              eventId: event.id,
+            ),
+    );
   }
 }

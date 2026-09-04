@@ -10,6 +10,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../genogram/providers/genogram_providers.dart';
 import '../../patient_check_ins/presentation/widgets/patient_check_in_widgets.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/patient_timeline_event.dart';
@@ -60,6 +61,7 @@ class _PatientTimelineEventFormPageState
   bool _isSensitive = false;
   bool _saving = false;
   bool _loaded = false;
+  String? _relatedPersonId;
 
   @override
   void dispose() {
@@ -97,6 +99,8 @@ class _PatientTimelineEventFormPageState
     _presentReactionController.text = input.presentReaction ?? '';
     _eventDate = input.eventDate;
     _isSensitive = input.isSensitive;
+    _relatedPersonId =
+        input.relatedPersonIds.isNotEmpty ? input.relatedPersonIds.first : null;
     if (input.presentInfluence != null) {
       _includePresentInfluence = true;
       _presentInfluence = input.presentInfluence!;
@@ -122,6 +126,8 @@ class _PatientTimelineEventFormPageState
       presentAreaKeys: _presentAreaKeys.toList(),
       presentReaction: _presentReactionController.text,
       isSensitive: _isSensitive,
+      relatedPersonIds:
+          _relatedPersonId != null ? [_relatedPersonId!] : const [],
     );
   }
 
@@ -322,6 +328,13 @@ class _PatientTimelineEventFormPageState
                 textCapitalization: TextCapitalization.sentences,
               ),
               const SizedBox(height: AppSpacing.md),
+              _RelatedPersonField(
+                role: widget.role,
+                patientId: widget.patientId,
+                value: _relatedPersonId,
+                onChanged: (v) => setState(() => _relatedPersonId = v),
+              ),
+              const SizedBox(height: AppSpacing.md),
               const _SectionTitle(
                   '1. Esse evento impactou em qual necessidade emocional?'),
               ..._emotionalNeedOptions.map(
@@ -498,6 +511,64 @@ class _PatientTimelineEventFormPageState
         target.remove(key);
       }
     });
+  }
+}
+
+/// Vínculo opcional com uma pessoa do genograma — permite depois navegar do
+/// genograma direto para o(s) evento(s) daquela pessoa.
+class _RelatedPersonField extends ConsumerWidget {
+  const _RelatedPersonField({
+    required this.role,
+    required this.patientId,
+    required this.value,
+    required this.onChanged,
+  });
+
+  final ProfileRole role;
+  final String? patientId;
+  final String? value;
+  final ValueChanged<String?> onChanged;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final genogramAsync = role == ProfileRole.patient
+        ? ref.watch(myGenogramProvider)
+        : ref.watch(
+            staffGenogramProvider(
+              StaffGenogramContext(role: role, patientId: patientId!),
+            ),
+          );
+
+    return genogramAsync.when(
+      loading: () => const SizedBox.shrink(),
+      error: (_, __) => const SizedBox.shrink(),
+      data: (data) {
+        if (data.people.isEmpty) return const SizedBox.shrink();
+        final validValue =
+            data.people.any((p) => p.id == value) ? value : null;
+        return DropdownButtonFormField<String>(
+          initialValue: validValue,
+          decoration: const InputDecoration(
+            labelText: 'Pessoa do genograma relacionada (opcional)',
+            helperText:
+                'Assim é possível achar este evento a partir do genograma.',
+          ),
+          items: [
+            const DropdownMenuItem<String>(
+              value: null,
+              child: Text('Nenhuma'),
+            ),
+            ...data.people.map(
+              (p) => DropdownMenuItem(
+                value: p.id,
+                child: Text(p.displayName),
+              ),
+            ),
+          ],
+          onChanged: onChanged,
+        );
+      },
+    );
   }
 }
 

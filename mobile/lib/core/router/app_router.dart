@@ -22,6 +22,7 @@ import '../../features/patient_library/presentation/admin_library_routes.dart';
 import '../../features/psychoeducation/presentation/psychoeducation_routes.dart';
 import '../../features/clinic_entitlements/presentation/admin_plans_page.dart';
 import '../../features/genogram/presentation/genogram_bootstrap_page.dart';
+import '../../features/genogram/presentation/genogram_person_detail_page.dart';
 import '../../features/genogram/presentation/genogram_person_form_page.dart';
 import '../../features/genogram/presentation/genogram_relationship_form_page.dart';
 import '../../features/genogram/presentation/genogram_route_helpers.dart';
@@ -276,6 +277,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: GenogramRoutes.personEditByPath,
         builder: (_, state) => GenogramPersonFormPage(
+          role: ProfileRole.psychologist,
+          patientId: state.pathParameters['patientId']!,
+          personId: state.pathParameters['personId']!,
+        ),
+      ),
+      GoRoute(
+        path: GenogramRoutes.personDetailByPath,
+        builder: (_, state) => GenogramPersonDetailPage(
           role: ProfileRole.psychologist,
           patientId: state.pathParameters['patientId']!,
           personId: state.pathParameters['personId']!,

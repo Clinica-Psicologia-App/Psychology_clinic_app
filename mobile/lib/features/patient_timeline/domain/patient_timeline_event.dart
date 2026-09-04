@@ -22,6 +22,7 @@
     this.presentAreaKeys = const [],
     this.presentReaction,
     required this.isSensitive,
+    this.relatedPersonIds = const [],
     required this.createdAt,
     required this.updatedAt,
   });
@@ -48,6 +49,11 @@
   final List<String> presentAreaKeys;
   final String? presentReaction;
   final bool isSensitive;
+
+  /// Pessoas do genograma relacionadas a este evento (junção
+  /// `timeline_event_people`) — o elo que permite navegar do genograma
+  /// direto para o(s) evento(s) daquela pessoa.
+  final List<String> relatedPersonIds;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -103,6 +109,10 @@
       presentAreaKeys: _parseStringList(json['present_area_keys']),
       presentReaction: json['present_reaction'] as String?,
       isSensitive: json['is_sensitive'] as bool? ?? false,
+      relatedPersonIds: [
+        for (final j in (json['timeline_event_people'] as List? ?? []))
+          (j as Map)['person_id'] as String,
+      ],
       createdAt: DateTime.parse(json['created_at'] as String).toLocal(),
       updatedAt: DateTime.parse(json['updated_at'] as String).toLocal(),
     );

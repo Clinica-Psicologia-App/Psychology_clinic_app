@@ -20,6 +20,7 @@ class PatientTimelineEventInput {
     this.presentAreaKeys = const [],
     this.presentReaction,
     this.isSensitive = false,
+    this.relatedPersonIds = const [],
   });
 
   final String title;
@@ -41,6 +42,10 @@ class PatientTimelineEventInput {
   final String? presentReaction;
   final bool isSensitive;
 
+  /// Pessoas do genograma vinculadas a este evento (junção
+  /// `timeline_event_people`) — escritas à parte, não é coluna da tabela.
+  final List<String> relatedPersonIds;
+
   factory PatientTimelineEventInput.fromEvent(PatientTimelineEvent event) {
     return PatientTimelineEventInput(
       title: event.title,
@@ -61,6 +66,7 @@ class PatientTimelineEventInput {
       presentAreaKeys: event.presentAreaKeys,
       presentReaction: event.presentReaction,
       isSensitive: event.isSensitive,
+      relatedPersonIds: event.relatedPersonIds,
     );
   }
 

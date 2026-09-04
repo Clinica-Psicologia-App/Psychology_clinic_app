@@ -87,6 +87,14 @@ abstract final class GenogramRoutes {
   static String personEditFor(String patientId, String personId) =>
       '/psychologist/genogram-person-edit/$patientId/$personId';
 
+  // Detalhe de pessoa STANDALONE (topo-nível), mesmo padrão de
+  // personEditByPath — usado pelo toque numa pessoa no diagrama do
+  // genograma, para ir direto aos vínculos e à linha do tempo dela.
+  static const personDetailByPath =
+      '/psychologist/genogram-person-detail/:patientId/:personId';
+  static String personDetailFor(String patientId, String personId) =>
+      '/psychologist/genogram-person-detail/$patientId/$personId';
+
   // Criação de vínculo STANDALONE — mesmo padrão de personEditByPath.
   static const relationshipCreateByPath =
       '/psychologist/genogram-relationship-create/:patientId';

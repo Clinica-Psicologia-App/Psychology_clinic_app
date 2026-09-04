@@ -1,4 +1,5 @@
 ﻿import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -189,9 +190,19 @@ class _QuestionnaireAnswerPageState
               ),
             ),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(AppSpacing.md),
-                child: Center(
+              child: LayoutBuilder(
+                builder: (context, constraints) => SingleChildScrollView(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  // Centraliza verticalmente quando o conteúdo é curto (uma
+                  // pergunta por vez), mas continua rolável em textos longos.
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: math.max(
+                        0,
+                        constraints.maxHeight - AppSpacing.md * 2,
+                      ),
+                    ),
+                    child: Center(
                   child: ConstrainedBox(
                     // Focus mode: uma pergunta por vez, largura de leitura
                     // confortável em vez de esticar em telas largas.
@@ -244,7 +255,9 @@ class _QuestionnaireAnswerPageState
                     ),
                   ),
                 ),
-              ),
+                    ),
+                  ),
+                ),
             ),
             Padding(
               padding: EdgeInsets.fromLTRB(

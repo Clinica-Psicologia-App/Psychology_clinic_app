@@ -94,7 +94,9 @@ class QuestionInputWidget extends StatelessWidget {
   }
 }
 
-/// Botões segmentados para escalas Likert curtas (ex.: 1–6).
+/// Escala Likert curta (ex.: 1–6) como um TRILHO contínuo com gradiente:
+/// as paradas ficam sobre um trilho que evolui de "Menos" → "Mais", e a
+/// seleção vira uma pílula preenchida e maior. Comunica o contínuo da escala.
 class _SegmentedScale extends StatelessWidget {
   const _SegmentedScale({
     required this.values,
@@ -106,55 +108,84 @@ class _SegmentedScale extends StatelessWidget {
   final int? value;
   final ValueChanged<int> onChanged;
 
+  // Largura fixa de cada parada — mantém os centros estáveis (a pílula cresce
+  // dentro do slot), o que alinha o trilho com as pontas.
+  static const _slot = 48.0;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
 
     return Column(
       children: [
-        Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          alignment: WrapAlignment.center,
-          children: values.map((v) {
-            final selected = value == v;
-            return _ScaleButton(
-              label: '$v',
-              selected: selected,
-              onTap: () => onChanged(v),
-            );
-          }).toList(),
+        SizedBox(
+          height: 58,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Trilho com gradiente, entre os centros da 1ª e da última parada.
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: _slot / 2),
+                child: Container(
+                  height: 6,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        scheme.primary.withValues(alpha: 0.22),
+                        scheme.primary,
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(3),
+                  ),
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: values
+                    .map((v) => _ScaleStop(
+                          slot: _slot,
+                          label: '$v',
+                          selected: value == v,
+                          onTap: () => onChanged(v),
+                        ))
+                    .toList(),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
-              'Menos',
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
-            Text(
-              'Mais',
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-            ),
+            _anchor(theme, 'Menos'),
+            _anchor(theme, 'Mais'),
           ],
         ),
       ],
     );
   }
+
+  Widget _anchor(ThemeData theme, String text) => Text(
+        text,
+        style: theme.textTheme.labelMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+          fontWeight: FontWeight.w600,
+        ),
+      );
 }
 
-class _ScaleButton extends StatelessWidget {
-  const _ScaleButton({
+/// Uma parada do trilho — círculo pequeno quando não selecionado, pílula
+/// preenchida e maior quando selecionado.
+class _ScaleStop extends StatelessWidget {
+  const _ScaleStop({
+    required this.slot,
     required this.label,
     required this.selected,
     required this.onTap,
   });
 
+  final double slot;
   final String label;
   final bool selected;
   final VoidCallback onTap;
@@ -163,6 +194,7 @@ class _ScaleButton extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final diameter = selected ? 46.0 : 34.0;
 
     return Semantics(
       button: true,
@@ -170,36 +202,43 @@ class _ScaleButton extends StatelessWidget {
       label: 'Opção $label',
       child: GestureDetector(
         onTap: onTap,
-        child: AnimatedContainer(
-          duration: AppAnimations.resolve(context, AppAnimations.fast),
-          curve: AppAnimations.standardCurve,
-          width: 56,
-          height: 56,
-          decoration: BoxDecoration(
-            color: selected ? scheme.primary : scheme.surface,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: selected ? scheme.primary : theme.dividerColor,
-              width: selected ? 2 : 1,
+        behavior: HitTestBehavior.opaque,
+        child: SizedBox(
+          width: slot,
+          height: 58,
+          child: Center(
+            child: AnimatedContainer(
+              duration: AppAnimations.resolve(context, AppAnimations.fast),
+              curve: AppAnimations.standardCurve,
+              width: diameter,
+              height: diameter,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: selected ? scheme.primary : scheme.surface,
+                border: Border.all(
+                  color: selected ? scheme.primary : theme.dividerColor,
+                  width: selected ? 2 : 1.4,
+                ),
+                boxShadow: selected
+                    ? [
+                        BoxShadow(
+                          color: scheme.primary.withValues(alpha: 0.30),
+                          blurRadius: 14,
+                          offset: const Offset(0, 6),
+                        ),
+                      ]
+                    : null,
+              ),
+              alignment: Alignment.center,
+              child: AnimatedDefaultTextStyle(
+                duration: AppAnimations.resolve(context, AppAnimations.fast),
+                style: theme.textTheme.titleMedium!.copyWith(
+                  color: selected ? scheme.onPrimary : scheme.onSurface,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+                ),
+                child: Text(label),
+              ),
             ),
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: scheme.primary.withValues(alpha: 0.28),
-                      blurRadius: 14,
-                      offset: const Offset(0, 6),
-                    ),
-                  ]
-                : null,
-          ),
-          alignment: Alignment.center,
-          child: AnimatedDefaultTextStyle(
-            duration: AppAnimations.resolve(context, AppAnimations.fast),
-            style: theme.textTheme.titleMedium!.copyWith(
-              color: selected ? scheme.onPrimary : scheme.onSurface,
-              fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-            ),
-            child: Text(label),
           ),
         ),
       ),

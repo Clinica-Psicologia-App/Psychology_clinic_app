@@ -27,68 +27,108 @@ class PatientInfographicPoster extends StatelessWidget {
   Widget build(BuildContext context) {
     // Seções de fluxo (com peso ≈ altura), distribuídas para equilibrar as
     // duas colunas em vez de uma divisão fixa.
+    // Cada seção padrão aparece sempre: com os dados (card real) ou como
+    // placeholder pontilhado ("a preencher") — assim o pôster mostra o que
+    // ainda falta em vez de deixar um vazio.
+    const challengesAccent = Color(0xFFE0519A);
     final flow = <_WeightedSection>[
-      if (data.hasTimeline)
-        _WeightedSection(
-          2 + data.timeline.length,
-          _TimelineBlock(entries: data.timeline),
-        ),
-      if (data.hasSchemas)
-        _WeightedSection(
-          1 + data.schemas.length,
-          _SectionCard(
-            title: 'ESQUEMAS EM DESTAQUE',
-            subtitle: 'Domínios ativados no perfil',
-            accent: AppColors.purple,
-            child: _items(data.schemas, AppColors.purple),
-          ),
-        ),
-      if (data.hasNeeds)
-        _WeightedSection(
-          1 + data.needs.length,
-          _SectionCard(
-            title: 'NECESSIDADES EMOCIONAIS',
-            subtitle: 'e eventos de vida relacionados',
-            accent: AppColors.error,
-            child: _needs(data.needs),
-          ),
-        ),
-      if (data.hasModes)
-        _WeightedSection(
-          1 + data.modes.fold<int>(0, (s, m) => s + 1 + m.bullets.length),
-          _SectionCard(
-            title: 'MODOS E ESTILOS DE ENFRENTAMENTO',
-            accent: AppColors.turquoise,
-            child: _items(data.modes, AppColors.turquoise),
-          ),
-        ),
-      if (data.hasStrengths)
-        _WeightedSection(
-          1 + data.strengths.length,
-          _SectionCard(
-            title: 'PONTOS FORTES E POTENCIAIS',
-            accent: AppColors.turquoise,
-            child: _items(data.strengths, AppColors.turquoise),
-          ),
-        ),
-      if (data.hasChallenges)
-        _WeightedSection(
-          1 + data.challenges.length,
-          _SectionCard(
-            title: 'DESAFIOS NA VIDA ADULTA',
-            accent: const Color(0xFFE0519A),
-            child: _items(data.challenges, const Color(0xFFE0519A)),
-          ),
-        ),
-      if (data.hasDirections)
-        _WeightedSection(
-          1 + data.directions.length,
-          _SectionCard(
-            title: 'DIREÇÕES TERAPÊUTICAS',
-            accent: AppColors.cyan,
-            child: _items(data.directions, AppColors.cyan),
-          ),
-        ),
+      data.hasTimeline
+          ? _WeightedSection(
+              2 + data.timeline.length,
+              _TimelineBlock(entries: data.timeline),
+            )
+          : const _WeightedSection(
+              4,
+              _GhostCard(title: 'LINHA DO TEMPO', accent: AppColors.cyan),
+            ),
+      data.hasSchemas
+          ? _WeightedSection(
+              1 + data.schemas.length,
+              _SectionCard(
+                title: 'ESQUEMAS EM DESTAQUE',
+                subtitle: 'Domínios ativados no perfil',
+                accent: AppColors.purple,
+                child: _items(data.schemas, AppColors.purple),
+              ),
+            )
+          : const _WeightedSection(
+              4,
+              _GhostCard(
+                  title: 'ESQUEMAS EM DESTAQUE', accent: AppColors.purple),
+            ),
+      data.hasNeeds
+          ? _WeightedSection(
+              1 + data.needs.length,
+              _SectionCard(
+                title: 'NECESSIDADES EMOCIONAIS',
+                subtitle: 'e eventos de vida relacionados',
+                accent: AppColors.error,
+                child: _needs(data.needs),
+              ),
+            )
+          : const _WeightedSection(
+              4,
+              _GhostCard(
+                  title: 'NECESSIDADES EMOCIONAIS', accent: AppColors.error),
+            ),
+      data.hasModes
+          ? _WeightedSection(
+              1 + data.modes.fold<int>(0, (s, m) => s + 1 + m.bullets.length),
+              _SectionCard(
+                title: 'MODOS E ESTILOS DE ENFRENTAMENTO',
+                accent: AppColors.turquoise,
+                child: _items(data.modes, AppColors.turquoise),
+              ),
+            )
+          : const _WeightedSection(
+              4,
+              _GhostCard(
+                  title: 'MODOS E ESTILOS DE ENFRENTAMENTO',
+                  accent: AppColors.turquoise),
+            ),
+      data.hasStrengths
+          ? _WeightedSection(
+              1 + data.strengths.length,
+              _SectionCard(
+                title: 'PONTOS FORTES E POTENCIAIS',
+                accent: AppColors.turquoise,
+                child: _items(data.strengths, AppColors.turquoise),
+              ),
+            )
+          : const _WeightedSection(
+              4,
+              _GhostCard(
+                  title: 'PONTOS FORTES E POTENCIAIS',
+                  accent: AppColors.turquoise),
+            ),
+      data.hasChallenges
+          ? _WeightedSection(
+              1 + data.challenges.length,
+              _SectionCard(
+                title: 'DESAFIOS NA VIDA ADULTA',
+                accent: challengesAccent,
+                child: _items(data.challenges, challengesAccent),
+              ),
+            )
+          : const _WeightedSection(
+              4,
+              _GhostCard(
+                  title: 'DESAFIOS NA VIDA ADULTA', accent: challengesAccent),
+            ),
+      data.hasDirections
+          ? _WeightedSection(
+              1 + data.directions.length,
+              _SectionCard(
+                title: 'DIREÇÕES TERAPÊUTICAS',
+                accent: AppColors.cyan,
+                child: _items(data.directions, AppColors.cyan),
+              ),
+            )
+          : const _WeightedSection(
+              4,
+              _GhostCard(
+                  title: 'DIREÇÕES TERAPÊUTICAS', accent: AppColors.cyan),
+            ),
     ];
     final (left, right) = _balanceColumns(flow);
 
@@ -104,14 +144,19 @@ class PatientInfographicPoster extends StatelessWidget {
           children: [
             _Header(data: data),
             const SizedBox(height: _gap),
-            if (data.hasPersonality) ...[
+            if (data.hasPersonality)
               _SectionCard(
                 title: 'PERSONALIDADE (BIG FIVE)',
                 accent: AppColors.purple,
                 child: _personality(data.personality),
+              )
+            else
+              const _GhostCard(
+                title: 'PERSONALIDADE (BIG FIVE)',
+                accent: AppColors.purple,
+                subtitle: 'Registre em Avaliação → Personalidade',
               ),
-              const SizedBox(height: _gap),
-            ],
+            const SizedBox(height: _gap),
             IntrinsicHeight(
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -122,14 +167,16 @@ class PatientInfographicPoster extends StatelessWidget {
                 ],
               ),
             ),
-            if (data.hasResources) ...[
-              const SizedBox(height: _gap),
+            const SizedBox(height: _gap),
+            if (data.hasResources)
               _SectionCard(
                 title: 'RECURSOS E FORÇAS',
                 accent: AppColors.success,
                 child: _resourcesWrap(data.resources),
-              ),
-            ],
+              )
+            else
+              const _GhostCard(
+                  title: 'RECURSOS E FORÇAS', accent: AppColors.success),
             if (data.closingLine != null) ...[
               const SizedBox(height: _gap),
               _closing(data.closingLine!),
@@ -426,6 +473,138 @@ class PatientInfographicPoster extends StatelessWidget {
       child: Icon(icon, size: 16, color: accent),
     );
   }
+}
+
+// ── Placeholder de seção ainda não preenchida ("bloco em branco") ───────────
+class _GhostCard extends StatelessWidget {
+  const _GhostCard({required this.title, required this.accent, this.subtitle});
+
+  final String title;
+  final Color accent;
+  final String? subtitle;
+
+  Widget _skeletonBar(double widthFactor) => FractionallySizedBox(
+        alignment: Alignment.centerLeft,
+        widthFactor: widthFactor,
+        child: Container(
+          height: 10,
+          margin: const EdgeInsets.only(bottom: 8),
+          decoration: BoxDecoration(
+            color: AppColors.navy.withValues(alpha: 0.06),
+            borderRadius: BorderRadius.circular(5),
+          ),
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _DashedRRectPainter(
+        color: accent.withValues(alpha: 0.45),
+        radius: 16,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 30,
+                  height: 30,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.more_horiz,
+                      size: 16, color: accent.withValues(alpha: 0.8)),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title,
+                          style: TextStyle(
+                              color: accent.withValues(alpha: 0.85),
+                              fontWeight: FontWeight.w800,
+                              fontSize: 13,
+                              letterSpacing: 0.4)),
+                      if (subtitle != null)
+                        Text(subtitle!,
+                            style: const TextStyle(
+                                color: AppColors.textMuted,
+                                fontSize: 11,
+                                fontStyle: FontStyle.italic)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
+            _skeletonBar(0.95),
+            _skeletonBar(0.75),
+            _skeletonBar(0.55),
+            const SizedBox(height: 6),
+            const Row(
+              children: [
+                Icon(Icons.hourglass_empty,
+                    size: 13, color: AppColors.textMuted),
+                SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'A preencher na Conceitualização',
+                    style: TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 11,
+                        fontStyle: FontStyle.italic),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Borda tracejada arredondada (aparência de "campo a preencher").
+class _DashedRRectPainter extends CustomPainter {
+  _DashedRRectPainter({required this.color, this.radius = 16});
+
+  final Color color;
+  final double radius;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rrect = RRect.fromRectAndRadius(
+      Offset.zero & size,
+      Radius.circular(radius),
+    );
+    final path = Path()..addRRect(rrect);
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+
+    const dash = 6.0;
+    const gap = 5.0;
+    for (final metric in path.computeMetrics()) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        final len = distance + dash < metric.length ? dash : metric.length - distance;
+        canvas.drawPath(metric.extractPath(distance, distance + len), paint);
+        distance += dash + gap;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedRRectPainter old) =>
+      old.color != color || old.radius != radius;
 }
 
 // ── Cabeçalho ────────────────────────────────────────────────────────────────

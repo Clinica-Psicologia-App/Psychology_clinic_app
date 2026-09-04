@@ -8,7 +8,9 @@ class ThemeController extends Notifier<ThemeMode> {
   @override
   ThemeMode build() {
     _load();
-    return ThemeMode.system;
+    // Padrão do app: Claro. O usuário pode trocar em Perfil → Aparência
+    // (Sistema/Claro/Escuro) e a escolha é persistida.
+    return ThemeMode.light;
   }
 
   Future<void> _load() async {
@@ -27,7 +29,9 @@ class ThemeController extends Notifier<ThemeMode> {
   static ThemeMode _fromString(String? v) => switch (v) {
         'light' => ThemeMode.light,
         'dark' => ThemeMode.dark,
-        _ => ThemeMode.system,
+        'system' => ThemeMode.system,
+        // Sem preferência salva (1ª vez / valor desconhecido) → Claro.
+        _ => ThemeMode.light,
       };
 
   static String _toString(ThemeMode m) => switch (m) {

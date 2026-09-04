@@ -96,55 +96,95 @@ class _CoachPanelPositioner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final rect = targetRect;
     final availableWidth =
         math.max(240.0, screenSize.width - AppSpacing.xl * 2);
     final panelWidth = math.min(520.0, availableWidth);
-    final minTop = safePadding.top + AppSpacing.md;
-    final maxTop =
-        math.max(minTop, screenSize.height - 240 - safePadding.bottom);
 
-    if (rect == null) {
-      return Align(
-        alignment: Alignment.bottomCenter,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.md,
-            AppSpacing.md,
-            safePadding.bottom + AppSpacing.xl,
-          ),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(maxWidth: panelWidth),
-            child: child,
-          ),
-        ),
-      );
-    }
-
-    final hasSpaceBelow =
-        rect.bottom + 230 < screenSize.height - safePadding.bottom;
-    final preferredTop =
-        hasSpaceBelow ? rect.bottom + AppSpacing.md : rect.top - 220;
-    final top = preferredTop.clamp(minTop, maxTop);
-    final maxLeft = math.max(
-      AppSpacing.md,
-      screenSize.width - panelWidth - AppSpacing.md,
-    );
-    final left =
-        (rect.center.dx - panelWidth / 2).clamp(AppSpacing.md, maxLeft);
-
-    return Stack(
-      children: [
-        Positioned(
-          top: top,
-          left: left,
-          width: panelWidth,
-          child: child,
-        ),
-      ],
+    // Mede a altura real do balão e posiciona sem vazar a área segura:
+    // abaixo do alvo se couber, senão acima, senão ancorado no rodapé seguro.
+    return CustomSingleChildLayout(
+      delegate: _CoachLayoutDelegate(
+        screenSize: screenSize,
+        safePadding: safePadding,
+        targetRect: targetRect,
+        panelWidth: panelWidth,
+      ),
+      child: child,
     );
   }
+}
+
+/// Posiciona o balão do coach usando a altura MEDIDA do filho, garantindo que
+/// ele fique sempre inteiro dentro da área segura da tela.
+class _CoachLayoutDelegate extends SingleChildLayoutDelegate {
+  const _CoachLayoutDelegate({
+    required this.screenSize,
+    required this.safePadding,
+    required this.targetRect,
+    required this.panelWidth,
+  });
+
+  final Size screenSize;
+  final EdgeInsets safePadding;
+  final Rect? targetRect;
+  final double panelWidth;
+
+  static const _margin = AppSpacing.md;
+
+  @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) {
+    final maxHeight = math.max(
+      0.0,
+      screenSize.height - safePadding.top - safePadding.bottom - _margin * 2,
+    );
+    return BoxConstraints(
+      minWidth: panelWidth,
+      maxWidth: panelWidth,
+      maxHeight: maxHeight,
+    );
+  }
+
+  @override
+  Offset getPositionForChild(Size size, Size childSize) {
+    final minTop = safePadding.top + _margin;
+    final bottomLimit = size.height - safePadding.bottom - _margin;
+    final maxTop = math.max(minTop, bottomLimit - childSize.height);
+
+    final rect = targetRect;
+    double top;
+    if (rect == null) {
+      top = maxTop; // sem alvo: ancora no rodapé seguro
+    } else {
+      final belowTop = rect.bottom + _margin;
+      final aboveTop = rect.top - _margin - childSize.height;
+      if (belowTop + childSize.height <= bottomLimit) {
+        top = belowTop; // cabe abaixo
+      } else if (aboveTop >= minTop) {
+        top = aboveTop; // cabe acima
+      } else {
+        top = maxTop; // não cabe em nenhum: rodapé seguro (inteiro)
+      }
+    }
+    top = top.clamp(minTop, maxTop);
+
+    double left;
+    if (rect == null) {
+      left = (size.width - childSize.width) / 2;
+    } else {
+      final maxLeft = math.max(_margin, size.width - childSize.width - _margin);
+      left = (rect.center.dx - childSize.width / 2)
+          .clamp(_margin.toDouble(), maxLeft);
+    }
+
+    return Offset(left, top);
+  }
+
+  @override
+  bool shouldRelayout(_CoachLayoutDelegate old) =>
+      old.screenSize != screenSize ||
+      old.safePadding != safePadding ||
+      old.targetRect != targetRect ||
+      old.panelWidth != panelWidth;
 }
 
 class _CoachPanel extends StatelessWidget {

@@ -176,8 +176,9 @@ class _SegmentedScale extends StatelessWidget {
 }
 
 /// Uma parada do trilho — círculo pequeno quando não selecionado, pílula
-/// preenchida e maior quando selecionado.
-class _ScaleStop extends StatelessWidget {
+/// preenchida e maior quando selecionado, com um "brilho" (anel que pulsa)
+/// ao ser escolhida.
+class _ScaleStop extends StatefulWidget {
   const _ScaleStop({
     required this.slot,
     required this.label,
@@ -191,53 +192,107 @@ class _ScaleStop extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
+  State<_ScaleStop> createState() => _ScaleStopState();
+}
+
+class _ScaleStopState extends State<_ScaleStop>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ring = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 520),
+  );
+
+  @override
+  void didUpdateWidget(covariant _ScaleStop old) {
+    super.didUpdateWidget(old);
+    // Pulso do anel só quando passa a ser o selecionado.
+    if (!old.selected && widget.selected && AppAnimations.shouldAnimate(context)) {
+      _ring.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _ring.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final selected = widget.selected;
     final diameter = selected ? 46.0 : 34.0;
 
     return Semantics(
       button: true,
       selected: selected,
-      label: 'Opção $label',
+      label: 'Opção ${widget.label}',
       child: GestureDetector(
-        onTap: onTap,
+        onTap: widget.onTap,
         behavior: HitTestBehavior.opaque,
         child: SizedBox(
-          width: slot,
+          width: widget.slot,
           height: 58,
           child: Center(
-            child: AnimatedContainer(
-              duration: AppAnimations.resolve(context, AppAnimations.fast),
-              curve: AppAnimations.standardCurve,
-              width: diameter,
-              height: diameter,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: selected ? scheme.primary : scheme.surface,
-                border: Border.all(
-                  color: selected ? scheme.primary : theme.dividerColor,
-                  width: selected ? 2 : 1.4,
-                ),
-                boxShadow: selected
-                    ? [
-                        BoxShadow(
-                          color: scheme.primary.withValues(alpha: 0.30),
-                          blurRadius: 14,
-                          offset: const Offset(0, 6),
-                        ),
-                      ]
-                    : null,
-              ),
+            child: Stack(
               alignment: Alignment.center,
-              child: AnimatedDefaultTextStyle(
-                duration: AppAnimations.resolve(context, AppAnimations.fast),
-                style: theme.textTheme.titleMedium!.copyWith(
-                  color: selected ? scheme.onPrimary : scheme.onSurface,
-                  fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+              clipBehavior: Clip.none,
+              children: [
+                // Brilho: anel que expande e some ao selecionar.
+                AnimatedBuilder(
+                  animation: _ring,
+                  builder: (context, child) {
+                    if (_ring.isDismissed) return const SizedBox.shrink();
+                    final t = Curves.easeOut.transform(_ring.value);
+                    return Opacity(
+                      opacity: (1 - t) * 0.55,
+                      child: Container(
+                        width: 46 + t * 28,
+                        height: 46 + t * 28,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border:
+                              Border.all(color: scheme.primary, width: 2),
+                        ),
+                      ),
+                    );
+                  },
                 ),
-                child: Text(label),
-              ),
+                AnimatedContainer(
+                  duration: AppAnimations.resolve(context, AppAnimations.fast),
+                  curve: AppAnimations.standardCurve,
+                  width: diameter,
+                  height: diameter,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: selected ? scheme.primary : scheme.surface,
+                    border: Border.all(
+                      color: selected ? scheme.primary : theme.dividerColor,
+                      width: selected ? 2 : 1.4,
+                    ),
+                    boxShadow: selected
+                        ? [
+                            BoxShadow(
+                              color: scheme.primary.withValues(alpha: 0.30),
+                              blurRadius: 14,
+                              offset: const Offset(0, 6),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  alignment: Alignment.center,
+                  child: AnimatedDefaultTextStyle(
+                    duration:
+                        AppAnimations.resolve(context, AppAnimations.fast),
+                    style: theme.textTheme.titleMedium!.copyWith(
+                      color: selected ? scheme.onPrimary : scheme.onSurface,
+                      fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+                    ),
+                    child: Text(widget.label),
+                  ),
+                ),
+              ],
             ),
           ),
         ),

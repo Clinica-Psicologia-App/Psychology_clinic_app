@@ -67,6 +67,14 @@ class _QuestionnaireAnswerPageState
     });
   }
 
+  /// Frase gentil que acompanha o progresso (acolhe o respondente).
+  String _encouragement(double progress) {
+    if (progress >= 0.99) return 'Última pergunta — quase lá!';
+    if (progress >= 0.75) return 'Reta final, continue assim.';
+    if (progress >= 0.4) return 'Você está indo muito bem.';
+    return 'Sem pressa — uma de cada vez.';
+  }
+
   /// Direção da transição entre perguntas: 1 = avançando (entra da direita),
   /// -1 = voltando (entra da esquerda).
   int _direction = 1;
@@ -186,12 +194,29 @@ class _QuestionnaireAnswerPageState
                           color: Theme.of(context).colorScheme.primary,
                         ),
                   ),
+                  const SizedBox(height: 2),
+                  Row(
+                    children: [
+                      const Icon(Icons.spa_outlined,
+                          size: 13, color: AppColors.textMuted),
+                      const SizedBox(width: 5),
+                      Text(
+                        _encouragement(progress),
+                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                              color: AppColors.textMuted,
+                            ),
+                      ),
+                    ],
+                  ),
                 ],
               ),
             ),
             Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) => SingleChildScrollView(
+              child: Stack(
+                children: [
+                  const Positioned.fill(child: _QuestionnaireBackdrop()),
+                  LayoutBuilder(
+                    builder: (context, constraints) => SingleChildScrollView(
                   padding: const EdgeInsets.all(AppSpacing.md),
                   // Centraliza verticalmente quando o conteúdo é curto (uma
                   // pergunta por vez), mas continua rolável em textos longos.
@@ -257,6 +282,8 @@ class _QuestionnaireAnswerPageState
                 ),
                     ),
                   ),
+                ),
+                  ],
                 ),
             ),
             Padding(
@@ -559,4 +586,38 @@ class _ParentalContextProgress extends StatelessWidget {
       }).toList(),
     );
   }
+}
+
+/// Fundo suave (formas orgânicas discretas da paleta) por trás do conteúdo —
+/// deixa a tela mais acolhedora sem competir com a pergunta.
+class _QuestionnaireBackdrop extends StatelessWidget {
+  const _QuestionnaireBackdrop();
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: ClipRect(
+        child: Stack(
+          children: [
+            Positioned(
+              top: -50,
+              right: -40,
+              child: _blob(150, AppColors.turquoise.withValues(alpha: 0.08)),
+            ),
+            Positioned(
+              bottom: -30,
+              left: -36,
+              child: _blob(120, AppColors.cyan.withValues(alpha: 0.07)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _blob(double size, Color color) => Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      );
 }

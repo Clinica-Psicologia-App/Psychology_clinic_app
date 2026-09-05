@@ -106,6 +106,7 @@ void main() {
           attention: r.attention,
           checkinMissingDays: r.missingDays,
           dataCompletion: r.completion,
+          onQuickAction: r.attention != null ? () {} : null,
           onTap: () {},
         );
 
@@ -124,20 +125,23 @@ void main() {
               children: [
                 PatientGroupHeader(
                     label: 'Precisam de atenção',
+                    icon: Icons.notifications_active_rounded,
                     count: urgent.length,
                     color: AppColors.error),
                 ...urgent.map(tile),
                 PatientGroupHeader(
                     label: 'Em dia',
+                    icon: Icons.verified_rounded,
                     count: ok.length,
                     color: AppColors.success,
-                    topSpacing: 16),
+                    topSpacing: 20),
                 ...ok.map(tile),
                 PatientGroupHeader(
                     label: 'Inativos',
+                    icon: Icons.pause_circle_outline_rounded,
                     count: inactive.length,
                     color: theme.colorScheme.onSurfaceVariant,
-                    topSpacing: 16),
+                    topSpacing: 20),
                 ...inactive.map(tile),
                 const SizedBox(height: 16),
               ],

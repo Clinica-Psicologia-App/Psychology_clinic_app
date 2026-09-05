@@ -61,7 +61,7 @@ PatientAttention? attentionFor({
   if (hasPendingResultsRelease) {
     return const PatientAttention(
       kind: PatientAttentionKind.pendingRelease,
-      label: 'Resultado pronto para liberar',
+      label: 'Resultado a liberar',
     );
   }
   if (completion != null && completion.filledSections == 0) {

@@ -1,18 +1,18 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_radius.dart';
-import '../../../../core/theme/app_spacing.dart';
-import '../../../../shared/widgets/clay_card.dart';
 import '../../../profile/domain/profile_role.dart';
 import '../../../profile/presentation/widgets/user_avatar.dart';
 import '../../domain/patient.dart';
 import '../../domain/patient_attention.dart';
 import '../../domain/patient_data_completion.dart';
 
-/// Linha de paciente na lista. Formato enxuto (~80px): quem está em dia mostra
-/// os sete tracinhos da semana; quem precisa de atenção troca os tracinhos pelo
-/// motivo escrito e ganha uma tarja lateral na cor da urgência.
+/// Linha de paciente na lista (~84px). Quem está em dia mostra os sete
+/// tracinhos da semana; quem precisa de atenção troca os tracinhos pelo motivo
+/// e ganha tarja lateral, fundo levemente tingido, selo no avatar e um botão
+/// que leva direto à ação daquele motivo.
 class PatientListTile extends StatelessWidget {
   const PatientListTile({
     super.key,
@@ -22,6 +22,7 @@ class PatientListTile extends StatelessWidget {
     this.checkinMissingDays,
     this.dataCompletion,
     this.showEmail = false,
+    this.onQuickAction,
   });
 
   final Patient patient;
@@ -41,132 +42,175 @@ class PatientListTile extends StatelessWidget {
   /// campos pesquisáveis — fora dela, a linha fica mais limpa sem ele.
   final bool showEmail;
 
+  /// Ação do motivo (ligar, liberar resultado, preencher avaliação). Só rende
+  /// botão quando há [attention].
+  final VoidCallback? onQuickAction;
+
   int get _filledDays {
     if (!patient.isActive) return 0;
     final missing = checkinMissingDays ?? 0;
     return (7 - missing).clamp(0, 7);
   }
 
-  Color _healthColor(ThemeData theme) {
-    if (!patient.isActive) return theme.colorScheme.outline;
-    final a = attention;
-    if (a == null) return AppColors.success;
-    return attentionColor(a.kind);
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final a = attention;
-    final health = _healthColor(theme);
+    final active = patient.isActive;
+    final accent = a != null
+        ? attentionColor(a.kind)
+        : active
+            ? AppColors.success
+            : theme.colorScheme.onSurfaceVariant;
     final completion = dataCompletion;
     final email = patient.email;
-    final showStatusChip = !patient.isActive ||
+    final showStatusChip = !active ||
         patient.accessStatus == PatientAccessStatus.noAppAccess;
+    final surface = theme.colorScheme.surface;
+    final onQuick = onQuickAction;
+    final quick = (a != null && onQuick != null)
+        ? (kind: a.kind, run: onQuick)
+        : null;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: 4,
-      ),
-      child: ClayCard(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+      child: Material(
+        // Tint quase imperceptível da cor da urgência: dá pertencimento ao
+        // grupo sem transformar a lista num semáforo.
+        color: a != null
+            ? Color.alphaBlend(accent.withValues(alpha: 0.035), surface)
+            : surface,
+        borderRadius: BorderRadius.circular(18),
         clipBehavior: Clip.antiAlias,
-        shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
         child: InkWell(
           onTap: onTap,
-          child: IntrinsicHeight(
-            child: Row(
-              children: [
-                // Tarja lateral só existe quando há urgência: é ela que faz o
-                // grupo "precisam de atenção" ser lido de relance.
-                if (a != null) Container(width: 4, color: health),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
-                    child: Row(
-                      children: [
-                        _StatusRingAvatar(patient: patient, ringColor: health),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Row(
-                                children: [
-                                  Flexible(
-                                    child: Text(
-                                      patient.fullName,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: theme.textTheme.titleSmall
-                                          ?.copyWith(
-                                        fontWeight: FontWeight.w700,
-                                        color: patient.isActive
-                                            ? null
-                                            : theme
-                                                .colorScheme.onSurfaceVariant,
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: a != null
+                    ? accent.withValues(alpha: 0.22)
+                    : theme.colorScheme.outline.withValues(alpha: 0.7),
+              ),
+            ),
+            child: IntrinsicHeight(
+              child: Row(
+                children: [
+                  if (a != null)
+                    Container(
+                      width: 4,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [accent, accent.withValues(alpha: 0.45)],
+                        ),
+                      ),
+                    ),
+                  Expanded(
+                    child: Padding(
+                      padding:
+                          EdgeInsets.fromLTRB(a != null ? 10 : 12, 10, 8, 10),
+                      child: Row(
+                        children: [
+                          _AvatarWithBadge(
+                            patient: patient,
+                            attention: a,
+                            accent: accent,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        patient.fullName,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: theme.textTheme.titleSmall
+                                            ?.copyWith(
+                                          fontWeight: FontWeight.w700,
+                                          height: 1.15,
+                                          color: active
+                                              ? null
+                                              : theme.colorScheme
+                                                  .onSurfaceVariant,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  if (showStatusChip) ...[
-                                    const SizedBox(width: 6),
-                                    _MutedChip(
-                                      label: patient.isActive
-                                          ? 'Sem app'
-                                          : 'Inativo',
-                                    ),
+                                    if (showStatusChip) ...[
+                                      const SizedBox(width: 6),
+                                      _MutedChip(
+                                        label: active ? 'Sem app' : 'Inativo',
+                                      ),
+                                    ],
                                   ],
+                                ),
+                                if (showEmail &&
+                                    email != null &&
+                                    email.isNotEmpty) ...[
+                                  const SizedBox(height: 1),
+                                  Text(
+                                    email,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style:
+                                        theme.textTheme.bodySmall?.copyWith(
+                                      fontSize: 11,
+                                      color:
+                                          theme.colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
                                 ],
-                              ),
-                              if (showEmail && email != null &&
-                                  email.isNotEmpty) ...[
-                                const SizedBox(height: 1),
-                                Text(
-                                  email,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    fontSize: 11,
-                                    color: theme.colorScheme.onSurfaceVariant,
+                                const SizedBox(height: 5),
+                                if (a != null)
+                                  _ReasonPill(label: a.label, color: accent)
+                                else if (active)
+                                  _WeekStrip(
+                                    filled: _filledDays,
+                                    color: accent,
+                                  )
+                                else
+                                  Text(
+                                    'Acompanhamento encerrado',
+                                    style:
+                                        theme.textTheme.labelSmall?.copyWith(
+                                      fontSize: 11,
+                                      color:
+                                          theme.colorScheme.onSurfaceVariant,
+                                    ),
                                   ),
-                                ),
                               ],
-                              const SizedBox(height: 3),
-                              if (a != null)
-                                _AttentionLine(attention: a, color: health)
-                              else if (patient.isActive)
-                                _WeekLine(
-                                  filledDays: _filledDays,
-                                  color: health,
-                                )
-                              else
-                                Text(
-                                  'Acompanhamento encerrado',
-                                  style: theme.textTheme.labelSmall?.copyWith(
-                                    fontSize: 11,
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                            ],
+                            ),
                           ),
-                        ),
-                        // Anel de preenchimento só faz sentido em quem está em
-                        // acompanhamento: no inativo vira ruído colorido.
-                        if (completion != null && patient.isActive) ...[
-                          const SizedBox(width: AppSpacing.xs),
-                          CompletionDonut(completion: completion),
+                          const SizedBox(width: 6),
+                          // Anel só faz sentido em quem está em acompanhamento:
+                          // no inativo vira ruído colorido.
+                          if (completion != null && active)
+                            CompletionRing(completion: completion),
+                          if (quick != null) ...[
+                            const SizedBox(width: 6),
+                            _QuickActionButton(
+                              kind: quick.kind,
+                              color: accent,
+                              onPressed: quick.run,
+                            ),
+                          ] else
+                            Icon(
+                              Icons.chevron_right_rounded,
+                              size: 20,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
                         ],
-                        Icon(
-                          Icons.chevron_right_rounded,
-                          size: 20,
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -175,7 +219,11 @@ class PatientListTile extends StatelessWidget {
   }
 }
 
-/// Cor de cada motivo de atenção — usada na tarja, no anel do avatar e no texto.
+// ─────────────────────────────────────────────────────────────────────────────
+// Cores e ícones por motivo. O selo do avatar diz o ESTADO; o botão diz a AÇÃO
+// — por isso são ícones diferentes para o mesmo motivo.
+// ─────────────────────────────────────────────────────────────────────────────
+
 Color attentionColor(PatientAttentionKind kind) => switch (kind) {
       PatientAttentionKind.noCheckin => AppColors.error,
       PatientAttentionKind.pendingRelease => AppColors.info,
@@ -183,76 +231,141 @@ Color attentionColor(PatientAttentionKind kind) => switch (kind) {
       PatientAttentionKind.fewCheckins => AppColors.warning,
     };
 
-IconData _attentionIcon(PatientAttentionKind kind) => switch (kind) {
-      PatientAttentionKind.noCheckin => Icons.phone_outlined,
-      PatientAttentionKind.pendingRelease => Icons.fact_check_outlined,
-      PatientAttentionKind.emptyData => Icons.edit_note_rounded,
+IconData _stateIcon(PatientAttentionKind kind) => switch (kind) {
+      PatientAttentionKind.noCheckin => Icons.event_busy_rounded,
+      PatientAttentionKind.pendingRelease => Icons.lock_rounded,
+      PatientAttentionKind.emptyData => Icons.assignment_late_rounded,
       PatientAttentionKind.fewCheckins => Icons.schedule_rounded,
     };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Segunda linha: motivo da urgência OU semana de check-ins
+IconData _actionIcon(PatientAttentionKind kind) => switch (kind) {
+      PatientAttentionKind.noCheckin => Icons.phone_rounded,
+      PatientAttentionKind.pendingRelease => Icons.lock_open_rounded,
+      PatientAttentionKind.emptyData => Icons.edit_rounded,
+      PatientAttentionKind.fewCheckins => Icons.phone_rounded,
+    };
+
+String actionLabelFor(PatientAttentionKind kind) => switch (kind) {
+      PatientAttentionKind.noCheckin => 'Ligar para o paciente',
+      PatientAttentionKind.pendingRelease => 'Abrir resultados para liberar',
+      PatientAttentionKind.emptyData => 'Abrir avaliação inicial',
+      PatientAttentionKind.fewCheckins => 'Ligar para o paciente',
+    };
+
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _AttentionLine extends StatelessWidget {
-  const _AttentionLine({required this.attention, required this.color});
+class _QuickActionButton extends StatelessWidget {
+  const _QuickActionButton({
+    required this.kind,
+    required this.color,
+    required this.onPressed,
+  });
 
-  final PatientAttention attention;
+  final PatientAttentionKind kind;
   final Color color;
+  final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(_attentionIcon(attention.kind), size: 13, color: color),
-        const SizedBox(width: 5),
-        Flexible(
-          child: Text(
-            attention.label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w600,
-              color: color,
+    return Tooltip(
+      message: actionLabelFor(kind),
+      child: Semantics(
+        button: true,
+        label: actionLabelFor(kind),
+        child: Material(
+          color: color,
+          shape: const CircleBorder(),
+          elevation: 2,
+          shadowColor: color.withValues(alpha: 0.5),
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: onPressed,
+            child: SizedBox(
+              width: 32,
+              height: 32,
+              child: Icon(_actionIcon(kind), size: 16, color: Colors.white),
             ),
           ),
         ),
-      ],
+      ),
     );
   }
 }
 
-class _WeekLine extends StatelessWidget {
-  const _WeekLine({required this.filledDays, required this.color});
+class _ReasonPill extends StatelessWidget {
+  const _ReasonPill({required this.label, required this.color});
 
-  final int filledDays;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.11),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          color: color,
+        ),
+      ),
+    );
+  }
+}
+
+/// Sete dias da semana, com o de hoje marcado por um ponto embaixo.
+class _WeekStrip extends StatelessWidget {
+  const _WeekStrip({required this.filled, required this.color});
+
+  final int filled;
   final Color color;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final today = DateTime.now().weekday - 1; // 0 = segunda
     return Row(
       children: [
         for (var i = 0; i < 7; i++) ...[
-          if (i > 0) const SizedBox(width: 3),
-          Container(
-            width: 5,
-            height: 10,
-            decoration: BoxDecoration(
-              color: i < filledDays
-                  ? color
-                  : theme.colorScheme.outline.withValues(alpha: 0.6),
-              borderRadius: BorderRadius.circular(3),
-            ),
+          if (i > 0) const SizedBox(width: 3.5),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 5,
+                height: 11,
+                decoration: BoxDecoration(
+                  color: i < filled
+                      ? color
+                      : theme.colorScheme.outline.withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+              const SizedBox(height: 2.5),
+              Container(
+                width: 3,
+                height: 3,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: i == today ? color : Colors.transparent,
+                ),
+              ),
+            ],
           ),
         ],
-        const SizedBox(width: 7),
+        const SizedBox(width: 8),
         Text(
-          '$filledDays/7',
+          '$filled/7',
           style: TextStyle(
             fontSize: 11,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
             color: color,
           ),
         ),
@@ -262,11 +375,11 @@ class _WeekLine extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Anel de preenchimento dos dados
+// Anel de preenchimento: um arco por seção da avaliação inicial
 // ─────────────────────────────────────────────────────────────────────────────
 
-class CompletionDonut extends StatelessWidget {
-  const CompletionDonut({super.key, required this.completion, this.size = 38});
+class CompletionRing extends StatelessWidget {
+  const CompletionRing({super.key, required this.completion, this.size = 36});
 
   final PatientDataCompletion completion;
   final double size;
@@ -279,56 +392,101 @@ class CompletionDonut extends StatelessWidget {
         : completion.filledSections <= 2
             ? AppColors.error
             : AppColors.warning;
+    final missing =
+        completion.sections.where((s) => !s.done).map((s) => s.label).join(', ');
 
     return Tooltip(
       message: completion.isComplete
-          ? 'Dados: tudo preenchido'
-          : 'Falta: ${completion.sections.where((s) => !s.done).map((s) => s.label).join(', ')}',
+          ? 'Avaliação inicial completa'
+          : 'Falta: $missing',
       child: SizedBox(
         width: size,
         height: size,
-        child: Stack(
-          alignment: Alignment.center,
-          children: [
-            SizedBox.expand(
-              child: CircularProgressIndicator(
-                value: completion.fraction,
-                strokeWidth: 3.4,
-                backgroundColor:
-                    theme.colorScheme.outline.withValues(alpha: 0.5),
-                valueColor: AlwaysStoppedAnimation(color),
-                strokeCap: StrokeCap.round,
-              ),
-            ),
-            Text(
+        child: CustomPaint(
+          painter: _RingPainter(
+            done: completion.filledSections,
+            total: completion.totalSections,
+            color: color,
+            trackColor: theme.colorScheme.outline.withValues(alpha: 0.7),
+          ),
+          child: Center(
+            child: Text(
               '${completion.percent}',
               style: TextStyle(
-                fontSize: size * 0.29,
-                fontWeight: FontWeight.w700,
+                fontSize: size * 0.31,
+                fontWeight: FontWeight.w800,
                 color: color,
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
+class _RingPainter extends CustomPainter {
+  _RingPainter({
+    required this.done,
+    required this.total,
+    required this.color,
+    required this.trackColor,
+  });
+
+  final int done;
+  final int total;
+  final Color color;
+  final Color trackColor;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (total <= 0) return;
+    final center = size.center(Offset.zero);
+    final radius = size.width / 2 - 2.6;
+    const gap = 0.26; // folga entre os arcos, em radianos
+    final step = math.pi * 2 / total;
+
+    for (var i = 0; i < total; i++) {
+      final start = -math.pi / 2 + i * step + gap / 2;
+      final paint = Paint()
+        ..color = i < done ? color : trackColor
+        ..strokeWidth = 3.4
+        ..style = PaintingStyle.stroke
+        ..strokeCap = StrokeCap.round;
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: radius),
+        start,
+        step - gap,
+        false,
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_RingPainter old) =>
+      old.done != done ||
+      old.total != total ||
+      old.color != color ||
+      old.trackColor != trackColor;
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
-// Cabeçalho de grupo ("Precisam de atenção" / "Em dia" / "Inativos")
+// Cabeçalho de grupo
 // ─────────────────────────────────────────────────────────────────────────────
 
 class PatientGroupHeader extends StatelessWidget {
   const PatientGroupHeader({
     super.key,
     required this.label,
+    required this.icon,
     required this.count,
     required this.color,
-    this.topSpacing = AppSpacing.sm,
+    this.topSpacing = 8,
   });
 
   final String label;
+  final IconData icon;
   final int count;
   final Color color;
   final double topSpacing;
@@ -337,34 +495,33 @@ class PatientGroupHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: EdgeInsets.fromLTRB(
-        AppSpacing.md + 2,
-        topSpacing,
-        AppSpacing.md,
-        AppSpacing.xs,
-      ),
+      padding: EdgeInsets.fromLTRB(16, topSpacing, 16, 8),
       child: Row(
         children: [
           Container(
-            width: 7,
-            height: 7,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            width: 22,
+            height: 22,
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.13),
+              borderRadius: BorderRadius.circular(7),
+            ),
+            child: Icon(icon, size: 13, color: color),
           ),
-          const SizedBox(width: 7),
+          const SizedBox(width: 8),
           Text(
             label.toUpperCase(),
             style: theme.textTheme.labelSmall?.copyWith(
               fontWeight: FontWeight.w800,
-              letterSpacing: 0.6,
+              letterSpacing: 0.7,
               color: theme.colorScheme.onSurfaceVariant,
             ),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 7),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(6),
+              color: color.withValues(alpha: 0.13),
+              borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
               '$count',
@@ -375,6 +532,21 @@ class PatientGroupHeader extends StatelessWidget {
               ),
             ),
           ),
+          const SizedBox(width: 10),
+          // Régua que ancora o grupo e se dissolve à direita.
+          Expanded(
+            child: Container(
+              height: 1,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    color.withValues(alpha: 0.28),
+                    color.withValues(alpha: 0.0),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -382,35 +554,68 @@ class PatientGroupHeader extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Avatar com anel de status colorido
+// Avatar com selo do estado
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _StatusRingAvatar extends StatelessWidget {
-  const _StatusRingAvatar({required this.patient, required this.ringColor});
+class _AvatarWithBadge extends StatelessWidget {
+  const _AvatarWithBadge({
+    required this.patient,
+    required this.attention,
+    required this.accent,
+  });
 
   final Patient patient;
-  final Color ringColor;
+  final PatientAttention? attention;
+  final Color accent;
 
   @override
   Widget build(BuildContext context) {
-    return Opacity(
-      opacity: patient.isActive ? 1.0 : 0.45,
-      child: Container(
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: ringColor, width: 2),
-        ),
-        padding: const EdgeInsets.all(2),
-        child: UserAvatar.parts(
-          fullName: patient.fullName,
-          initials: _initials(patient.fullName),
-          role: ProfileRole.patient,
-          avatarType: patient.avatarType,
-          photoUrl: patient.photoUrl,
-          avatarConfig: patient.avatarConfig,
-          size: 42,
-          borderRadius: BorderRadius.circular(42),
-        ),
+    final theme = Theme.of(context);
+    final a = attention;
+    return SizedBox(
+      width: 44,
+      height: 44,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Opacity(
+            opacity: patient.isActive ? 1 : 0.45,
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border:
+                    Border.all(color: accent.withValues(alpha: 0.55), width: 2),
+              ),
+              padding: const EdgeInsets.all(2),
+              child: UserAvatar.parts(
+                fullName: patient.fullName,
+                initials: _initials(patient.fullName),
+                role: ProfileRole.patient,
+                avatarType: patient.avatarType,
+                photoUrl: patient.photoUrl,
+                avatarConfig: patient.avatarConfig,
+                size: 36,
+                borderRadius: BorderRadius.circular(36),
+              ),
+            ),
+          ),
+          if (a != null)
+            Positioned(
+              right: -2,
+              bottom: -2,
+              child: Container(
+                width: 19,
+                height: 19,
+                decoration: BoxDecoration(
+                  color: accent,
+                  shape: BoxShape.circle,
+                  border:
+                      Border.all(color: theme.colorScheme.surface, width: 2),
+                ),
+                child: Icon(_stateIcon(a.kind), size: 10, color: Colors.white),
+              ),
+            ),
+        ],
       ),
     );
   }

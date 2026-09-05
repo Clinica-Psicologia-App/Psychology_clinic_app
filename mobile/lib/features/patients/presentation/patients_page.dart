@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
@@ -11,7 +12,9 @@ import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../../shared/widgets/brand_loading.dart';
 import '../../auth/providers/auth_providers.dart';
+import '../../initial_assessment/presentation/initial_assessment_routes.dart';
 import '../../patients/domain/psychologist_alert.dart';
+import '../../results/presentation/result_routes.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/patient.dart';
 import '../domain/patient_data_completion.dart';
@@ -260,15 +263,23 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
         .toList();
     final inactive = patients.where((p) => !p.isActive).toList();
 
-    final groups = <({String label, Color color, List<Patient> items})>[
+    final groups =
+        <({String label, IconData icon, Color color, List<Patient> items})>[
       (
         label: 'Precisam de atenção',
+        icon: Icons.notifications_active_rounded,
         color: AppColors.error,
         items: needAttention
       ),
-      (label: 'Em dia', color: AppColors.success, items: upToDate),
+      (
+        label: 'Em dia',
+        icon: Icons.verified_rounded,
+        color: AppColors.success,
+        items: upToDate
+      ),
       (
         label: 'Inativos',
+        icon: Icons.pause_circle_outline_rounded,
         color: Theme.of(context).colorScheme.onSurfaceVariant,
         items: inactive
       ),
@@ -284,9 +295,10 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
         slivers.add(SliverToBoxAdapter(
           child: PatientGroupHeader(
             label: group.label,
+            icon: group.icon,
             count: group.items.length,
             color: group.color,
-            topSpacing: g == 0 ? AppSpacing.xs : AppSpacing.md,
+            topSpacing: g == 0 ? AppSpacing.xs : AppSpacing.lg,
           ),
         ));
       }
@@ -295,14 +307,19 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
         itemCount: group.items.length,
         itemBuilder: (context, i) {
           final patient = group.items[i];
+          final attention = attentions[patient.id];
           return MotionReveal(
             delay: staggerDelay(base + i),
             child: PatientListTile(
               patient: patient,
-              attention: attentions[patient.id],
+              attention: attention,
               checkinMissingDays: checkinMissingMap[patient.id],
               dataCompletion: dataCompletionMap?[patient.id],
               showEmail: showEmail,
+              onQuickAction: attention != null &&
+                      widget.role == ProfileRole.psychologist
+                  ? () => _runQuickAction(context, patient, attention)
+                  : null,
               onTap: () => context.push(
                 PatientRoutes.detail(widget.role, patient.id),
               ),
@@ -314,6 +331,55 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
     }
 
     return slivers;
+  }
+
+  /// Botão do motivo: leva direto para onde a coisa se resolve, em vez de
+  /// jogar o psicólogo na ficha para ele procurar.
+  Future<void> _runQuickAction(
+    BuildContext context,
+    Patient patient,
+    PatientAttention attention,
+  ) async {
+    final messenger = ScaffoldMessenger.of(context);
+
+    switch (attention.kind) {
+      case PatientAttentionKind.noCheckin:
+      case PatientAttentionKind.fewCheckins:
+        final raw = patient.phone?.trim() ?? '';
+        if (raw.isEmpty) {
+          messenger.showSnackBar(
+            const SnackBar(
+              content: Text('Este paciente não tem telefone cadastrado.'),
+            ),
+          );
+          return;
+        }
+        final uri = Uri(
+          scheme: 'tel',
+          path: raw.replaceAll(RegExp(r'[^0-9+]'), ''),
+        );
+        final ok = await launchUrl(uri);
+        if (!ok) {
+          messenger.showSnackBar(
+            const SnackBar(
+              content: Text('Não foi possível abrir o discador.'),
+            ),
+          );
+        }
+      case PatientAttentionKind.pendingRelease:
+        if (!context.mounted) return;
+        context.push(
+          ResultRoutes.list(role: widget.role, patientId: patient.id),
+        );
+      case PatientAttentionKind.emptyData:
+        if (!context.mounted) return;
+        context.push(
+          InitialAssessmentRoutes.staff(
+            role: widget.role,
+            patientId: patient.id,
+          ),
+        );
+    }
   }
 }
 

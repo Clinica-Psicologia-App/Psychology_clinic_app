@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_animations.dart';
 import '../../domain/genogram_data.dart';
 import '../../domain/genogram_gender.dart';
 import '../../domain/genogram_layout.dart';
@@ -12,7 +13,7 @@ import '../../domain/genogram_person.dart';
 /// vínculos estruturais explícitos e desenha a árvore bilateral (linhagem
 /// paterna à esquerda, materna à direita, gerações em faixas). Só faz sentido
 /// quando há vínculos; a página decide entre este e o desenho por inferência.
-class MotorGenogramDiagram extends StatelessWidget {
+class MotorGenogramDiagram extends StatefulWidget {
   const MotorGenogramDiagram({
     super.key,
     required this.data,
@@ -40,6 +41,48 @@ class MotorGenogramDiagram extends StatelessWidget {
   }
 
   @override
+  State<MotorGenogramDiagram> createState() => _MotorGenogramDiagramState();
+}
+
+class _MotorGenogramDiagramState extends State<MotorGenogramDiagram>
+    with TickerProviderStateMixin {
+  /// Entrada: pessoas surgem em cascata e as ligações se desenham depois.
+  late final AnimationController _entry = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  );
+
+  /// Halo do paciente "respirando" — sinaliza quem é o índice sem poluir.
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2600),
+  );
+
+  bool _started = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    if (AppAnimations.shouldAnimate(context)) {
+      _entry.forward();
+      _pulse.repeat(reverse: true);
+    } else {
+      _entry.value = 1;
+    }
+  }
+
+  @override
+  void dispose() {
+    _entry.dispose();
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  GenogramData get data => widget.data;
+
+  @override
   Widget build(BuildContext context) {
     final input = buildLayoutInput(
       people: data.people,
@@ -57,23 +100,29 @@ class MotorGenogramDiagram extends StatelessWidget {
     final diagram = positionGenogram(layout, colWidth: 116, rowHeight: 150);
     final byId = {for (final p in data.people) p.id: p};
     final fontFamily = DefaultTextStyle.of(context).style.fontFamily;
-    final emotional = showEmotional
+    final emotional = widget.showEmotional
         ? emotionalRelations(data.relationships)
         : const <GEmotionalRel>[];
+    final onTapPerson = widget.onTapPerson;
 
-    final painter = CustomPaint(
-      size: Size(diagram.width, diagram.height),
-      painter: _MotorGenogramPainter(
-        layout: layout,
-        diagram: diagram,
-        byId: byId,
-        focusId: input.focusId,
-        emotional: emotional,
-        fontFamily: fontFamily,
+    final painter = AnimatedBuilder(
+      animation: Listenable.merge([_entry, _pulse]),
+      builder: (context, _) => CustomPaint(
+        size: Size(diagram.width, diagram.height),
+        painter: _MotorGenogramPainter(
+          layout: layout,
+          diagram: diagram,
+          byId: byId,
+          focusId: input.focusId,
+          emotional: emotional,
+          fontFamily: fontFamily,
+          entry: _entry.value,
+          pulse: _pulse.value,
+        ),
       ),
     );
 
-    return InteractiveViewer(
+    final viewer = InteractiveViewer(
       constrained: false,
       minScale: 0.4,
       maxScale: 2.5,
@@ -84,10 +133,19 @@ class MotorGenogramDiagram extends StatelessWidget {
               behavior: HitTestBehavior.deferToChild,
               onTapUp: (d) {
                 final id = _hitTest(diagram, d.localPosition);
-                if (id != null) onTapPerson!(id);
+                if (id != null) onTapPerson(id);
               },
               child: painter,
             ),
+    );
+
+    // Fundo fica FORA do InteractiveViewer: não acompanha o zoom/arraste, então
+    // funciona como ambiente da tela em vez de parte do desenho.
+    return Stack(
+      children: [
+        const Positioned.fill(child: _GenogramBackdrop()),
+        Positioned.fill(child: viewer),
+      ],
     );
   }
 
@@ -116,6 +174,8 @@ class _MotorGenogramPainter extends CustomPainter {
     required this.focusId,
     required this.emotional,
     this.fontFamily,
+    this.entry = 1,
+    this.pulse = 0,
   });
 
   final GLayout layout;
@@ -124,6 +184,12 @@ class _MotorGenogramPainter extends CustomPainter {
   final String focusId;
   final List<GEmotionalRel> emotional;
   final String? fontFamily;
+
+  /// 0→1: progresso da entrada (cascata das pessoas + traçado das ligações).
+  final double entry;
+
+  /// 0→1→0: respiração do halo do paciente.
+  final double pulse;
 
   static const _green = Color(0xFF2E7D6B);
   static const _ochre = Color(0xFFB5651D);
@@ -143,14 +209,53 @@ class _MotorGenogramPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    canvas.drawRect(
-        Offset.zero & size, Paint()..color = const Color(0xFFFBFCFE));
-    _bands(canvas);
-    _connectors(canvas);
-    _emotionalLayer(canvas);
-    for (final n in diagram.nodes) {
-      _node(canvas, n);
+    // Sem fundo opaco: o ambiente atrás do InteractiveViewer aparece.
+    final rect = Offset.zero & size;
+
+    // Ligações entram depois das pessoas, "se desenhando".
+    final linkT = Curves.easeOut.transform(
+      ((entry - 0.30) / 0.55).clamp(0.0, 1.0),
+    );
+    if (linkT > 0) {
+      canvas.saveLayer(rect, Paint()..color = Color.fromRGBO(0, 0, 0, linkT));
+      _bands(canvas);
+      _connectors(canvas);
+      _emotionalLayer(canvas);
+      canvas.restore();
     }
+
+    // Pessoas surgem em cascata, com um leve "pop".
+    for (var i = 0; i < diagram.nodes.length; i++) {
+      final n = diagram.nodes[i];
+      final t = Curves.easeOutBack.transform(
+        ((entry - i * 0.05) / 0.45).clamp(0.0, 1.0),
+      );
+      if (t <= 0) continue;
+      final fade = ((entry - i * 0.05) / 0.45).clamp(0.0, 1.0);
+      final bounds = Rect.fromCircle(center: Offset(n.x, n.y), radius: 110);
+
+      canvas.saveLayer(bounds, Paint()..color = Color.fromRGBO(0, 0, 0, fade));
+      canvas.save();
+      final s = 0.84 + 0.16 * t.clamp(0.0, 1.0);
+      canvas.translate(n.x, n.y);
+      canvas.scale(s);
+      canvas.translate(-n.x, -n.y);
+      if (n.id == focusId) _focusHalo(canvas, n);
+      _node(canvas, n);
+      canvas.restore();
+      canvas.restore();
+    }
+  }
+
+  /// Halo que "respira" no paciente — só aparece com a entrada concluída.
+  void _focusHalo(Canvas canvas, GPositioned n) {
+    if (entry < 0.9) return;
+    final r = _r + 8 + 6 * pulse;
+    canvas.drawCircle(
+      Offset(n.x, n.y),
+      r,
+      Paint()..color = _teal.withValues(alpha: 0.20 - 0.12 * pulse),
+    );
   }
 
   // ── Camada emocional (overlay) ─────────────────────────────────────────────
@@ -498,7 +603,49 @@ class _MotorGenogramPainter extends CustomPainter {
   bool shouldRepaint(_MotorGenogramPainter old) =>
       old.diagram != diagram ||
       old.layout != layout ||
-      old.emotional != emotional;
+      old.emotional != emotional ||
+      old.entry != entry ||
+      old.pulse != pulse;
+}
+
+/// Ambiente da tela do genograma: formas orgânicas discretas da paleta, para o
+/// diagrama não flutuar num vazio branco. Fica atrás do zoom/arraste.
+class _GenogramBackdrop extends StatelessWidget {
+  const _GenogramBackdrop();
+
+  @override
+  Widget build(BuildContext context) {
+    return IgnorePointer(
+      child: ClipRect(
+        child: Stack(
+          children: [
+            Positioned.fill(child: Container(color: const Color(0xFFF7FBFA))),
+            Positioned(
+              top: -70,
+              left: -60,
+              child: _blob(210, const Color(0xFF0F9C90).withValues(alpha: 0.09)),
+            ),
+            Positioned(
+              bottom: -80,
+              right: -70,
+              child: _blob(240, const Color(0xFF1F7A8C).withValues(alpha: 0.08)),
+            ),
+            Positioned(
+              top: 120,
+              right: -40,
+              child: _blob(120, const Color(0xFF8A5CB0).withValues(alpha: 0.06)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _blob(double size, Color color) => Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      );
 }
 
 enum _CurveKind { doubleLine, dashed, zigzag, slashed }

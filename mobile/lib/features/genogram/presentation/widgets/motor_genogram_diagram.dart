@@ -197,6 +197,9 @@ class _MotorGenogramPainter extends CustomPainter {
   static const _care = Color(0xFFE0A400); // cuidador principal (destaque)
 
   static const _r = 22.0;
+
+  /// Cor base do ambiente atrás do diagrama — usada no contorno dos rótulos.
+  static const _canvasBg = Color(0xFFF7FBFA);
   static const _navy = Color(0xFF0D1B3D);
   static const _line = Color(0xFF5B6B86);
   static const _teal = Color(0xFF0F9C90);
@@ -247,15 +250,25 @@ class _MotorGenogramPainter extends CustomPainter {
     }
   }
 
-  /// Halo que "respira" no paciente — só aparece com a entrada concluída.
+  /// Halo que "respira" no paciente — só aparece com a entrada concluída e
+  /// segue a forma do símbolo (círculo no feminino, quadrado no restante).
   void _focusHalo(Canvas canvas, GPositioned n) {
     if (entry < 0.9) return;
+    final c = Offset(n.x, n.y);
     final r = _r + 8 + 6 * pulse;
-    canvas.drawCircle(
-      Offset(n.x, n.y),
-      r,
-      Paint()..color = _teal.withValues(alpha: 0.20 - 0.12 * pulse),
-    );
+    final paint = Paint()
+      ..color = _teal.withValues(alpha: 0.20 - 0.12 * pulse)
+      ..style = PaintingStyle.fill;
+
+    final isFemale = byId[n.id]?.gender == GenogramGender.female;
+    if (isFemale) {
+      canvas.drawCircle(c, r, paint);
+    } else {
+      canvas.drawRect(
+        Rect.fromCenter(center: c, width: r * 2, height: r * 2),
+        paint,
+      );
+    }
   }
 
   // ── Camada emocional (overlay) ─────────────────────────────────────────────
@@ -581,20 +594,35 @@ class _MotorGenogramPainter extends CustomPainter {
       required FontWeight weight,
       required Color color,
       bool center = false}) {
-    final tp = TextPainter(
-      text: TextSpan(
-        text: text,
-        style: TextStyle(
-            fontFamily: fontFamily,
-            fontSize: size,
-            fontWeight: weight,
-            color: color),
-      ),
-      textAlign: TextAlign.center,
-      textDirection: TextDirection.ltr,
-    )..layout(maxWidth: 104);
+    TextPainter build(TextStyle style) => TextPainter(
+          text: TextSpan(text: text, style: style),
+          textAlign: TextAlign.center,
+          textDirection: TextDirection.ltr,
+        )..layout(maxWidth: 104);
+
+    final tp = build(TextStyle(
+      fontFamily: fontFamily,
+      fontSize: size,
+      fontWeight: weight,
+      color: color,
+    ));
     final dx = center ? at.dx - tp.width / 2 : at.dx;
     final dy = center && size >= 13 ? at.dy - tp.height / 2 : at.dy;
+
+    // Contorno na cor do fundo: as linhas de parentesco passam por trás do
+    // nome sem cortá-lo (mesma técnica de rótulo sobre mapa).
+    final outline = build(TextStyle(
+      fontFamily: fontFamily,
+      fontSize: size,
+      fontWeight: weight,
+      foreground: Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3.5
+        ..strokeJoin = StrokeJoin.round
+        ..color = _canvasBg,
+    ));
+    outline.paint(canvas, Offset(dx, dy));
+
     tp.paint(canvas, Offset(dx, dy));
   }
 

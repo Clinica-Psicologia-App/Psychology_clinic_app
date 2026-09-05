@@ -58,11 +58,10 @@ class _GenogramDiagramPageState extends ConsumerState<GenogramDiagramPage> {
 
     final gdata = gdataAsync.valueOrNull;
     if (gdata != null && MotorGenogramDiagram.hasStructure(gdata)) {
-      final hasEmotional =
-          emotionalRelations(gdata.relationships).isNotEmpty;
+      final bondCount = emotionalRelations(gdata.relationships).length;
       return Column(
         children: [
-          _motorControls(hasEmotional: hasEmotional, gdata: gdata),
+          _motorControls(bondCount: bondCount, gdata: gdata),
           Expanded(
             child: Container(
               width: double.infinity,
@@ -167,38 +166,36 @@ class _GenogramDiagramPageState extends ConsumerState<GenogramDiagramPage> {
     if (_showBonds == false) setState(() => _showBonds = true);
   }
 
-  Widget _motorControls({required bool hasEmotional, required GenogramData gdata}) {
+  Widget _motorControls({required int bondCount, required GenogramData gdata}) {
+    final hasEmotional = bondCount > 0;
     return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.fromLTRB(12, 6, 4, 6),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          bottom: BorderSide(color: Color(0x14000000)),
+        ),
+      ),
+      padding: const EdgeInsets.fromLTRB(12, 8, 8, 8),
       child: Row(
         children: [
-          FilterChip(
-            label: const Text('Mostrar relações'),
-            selected: _showBonds,
-            onSelected: (v) => setState(() => _showBonds = v),
-            selectedColor: AppColors.turquoise.withValues(alpha: 0.18),
-            checkmarkColor: AppColors.turquoise,
+          _RelationsToggle(
+            active: _showBonds,
+            count: bondCount,
+            onChanged: (v) => setState(() => _showBonds = v),
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 8),
           if (_showBonds && !hasEmotional)
             const Expanded(
               child: Text(
-                'Sem vínculos. Adicione um →',
-                style: TextStyle(fontSize: 11, color: AppColors.textMuted),
+                'Nenhum vínculo ainda',
+                style: TextStyle(fontSize: 11.5, color: AppColors.textMuted),
               ),
             )
           else
             const Spacer(),
           Builder(
-            builder: (ctx) => TextButton.icon(
-              onPressed: () => _openAddBondSheet(ctx, gdata),
-              icon: const Icon(Icons.add_rounded, size: 16),
-              label: const Text('Vínculo'),
-              style: TextButton.styleFrom(
-                foregroundColor: AppColors.turquoise,
-                textStyle: const TextStyle(fontSize: 13),
-              ),
+            builder: (ctx) => _AddBondButton(
+              onTap: () => _openAddBondSheet(ctx, gdata),
             ),
           ),
         ],
@@ -535,6 +532,157 @@ class _LegendItem extends StatelessWidget {
         Text(text,
             style: const TextStyle(fontSize: 11, color: AppColors.textSecondary)),
       ],
+    );
+  }
+}
+
+/// Alternador das relações emocionais — pílula animada com estado claro:
+/// ligado mostra o olho aberto, a cor da marca e a contagem de vínculos.
+class _RelationsToggle extends StatelessWidget {
+  const _RelationsToggle({
+    required this.active,
+    required this.count,
+    required this.onChanged,
+  });
+
+  final bool active;
+  final int count;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    const accent = AppColors.turquoise;
+    return Semantics(
+      button: true,
+      toggled: active,
+      label: 'Mostrar relações',
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(999),
+          onTap: () => onChanged(!active),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOut,
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
+            decoration: BoxDecoration(
+              color: active
+                  ? accent.withValues(alpha: 0.13)
+                  : Colors.white,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: active
+                    ? accent.withValues(alpha: 0.55)
+                    : AppColors.border,
+                width: active ? 1.4 : 1,
+              ),
+              boxShadow: active
+                  ? [
+                      BoxShadow(
+                        color: accent.withValues(alpha: 0.22),
+                        blurRadius: 10,
+                        offset: const Offset(0, 3),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  transitionBuilder: (child, anim) => ScaleTransition(
+                    scale: anim,
+                    child: FadeTransition(opacity: anim, child: child),
+                  ),
+                  child: Icon(
+                    active
+                        ? Icons.visibility_rounded
+                        : Icons.visibility_off_rounded,
+                    key: ValueKey(active),
+                    size: 17,
+                    color: active ? accent : AppColors.textMuted,
+                  ),
+                ),
+                const SizedBox(width: 7),
+                AnimatedDefaultTextStyle(
+                  duration: const Duration(milliseconds: 220),
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+                    color: active
+                        ? const Color(0xFF0A6E68) // turquesa escurecido: contraste do texto
+                        : AppColors.textSecondary,
+                  ),
+                  child: const Text('Relações'),
+                ),
+                if (count > 0) ...[
+                  const SizedBox(width: 7),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 220),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: active
+                          ? accent
+                          : AppColors.textMuted.withValues(alpha: 0.18),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      '$count',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w800,
+                        color: active ? Colors.white : AppColors.textMuted,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Ação de adicionar vínculo — botão tonal, par visual do alternador.
+class _AddBondButton extends StatelessWidget {
+  const _AddBondButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(999),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(12, 8, 14, 8),
+          decoration: BoxDecoration(
+            color: AppColors.navy,
+            borderRadius: BorderRadius.circular(999),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.add_rounded, size: 17, color: Colors.white),
+              SizedBox(width: 5),
+              Text(
+                'Vínculo',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

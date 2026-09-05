@@ -9,10 +9,11 @@ import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../profile/domain/profile_role.dart';
+import '../domain/check_in_diary_stats.dart';
 import '../domain/patient_check_in.dart';
 import '../providers/patient_check_ins_providers.dart';
 import 'patient_check_in_routes.dart';
-import 'widgets/patient_check_in_widgets.dart';
+import 'widgets/check_in_diary_widgets.dart';
 
 class PatientCheckInsPage extends ConsumerWidget {
   const PatientCheckInsPage({super.key});
@@ -25,38 +26,23 @@ class PatientCheckInsPage extends ConsumerWidget {
     return AppScaffold(
       title: 'Check-in',
       accent: AppColors.turquoise,
-      floatingActionButton: todayAsync.when(
-        data: (today) {
-          if (today != null) {
-            return FloatingActionButton.extended(
+      // Sem check-in hoje, quem convida é a "página em branco" no topo do
+      // caderno — um FAB ao lado dela seria o mesmo pedido duas vezes.
+      floatingActionButton: todayAsync.valueOrNull == null
+          ? null
+          : FloatingActionButton.extended(
               onPressed: () async {
                 await context.push(
-                  PatientCheckInRoutes.patientEdit(today.id),
+                  PatientCheckInRoutes.patientEdit(
+                    todayAsync.requireValue!.id,
+                  ),
                 );
                 ref.read(myPatientCheckInsProvider.notifier).refresh();
                 ref.invalidate(todayCheckInProvider);
               },
               icon: const Icon(Icons.edit),
-              label: const Text('Editar check-in de hoje'),
-            );
-          }
-          return FloatingActionButton.extended(
-            onPressed: () => _openCreate(context, ref),
-            icon: const Icon(Icons.add),
-            label: const Text('Check-in de hoje'),
-          );
-        },
-        loading: () => const FloatingActionButton.extended(
-          onPressed: null,
-          icon: Icon(Icons.add),
-          label: Text('Check-in de hoje'),
-        ),
-        error: (_, __) => FloatingActionButton.extended(
-          onPressed: () => _openCreate(context, ref),
-          icon: const Icon(Icons.add),
-          label: const Text('Check-in de hoje'),
-        ),
-      ),
+              label: const Text('Editar a página de hoje'),
+            ),
       actions: [
         IconButton(
           tooltip: 'Atualizar',
@@ -73,9 +59,9 @@ class PatientCheckInsPage extends ConsumerWidget {
           ref.read(myPatientCheckInsProvider.notifier).refresh();
           ref.invalidate(todayCheckInProvider);
         },
-        emptyMessage:
-            'Nenhum check-in ainda. Registre como está se sentindo hoje.',
-        emptyIcon: Icons.fact_check_outlined,
+        emptyMessage: 'Seu diário ainda está em branco. '
+            'A primeira página é a de hoje.',
+        emptyIcon: Icons.menu_book_outlined,
         dataBuilder: (items) => RefreshIndicator(
           onRefresh: () async {
             await ref.read(myPatientCheckInsProvider.notifier).refresh();
@@ -83,6 +69,7 @@ class PatientCheckInsPage extends ConsumerWidget {
           },
           child: _CheckInsList(
             items: items,
+            onWriteToday: () => _openCreate(context, ref),
             onTap: (c) async {
               await context.push(PatientCheckInRoutes.patientDetail(c.id));
               ref.read(myPatientCheckInsProvider.notifier).refresh();
@@ -133,7 +120,7 @@ class StaffPatientCheckInsPage extends ConsumerWidget {
         asyncValue: listAsync,
         onRetry: () => ref.invalidate(staffPatientCheckInsProvider(ctx)),
         emptyMessage: 'Nenhum check-in registrado pelo paciente.',
-        emptyIcon: Icons.fact_check_outlined,
+        emptyIcon: Icons.menu_book_outlined,
         dataBuilder: (items) => RefreshIndicator(
           onRefresh: () async {
             ref.invalidate(staffPatientCheckInsProvider(ctx));
@@ -156,21 +143,77 @@ class StaffPatientCheckInsPage extends ConsumerWidget {
   }
 }
 
+/// O caderno: capa (só do paciente), página de hoje e as páginas anteriores
+/// agrupadas por mês, costuradas por um fio vertical.
 class _CheckInsList extends StatelessWidget {
   const _CheckInsList({
     required this.items,
     required this.onTap,
     this.readOnly = false,
+    this.onWriteToday,
   });
 
   final List<PatientCheckIn> items;
   final void Function(PatientCheckIn checkIn) onTap;
+
+  /// Visão do psicólogo: sem capa motivacional, sem convite de hoje.
   final bool readOnly;
+
+  final VoidCallback? onWriteToday;
 
   @override
   Widget build(BuildContext context) {
-    final today = items.where((c) => c.isToday).toList();
-    final history = items.where((c) => !c.isToday).toList();
+    final loc = MaterialLocalizations.of(context);
+    final hasToday = items.any((c) => c.isToday);
+    final onWrite = onWriteToday;
+
+    final blocks = <Widget>[];
+
+    if (!readOnly) {
+      blocks.add(CheckInDiaryCover(stats: buildDiaryStats(items)));
+      blocks.add(const SizedBox(height: AppSpacing.md));
+      if (!hasToday && onWrite != null) {
+        blocks.add(CheckInBlankPage(onWrite: onWrite));
+        blocks.add(const SizedBox(height: AppSpacing.md));
+      }
+    } else {
+      blocks.add(
+        AppPageHeader(
+          title: 'Diário do paciente',
+          subtitle: 'O que ele registrou entre as sessões, na ordem em que '
+              'escreveu.',
+          icon: Icons.menu_book_outlined,
+          metadata: [
+            if (hasToday) const Chip(label: Text('Escreveu hoje')),
+            Chip(label: Text('${items.length} páginas')),
+          ],
+        ),
+      );
+      blocks.add(const SizedBox(height: AppSpacing.lg));
+    }
+
+    // Capítulos por mês. `items` já vem do mais recente para o mais antigo.
+    String? currentMonth;
+    for (var i = 0; i < items.length; i++) {
+      final c = items[i];
+      final at = c.checkedInAt.toLocal();
+      final month = loc.formatMonthYear(at);
+      if (month != currentMonth) {
+        currentMonth = month;
+        blocks.add(CheckInMonthDivider(label: month));
+      }
+      final nextIsNewMonth = i == items.length - 1 ||
+          loc.formatMonthYear(items[i + 1].checkedInAt.toLocal()) != month;
+      blocks.add(
+        CheckInDiaryEntry(
+          checkIn: c,
+          isToday: c.isToday,
+          // O fio para no fim de cada capítulo, senão atravessa o divisor.
+          isLast: nextIsNewMonth,
+          onTap: () => onTap(c),
+        ),
+      );
+    }
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -179,54 +222,7 @@ class _CheckInsList extends StatelessWidget {
         AppSpacing.md,
         88,
       ),
-      children: [
-        AppPageHeader(
-          title: readOnly ? 'Check-ins do paciente' : 'Check-in emocional',
-          subtitle: readOnly
-              ? 'Histórico de registros do paciente para leitura clínica entre sessões.'
-              : 'Registros rápidos entre as sessões para acompanhar humor, energia e sinais importantes do dia.',
-          icon: Icons.fact_check_outlined,
-          metadata: [
-            if (today.isNotEmpty) const Chip(label: Text('Hoje preenchido')),
-            Chip(label: Text('${history.length} anteriores')),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.xl),
-        if (today.isNotEmpty) ...[
-          const AppSectionHeader(
-            title: 'Hoje',
-            subtitle: 'Registro mais recente em destaque.',
-          ),
-          const SizedBox(height: AppSpacing.sm),
-        ],
-        MotionStaggered(
-          children: [
-            for (final c in today)
-              PatientCheckInListTile(
-                checkIn: c,
-                highlightToday: true,
-                onTap: () => onTap(c),
-              ),
-          ],
-        ),
-        if (history.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.xl),
-          const AppSectionHeader(
-            title: 'Anteriores',
-            subtitle: 'Linha de acompanhamento ao longo do tempo.',
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          MotionStaggered(
-            children: [
-              for (final c in history)
-                PatientCheckInListTile(
-                  checkIn: c,
-                  onTap: () => onTap(c),
-                ),
-            ],
-          ),
-        ],
-      ],
+      children: [MotionStaggered(children: blocks)],
     );
   }
 }

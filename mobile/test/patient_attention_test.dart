@@ -88,4 +88,16 @@ void main() {
       expect(attentionFor(patient: _p()), isNull);
     });
   });
+
+  group('hasDirectAction', () {
+    test('resultado pendente e avaliação vazia têm botão', () {
+      expect(PatientAttentionKind.pendingRelease.hasDirectAction, isTrue);
+      expect(PatientAttentionKind.emptyData.hasDirectAction, isTrue);
+    });
+
+    test('motivos de check-in não têm — o discador está fora por ora', () {
+      expect(PatientAttentionKind.noCheckin.hasDirectAction, isFalse);
+      expect(PatientAttentionKind.fewCheckins.hasDirectAction, isFalse);
+    });
+  });
 }

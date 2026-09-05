@@ -33,6 +33,20 @@ class PatientAttention {
       };
 }
 
+extension PatientAttentionKindAction on PatientAttentionKind {
+  /// Motivos que ganham botão de ação direta na lista.
+  ///
+  /// Contatar por telefone está fora por ora — o discador não faz parte do
+  /// fluxo hoje. Quando voltar, é só devolver `true` aqui: a ação em si
+  /// continua escrita na página.
+  bool get hasDirectAction => switch (this) {
+        PatientAttentionKind.pendingRelease => true,
+        PatientAttentionKind.emptyData => true,
+        PatientAttentionKind.noCheckin => false,
+        PatientAttentionKind.fewCheckins => false,
+      };
+}
+
 /// Corte deliberadamente rigoroso: se quase todo mundo entra no grupo de
 /// atenção, o grupo deixa de significar alguma coisa. Paciente inativo nunca
 /// entra — não há acompanhamento em curso para cobrar.

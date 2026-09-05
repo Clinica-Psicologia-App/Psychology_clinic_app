@@ -106,7 +106,8 @@ void main() {
           attention: r.attention,
           checkinMissingDays: r.missingDays,
           dataCompletion: r.completion,
-          onQuickAction: r.attention != null ? () {} : null,
+          onQuickAction:
+              r.attention?.kind.hasDirectAction == true ? () {} : null,
           onTap: () {},
         );
 

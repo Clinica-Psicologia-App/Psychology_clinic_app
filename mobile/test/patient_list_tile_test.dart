@@ -60,21 +60,38 @@ void main() {
     await _pump(
       tester,
       attention: const PatientAttention(
-        kind: PatientAttentionKind.noCheckin,
-        label: 'Nunca fez check-in',
+        kind: PatientAttentionKind.pendingRelease,
+        label: 'Resultado a liberar',
       ),
       onQuickAction: () => taps++,
     );
 
-    expect(find.text('Nunca fez check-in'), findsOneWidget);
+    expect(find.text('Resultado a liberar'), findsOneWidget);
     // Selo (estado) e botão (ação) usam ícones diferentes de propósito.
-    expect(find.byIcon(Icons.event_busy_rounded), findsOneWidget);
-    expect(find.byIcon(Icons.phone_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.lock_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.lock_open_rounded), findsOneWidget);
     expect(find.byIcon(Icons.chevron_right_rounded), findsNothing);
 
-    await tester.tap(find.byIcon(Icons.phone_rounded));
+    await tester.tap(find.byIcon(Icons.lock_open_rounded));
     await tester.pump();
     expect(taps, 1);
+  });
+
+  testWidgets('motivo de check-in mostra o selo, mas nenhum botão de contato',
+      (tester) async {
+    await _pump(
+      tester,
+      attention: const PatientAttention(
+        kind: PatientAttentionKind.noCheckin,
+        label: 'Nunca fez check-in',
+      ),
+      // A página não passa callback para este motivo — ver hasDirectAction.
+    );
+
+    expect(find.text('Nunca fez check-in'), findsOneWidget);
+    expect(find.byIcon(Icons.event_busy_rounded), findsOneWidget);
+    expect(find.byIcon(Icons.phone_rounded), findsNothing);
+    expect(find.byIcon(Icons.chevron_right_rounded), findsOneWidget);
   });
 
   testWidgets('sem callback de ação, a linha volta a mostrar a seta',

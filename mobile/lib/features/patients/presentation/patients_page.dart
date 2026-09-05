@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
@@ -317,6 +316,7 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
               dataCompletion: dataCompletionMap?[patient.id],
               showEmail: showEmail,
               onQuickAction: attention != null &&
+                      attention.kind.hasDirectAction &&
                       widget.role == ProfileRole.psychologist
                   ? () => _runQuickAction(context, patient, attention)
                   : null,
@@ -334,51 +334,29 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
   }
 
   /// Botão do motivo: leva direto para onde a coisa se resolve, em vez de
-  /// jogar o psicólogo na ficha para ele procurar.
-  Future<void> _runQuickAction(
+  /// jogar o psicólogo na ficha para ele procurar. Só é chamado para motivos
+  /// com `hasDirectAction`.
+  void _runQuickAction(
     BuildContext context,
     Patient patient,
     PatientAttention attention,
-  ) async {
-    final messenger = ScaffoldMessenger.of(context);
-
+  ) {
     switch (attention.kind) {
-      case PatientAttentionKind.noCheckin:
-      case PatientAttentionKind.fewCheckins:
-        final raw = patient.phone?.trim() ?? '';
-        if (raw.isEmpty) {
-          messenger.showSnackBar(
-            const SnackBar(
-              content: Text('Este paciente não tem telefone cadastrado.'),
-            ),
-          );
-          return;
-        }
-        final uri = Uri(
-          scheme: 'tel',
-          path: raw.replaceAll(RegExp(r'[^0-9+]'), ''),
-        );
-        final ok = await launchUrl(uri);
-        if (!ok) {
-          messenger.showSnackBar(
-            const SnackBar(
-              content: Text('Não foi possível abrir o discador.'),
-            ),
-          );
-        }
       case PatientAttentionKind.pendingRelease:
-        if (!context.mounted) return;
         context.push(
           ResultRoutes.list(role: widget.role, patientId: patient.id),
         );
       case PatientAttentionKind.emptyData:
-        if (!context.mounted) return;
         context.push(
           InitialAssessmentRoutes.staff(
             role: widget.role,
             patientId: patient.id,
           ),
         );
+      // Sem ação direta hoje: a linha mostra a seta e leva à ficha.
+      case PatientAttentionKind.noCheckin:
+      case PatientAttentionKind.fewCheckins:
+        context.push(PatientRoutes.detail(widget.role, patient.id));
     }
   }
 }

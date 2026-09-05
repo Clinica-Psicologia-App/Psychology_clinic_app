@@ -46,7 +46,19 @@ void main() {
 
     expect(find.text('Notificações'), findsOneWidget);
     expect(find.text('Atenções'), findsNothing);
-    expect(find.text('3'), findsOneWidget);
+
+    // A contagem tem que ser procurada DENTRO do cartão de notificações: a
+    // home também mostra a faixa da semana, e o número do dia colide com a
+    // contagem sempre que a semana visível contém aquele dia. Um
+    // `find.text('3')` solto passava ou falhava conforme a data de hoje.
+    final panel = find
+        .ancestor(
+          of: find.text('Notificações'),
+          matching: find.byType(Column),
+        )
+        .first;
+    expect(find.descendant(of: panel, matching: find.text('3')),
+        findsOneWidget);
 
     // Nome e subtítulo separados da pílula de prazo — não é mais uma frase
     // corrida como "Roberto com questionário em andamento há 9 dias".

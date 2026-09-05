@@ -282,12 +282,23 @@ class _MotorGenogramPainter extends CustomPainter {
         GEmotion.conflict => (_ochre, _CurveKind.zigzag),
         GEmotion.broken => (_red, _CurveKind.slashed),
       };
-      _styledLine(canvas, Offset(a.x, a.y), Offset(b.x, b.y), draw, color);
+      _styledLine(canvas, Offset(a.x, a.y), Offset(b.x, b.y), draw, color,
+          fromId: e.a, toId: e.b);
     }
   }
 
+  /// Distância do centro até a borda do símbolo na direção `unit`. Círculo é o
+  /// raio; quadrado depende do ângulo (no canto a borda fica mais longe).
+  double _edgeDistance(String id, Offset unit) {
+    final isFemale = byId[id]?.gender == GenogramGender.female;
+    if (isFemale) return _r;
+    final m = math.max(unit.dx.abs(), unit.dy.abs());
+    return m < 1e-6 ? _r : _r / m;
+  }
+
   void _styledLine(
-      Canvas canvas, Offset a, Offset b, _CurveKind kind, Color color) {
+      Canvas canvas, Offset a, Offset b, _CurveKind kind, Color color,
+      {required String fromId, required String toId}) {
     final paint = Paint()
       ..color = color
       ..strokeWidth = 1.8
@@ -296,8 +307,9 @@ class _MotorGenogramPainter extends CustomPainter {
     final len = dir.distance;
     if (len < 1) return;
     final unit = dir / len;
-    final start = a + unit * (_r + 6);
-    final end = b - unit * (_r + 6);
+    // Encosta na borda do símbolo: nada de folga entre a linha e a forma.
+    final start = a + unit * _edgeDistance(fromId, unit);
+    final end = b - unit * _edgeDistance(toId, -unit);
     switch (kind) {
       case _CurveKind.doubleLine:
         final n = Offset(-unit.dy, unit.dx) * 2.4;

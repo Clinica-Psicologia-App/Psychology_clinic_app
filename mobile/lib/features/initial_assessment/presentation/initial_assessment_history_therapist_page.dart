@@ -11,10 +11,13 @@ import '../domain/patient_history.dart';
 import '../domain/timeline_belief.dart';
 import '../domain/timeline_entry.dart';
 import '../providers/patient_history_providers.dart';
+import 'widgets/life_chapter_style.dart';
 import 'widgets/timeline_event_editor.dart';
+import 'widgets/timeline_spine.dart';
 
 /// Tela 2 do fluxo Conhecer — lente do terapeuta.
-/// Layout Tiras: capítulos em bandas coloridas, eventos como linhas compactas.
+/// Espinha contínua do nascimento até hoje: a idade é o nó sobre o fio e os
+/// capítulos são marcos no próprio fio, em vez de faixas que cortam a leitura.
 /// Toque num evento → bottom sheet com detalhes + comentário clínico editável.
 class InitialAssessmentHistoryTherapistPage extends ConsumerStatefulWidget {
   const InitialAssessmentHistoryTherapistPage({
@@ -83,7 +86,7 @@ class _State extends ConsumerState<InitialAssessmentHistoryTherapistPage> {
         onSave: (comment) => _saveNote(entry, comment),
       ),
     );
-    // Atualiza o ponto de status da tira após fechar o sheet.
+    // Atualiza o selo "anotado" do nó após fechar o sheet.
     if (mounted) setState(() {});
   }
 
@@ -169,16 +172,23 @@ class _State extends ConsumerState<InitialAssessmentHistoryTherapistPage> {
       );
     }
 
-    final rows = <Widget>[];
+    final rows = <Widget>[const TimelineBirthCap()];
 
     void addChapter(LifeChapter? chapter, List<TimelineEntry> entries) {
-      rows.add(_ChapterBand(
+      rows.add(TimelineChapterMarker(
         chapter: chapter,
-        count: entries.length,
-        onAdd: () => showTimelineEventEditor(context: context, ctx: _ctx),
+        onAdd: () => showTimelineEventEditor(
+          context: context,
+          ctx: _ctx,
+          initialChapter: chapter,
+        ),
       ));
+      if (entries.isEmpty) {
+        rows.add(const TimelineEmptyChapterHint());
+        return;
+      }
       for (final entry in entries) {
-        rows.add(_EventStrip(
+        rows.add(TimelineEventNode(
           entry: entry,
           chapter: chapter,
           hasComment: _hasComment(entry),
@@ -194,213 +204,11 @@ class _State extends ConsumerState<InitialAssessmentHistoryTherapistPage> {
       addChapter(null, history.unchaptered);
     }
 
+    rows.add(const TimelineTodayCap());
+
     return ListView(
-      padding: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.only(top: 10, bottom: 24),
       children: rows,
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Paleta + ícone por capítulo
-// ─────────────────────────────────────────────────────────────────────────────
-
-({Color accent, Color bg, Color text, IconData icon}) _chapterMeta(
-        LifeChapter? chapter) =>
-    switch (chapter) {
-      LifeChapter.childhood => (
-          accent: const Color(0xFFD85A30),
-          bg: const Color(0xFFFAECE7),
-          text: const Color(0xFF7D2F12),
-          icon: Icons.child_care_rounded,
-        ),
-      LifeChapter.adolescence => (
-          accent: const Color(0xFFB97010),
-          bg: const Color(0xFFFAEEDA),
-          text: const Color(0xFF7A4408),
-          icon: Icons.school_rounded,
-        ),
-      LifeChapter.adulthood => (
-          accent: const Color(0xFF1B9A6E),
-          bg: const Color(0xFFE1F5EE),
-          text: const Color(0xFF0D6044),
-          icon: Icons.work_outline_rounded,
-        ),
-      LifeChapter.maturity => (
-          accent: const Color(0xFF7240C0),
-          bg: const Color(0xFFEDE5FA),
-          text: const Color(0xFF432875),
-          icon: Icons.self_improvement_rounded,
-        ),
-      LifeChapter.today => (
-          accent: const Color(0xFF378ADD),
-          bg: const Color(0xFFE6F1FB),
-          text: const Color(0xFF185FA5),
-          icon: Icons.place_rounded,
-        ),
-      _ => (
-          accent: AppColors.textMuted,
-          bg: const Color(0xFFF5F5F5),
-          text: AppColors.textSecondary,
-          icon: Icons.circle_outlined,
-        ),
-    };
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Banda de capítulo
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _ChapterBand extends StatelessWidget {
-  const _ChapterBand({
-    required this.chapter,
-    required this.count,
-    required this.onAdd,
-  });
-
-  final LifeChapter? chapter;
-  final int count;
-  final VoidCallback onAdd;
-
-  @override
-  Widget build(BuildContext context) {
-    final m = _chapterMeta(chapter);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: m.bg,
-        border: Border(
-          top: BorderSide(color: m.accent.withValues(alpha: .2)),
-          bottom: BorderSide(color: m.accent.withValues(alpha: .15)),
-        ),
-      ),
-      child: IntrinsicHeight(
-        child: Row(
-          children: [
-            Container(width: 3, color: m.accent),
-            const SizedBox(width: 10),
-            Icon(m.icon, size: 16, color: m.accent),
-            const SizedBox(width: 7),
-            Expanded(
-              child: Text(
-                chapter?.label ?? 'Outros acontecimentos',
-                style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                    color: m.text),
-              ),
-            ),
-            if (count > 0)
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                decoration: BoxDecoration(
-                  color: m.accent.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text('$count',
-                    style: TextStyle(
-                        fontSize: 10.5,
-                        fontWeight: FontWeight.w700,
-                        color: m.text)),
-              ),
-            IconButton(
-              icon: Icon(Icons.add, size: 18, color: m.accent),
-              onPressed: onAdd,
-              tooltip: 'Adicionar acontecimento',
-              visualDensity: VisualDensity.compact,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Tira de evento (colapsada)
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _EventStrip extends StatelessWidget {
-  const _EventStrip({
-    required this.entry,
-    required this.chapter,
-    required this.hasComment,
-    required this.onTap,
-  });
-
-  final TimelineEntry entry;
-  final LifeChapter? chapter;
-  final bool hasComment;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final m = _chapterMeta(chapter);
-    final ageLabel =
-        entry.ageAtEvent != null ? '${entry.ageAtEvent}a' : '—';
-
-    return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        border: Border(bottom: BorderSide(color: Color(0xFFEEF2F8))),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: onTap,
-          child: IntrinsicHeight(
-            child: Row(
-              children: [
-                Container(width: 4, color: m.accent),
-                const SizedBox(width: 10),
-                SizedBox(
-                  width: 26,
-                  child: Text(ageLabel,
-                      style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: m.text)),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 13),
-                    child: Text(
-                      entry.title,
-                      style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.navy),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-                // Ponto de status: turquesa = tem anotação, cinza = sem
-                Container(
-                  width: 7,
-                  height: 7,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: hasComment
-                        ? AppColors.turquoise
-                        : const Color(0xFFCDD6E4),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                if (entry.emotionalImpact != null)
-                  Text('${entry.emotionalImpact}',
-                      style: const TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textSecondary)),
-                const SizedBox(width: 8),
-                const Icon(Icons.chevron_right_rounded,
-                    size: 18, color: AppColors.textMuted),
-                const SizedBox(width: 6),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
@@ -451,7 +259,7 @@ class _EventDetailSheetState extends State<_EventDetailSheet> {
   @override
   Widget build(BuildContext context) {
     final entry = widget.entry;
-    final m = _chapterMeta(widget.chapter);
+    final m = styleForChapter(widget.chapter);
     final beliefs = entry.beliefs.map((b) => b.label).join(' · ');
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 

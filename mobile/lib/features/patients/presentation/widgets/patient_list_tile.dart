@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -9,23 +7,28 @@ import '../../../../shared/widgets/clay_card.dart';
 import '../../../profile/domain/profile_role.dart';
 import '../../../profile/presentation/widgets/user_avatar.dart';
 import '../../domain/patient.dart';
+import '../../domain/patient_attention.dart';
 import '../../domain/patient_data_completion.dart';
 
+/// Linha de paciente na lista. Formato enxuto (~80px): quem está em dia mostra
+/// os sete tracinhos da semana; quem precisa de atenção troca os tracinhos pelo
+/// motivo escrito e ganha uma tarja lateral na cor da urgência.
 class PatientListTile extends StatelessWidget {
   const PatientListTile({
     super.key,
     required this.patient,
     required this.onTap,
-    this.hasPendingResultsRelease = false,
+    this.attention,
     this.checkinMissingDays,
     this.dataCompletion,
+    this.showEmail = false,
   });
 
   final Patient patient;
   final VoidCallback onTap;
 
-  /// Questionário concluído, resultado ainda não liberado ao paciente.
-  final bool hasPendingResultsRelease;
+  /// Motivo pelo qual o paciente precisa de atenção. Null = está em dia.
+  final PatientAttention? attention;
 
   /// Dias sem check-in (de psychologistAlertsProvider). Null = sem alerta.
   final int? checkinMissingDays;
@@ -34,17 +37,9 @@ class PatientListTile extends StatelessWidget {
   /// (paciente/lista ainda carregando, ou visão do paciente).
   final PatientDataCompletion? dataCompletion;
 
-  Color _ringColor(ThemeData theme) {
-    if (!patient.isActive) return theme.colorScheme.outline;
-    if (checkinMissingDays != null && checkinMissingDays! >= 5) {
-      return AppColors.error;
-    }
-    if (checkinMissingDays != null && checkinMissingDays! >= 3) {
-      return AppColors.warning;
-    }
-    if (hasPendingResultsRelease) return AppColors.info;
-    return AppColors.success;
-  }
+  /// Mostra o e-mail sob o nome. Ligado durante a busca, já que é um dos
+  /// campos pesquisáveis — fora dela, a linha fica mais limpa sem ele.
+  final bool showEmail;
 
   int get _filledDays {
     if (!patient.isActive) return 0;
@@ -52,155 +47,266 @@ class PatientListTile extends StatelessWidget {
     return (7 - missing).clamp(0, 7);
   }
 
-  Color _completionColor(PatientDataCompletion c) {
-    if (c.isComplete) return AppColors.success;
-    if (c.filledSections == 0) return AppColors.error;
-    return AppColors.warning;
-  }
-
-  String _checkinSubtitle() {
-    if (checkinMissingDays == null) return 'Em dia esta semana';
-    if (checkinMissingDays! >= 999) return 'Nunca fez check-in';
-    return '${checkinMissingDays!} dias sem check-in';
+  Color _healthColor(ThemeData theme) {
+    if (!patient.isActive) return theme.colorScheme.outline;
+    final a = attention;
+    if (a == null) return AppColors.success;
+    return attentionColor(a.kind);
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final filledDays = _filledDays;
-    final barColor = filledDays >= 6
-        ? AppColors.success
-        : filledDays >= 4
-            ? AppColors.warning
-            : AppColors.error;
-    final stripColor = _ringColor(theme);
+    final a = attention;
+    final health = _healthColor(theme);
     final completion = dataCompletion;
-
-    final statusLabel = patient.isActive
-        ? (patient.accessStatus?.label ?? 'Ativo')
-        : 'Inativo';
-    final statusColor =
-        patient.isActive ? AppColors.success : theme.colorScheme.onSurfaceVariant;
-    final statusBg = patient.isActive
-        ? AppColors.successContainer
-        : theme.colorScheme.outline.withValues(alpha: 0.2);
+    final email = patient.email;
+    final showStatusChip = !patient.isActive ||
+        patient.accessStatus == PatientAccessStatus.noAppAccess;
 
     return Padding(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.md,
-        vertical: AppSpacing.xs,
+        vertical: 4,
       ),
       child: ClayCard(
         clipBehavior: Clip.antiAlias,
         shape: RoundedRectangleBorder(borderRadius: AppRadius.lgAll),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // ── Faixa de status (saúde do acompanhamento) ─────────────────
-            Container(height: 4, color: stripColor),
-
-            // ── Topo: avatar + nome + status ─────────────────────────────
-            InkWell(
-              onTap: onTap,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  AppSpacing.md,
-                  AppSpacing.md,
-                  AppSpacing.sm,
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _StatusRingAvatar(patient: patient, ringColor: stripColor),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            patient.fullName,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                          ),
-                          if (patient.email?.isNotEmpty == true) ...[
-                            const SizedBox(height: 2),
-                            Text(
-                              patient.email!,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
+        child: InkWell(
+          onTap: onTap,
+          child: IntrinsicHeight(
+            child: Row(
+              children: [
+                // Tarja lateral só existe quando há urgência: é ela que faz o
+                // grupo "precisam de atenção" ser lido de relance.
+                if (a != null) Container(width: 4, color: health),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+                    child: Row(
+                      children: [
+                        _StatusRingAvatar(patient: patient, ringColor: health),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      patient.fullName,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: theme.textTheme.titleSmall
+                                          ?.copyWith(
+                                        fontWeight: FontWeight.w700,
+                                        color: patient.isActive
+                                            ? null
+                                            : theme
+                                                .colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ),
+                                  if (showStatusChip) ...[
+                                    const SizedBox(width: 6),
+                                    _MutedChip(
+                                      label: patient.isActive
+                                          ? 'Sem app'
+                                          : 'Inativo',
+                                    ),
+                                  ],
+                                ],
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ],
-                          const SizedBox(height: AppSpacing.xs),
-                          _MiniChip(
-                            label: statusLabel,
-                            color: statusColor,
-                            bg: statusBg,
+                              if (showEmail && email != null &&
+                                  email.isNotEmpty) ...[
+                                const SizedBox(height: 1),
+                                Text(
+                                  email,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    fontSize: 11,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
+                              const SizedBox(height: 3),
+                              if (a != null)
+                                _AttentionLine(attention: a, color: health)
+                              else if (patient.isActive)
+                                _WeekLine(
+                                  filledDays: _filledDays,
+                                  color: health,
+                                )
+                              else
+                                Text(
+                                  'Acompanhamento encerrado',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    fontSize: 11,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                  ),
+                                ),
+                            ],
                           ),
+                        ),
+                        // Anel de preenchimento só faz sentido em quem está em
+                        // acompanhamento: no inativo vira ruído colorido.
+                        if (completion != null && patient.isActive) ...[
+                          const SizedBox(width: AppSpacing.xs),
+                          CompletionDonut(completion: completion),
                         ],
-                      ),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          size: 20,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ],
                     ),
-                    Icon(
-                      Icons.arrow_forward_ios_rounded,
-                      size: 14,
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            if (patient.isActive) ...[
-              Divider(
-                height: 1,
-                thickness: 0.5,
-                color: theme.colorScheme.outline.withValues(alpha: 0.5),
-              ),
-              // ── Métrica: check-ins da semana ──────────────────────────
-              _MetricRow(
-                icon: Icons.schedule_rounded,
-                accent: barColor,
-                title: 'Check-ins esta semana',
-                subtitle: _checkinSubtitle(),
-                valueText: '$filledDays/7',
-                content: _WeekCheckinBar(
-                  filledDays: filledDays,
-                  fillColor: barColor,
-                ),
-              ),
-
-              // ── Métrica: preenchimento dos dados ──────────────────────
-              if (completion != null) ...[
-                Divider(
-                  height: 1,
-                  thickness: 0.5,
-                  color: theme.colorScheme.outline.withValues(alpha: 0.5),
-                ),
-                _MetricRow(
-                  icon: Icons.assignment_turned_in_outlined,
-                  accent: _completionColor(completion),
-                  title: 'Preenchimento dos dados',
-                  subtitle: completion.isComplete
-                      ? 'Tudo preenchido'
-                      : 'Falta: ${completion.sections.where((s) => !s.done).map((s) => s.label).join(', ')}',
-                  valueText: '${completion.percent}%',
-                  content: _CompletionSegments(completion: completion),
+                  ),
                 ),
               ],
-            ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
 
-            // ── Footer com ações contextuais ─────────────────────────────
-            Divider(height: 1, thickness: 0.5, color: theme.colorScheme.outline),
-            _CardFooter(
-              hasPendingResultsRelease: hasPendingResultsRelease,
-              checkinMissingDays: checkinMissingDays,
-              isActive: patient.isActive,
-              onTap: onTap,
+/// Cor de cada motivo de atenção — usada na tarja, no anel do avatar e no texto.
+Color attentionColor(PatientAttentionKind kind) => switch (kind) {
+      PatientAttentionKind.noCheckin => AppColors.error,
+      PatientAttentionKind.pendingRelease => AppColors.info,
+      PatientAttentionKind.emptyData => AppColors.warning,
+      PatientAttentionKind.fewCheckins => AppColors.warning,
+    };
+
+IconData _attentionIcon(PatientAttentionKind kind) => switch (kind) {
+      PatientAttentionKind.noCheckin => Icons.phone_outlined,
+      PatientAttentionKind.pendingRelease => Icons.fact_check_outlined,
+      PatientAttentionKind.emptyData => Icons.edit_note_rounded,
+      PatientAttentionKind.fewCheckins => Icons.schedule_rounded,
+    };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Segunda linha: motivo da urgência OU semana de check-ins
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _AttentionLine extends StatelessWidget {
+  const _AttentionLine({required this.attention, required this.color});
+
+  final PatientAttention attention;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(_attentionIcon(attention.kind), size: 13, color: color),
+        const SizedBox(width: 5),
+        Flexible(
+          child: Text(
+            attention.label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _WeekLine extends StatelessWidget {
+  const _WeekLine({required this.filledDays, required this.color});
+
+  final int filledDays;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        for (var i = 0; i < 7; i++) ...[
+          if (i > 0) const SizedBox(width: 3),
+          Container(
+            width: 5,
+            height: 10,
+            decoration: BoxDecoration(
+              color: i < filledDays
+                  ? color
+                  : theme.colorScheme.outline.withValues(alpha: 0.6),
+              borderRadius: BorderRadius.circular(3),
+            ),
+          ),
+        ],
+        const SizedBox(width: 7),
+        Text(
+          '$filledDays/7',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Anel de preenchimento dos dados
+// ─────────────────────────────────────────────────────────────────────────────
+
+class CompletionDonut extends StatelessWidget {
+  const CompletionDonut({super.key, required this.completion, this.size = 38});
+
+  final PatientDataCompletion completion;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final color = completion.isComplete
+        ? AppColors.success
+        : completion.filledSections <= 2
+            ? AppColors.error
+            : AppColors.warning;
+
+    return Tooltip(
+      message: completion.isComplete
+          ? 'Dados: tudo preenchido'
+          : 'Falta: ${completion.sections.where((s) => !s.done).map((s) => s.label).join(', ')}',
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            SizedBox.expand(
+              child: CircularProgressIndicator(
+                value: completion.fraction,
+                strokeWidth: 3.4,
+                backgroundColor:
+                    theme.colorScheme.outline.withValues(alpha: 0.5),
+                valueColor: AlwaysStoppedAnimation(color),
+                strokeCap: StrokeCap.round,
+              ),
+            ),
+            Text(
+              '${completion.percent}',
+              style: TextStyle(
+                fontSize: size * 0.29,
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
             ),
           ],
         ),
@@ -210,126 +316,67 @@ class PatientListTile extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Linha de métrica: ícone + título/subtítulo + valor, com conteúdo abaixo
+// Cabeçalho de grupo ("Precisam de atenção" / "Em dia" / "Inativos")
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _MetricRow extends StatelessWidget {
-  const _MetricRow({
-    required this.icon,
-    required this.accent,
-    required this.title,
-    required this.subtitle,
-    required this.valueText,
-    required this.content,
+class PatientGroupHeader extends StatelessWidget {
+  const PatientGroupHeader({
+    super.key,
+    required this.label,
+    required this.count,
+    required this.color,
+    this.topSpacing = AppSpacing.sm,
   });
 
-  final IconData icon;
-  final Color accent;
-  final String title;
-  final String subtitle;
-  final String valueText;
-  final Widget content;
+  final String label;
+  final int count;
+  final Color color;
+  final double topSpacing;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.md + 2,
+        topSpacing,
         AppSpacing.md,
-        AppSpacing.sm,
-        AppSpacing.md,
-        AppSpacing.sm,
+        AppSpacing.xs,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 30,
-                height: 30,
-                decoration: BoxDecoration(
-                  color: accent.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(9),
-                ),
-                child: Icon(icon, size: 16, color: accent),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 12,
-                      ),
-                    ),
-                    Text(
-                      subtitle,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontSize: 10,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Text(
-                valueText,
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: accent,
-                ),
-              ),
-            ],
+          Container(
+            width: 7,
+            height: 7,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
           ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.only(left: 38),
-            child: content,
+          const SizedBox(width: 7),
+          Text(
+            label.toUpperCase(),
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.6,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Segmentos de preenchimento (6 seções)
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _CompletionSegments extends StatelessWidget {
-  const _CompletionSegments({required this.completion});
-
-  final PatientDataCompletion completion;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final sections = completion.sections;
-    return Row(
-      children: [
-        for (var i = 0; i < sections.length; i++) ...[
-          if (i > 0) const SizedBox(width: 3),
-          Expanded(
-            child: Container(
-              height: 6,
-              decoration: BoxDecoration(
-                color: sections[i].done
-                    ? AppColors.success
-                    : theme.colorScheme.outline.withValues(alpha: 0.25),
-                borderRadius: BorderRadius.circular(3),
+          const SizedBox(width: 6),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              '$count',
+              style: TextStyle(
+                fontSize: 10.5,
+                fontWeight: FontWeight.w800,
+                color: color,
               ),
             ),
           ),
         ],
-      ],
+      ),
     );
   }
 }
@@ -350,8 +397,8 @@ class _StatusRingAvatar extends StatelessWidget {
       opacity: patient.isActive ? 1.0 : 0.45,
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(color: ringColor, width: 2.5),
+          shape: BoxShape.circle,
+          border: Border.all(color: ringColor, width: 2),
         ),
         padding: const EdgeInsets.all(2),
         child: UserAvatar.parts(
@@ -361,8 +408,8 @@ class _StatusRingAvatar extends StatelessWidget {
           avatarType: patient.avatarType,
           photoUrl: patient.photoUrl,
           avatarConfig: patient.avatarConfig,
-          size: 46,
-          borderRadius: BorderRadius.circular(12),
+          size: 42,
+          borderRadius: BorderRadius.circular(42),
         ),
       ),
     );
@@ -382,302 +429,29 @@ class _StatusRingAvatar extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Chip de status
-// ─────────────────────────────────────────────────────────────────────────────
 
-class _MiniChip extends StatelessWidget {
-  const _MiniChip({
-    required this.label,
-    required this.color,
-    required this.bg,
-  });
+class _MutedChip extends StatelessWidget {
+  const _MutedChip({required this.label});
 
   final String label;
-  final Color color;
-  final Color bg;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs, vertical: 3),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Barra de check-ins semanal (7 segmentos animados)
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _WeekCheckinBar extends StatefulWidget {
-  const _WeekCheckinBar({
-    required this.filledDays,
-    required this.fillColor,
-  });
-
-  final int filledDays;
-  final Color fillColor;
-
-  @override
-  State<_WeekCheckinBar> createState() => _WeekCheckinBarState();
-}
-
-class _WeekCheckinBarState extends State<_WeekCheckinBar>
-    with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl;
-
-  static const _dayLabels = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 700),
-    );
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _ctrl.forward();
-    });
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final todayIndex = DateTime.now().weekday - 1; // 0=seg, 6=dom
-
-    // Apenas os 7 segmentos com o rótulo do dia abaixo de cada um. O título e
-    // a contagem "x/7" ficam na linha da métrica (cabeçalho da seção).
-    return Row(
-      children: [
-        for (var i = 0; i < 7; i++) ...[
-          if (i > 0) const SizedBox(width: 3),
-          Expanded(
-            child: _Segment(
-              label: _dayLabels[i],
-              isToday: i == todayIndex,
-              isFilled: i < widget.filledDays,
-              fillColor: widget.fillColor,
-              controller: _ctrl,
-              index: i,
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class _Segment extends StatelessWidget {
-  const _Segment({
-    required this.label,
-    required this.isToday,
-    required this.isFilled,
-    required this.fillColor,
-    required this.controller,
-    required this.index,
-  });
-
-  final String label;
-  final bool isToday;
-  final bool isFilled;
-  final Color fillColor;
-  final AnimationController controller;
-  final int index;
-
-  @override
-  Widget build(BuildContext context) {
-    final animation = CurvedAnimation(
-      parent: controller,
-      curve: Interval(
-        index * 0.09,
-        math.min(1.0, index * 0.09 + 0.5),
-        curve: Curves.elasticOut,
-      ),
-    );
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        AnimatedBuilder(
-          animation: animation,
-          builder: (context, _) {
-            return Transform.scale(
-              scaleY: isFilled ? animation.value.clamp(0.0, 1.0) : 1.0,
-              alignment: Alignment.bottomCenter,
-              child: Container(
-                height: 26,
-                decoration: BoxDecoration(
-                  color: isFilled ? fillColor : Theme.of(context).colorScheme.outline,
-                  borderRadius: BorderRadius.circular(6),
-                  boxShadow: (isFilled && isToday)
-                      ? [
-                          BoxShadow(
-                            color: fillColor.withValues(alpha: 0.45),
-                            blurRadius: 8,
-                            spreadRadius: 1,
-                          ),
-                        ]
-                      : null,
-                ),
-              ),
-            );
-          },
-        ),
-        const SizedBox(height: 4),
-        Text(
-          label,
-          style: TextStyle(
-            fontSize: 9,
-            fontWeight: isToday ? FontWeight.w800 : FontWeight.w600,
-            color: isToday ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onSurfaceVariant,
-            letterSpacing: 0.2,
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Footer com duas ações contextuais
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _CardFooter extends StatelessWidget {
-  const _CardFooter({
-    required this.hasPendingResultsRelease,
-    required this.checkinMissingDays,
-    required this.isActive,
-    required this.onTap,
-  });
-
-  final bool hasPendingResultsRelease;
-  final int? checkinMissingDays;
-  final bool isActive;
-  final VoidCallback onTap;
-
-  ({String label, IconData icon, Color color}) _leftActionForTheme(ThemeData theme) {
-    if (!isActive) {
-      return (
-        label: 'Ver histórico',
-        icon: Icons.history_rounded,
-        color: theme.colorScheme.onSurfaceVariant,
-      );
-    }
-    if (hasPendingResultsRelease) {
-      return (
-        label: 'Liberar resultado',
-        icon: Icons.fact_check_outlined,
-        color: AppColors.success,
-      );
-    }
-    if (checkinMissingDays != null && checkinMissingDays! >= 5) {
-      return (
-        label: 'Contatar',
-        icon: Icons.phone_outlined,
-        color: AppColors.error,
-      );
-    }
-    if (checkinMissingDays != null && checkinMissingDays! >= 3) {
-      return (
-        label: 'Atenção',
-        icon: Icons.warning_amber_rounded,
-        color: AppColors.warning,
-      );
-    }
-    return (
-      label: 'Questionários',
-      icon: Icons.assignment_outlined,
-      color: theme.colorScheme.onSurfaceVariant,
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    // Resolve muted/secondary action colors from theme so they stay legible in dark mode.
-    final action = _leftActionForTheme(theme);
-
-    return Row(
-      children: [
-        Expanded(
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: const BorderRadius.only(
-              bottomLeft: Radius.circular(16),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(action.icon, size: 14, color: action.color),
-                  const SizedBox(width: 5),
-                  Text(
-                    action.label,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: action.color,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.outline.withValues(alpha: 0.25),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        label,
+        style: theme.textTheme.labelSmall?.copyWith(
+          fontSize: 10,
+          fontWeight: FontWeight.w600,
+          color: theme.colorScheme.onSurfaceVariant,
         ),
-        Container(width: 0.5, height: 38, color: Theme.of(context).colorScheme.outline),
-        Expanded(
-          child: InkWell(
-            onTap: onTap,
-            borderRadius: const BorderRadius.only(
-              bottomRight: Radius.circular(16),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Ver ficha',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Icon(
-                    Icons.arrow_forward_rounded,
-                    size: 13,
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

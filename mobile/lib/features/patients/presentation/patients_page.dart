@@ -13,6 +13,9 @@ import '../../../shared/widgets/brand_loading.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../patients/domain/psychologist_alert.dart';
 import '../../profile/domain/profile_role.dart';
+import '../domain/patient.dart';
+import '../domain/patient_data_completion.dart';
+import '../domain/patient_attention.dart';
 import '../providers/patients_providers.dart';
 import 'patient_routes.dart';
 import 'widgets/patient_list_tile.dart';
@@ -207,24 +210,13 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
                   ),
                 )
               else
-                SliverList.builder(
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    final patient = filtered[index];
-                    return MotionReveal(
-                      delay: staggerDelay(index),
-                      child: PatientListTile(
-                        patient: patient,
-                        hasPendingResultsRelease:
-                            pendingReleaseIds?.contains(patient.id) ?? false,
-                        checkinMissingDays: checkinMissingMap[patient.id],
-                        dataCompletion: dataCompletionMap?[patient.id],
-                        onTap: () => context.push(
-                          PatientRoutes.detail(widget.role, patient.id),
-                        ),
-                      ),
-                    );
-                  },
+                ..._groupedSlivers(
+                  context: context,
+                  patients: filtered,
+                  pendingReleaseIds: pendingReleaseIds,
+                  checkinMissingMap: checkinMissingMap,
+                  dataCompletionMap: dataCompletionMap,
+                  showEmail: normalized.isNotEmpty,
                 ),
 
               const SliverToBoxAdapter(
@@ -235,6 +227,93 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
         ),
       ),
     );
+  }
+
+  /// Divide a lista em "precisam de atenção" / "em dia" / "inativos" e monta um
+  /// sliver por grupo. Quando só existe um grupo (visão sem dados de alerta,
+  /// filtro de inativos, clínica pequena), os cabeçalhos somem e a lista volta
+  /// a ser uma lista simples.
+  List<Widget> _groupedSlivers({
+    required BuildContext context,
+    required List<Patient> patients,
+    required Set<String>? pendingReleaseIds,
+    required Map<String, int> checkinMissingMap,
+    required Map<String, PatientDataCompletion>? dataCompletionMap,
+    required bool showEmail,
+  }) {
+    final attentions = <String, PatientAttention>{};
+    for (final p in patients) {
+      final a = attentionFor(
+        patient: p,
+        hasPendingResultsRelease: pendingReleaseIds?.contains(p.id) ?? false,
+        checkinMissingDays: checkinMissingMap[p.id],
+        completion: dataCompletionMap?[p.id],
+      );
+      if (a != null) attentions[p.id] = a;
+    }
+
+    final needAttention = patients.where((p) => attentions[p.id] != null).toList()
+      ..sort((a, b) =>
+          attentions[a.id]!.rank.compareTo(attentions[b.id]!.rank));
+    final upToDate = patients
+        .where((p) => p.isActive && attentions[p.id] == null)
+        .toList();
+    final inactive = patients.where((p) => !p.isActive).toList();
+
+    final groups = <({String label, Color color, List<Patient> items})>[
+      (
+        label: 'Precisam de atenção',
+        color: AppColors.error,
+        items: needAttention
+      ),
+      (label: 'Em dia', color: AppColors.success, items: upToDate),
+      (
+        label: 'Inativos',
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+        items: inactive
+      ),
+    ].where((g) => g.items.isNotEmpty).toList();
+
+    final showHeaders = groups.length > 1;
+    final slivers = <Widget>[];
+    var index = 0;
+
+    for (var g = 0; g < groups.length; g++) {
+      final group = groups[g];
+      if (showHeaders) {
+        slivers.add(SliverToBoxAdapter(
+          child: PatientGroupHeader(
+            label: group.label,
+            count: group.items.length,
+            color: group.color,
+            topSpacing: g == 0 ? AppSpacing.xs : AppSpacing.md,
+          ),
+        ));
+      }
+      final base = index;
+      slivers.add(SliverList.builder(
+        itemCount: group.items.length,
+        itemBuilder: (context, i) {
+          final patient = group.items[i];
+          return MotionReveal(
+            delay: staggerDelay(base + i),
+            child: PatientListTile(
+              patient: patient,
+              attention: attentions[patient.id],
+              checkinMissingDays: checkinMissingMap[patient.id],
+              dataCompletion: dataCompletionMap?[patient.id],
+              showEmail: showEmail,
+              onTap: () => context.push(
+                PatientRoutes.detail(widget.role, patient.id),
+              ),
+            ),
+          );
+        },
+      ));
+      index += group.items.length;
+    }
+
+    return slivers;
   }
 }
 

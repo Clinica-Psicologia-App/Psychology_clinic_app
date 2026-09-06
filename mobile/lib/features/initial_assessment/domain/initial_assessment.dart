@@ -51,13 +51,21 @@ class InitialAssessment {
 
   // ── Progresso da trilha ("Conhecendo você") ─────────────────────────────
   //
-  // Total fixo e real (ao contrário de listas abertas como genograma/linha
-  // da vida): 10 campos do Bloco 1 + 5 do Bloco 2 + 9 áreas do Bloco 3.
+  // Bloco 1: 8 campos fixos + campos condicionais (medicationNotes só conta
+  // quando usesMedication=true; psychiatristNotes só quando
+  // psychiatricFollowup=true). Bloco 2: 5 campos. Bloco 3: 9 áreas.
+  // O total é dinâmico para não travar o progresso em pacientes que não
+  // usam medicação ou não têm acompanhamento psiquiátrico.
 
-  static const int block1FieldTotal = 10;
   static const int block2FieldTotal = 5;
-  static const int totalFieldCount =
-      block1FieldTotal + block2FieldTotal + 9; // 9 = kLifeAreasInOrder.length
+
+  /// Total aplicável ao paciente — varia conforme respostas condicionais do Bloco 1.
+  int get totalFieldCount {
+    var total = 8 + block2FieldTotal + 9; // 8 campos fixos do Bloco 1
+    if (basics?.usesMedication == true) total++; // medicationNotes aplicável
+    if (basics?.psychiatricFollowup == true) total++; // psychiatristNotes aplicável
+    return total;
+  }
 
   int get filledBlock1Count {
     final b = basics;
@@ -69,9 +77,15 @@ class InitialAssessment {
     if ((b.livesWith ?? '').trim().isNotEmpty) count++;
     if (b.hasChildren != null) count++;
     if (b.usesMedication != null) count++;
-    if ((b.medicationNotes ?? '').trim().isNotEmpty) count++;
+    if (b.usesMedication == true &&
+        (b.medicationNotes ?? '').trim().isNotEmpty) {
+      count++;
+    }
     if (b.psychiatricFollowup != null) count++;
-    if ((b.psychiatristNotes ?? '').trim().isNotEmpty) count++;
+    if (b.psychiatricFollowup == true &&
+        (b.psychiatristNotes ?? '').trim().isNotEmpty) {
+      count++;
+    }
     if ((b.importantToKnow ?? '').trim().isNotEmpty) count++;
     return count;
   }

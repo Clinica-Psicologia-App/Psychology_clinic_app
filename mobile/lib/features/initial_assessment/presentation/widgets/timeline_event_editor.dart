@@ -10,11 +10,16 @@ import '../../domain/timeline_entry.dart';
 import '../../providers/patient_history_providers.dart';
 
 /// Abre o editor de um evento da Linha do Tempo (criar ou editar).
+///
+/// [popParentOnSave]: quando true, fecha também o bottom sheet pai após salvar
+/// (usado pelo terapeuta que abre o editor a partir do detail sheet). No fluxo
+/// do paciente deve ser false (padrão) para permanecer na tela após salvar.
 Future<void> showTimelineEventEditor({
   required BuildContext context,
   required InitialAssessmentContext ctx,
   LifeChapter? initialChapter,
   TimelineEntry? entry,
+  bool popParentOnSave = false,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -24,6 +29,7 @@ Future<void> showTimelineEventEditor({
       ctx: ctx,
       initialChapter: initialChapter,
       entry: entry,
+      popParentOnSave: popParentOnSave,
     ),
   );
 }
@@ -33,11 +39,13 @@ class _TimelineEventEditor extends ConsumerStatefulWidget {
     required this.ctx,
     this.initialChapter,
     this.entry,
+    this.popParentOnSave = false,
   });
 
   final InitialAssessmentContext ctx;
   final LifeChapter? initialChapter;
   final TimelineEntry? entry;
+  final bool popParentOnSave;
 
   @override
   ConsumerState<_TimelineEventEditor> createState() =>
@@ -118,7 +126,7 @@ class _TimelineEventEditorState extends ConsumerState<_TimelineEventEditor> {
       if (mounted) {
         final nav = Navigator.of(context);
         nav.pop(); // fecha o editor
-        if (nav.canPop()) nav.pop(); // volta à tela anterior
+        if (widget.popParentOnSave && nav.canPop()) nav.pop();
       }
     } catch (e) {
       if (mounted) showErrorBanner(context, e);

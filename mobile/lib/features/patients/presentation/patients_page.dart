@@ -176,6 +176,7 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
                             ..._SortMode.values.map((s) {
                               return FilterChip(
                                 selected: _sortMode == s,
+                                showCheckmark: false,
                                 label: Text(s.label),
                                 avatar: Icon(s.icon, size: 13),
                                 onSelected: (_) =>

@@ -34,6 +34,7 @@ class PatientsPage extends ConsumerStatefulWidget {
 class _PatientsPageState extends ConsumerState<PatientsPage> {
   String _query = '';
   _PatientFilter _filter = _PatientFilter.active;
+  _SortMode _sortMode = _SortMode.alphabetical;
   final _searchController = SearchController();
 
   @override
@@ -162,14 +163,26 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
                         child: Wrap(
                           spacing: AppSpacing.xs,
                           runSpacing: AppSpacing.xs,
-                          children: _PatientFilter.values.map((f) {
-                            return FilterChip(
-                              selected: _filter == f,
-                              label: Text(f.label),
-                              onSelected: (_) =>
-                                  setState(() => _filter = f),
-                            );
-                          }).toList(),
+                          children: [
+                            ..._PatientFilter.values.map((f) {
+                              return FilterChip(
+                                selected: _filter == f,
+                                label: Text(f.label),
+                                onSelected: (_) =>
+                                    setState(() => _filter = f),
+                              );
+                            }),
+                            const SizedBox(width: 4),
+                            ..._SortMode.values.map((s) {
+                              return FilterChip(
+                                selected: _sortMode == s,
+                                label: Text(s.label),
+                                avatar: Icon(s.icon, size: 13),
+                                onSelected: (_) =>
+                                    setState(() => _sortMode = s),
+                              );
+                            }),
+                          ],
                         ),
                       ),
                     ],
@@ -212,7 +225,7 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
                   ),
                 )
               else
-                ..._groupedSlivers(
+                ..._flatSortedSlivers(
                   context: context,
                   patients: filtered,
                   pendingReleaseIds: pendingReleaseIds,
@@ -231,11 +244,8 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
     );
   }
 
-  /// Divide a lista em "precisam de atenção" / "em dia" / "inativos" e monta um
-  /// sliver por grupo. Quando só existe um grupo (visão sem dados de alerta,
-  /// filtro de inativos, clínica pequena), os cabeçalhos somem e a lista volta
-  /// a ser uma lista simples.
-  List<Widget> _groupedSlivers({
+  /// Lista plana ordenada pelo modo selecionado (sem agrupamentos).
+  List<Widget> _flatSortedSlivers({
     required BuildContext context,
     required List<Patient> patients,
     required Set<String>? pendingReleaseIds,
@@ -254,61 +264,38 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
       if (a != null) attentions[p.id] = a;
     }
 
-    final needAttention = patients.where((p) => attentions[p.id] != null).toList()
-      ..sort((a, b) =>
-          attentions[a.id]!.rank.compareTo(attentions[b.id]!.rank));
-    final upToDate = patients
-        .where((p) => p.isActive && attentions[p.id] == null)
-        .toList();
-    final inactive = patients.where((p) => !p.isActive).toList();
+    final sorted = [...patients];
+    switch (_sortMode) {
+      case _SortMode.alphabetical:
+        sorted.sort(
+          (a, b) => a.fullName.toLowerCase().compareTo(b.fullName.toLowerCase()),
+        );
+      case _SortMode.lastAccess:
+        sorted.sort((a, b) {
+          final ma = checkinMissingMap[a.id] ?? 999;
+          final mb = checkinMissingMap[b.id] ?? 999;
+          if (ma != mb) return ma.compareTo(mb);
+          return a.fullName.toLowerCase().compareTo(b.fullName.toLowerCase());
+        });
+      case _SortMode.alerts:
+        sorted.sort((a, b) {
+          final aa = attentions[a.id];
+          final ab = attentions[b.id];
+          if (aa != null && ab == null) return -1;
+          if (aa == null && ab != null) return 1;
+          if (aa != null && ab != null) return aa.rank.compareTo(ab.rank);
+          return a.fullName.toLowerCase().compareTo(b.fullName.toLowerCase());
+        });
+    }
 
-    final groups =
-        <({String label, IconData icon, Color color, List<Patient> items})>[
-      (
-        label: 'Precisam de atenção',
-        icon: Icons.notifications_active_rounded,
-        color: AppColors.error,
-        items: needAttention
-      ),
-      (
-        label: 'Em dia',
-        icon: Icons.verified_rounded,
-        color: AppColors.success,
-        items: upToDate
-      ),
-      (
-        label: 'Inativos',
-        icon: Icons.pause_circle_outline_rounded,
-        color: Theme.of(context).colorScheme.onSurfaceVariant,
-        items: inactive
-      ),
-    ].where((g) => g.items.isNotEmpty).toList();
-
-    final showHeaders = groups.length > 1;
-    final slivers = <Widget>[];
-    var index = 0;
-
-    for (var g = 0; g < groups.length; g++) {
-      final group = groups[g];
-      if (showHeaders) {
-        slivers.add(SliverToBoxAdapter(
-          child: PatientGroupHeader(
-            label: group.label,
-            icon: group.icon,
-            count: group.items.length,
-            color: group.color,
-            topSpacing: g == 0 ? AppSpacing.xs : AppSpacing.lg,
-          ),
-        ));
-      }
-      final base = index;
-      slivers.add(SliverList.builder(
-        itemCount: group.items.length,
+    return [
+      SliverList.builder(
+        itemCount: sorted.length,
         itemBuilder: (context, i) {
-          final patient = group.items[i];
+          final patient = sorted[i];
           final attention = attentions[patient.id];
           return MotionReveal(
-            delay: staggerDelay(base + i),
+            delay: staggerDelay(i),
             child: PatientListTile(
               patient: patient,
               attention: attention,
@@ -326,11 +313,8 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
             ),
           );
         },
-      ));
-      index += group.items.length;
-    }
-
-    return slivers;
+      ),
+    ];
   }
 
   /// Botão do motivo: leva direto para onde a coisa se resolve, em vez de
@@ -702,5 +686,21 @@ extension on _PatientFilter {
         _PatientFilter.active => 'Ativos',
         _PatientFilter.inactive => 'Inativos',
         _PatientFilter.all => 'Todos',
+      };
+}
+
+enum _SortMode { alphabetical, lastAccess, alerts }
+
+extension on _SortMode {
+  String get label => switch (this) {
+        _SortMode.alphabetical => 'A–Z',
+        _SortMode.lastAccess => 'Último acesso',
+        _SortMode.alerts => 'Alertas',
+      };
+
+  IconData get icon => switch (this) {
+        _SortMode.alphabetical => Icons.sort_by_alpha_rounded,
+        _SortMode.lastAccess => Icons.access_time_rounded,
+        _SortMode.alerts => Icons.notifications_rounded,
       };
 }

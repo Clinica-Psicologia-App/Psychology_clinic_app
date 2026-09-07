@@ -30,6 +30,36 @@ class _CoachOverlayState extends State<CoachOverlay> {
   final _mascotKey = GlobalKey<MascotWidgetState>();
 
   @override
+  void initState() {
+    super.initState();
+    _scrollToTarget();
+  }
+
+  @override
+  void didUpdateWidget(CoachOverlay old) {
+    super.didUpdateWidget(old);
+    if (old.index != widget.index) _scrollToTarget();
+  }
+
+  /// Rola a tela até o elemento alvo do passo atual e reconstrói
+  /// o overlay para que o spotlight e o painel se posicionem corretamente.
+  void _scrollToTarget() {
+    final key = widget.tour.steps[widget.index].targetKey;
+    if (key == null) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final ctx = key.currentContext;
+      if (ctx == null || !mounted) return;
+      await Scrollable.ensureVisible(
+        ctx,
+        duration: const Duration(milliseconds: 350),
+        curve: Curves.easeInOut,
+        alignment: 0.3, // mantém o elemento no terço superior da tela
+      );
+      if (mounted) setState(() {}); // recalcula targetRect após o scroll
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
     final step = widget.tour.steps[widget.index];
     final targetRect = _targetRect(step.targetKey);

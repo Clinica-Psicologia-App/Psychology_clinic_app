@@ -9,10 +9,8 @@ import '../../domain/patient.dart';
 import '../../domain/patient_attention.dart';
 import '../../domain/patient_data_completion.dart';
 
-/// Linha de paciente na lista (~84px). Quem está em dia mostra os sete
-/// tracinhos da semana; quem precisa de atenção troca os tracinhos pelo motivo
-/// e ganha tarja lateral, fundo levemente tingido, selo no avatar e um botão
-/// que leva direto à ação daquele motivo.
+/// Linha de paciente na lista.
+/// Card branco uniforme com calendário de dots e anel de preenchimento.
 class PatientListTile extends StatelessWidget {
   const PatientListTile({
     super.key,
@@ -34,22 +32,31 @@ class PatientListTile extends StatelessWidget {
   /// Dias sem check-in (de psychologistAlertsProvider). Null = sem alerta.
   final int? checkinMissingDays;
 
-  /// Preenchimento da avaliação inicial + questionários. Null = sem dado
-  /// (paciente/lista ainda carregando, ou visão do paciente).
+  /// Preenchimento da avaliação inicial + questionários.
   final PatientDataCompletion? dataCompletion;
 
-  /// Mostra o e-mail sob o nome. Ligado durante a busca, já que é um dos
-  /// campos pesquisáveis — fora dela, a linha fica mais limpa sem ele.
+  /// Mostra o e-mail sob o nome durante busca ativa.
   final bool showEmail;
 
-  /// Ação do motivo (ligar, liberar resultado, preencher avaliação). Só rende
-  /// botão quando há [attention].
+  /// Ação rápida contextual (liberar resultado, abrir avaliação…).
   final VoidCallback? onQuickAction;
 
   int get _filledDays {
     if (!patient.isActive) return 0;
     final missing = checkinMissingDays ?? 0;
     return (7 - missing).clamp(0, 7);
+  }
+
+  String _lastAccessLabel() {
+    if (!patient.isActive) return 'Acompanhamento encerrado';
+    if (patient.accessStatus == PatientAccessStatus.noAppAccess) {
+      return 'Sem acesso ao app';
+    }
+    final missing = checkinMissingDays;
+    if (missing == null) return 'Sem check-ins ainda';
+    if (missing == 0) return 'Check-in hoje';
+    if (missing == 1) return 'Último check-in ontem';
+    return 'Último check-in há $missing dias';
   }
 
   @override
@@ -64,8 +71,6 @@ class PatientListTile extends StatelessWidget {
             : theme.colorScheme.onSurfaceVariant;
     final completion = dataCompletion;
     final email = patient.email;
-    final showStatusChip = !active ||
-        patient.accessStatus == PatientAccessStatus.noAppAccess;
     final surface = theme.colorScheme.surface;
     final onQuick = onQuickAction;
     final quick = (a != null && onQuick != null)
@@ -75,11 +80,7 @@ class PatientListTile extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
       child: Material(
-        // Tint quase imperceptível da cor da urgência: dá pertencimento ao
-        // grupo sem transformar a lista num semáforo.
-        color: a != null
-            ? Color.alphaBlend(accent.withValues(alpha: 0.035), surface)
-            : surface,
+        color: surface,
         borderRadius: BorderRadius.circular(18),
         clipBehavior: Clip.antiAlias,
         child: InkWell(
@@ -89,107 +90,75 @@ class PatientListTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
                 color: a != null
-                    ? accent.withValues(alpha: 0.22)
-                    : theme.colorScheme.outline.withValues(alpha: 0.7),
+                    ? accent.withValues(alpha: 0.25)
+                    : theme.colorScheme.outline.withValues(alpha: 0.55),
               ),
             ),
-            child: IntrinsicHeight(
-              child: Row(
-                children: [
-                  if (a != null)
-                    Container(
-                      width: 4,
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [accent, accent.withValues(alpha: 0.45)],
-                        ),
-                      ),
-                    ),
-                  Expanded(
-                    child: Padding(
-                      padding:
-                          EdgeInsets.fromLTRB(a != null ? 10 : 12, 10, 8, 10),
-                      child: Row(
+            padding: const EdgeInsets.fromLTRB(12, 11, 12, 11),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _AvatarWithBadge(
+                  patient: patient,
+                  attention: a,
+                  accent: accent,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // ── Nome + badge de status ──────────────────────────
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
-                          _AvatarWithBadge(
-                            patient: patient,
-                            attention: a,
-                            accent: accent,
-                          ),
-                          const SizedBox(width: 10),
                           Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Row(
-                                  children: [
-                                    Flexible(
-                                      child: Text(
-                                        patient.fullName,
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: theme.textTheme.titleSmall
-                                            ?.copyWith(
-                                          fontWeight: FontWeight.w700,
-                                          height: 1.15,
-                                          color: active
-                                              ? null
-                                              : theme.colorScheme
-                                                  .onSurfaceVariant,
-                                        ),
-                                      ),
-                                    ),
-                                    if (showStatusChip) ...[
-                                      const SizedBox(width: 6),
-                                      _MutedChip(
-                                        label: active ? 'Sem app' : 'Inativo',
-                                      ),
-                                    ],
-                                  ],
-                                ),
-                                if (showEmail &&
-                                    email != null &&
-                                    email.isNotEmpty) ...[
-                                  const SizedBox(height: 1),
-                                  Text(
-                                    email,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style:
-                                        theme.textTheme.bodySmall?.copyWith(
-                                      fontSize: 11,
-                                      color:
-                                          theme.colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ],
-                                const SizedBox(height: 5),
-                                if (a != null)
-                                  _ReasonPill(label: a.label, color: accent)
-                                else if (active)
-                                  _WeekStrip(
-                                    filled: _filledDays,
-                                    color: accent,
-                                  )
-                                else
-                                  Text(
-                                    'Acompanhamento encerrado',
-                                    style:
-                                        theme.textTheme.labelSmall?.copyWith(
-                                      fontSize: 11,
-                                      color:
-                                          theme.colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                              ],
+                            child: Text(
+                              patient.fullName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                height: 1.15,
+                                color: active
+                                    ? null
+                                    : theme.colorScheme.onSurfaceVariant,
+                              ),
                             ),
                           ),
                           const SizedBox(width: 6),
-                          // Anel só faz sentido em quem está em acompanhamento:
-                          // no inativo vira ruído colorido.
+                          _StatusBadge(
+                            label: a != null
+                                ? 'Atenção'
+                                : active
+                                    ? 'Em dia'
+                                    : 'Inativo',
+                            color: accent,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 2),
+                      // ── Subtítulo (e-mail ou último acesso) ─────────────
+                      Text(
+                        showEmail && email != null && email.isNotEmpty
+                            ? email
+                            : _lastAccessLabel(),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontSize: 11,
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // ── Calendário de dots + anel ────────────────────────
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          if (active)
+                            _DotCalendar(filled: _filledDays, color: accent),
+                          const Spacer(),
                           if (completion != null && active)
                             CompletionRing(completion: completion),
                           if (quick != null) ...[
@@ -199,7 +168,7 @@ class PatientListTile extends StatelessWidget {
                               color: accent,
                               onPressed: quick.run,
                             ),
-                          ] else
+                          ] else if (completion == null || !active)
                             Icon(
                               Icons.chevron_right_rounded,
                               size: 20,
@@ -207,10 +176,10 @@ class PatientListTile extends StatelessWidget {
                             ),
                         ],
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -220,8 +189,7 @@ class PatientListTile extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Cores e ícones por motivo. O selo do avatar diz o ESTADO; o botão diz a AÇÃO
-// — por isso são ícones diferentes para o mesmo motivo.
+// Cores e ícones por motivo
 // ─────────────────────────────────────────────────────────────────────────────
 
 Color attentionColor(PatientAttentionKind kind) => switch (kind) {
@@ -292,8 +260,12 @@ class _QuickActionButton extends StatelessWidget {
   }
 }
 
-class _ReasonPill extends StatelessWidget {
-  const _ReasonPill({required this.label, required this.color});
+// ─────────────────────────────────────────────────────────────────────────────
+// Badge de status (Em dia / Atenção / Inativo)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _StatusBadge extends StatelessWidget {
+  const _StatusBadge({required this.label, required this.color});
 
   final String label;
   final Color color;
@@ -301,17 +273,16 @@ class _ReasonPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.11),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Text(
         label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
         style: TextStyle(
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: FontWeight.w700,
           color: color,
         ),
@@ -320,55 +291,51 @@ class _ReasonPill extends StatelessWidget {
   }
 }
 
-/// Sete dias da semana, com o de hoje marcado por um ponto embaixo.
-class _WeekStrip extends StatelessWidget {
-  const _WeekStrip({required this.filled, required this.color});
+// ─────────────────────────────────────────────────────────────────────────────
+// Calendário de 7 dias com rótulos (S T Q Q S S D)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _DotCalendar extends StatelessWidget {
+  const _DotCalendar({required this.filled, required this.color});
 
   final int filled;
   final Color color;
 
+  static const _labels = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final today = DateTime.now().weekday - 1; // 0 = segunda
+    final emptyColor = theme.colorScheme.outline.withValues(alpha: 0.35);
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         for (var i = 0; i < 7; i++) ...[
-          if (i > 0) const SizedBox(width: 3.5),
+          if (i > 0) const SizedBox(width: 5),
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 5,
-                height: 11,
-                decoration: BoxDecoration(
-                  color: i < filled
-                      ? color
-                      : theme.colorScheme.outline.withValues(alpha: 0.7),
-                  borderRadius: BorderRadius.circular(3),
-                ),
-              ),
-              const SizedBox(height: 2.5),
-              Container(
-                width: 3,
-                height: 3,
+                width: 8,
+                height: 8,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: i == today ? color : Colors.transparent,
+                  color: i < filled ? color : emptyColor,
+                ),
+              ),
+              const SizedBox(height: 3),
+              Text(
+                _labels[i],
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  color: i < filled ? color.withValues(alpha: 0.85) : emptyColor,
+                  height: 1,
                 ),
               ),
             ],
           ),
         ],
-        const SizedBox(width: 8),
-        Text(
-          '$filled/7',
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            color: color,
-          ),
-        ),
       ],
     );
   }
@@ -443,7 +410,7 @@ class _RingPainter extends CustomPainter {
     if (total <= 0) return;
     final center = size.center(Offset.zero);
     final radius = size.width / 2 - 2.6;
-    const gap = 0.26; // folga entre os arcos, em radianos
+    const gap = 0.26;
     final step = math.pi * 2 / total;
 
     for (var i = 0; i < total; i++) {
@@ -472,7 +439,7 @@ class _RingPainter extends CustomPainter {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Cabeçalho de grupo
+// Cabeçalho de grupo (mantido para compatibilidade com ferramentas de teste)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class PatientGroupHeader extends StatelessWidget {
@@ -533,7 +500,6 @@ class PatientGroupHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          // Régua que ancora o grupo e se dissolve à direita.
           Expanded(
             child: Container(
               height: 1,
@@ -583,8 +549,10 @@ class _AvatarWithBadge extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border:
-                    Border.all(color: accent.withValues(alpha: 0.55), width: 2),
+                border: Border.all(
+                  color: accent.withValues(alpha: 0.55),
+                  width: 2,
+                ),
               ),
               padding: const EdgeInsets.all(2),
               child: UserAvatar.parts(
@@ -609,8 +577,10 @@ class _AvatarWithBadge extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: accent,
                   shape: BoxShape.circle,
-                  border:
-                      Border.all(color: theme.colorScheme.surface, width: 2),
+                  border: Border.all(
+                    color: theme.colorScheme.surface,
+                    width: 2,
+                  ),
                 ),
                 child: Icon(_stateIcon(a.kind), size: 10, color: Colors.white),
               ),
@@ -630,33 +600,5 @@ class _AvatarWithBadge extends StatelessWidget {
     if (parts.length == 1) return parts.first.characters.first.toUpperCase();
     return (parts.first.characters.first + parts.last.characters.first)
         .toUpperCase();
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _MutedChip extends StatelessWidget {
-  const _MutedChip({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.outline.withValues(alpha: 0.25),
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Text(
-        label,
-        style: theme.textTheme.labelSmall?.copyWith(
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          color: theme.colorScheme.onSurfaceVariant,
-        ),
-      ),
-    );
   }
 }

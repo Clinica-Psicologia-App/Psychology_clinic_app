@@ -1,5 +1,6 @@
 class MentalMapCaseSummary {
   const MentalMapCaseSummary({
+    this.patientReason,
     this.intakeSummary,
     this.currentLifeContext,
     this.therapyDemands,
@@ -12,6 +13,9 @@ class MentalMapCaseSummary {
     currentFocuses: [],
   );
 
+  /// Motivo da busca relatado pelo próprio paciente no módulo Conhecer
+  /// (`patient_intake.reason_for_seeking`).
+  final String? patientReason;
   final String? intakeSummary;
   final String? currentLifeContext;
   final String? therapyDemands;
@@ -19,7 +23,8 @@ class MentalMapCaseSummary {
   final List<String> currentFocuses;
 
   bool get hasContent {
-    return _hasText(intakeSummary) ||
+    return _hasText(patientReason) ||
+        _hasText(intakeSummary) ||
         _hasText(currentLifeContext) ||
         _hasText(therapyDemands) ||
         centralHypotheses.isNotEmpty ||

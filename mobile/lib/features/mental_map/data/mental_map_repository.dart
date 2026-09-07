@@ -1,3 +1,5 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../daily_monitors/data/daily_monitors_repository.dart';
 import '../../profile/domain/avatar_type.dart';
 import '../../genogram/data/genogram_repository.dart';
@@ -181,6 +183,18 @@ class MentalMapRepository {
       if (r.isSensitive) sensitiveRels++;
     }
 
+    // Motivo da busca relatado pelo paciente no módulo Conhecer.
+    String? patientReason;
+    try {
+      final intakeRow = await Supabase.instance.client
+          .from('patient_intake')
+          .select('reason_for_seeking')
+          .eq('patient_id', patientId)
+          .maybeSingle();
+      final raw = intakeRow?['reason_for_seeking'] as String?;
+      if ((raw ?? '').trim().isNotEmpty) patientReason = raw!.trim();
+    } catch (_) {}
+
     final caseSummary = patient == null
         ? MentalMapCaseSummary.empty
         : buildCaseSummary(
@@ -188,6 +202,7 @@ class MentalMapRepository {
             questionnaires: blocks,
             activeProblems: activeProblems,
             activeGoals: activeGoals,
+            patientReason: patientReason,
           );
     final validationSummary = patient == null
         ? MentalMapValidationSummary.empty

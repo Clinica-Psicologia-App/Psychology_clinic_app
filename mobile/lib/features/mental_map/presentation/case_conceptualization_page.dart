@@ -424,6 +424,7 @@ class _Body extends StatelessWidget {
 
   Widget _motivo(
       BuildContext context, MentalMapCaseSummary s, String? therapistNote) {
+    final hasPatientReason = (s.patientReason ?? '').trim().isNotEmpty;
     final parts = <({String label, String? value})>[
       (label: 'Contexto de vida atual', value: s.currentLifeContext),
       (label: 'Demandas terapêuticas', value: s.therapyDemands),
@@ -431,13 +432,54 @@ class _Body extends StatelessWidget {
       (label: 'Complemento do terapeuta', value: therapistNote),
     ].where((e) => (e.value ?? '').trim().isNotEmpty).toList();
 
-    if (parts.isEmpty) {
+    if (!hasPatientReason && parts.isEmpty) {
       return const _Placeholder('Motivo/queixa ainda não registrado.');
     }
     final theme = Theme.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Voz do paciente — campo preenchido pelo próprio paciente no Conhecer.
+        if (hasPatientReason) ...[
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFEBF4FF),
+              border: Border.all(color: const Color(0xFFBDD9F5)),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.person_outline,
+                        size: 12, color: Color(0xFF185FA5)),
+                    const SizedBox(width: 4),
+                    Text(
+                      'RELATADO PELO PACIENTE',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: const Color(0xFF185FA5),
+                        fontWeight: FontWeight.w700,
+                        fontSize: 9,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  s.patientReason!.trim(),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                      color: const Color(0xFF0D1B3D), height: 1.5),
+                ),
+              ],
+            ),
+          ),
+        ],
+        // Campos do terapeuta
         for (final p in parts)
           Padding(
             padding: const EdgeInsets.only(bottom: 8),

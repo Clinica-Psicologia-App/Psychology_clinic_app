@@ -230,6 +230,7 @@ MentalMapCaseSummary buildCaseSummary({
   required List<MentalMapQuestionnaireBlock> questionnaires,
   required List<MentalMapProblemSummary> activeProblems,
   required List<MentalMapGoalSummary> activeGoals,
+  String? patientReason,
 }) {
   final hypotheses = <String>[];
   final seenHypotheses = <String>{};
@@ -270,6 +271,7 @@ MentalMapCaseSummary buildCaseSummary({
   }
 
   return MentalMapCaseSummary(
+    patientReason: _nullableText(patientReason),
     intakeSummary: _nullableText(patient.intakeSummary),
     currentLifeContext: _nullableText(patient.currentLifeContext),
     therapyDemands: demand,

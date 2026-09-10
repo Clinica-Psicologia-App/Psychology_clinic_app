@@ -18,7 +18,7 @@ class PatientTimelineEventTile extends StatelessWidget {
   });
 
   final PatientTimelineEvent event;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final bool isFirst;
   final bool isLast;
 

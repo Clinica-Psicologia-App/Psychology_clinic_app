@@ -834,6 +834,7 @@ class _PatientBasicsCard extends StatelessWidget {
     ].where((r) => (r.$2 ?? '').trim().isNotEmpty).toList();
 
     final extraRows = <(String, String?)>[
+      ('Nível educacional', basics.displayEducationLevel),
       ('Estado civil', _relStatus(basics.relationshipStatus)),
       ('Orientação sexual', _sexOrientation(basics.sexualOrientation)),
       ('País de nascimento', basics.countryBirth),

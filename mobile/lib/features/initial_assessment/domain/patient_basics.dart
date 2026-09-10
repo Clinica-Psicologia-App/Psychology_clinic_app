@@ -23,6 +23,7 @@ class PatientBasics {
     this.psychiatristNotes,
     this.importantToKnow,
     // Dados complementares — visíveis ao terapeuta no Bloco 1.
+    this.educationLevel,
     this.relationshipStatus,
     this.sexualOrientation,
     this.countryBirth,
@@ -48,6 +49,7 @@ class PatientBasics {
   final String? importantToKnow;
 
   // Dados complementares — staff-only no contexto do Conhecer.
+  final String? educationLevel;
   final String? relationshipStatus;
   final String? sexualOrientation;
   final String? countryBirth;
@@ -69,11 +71,49 @@ class PatientBasics {
   }
 
   bool get hasDemographicExtras =>
+      educationLevel != null ||
       relationshipStatus != null ||
       sexualOrientation != null ||
       countryBirth != null ||
       ethnicGroup != null ||
       religiousOrientation != null;
+
+  String? get displayEducationLevel => _humanize(educationLevel, const {
+        'elementary': 'Ensino fundamental',
+        'high_school': 'Ensino médio',
+        'undergraduate': 'Ensino superior',
+        'graduate': 'Pós-graduação',
+        'nao_informado': 'Não informado',
+      });
+
+  String? get displayRelationshipStatus =>
+      _humanize(relationshipStatus, const {
+        'single': 'Solteiro(a)',
+        'solteiro': 'Solteiro(a)',
+        'married': 'Casado(a)',
+        'casado': 'Casado(a)',
+        'divorced': 'Divorciado(a)',
+        'divorciado': 'Divorciado(a)',
+        'widowed': 'Viúvo(a)',
+        'viuvo': 'Viúvo(a)',
+        'stable_union': 'União estável',
+        'uniao_estavel': 'União estável',
+        'nao_informado': 'Não informado',
+      });
+
+  String? get displaySexualOrientation => _humanize(sexualOrientation, const {
+        'heterosexual': 'Heterossexual',
+        'homosexual': 'Homossexual',
+        'bisexual': 'Bissexual',
+        'asexual': 'Assexual',
+        'pansexual': 'Pansexual',
+        'nao_informado': 'Não informado',
+      });
+
+  static String? _humanize(String? raw, Map<String, String> map) {
+    if (raw == null || raw.isEmpty) return null;
+    return map[raw.toLowerCase()] ?? raw;
+  }
 
   /// Idade derivada da data de nascimento.
   int? get age {
@@ -124,6 +164,7 @@ class PatientBasics {
       psychiatricFollowup: json['psychiatric_followup'] as bool?,
       psychiatristNotes: json['psychiatrist_notes'] as String?,
       importantToKnow: json['important_to_know'] as String?,
+      educationLevel: json['education_level'] as String?,
       relationshipStatus: json['relationship_status'] as String?,
       sexualOrientation: json['sexual_orientation'] as String?,
       countryBirth: json['country_birth'] as String?,

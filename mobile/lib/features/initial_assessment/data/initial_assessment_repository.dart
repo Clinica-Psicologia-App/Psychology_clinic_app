@@ -69,7 +69,7 @@ class InitialAssessmentRepository {
       'full_name, preferred_name, birth_date, occupation, lives_with, '
       'has_children, uses_medication, medication_notes, psychiatric_followup, '
       'psychiatrist_notes, important_to_know, '
-      'relationship_status, sexual_orientation, country_birth, '
+      'education_level, relationship_status, sexual_orientation, country_birth, '
       'ethnic_group, religious_orientation, '
       'access_profile:profiles!patients_profile_id_fkey'
       '(avatar_type, avatar_path, avatar_url, avatar_config, avatar_updated_at)';

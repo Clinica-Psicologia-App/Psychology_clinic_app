@@ -8,6 +8,7 @@ import '../../../shared/widgets/async_state_body.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../initial_assessment/domain/initial_assessment.dart';
 import '../../initial_assessment/domain/life_area.dart';
+import '../../initial_assessment/domain/patient_basics.dart';
 import '../../initial_assessment/providers/initial_assessment_providers.dart';
 import '../../personality_assessment/domain/personality_assessment.dart';
 import '../../personality_assessment/presentation/personality_assessment_routes.dart';
@@ -159,6 +160,13 @@ class _Body extends StatelessWidget {
           ),
           const SizedBox(height: 12),
         ],
+
+        // 1. Informações básicas do cliente
+        _Section(
+          number: '1',
+          title: 'Informações básicas do cliente',
+          child: _BasicInfoSection(basics: assessment?.basics),
+        ),
 
         // 2. Motivo da terapia
         _Section(
@@ -1561,6 +1569,56 @@ class _ModesList extends StatelessWidget {
               ),
             );
           }),
+      ],
+    );
+  }
+}
+
+// ── Seção 1: Informações básicas ──────────────────────────────────────────────
+
+class _BasicInfoSection extends StatelessWidget {
+  const _BasicInfoSection({this.basics});
+
+  final PatientBasics? basics;
+
+  @override
+  Widget build(BuildContext context) {
+    final b = basics;
+    if (b == null) {
+      return const _Placeholder('Dados do paciente ainda não disponíveis.');
+    }
+
+    String? ageStr;
+    if (b.age != null) {
+      ageStr = '${b.age} anos';
+    } else if (b.birthDate != null) {
+      final bd = b.birthDate!;
+      ageStr =
+          '${bd.day.toString().padLeft(2, '0')}/${bd.month.toString().padLeft(2, '0')}/${bd.year}';
+    }
+
+    final rows = <(String, String?)>[
+      ('Nome preferido', b.preferredName),
+      ('Idade', ageStr),
+      ('Profissão/Ocupação', b.occupation),
+      ('Com quem mora', b.livesWith),
+      if (b.hasChildren != null) ('Tem filhos', b.hasChildren! ? 'Sim' : 'Não'),
+      ('Nível educacional', b.displayEducationLevel),
+      ('Estado civil', b.displayRelationshipStatus),
+      ('Orientação sexual', b.displaySexualOrientation),
+      ('País de nascimento', b.countryBirth),
+      ('Grupo étnico', b.ethnicGroup),
+      ('Religião/Espiritualidade', b.religiousOrientation),
+    ].where((r) => (r.$2 ?? '').trim().isNotEmpty).toList();
+
+    if (rows.isEmpty) {
+      return const _Placeholder(
+          'Preencha os dados básicos em Conhecer → Dados Iniciais.');
+    }
+
+    return Column(
+      children: [
+        for (final r in rows) _BulletRow(text: '${r.$1}: ${r.$2}'),
       ],
     );
   }

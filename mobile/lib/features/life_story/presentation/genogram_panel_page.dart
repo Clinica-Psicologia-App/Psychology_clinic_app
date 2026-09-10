@@ -20,10 +20,27 @@ import '../../../shared/widgets/brand_loading.dart';
 /// O bloco "Comentários Clínicos" (nível painel) e o genograma gráfico completo
 /// (§36–38) entram depois — o gráfico com sua própria etapa e o comentário de
 /// painel junto da Síntese/Hipóteses (§42–43), mesma classe de campo editável.
-class GenogramPanelPage extends ConsumerWidget {
+class GenogramPanelPage extends ConsumerStatefulWidget {
   const GenogramPanelPage({super.key, required this.patientId});
 
   final String patientId;
+
+  @override
+  ConsumerState<GenogramPanelPage> createState() => _GenogramPanelPageState();
+}
+
+class _GenogramPanelPageState extends ConsumerState<GenogramPanelPage> {
+  bool _navigating = false;
+
+  Future<void> _push(String route, {Object? extra}) async {
+    if (_navigating || !mounted) return;
+    setState(() => _navigating = true);
+    try {
+      await context.push(route, extra: extra);
+    } finally {
+      if (mounted) setState(() => _navigating = false);
+    }
+  }
 
   /// Necessidades associadas a apoio, segurança, aceitação, incentivo e
   /// cuidado — base do bloco "Recursos e Fatores Protetores".
@@ -42,7 +59,8 @@ class GenogramPanelPage extends ConsumerWidget {
   };
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final patientId = widget.patientId;
     final familyAsync = ref.watch(familyForPatientProvider(patientId));
     final contextAsync = ref.watch(familyContextForPatientProvider(patientId));
 
@@ -94,10 +112,12 @@ class GenogramPanelPage extends ConsumerWidget {
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: FilledButton.icon(
-                  onPressed: () => context.push(
-                    LifeStoryRoutes.developmentalSynthesis,
-                    extra: patientId,
-                  ),
+                  onPressed: _navigating
+                      ? null
+                      : () => _push(
+                            LifeStoryRoutes.developmentalSynthesis,
+                            extra: patientId,
+                          ),
                   icon: const Icon(Icons.auto_stories_outlined, size: 18),
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.navy,
@@ -192,17 +212,34 @@ class _Block extends StatelessWidget {
 }
 
 /// Chip de pessoa que abre o cartão clínico (§40).
-class _PersonPill extends StatelessWidget {
+class _PersonPill extends StatefulWidget {
   const _PersonPill({required this.person});
   final FamilyPerson person;
 
   @override
+  State<_PersonPill> createState() => _PersonPillState();
+}
+
+class _PersonPillState extends State<_PersonPill> {
+  bool _navigating = false;
+
+  @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => context.push(
-        LifeStoryRoutes.therapistPersonCard,
-        extra: person,
-      ),
+      onTap: _navigating
+          ? null
+          : () async {
+              if (!mounted) return;
+              setState(() => _navigating = true);
+              try {
+                await context.push(
+                  LifeStoryRoutes.therapistPersonCard,
+                  extra: widget.person,
+                );
+              } finally {
+                if (mounted) setState(() => _navigating = false);
+              }
+            },
       borderRadius: BorderRadius.circular(10),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
@@ -214,14 +251,14 @@ class _PersonPill extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(person.fullName,
+            Text(widget.person.fullName,
                 style: const TextStyle(
                     fontSize: 13.5,
                     fontWeight: FontWeight.w600,
                     color: AppColors.navy)),
-            if (person.role != null) ...[
+            if (widget.person.role != null) ...[
               const SizedBox(width: 6),
-              Text('· ${person.role!.label}',
+              Text('· ${widget.person.role!.label}',
                   style: const TextStyle(
                       fontSize: 12, color: AppColors.textSecondary)),
             ],
@@ -237,7 +274,7 @@ class _PersonPill extends StatelessWidget {
 
 /// Ação principal da tela: abrir o genograma em diagrama. Card de destaque
 /// para não competir de igual para igual com as ações secundárias.
-class _GenogramHeroCard extends StatelessWidget {
+class _GenogramHeroCard extends StatefulWidget {
   const _GenogramHeroCard({
     required this.patientId,
     required this.peopleCount,
@@ -247,16 +284,33 @@ class _GenogramHeroCard extends StatelessWidget {
   final int peopleCount;
 
   @override
+  State<_GenogramHeroCard> createState() => _GenogramHeroCardState();
+}
+
+class _GenogramHeroCardState extends State<_GenogramHeroCard> {
+  bool _navigating = false;
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Material(
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
-        onTap: () => context.push(
-          LifeStoryRoutes.genogramDiagram,
-          extra: patientId,
-        ),
+        onTap: _navigating
+            ? null
+            : () async {
+                if (!mounted) return;
+                setState(() => _navigating = true);
+                try {
+                  await context.push(
+                    LifeStoryRoutes.genogramDiagram,
+                    extra: widget.patientId,
+                  );
+                } finally {
+                  if (mounted) setState(() => _navigating = false);
+                }
+              },
         child: Ink(
           decoration: BoxDecoration(
             gradient: const LinearGradient(
@@ -294,10 +348,10 @@ class _GenogramHeroCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 3),
                     Text(
-                      peopleCount == 0
+                      widget.peopleCount == 0
                           ? 'Monte a árvore familiar em diagrama.'
                           : 'Árvore familiar e vínculos em diagrama · '
-                              '$peopleCount ${peopleCount == 1 ? "pessoa" : "pessoas"}',
+                              '${widget.peopleCount} ${widget.peopleCount == 1 ? "pessoa" : "pessoas"}',
                       style: theme.textTheme.bodySmall
                           ?.copyWith(color: const Color(0xFFCDE9E1), height: 1.35),
                     ),

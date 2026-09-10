@@ -12,7 +12,6 @@ import '../../patient_timeline/presentation/patient_timeline_routes.dart';
 import '../../patient_timeline/presentation/widgets/patient_timeline_widgets.dart';
 import '../../patient_timeline/providers/patient_timeline_providers.dart';
 import '../../profile/domain/profile_role.dart';
-import '../domain/genogram_data.dart';
 import '../domain/genogram_gender.dart';
 import '../domain/genogram_person.dart';
 import '../providers/genogram_providers.dart';
@@ -80,7 +79,7 @@ class GenogramPersonDetailPage extends ConsumerWidget {
   }
 }
 
-class _PersonDetailBody extends ConsumerWidget {
+class _PersonDetailBody extends ConsumerStatefulWidget {
   const _PersonDetailBody({
     required this.person,
     required this.role,
@@ -94,7 +93,34 @@ class _PersonDetailBody extends ConsumerWidget {
   final VoidCallback onChanged;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_PersonDetailBody> createState() => _PersonDetailBodyState();
+}
+
+class _PersonDetailBodyState extends ConsumerState<_PersonDetailBody> {
+  bool _navigating = false;
+
+  Future<void> _push(String route, {bool returnsResult = false}) async {
+    if (_navigating || !mounted) return;
+    setState(() => _navigating = true);
+    try {
+      if (returnsResult) {
+        final updated = await context.push<bool>(route);
+        if (mounted && updated == true) widget.onChanged();
+      } else {
+        await context.push(route);
+        if (mounted) widget.onChanged();
+      }
+    } finally {
+      if (mounted) setState(() => _navigating = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final person = widget.person;
+    final role = widget.role;
+    final patientId = widget.patientId;
+
     final genogramAsync = role == ProfileRole.patient
         ? ref.watch(myGenogramProvider)
         : ref.watch(
@@ -109,143 +135,133 @@ class _PersonDetailBody extends ConsumerWidget {
     return genogramAsync.when(
       loading: () => const BrandLoader(),
       error: (_, __) => const Center(child: Text('Erro ao carregar relações.')),
-      data: (data) => _buildContent(context, ref, data),
-    );
-  }
+      data: (data) {
+        final linked =
+            data.relationships.where((r) => r.involvesPerson(person.id)).toList();
 
-  Widget _buildContent(BuildContext context, WidgetRef ref, GenogramData data) {
-    final linked =
-        data.relationships.where((r) => r.involvesPerson(person.id)).toList();
-
-    return MotionReveal(
-      child: Column(
-        children: [
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.md,
-                AppSpacing.md,
-                AppSpacing.xxxl,
-              ),
-              children: [
-                if (person.isSensitive)
-                  const Padding(
-                    padding: EdgeInsets.only(bottom: AppSpacing.md),
-                    child: AppInfoCard(
-                      title: 'Dados sensíveis',
-                      body:
-                          'As informações foram ocultadas na visualização principal.',
-                      icon: Icons.lock_outline,
-                      tone: AppInfoCardTone.error,
-                    ),
+        return MotionReveal(
+          child: Column(
+            children: [
+              Expanded(
+                child: ListView(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    AppSpacing.md,
+                    AppSpacing.xxxl,
                   ),
-                AppPageHeader(
-                  title: person.displayName,
-                  subtitle:
-                      'Detalhes desta pessoa no genograma e relações registradas.',
-                  icon: person.isSensitive
-                      ? Icons.lock_outline
-                      : Icons.person_outline,
-                  metadata: [
-                    if (person.relationshipToPatient != null &&
-                        person.relationshipToPatient!.trim().isNotEmpty)
-                      Chip(label: Text(person.relationshipToPatient!.trim())),
-                    if (person.gender != null)
-                      Chip(label: Text(person.gender!.label)),
-                    if (person.lifeSpanLabel != null)
-                      Chip(label: Text(person.lifeSpanLabel!)),
-                    if (person.isDeceased) const Chip(label: Text('Falecido')),
+                  children: [
+                    if (person.isSensitive)
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: AppSpacing.md),
+                        child: AppInfoCard(
+                          title: 'Dados sensíveis',
+                          body:
+                              'As informações foram ocultadas na visualização principal.',
+                          icon: Icons.lock_outline,
+                          tone: AppInfoCardTone.error,
+                        ),
+                      ),
+                    AppPageHeader(
+                      title: person.displayName,
+                      subtitle:
+                          'Detalhes desta pessoa no genograma e relações registradas.',
+                      icon: person.isSensitive
+                          ? Icons.lock_outline
+                          : Icons.person_outline,
+                      metadata: [
+                        if (person.relationshipToPatient != null &&
+                            person.relationshipToPatient!.trim().isNotEmpty)
+                          Chip(label: Text(person.relationshipToPatient!.trim())),
+                        if (person.gender != null)
+                          Chip(label: Text(person.gender!.label)),
+                        if (person.lifeSpanLabel != null)
+                          Chip(label: Text(person.lifeSpanLabel!)),
+                        if (person.isDeceased) const Chip(label: Text('Falecido')),
+                      ],
+                    ),
+                    if (person.notes != null &&
+                        person.notes!.trim().isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.xl),
+                      AppInfoCard(
+                        title: 'Observações',
+                        body: person.notes!.trim(),
+                        icon: Icons.notes_outlined,
+                      ),
+                    ],
+                    const SizedBox(height: AppSpacing.xl),
+                    const AppSectionHeader(
+                      title: 'Relações vinculadas',
+                      subtitle: 'Vínculos registrados com esta pessoa.',
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    if (linked.isEmpty)
+                      const AppInfoCard(
+                        title: 'Nenhuma relação cadastrada',
+                        body: 'Ainda não há vínculo registrado com esta pessoa.',
+                        icon: Icons.account_tree_outlined,
+                      )
+                    else
+                      ...linked.map(
+                        (r) => GenogramRelationshipTile(
+                          relationship: r,
+                          data: data,
+                          onTap: _navigating
+                              ? null
+                              : () => _push(
+                                    role == ProfileRole.patient
+                                        ? GenogramRoutes.patientRelationshipDetail(r.id)
+                                        : GenogramRoutes.staffRelationshipDetail(
+                                            role: role,
+                                            patientId: patientId!,
+                                            relationshipId: r.id,
+                                          ),
+                                  ),
+                        ),
+                      ),
+                    const SizedBox(height: AppSpacing.xl),
+                    const AppSectionHeader(
+                      title: 'Linha do tempo',
+                      subtitle: 'Acontecimentos registrados desta pessoa.',
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    _PersonTimelineSection(
+                      person: person,
+                      role: role,
+                      patientId: patientId,
+                    ),
                   ],
                 ),
-                if (person.notes != null &&
-                    person.notes!.trim().isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.xl),
-                  AppInfoCard(
-                    title: 'Observações',
-                    body: person.notes!.trim(),
-                    icon: Icons.notes_outlined,
-                  ),
-                ],
-                const SizedBox(height: AppSpacing.xl),
-                const AppSectionHeader(
-                  title: 'Relações vinculadas',
-                  subtitle: 'Vínculos registrados com esta pessoa.',
+              ),
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: FilledButton.icon(
+                  onPressed: _navigating
+                      ? null
+                      : () => _push(
+                            role == ProfileRole.patient
+                                ? GenogramRoutes.patientPersonEdit(person.id)
+                                : GenogramRoutes.personEditFor(
+                                    patientId ?? person.patientId,
+                                    person.id,
+                                  ),
+                            returnsResult: true,
+                          ),
+                  icon: const Icon(Icons.edit_outlined),
+                  label: const Text('Editar pessoa'),
                 ),
-                const SizedBox(height: AppSpacing.sm),
-                if (linked.isEmpty)
-                  const AppInfoCard(
-                    title: 'Nenhuma relação cadastrada',
-                    body: 'Ainda não há vínculo registrado com esta pessoa.',
-                    icon: Icons.account_tree_outlined,
-                  )
-                else
-                  ...linked.map(
-                    (r) => GenogramRelationshipTile(
-                      relationship: r,
-                      data: data,
-                      onTap: () => _openRelationship(context, r.id),
-                    ),
-                  ),
-                const SizedBox(height: AppSpacing.xl),
-                const AppSectionHeader(
-                  title: 'Linha do tempo',
-                  subtitle: 'Acontecimentos registrados desta pessoa.',
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                _PersonTimelineSection(
-                  person: person,
-                  role: role,
-                  patientId: patientId,
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
-          Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: FilledButton.icon(
-              onPressed: () async {
-                // Rota STANDALONE para editar: esta tela de detalhe também é
-                // aberta a partir do diagrama (rota de topo, fora da árvore
-                // de StaffPatientGenogramPage) — usar sempre a edição
-                // standalone evita reconstruir aquele branch e o crash de
-                // GlobalKey que isso causava.
-                final updated = await context.push<bool>(
-                  role == ProfileRole.patient
-                      ? GenogramRoutes.patientPersonEdit(person.id)
-                      : GenogramRoutes.personEditFor(
-                          patientId ?? person.patientId,
-                          person.id,
-                        ),
-                );
-                if (updated == true) onChanged();
-              },
-              icon: const Icon(Icons.edit_outlined),
-              label: const Text('Editar pessoa'),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
-  }
-
-  Future<void> _openRelationship(BuildContext context, String id) async {
-    await context.push(
-      role == ProfileRole.patient
-          ? GenogramRoutes.patientRelationshipDetail(id)
-          : GenogramRoutes.staffRelationshipDetail(
-              role: role,
-              patientId: patientId!,
-              relationshipId: id,
-            ),
-    );
-    onChanged();
   }
 }
 
 /// Eventos da linha do tempo vinculados a esta pessoa — permite ao
 /// psicólogo ir direto do genograma ao(s) acontecimento(s) registrado(s).
-class _PersonTimelineSection extends ConsumerWidget {
+class _PersonTimelineSection extends ConsumerStatefulWidget {
   const _PersonTimelineSection({
     required this.person,
     required this.role,
@@ -257,12 +273,38 @@ class _PersonTimelineSection extends ConsumerWidget {
   final String? patientId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_PersonTimelineSection> createState() =>
+      _PersonTimelineSectionState();
+}
+
+class _PersonTimelineSectionState
+    extends ConsumerState<_PersonTimelineSection> {
+  bool _navigating = false;
+
+  Future<void> _openEvent(PatientTimelineEvent event) async {
+    if (_navigating || !mounted) return;
+    setState(() => _navigating = true);
+    try {
+      await context.push(
+        widget.role == ProfileRole.patient
+            ? PatientTimelineRoutes.patientDetail(event.id)
+            : PatientTimelineRoutes.staffDetailFor(
+                widget.patientId ?? widget.person.patientId,
+                event.id,
+              ),
+      );
+    } finally {
+      if (mounted) setState(() => _navigating = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final eventsAsync = ref.watch(
       timelineEventsForPersonProvider(
         TimelineEventsForPersonContext(
-          patientId: person.patientId,
-          personId: person.id,
+          patientId: widget.person.patientId,
+          personId: widget.person.id,
         ),
       ),
     );
@@ -296,28 +338,11 @@ class _PersonTimelineSection extends ConsumerWidget {
                 event: events[i],
                 isFirst: i == 0,
                 isLast: i == events.length - 1,
-                onTap: () => _openEvent(context, events[i]),
+                onTap: _navigating ? null : () => _openEvent(events[i]),
               ),
           ],
         );
       },
-    );
-  }
-
-  Future<void> _openEvent(
-    BuildContext context,
-    PatientTimelineEvent event,
-  ) async {
-    await context.push(
-      role == ProfileRole.patient
-          ? PatientTimelineRoutes.patientDetail(event.id)
-          // Rota STANDALONE: esta ficha é de topo (aberta pelo diagrama). Usar
-          // a rota aninhada aqui reentraria no shell, duplicando a página dele
-          // na pilha — crash de GlobalKey no Navigator.
-          : PatientTimelineRoutes.staffDetailFor(
-              patientId ?? person.patientId,
-              event.id,
-            ),
     );
   }
 }

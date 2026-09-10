@@ -589,7 +589,7 @@ class GenogramPersonTile extends StatelessWidget {
   });
 
   final GenogramPerson person;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -696,7 +696,7 @@ class GenogramRelationshipTile extends StatelessWidget {
 
   final GenogramRelationship relationship;
   final GenogramData data;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {

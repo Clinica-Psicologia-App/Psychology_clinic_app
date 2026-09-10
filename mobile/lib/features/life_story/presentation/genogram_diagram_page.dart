@@ -32,6 +32,7 @@ class GenogramDiagramPage extends ConsumerStatefulWidget {
 class _GenogramDiagramPageState extends ConsumerState<GenogramDiagramPage> {
   bool _showBonds = false;
   bool _highlightCaregivers = false;
+  bool _navigating = false;
 
   @override
   Widget build(BuildContext context) {
@@ -143,11 +144,16 @@ class _GenogramDiagramPageState extends ConsumerState<GenogramDiagramPage> {
   /// Da tela de detalhe dá para editar ou ir direto a um evento registrado.
   /// Ao voltar, revalida os dados do diagrama.
   Future<void> _openPerson(String personId) async {
-    await context.push(
-      GenogramRoutes.personDetailFor(widget.patientId, personId),
-    );
-    if (!mounted) return;
-    ref.invalidate(genogramDataForPatientProvider(widget.patientId));
+    if (_navigating || !mounted) return;
+    setState(() => _navigating = true);
+    try {
+      await context.push(
+        GenogramRoutes.personDetailFor(widget.patientId, personId),
+      );
+      if (mounted) ref.invalidate(genogramDataForPatientProvider(widget.patientId));
+    } finally {
+      if (mounted) setState(() => _navigating = false);
+    }
   }
 
   Future<void> _openAddBondSheet(BuildContext ctx, GenogramData gdata) async {
@@ -221,9 +227,19 @@ class _GenogramDiagramPageState extends ConsumerState<GenogramDiagramPage> {
               ),
             ),
             TextButton(
-              onPressed: () => context.push(
-                GenogramRoutes.bootstrapFor(widget.patientId),
-              ),
+              onPressed: _navigating
+                  ? null
+                  : () async {
+                      if (!mounted) return;
+                      setState(() => _navigating = true);
+                      try {
+                        await context.push(
+                          GenogramRoutes.bootstrapFor(widget.patientId),
+                        );
+                      } finally {
+                        if (mounted) setState(() => _navigating = false);
+                      }
+                    },
               child: const Text('Sugerir vínculos'),
             ),
           ],

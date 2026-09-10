@@ -118,20 +118,43 @@ class GenogramRepository {
   Future<void> _ensurePatientPerson(String patientId) async {
     final existing = await _client
         .from('genogram_people')
-        .select('id')
+        .select('id, gender, birth_year')
         .eq('patient_id', patientId)
         .eq('relationship_to_patient', 'Paciente')
         .limit(1);
 
-    if ((existing as List).isNotEmpty) return;
-
     final patient = await _client
         .from('patients')
-        .select('id, clinic_id, full_name')
+        .select('id, clinic_id, full_name, gender, birth_date')
         .eq('id', patientId)
         .maybeSingle();
 
     if (patient == null) return;
+
+    final rawGender = patient['gender'] as String?;
+    final genderValue = _mapPatientGender(rawGender);
+
+    final rawBirthDate = patient['birth_date'] as String?;
+    final birthYear = rawBirthDate != null
+        ? DateTime.tryParse(rawBirthDate)?.year
+        : null;
+
+    final existingList = existing as List;
+    if (existingList.isNotEmpty) {
+      final row = existingList.first as Map<String, dynamic>;
+      final needsUpdate =
+          (genderValue != null && row['gender'] == null) ||
+          (birthYear != null && row['birth_year'] == null);
+      if (needsUpdate) {
+        await _client.from('genogram_people').update({
+          if (genderValue != null && row['gender'] == null)
+            'gender': genderValue,
+          if (birthYear != null && row['birth_year'] == null)
+            'birth_year': birthYear,
+        }).eq('id', row['id'] as String);
+      }
+      return;
+    }
 
     final userId = _client.auth.currentUser?.id;
     await _client.from('genogram_people').insert({
@@ -143,7 +166,20 @@ class GenogramRepository {
       'relationship_to_patient': 'Paciente',
       'is_deceased': false,
       'is_sensitive': false,
+      if (genderValue != null) 'gender': genderValue,
+      if (birthYear != null) 'birth_year': birthYear,
     });
+  }
+
+  String? _mapPatientGender(String? patientGender) {
+    return switch (patientGender) {
+      'male' => 'male',
+      'female' => 'female',
+      'other' => 'other',
+      'unknown' => 'unknown',
+      'non_binary' => 'other',
+      _ => null,
+    };
   }
 
   Future<GenogramPerson?> getPersonById(String id) async {

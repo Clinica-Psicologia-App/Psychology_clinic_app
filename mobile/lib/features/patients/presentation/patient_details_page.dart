@@ -679,7 +679,7 @@ class _PatientHeroHeader extends StatelessWidget {
 class _NavBtn extends StatelessWidget {
   const _NavBtn({required this.icon, required this.onTap});
   final IconData icon;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -739,7 +739,7 @@ class _HeroActionBtn extends StatelessWidget {
   });
   final String label;
   final IconData icon;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final bool solid;
 
   @override
@@ -948,7 +948,7 @@ class _VitalCell extends StatelessWidget {
   final Color accent;
   final String label;
   final String value;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final int? daysCount;
   final bool highlight;
 

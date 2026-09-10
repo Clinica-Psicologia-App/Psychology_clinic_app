@@ -110,7 +110,7 @@ class _PersonalityDashboardPageState
       body: AsyncStateBody<PersonalityAssessment?>(
         asyncValue: async,
         onRetry: () =>
-            ref.invalidate(personalityAssessmentByIdProvider(assessmentId)),
+            ref.invalidate(personalityAssessmentByIdProvider(widget.assessmentId)),
         emptyMessage: 'Avaliação não encontrada.',
         dataBuilder: (a) {
           if (a == null) {
@@ -147,6 +147,8 @@ class _Body extends StatefulWidget {
 
 class _BodyState extends State<_Body> {
   bool _navigating = false;
+
+  PersonalityAssessment get assessment => widget.assessment;
 
   Future<void> _push(String route) async {
     if (_navigating || !mounted) return;

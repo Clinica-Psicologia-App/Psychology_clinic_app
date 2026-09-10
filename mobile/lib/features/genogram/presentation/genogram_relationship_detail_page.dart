@@ -41,10 +41,9 @@ class _GenogramRelationshipDetailPageState
       final updated = await context.push<bool>(
         widget.role == ProfileRole.patient
             ? GenogramRoutes.patientRelationshipEdit(widget.relationshipId)
-            : GenogramRoutes.staffRelationshipEdit(
-                role: widget.role,
-                patientId: widget.patientId!,
-                relationshipId: widget.relationshipId,
+            : GenogramRoutes.relationshipEditFor(
+                widget.patientId!,
+                widget.relationshipId,
               ),
       );
       if (!mounted) return;

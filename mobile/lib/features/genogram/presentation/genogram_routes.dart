@@ -100,4 +100,18 @@ abstract final class GenogramRoutes {
       '/psychologist/genogram-relationship-create/:patientId';
   static String relationshipCreateFor(String patientId) =>
       '/psychologist/genogram-relationship-create/$patientId';
+
+  // Detalhe de vínculo STANDALONE — evita cruzar navegador do shell com o
+  // navegador top-level (o que causava duplicate page key crash).
+  static const relationshipDetailByPath =
+      '/psychologist/genogram-relationship-detail/:patientId/:relationshipId';
+  static String relationshipDetailFor(
+          String patientId, String relationshipId) =>
+      '/psychologist/genogram-relationship-detail/$patientId/$relationshipId';
+
+  // Edição de vínculo STANDALONE — mesmo padrão de relationshipDetailByPath.
+  static const relationshipEditByPath =
+      '/psychologist/genogram-relationship-edit/:patientId/:relationshipId';
+  static String relationshipEditFor(String patientId, String relationshipId) =>
+      '/psychologist/genogram-relationship-edit/$patientId/$relationshipId';
 }

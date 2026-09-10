@@ -211,10 +211,9 @@ class _PersonDetailBodyState extends ConsumerState<_PersonDetailBody> {
                               : () => _push(
                                     role == ProfileRole.patient
                                         ? GenogramRoutes.patientRelationshipDetail(r.id)
-                                        : GenogramRoutes.staffRelationshipDetail(
-                                            role: role,
-                                            patientId: patientId!,
-                                            relationshipId: r.id,
+                                        : GenogramRoutes.relationshipDetailFor(
+                                            patientId!,
+                                            r.id,
                                           ),
                                   ),
                         ),

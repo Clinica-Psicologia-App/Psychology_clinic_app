@@ -171,18 +171,6 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
             accentColor: AppColors.cyan,
             onTap: null,
           ),
-          _ModuleSpec(
-            icon: Icons.summarize_outlined,
-            title: 'Síntese',
-            subtitle: 'Conceitualização de caso.',
-            accentColor: AppColors.cyan,
-            onTap: () => _push(
-              MentalMapRoutes.staffCaseConceptualization(
-                role: role,
-                patientId: patientId,
-              ),
-            ),
-          ),
         ],
       ),
 
@@ -244,6 +232,18 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
         subtitle: 'Formulação e visão integrada do caso.',
         accentColor: AppColors.purple,
         modules: [
+          _ModuleSpec(
+            icon: Icons.summarize_outlined,
+            title: 'Síntese',
+            subtitle: 'Conceitualização de caso.',
+            accentColor: AppColors.purple,
+            onTap: () => _push(
+              MentalMapRoutes.staffCaseConceptualization(
+                role: role,
+                patientId: patientId,
+              ),
+            ),
+          ),
           _ModuleSpec(
             icon: Icons.hub_outlined,
             title: 'Mapa Mental',

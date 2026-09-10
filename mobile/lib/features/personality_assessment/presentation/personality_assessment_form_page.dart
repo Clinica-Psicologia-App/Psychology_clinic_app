@@ -296,26 +296,6 @@ class _FormState extends ConsumerState<PersonalityAssessmentFormPage> {
         ),
       ),
       const SizedBox(height: 16),
-      Text('Validade do protocolo',
-          style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
-      const SizedBox(height: 4),
-      Text(
-        'Conforme o relatório oficial da aplicação/correção.',
-        style: theme.textTheme.labelSmall?.copyWith(color: AppColors.textMuted),
-      ),
-      const SizedBox(height: 8),
-      Wrap(
-        spacing: 8,
-        children: [
-          for (final v in ProtocolValidity.values)
-            ChoiceChip(
-              label: Text(v.label),
-              selected: _validity == v,
-              onSelected: (sel) => setState(() => _validity = sel ? v : null),
-            ),
-        ],
-      ),
-      const SizedBox(height: 16),
       Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
@@ -337,6 +317,7 @@ class _FormState extends ConsumerState<PersonalityAssessmentFormPage> {
 
   List<Widget> _domainFields(PersonalityDomain domain) {
     return [
+      _columnHeader(),
       _scoreRow(domain.code, 'Resultado geral', bold: true),
       const Divider(height: 26),
       Padding(
@@ -352,6 +333,45 @@ class _FormState extends ConsumerState<PersonalityAssessmentFormPage> {
       for (final f in domain.facets)
         _scoreRow('${domain.code}.${f.code}', f.label),
     ];
+  }
+
+  Widget _columnHeader() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
+      child: Row(
+        children: [
+          const Expanded(flex: 4, child: SizedBox()),
+          const SizedBox(width: 8),
+          SizedBox(
+            width: 64,
+            child: Text(
+              'Escore T',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textMuted,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          const SizedBox(
+            width: 128,
+            child: Text(
+              'Classificação',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+                color: AppColors.textMuted,
+                letterSpacing: 0.2,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _scoreRow(String key, String label, {bool bold = false}) {
@@ -380,7 +400,7 @@ class _FormState extends ConsumerState<PersonalityAssessmentFormPage> {
                   const TextInputType.numberWithOptions(decimal: true),
               textAlign: TextAlign.center,
               decoration: const InputDecoration(
-                labelText: 'Nº',
+                hintText: '—',
                 isDense: true,
               ),
             ),
@@ -392,7 +412,6 @@ class _FormState extends ConsumerState<PersonalityAssessmentFormPage> {
               initialValue: _level[key],
               isExpanded: true,
               decoration: const InputDecoration(
-                labelText: 'Classificação',
                 isDense: true,
               ),
               items: [

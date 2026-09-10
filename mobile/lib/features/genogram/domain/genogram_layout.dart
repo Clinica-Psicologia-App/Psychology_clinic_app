@@ -16,13 +16,13 @@ enum GSex { male, female, unknown }
 
 /// Tipos de vínculo ESTRUTURAL (os que definem a árvore). Os vínculos
 /// emocionais (conflito, próxima…) são outra camada e não entram aqui.
-enum GEdgeType { spouse, exSpouse, parentChild }
+enum GEdgeType { spouse, exSpouse, separation, parentChild }
 
 /// Linhagem de uma pessoa em relação ao paciente (foco).
 enum GLineage { paternal, maternal, self, unknown }
 
 /// Tipos de relação EMOCIONAL (camada 2), separados da estrutura.
-enum GEmotion { close, distant, conflict, broken }
+enum GEmotion { close, distant, conflict, broken, closeAndConflict }
 
 /// Uma relação emocional entre duas pessoas (para o overlay do desenho).
 class GEmotionalRel {
@@ -88,9 +88,14 @@ class GCouple {
   final String a;
   final String b;
 
-  /// `true` para casamento atual; `false` para ex (divórcio/separação).
+  /// `true` para casamento atual; `false` para ex (divórcio ou separação).
   final bool current;
-  const GCouple(this.a, this.b, {this.current = true});
+
+  /// `true` para separação (1 barra "/"); `false` para divórcio (2 barras "//").
+  /// Só relevante quando [current] é `false`.
+  final bool separated;
+  const GCouple(this.a, this.b,
+      {this.current = true, this.separated = false});
 }
 
 /// Um grupo de irmãos (filhos do mesmo conjunto de pais).
@@ -155,9 +160,12 @@ GLayout buildGenogramStructure({
         childrenOf[e.a]!.add(e.b);
       case GEdgeType.spouse:
       case GEdgeType.exSpouse:
+      case GEdgeType.separation:
         spouseOf[e.a]!.add(e.b);
         spouseOf[e.b]!.add(e.a);
-        couples.add(GCouple(e.a, e.b, current: e.type == GEdgeType.spouse));
+        couples.add(GCouple(e.a, e.b,
+            current: e.type == GEdgeType.spouse,
+            separated: e.type == GEdgeType.separation));
     }
   }
 
@@ -376,21 +384,39 @@ GDiagram positionGenogram(
   final connected = layout.placed.values.where((p) => p.connected).toList();
   final unconnected = layout.placed.values.where((p) => !p.connected).toList();
 
-  final spouse = <String, String>{};
+  // ── Lookup de casais ───────────────────────────────────────────────────────
+  // Suporta recasamentos: uma pessoa pode ter múltiplos cônjuges na mesma
+  // geração. A chave "a|b" (IDs ordenados) identifica cada par de forma única.
+  String ck(String a, String b) => ([a, b]..sort()).join('|');
+  final coupleMap = <String, GCouple>{
+    for (final c in layout.couples) ck(c.a, c.b): c,
+  };
+  // Todos os cônjuges por pessoa (pode ser mais de um).
+  final spousesOf = <String, List<String>>{};
   for (final c in layout.couples) {
-    spouse[c.a] = c.b;
-    spouse[c.b] = c.a;
+    (spousesOf[c.a] ??= []).add(c.b);
+    (spousesOf[c.b] ??= []).add(c.a);
+  }
+  // Filhos específicos de cada casal (a partir dos grupos de irmãos com
+  // exatamente 2 pais). Essencial para centrar cada casal sobre seus filhos
+  // sem confundir filhos de uniões diferentes.
+  final coupleKids = <String, Set<String>>{};
+  for (final sg in layout.sibGroups) {
+    if (sg.parents.length == 2) {
+      final sorted = sg.parents.toList()..sort();
+      coupleKids[ck(sorted[0], sorted[1])] = sg.members.toSet();
+    }
   }
 
   final byGen = <int, List<GPlaced>>{};
   for (final p in connected) {
     byGen.putIfAbsent(p.generation, () => []).add(p);
   }
-  final gens = byGen.keys.toList()..sort(); // ascendente: ancestral no topo
+  final gens = byGen.keys.toList()..sort();
 
-  // Ordena cada faixa: linhagem paterna | própria | materna, com os ancestrais
-  // diretos no lado INTERNO (perto do centro) e os tios/tias no EXTERNO, e os
-  // casais adjacentes.
+  // Ordena cada faixa: linhagem paterna | própria | materna, ancestrais no
+  // lado INTERNO. Recasamentos formam cadeias: [ex... | pessoa | atual...].
+  // Ex-cônjuges vão à ESQUERDA da pessoa; cônjuge atual vai à DIREITA.
   final rowOrders = <int, List<String>>{};
   for (final g in gens) {
     final people = byGen[g]!;
@@ -399,8 +425,6 @@ GDiagram positionGenogram(
         ..sort((a, b) {
           final av = a.ancestor ? 1 : 0;
           final bv = b.ancestor ? 1 : 0;
-          // paterna: ancestral por último (direita/interno).
-          // materna: ancestral primeiro (esquerda/interno).
           final byAnc = ancestorRight ? av.compareTo(bv) : bv.compareTo(av);
           return byAnc != 0 ? byAnc : a.id.compareTo(b.id);
         });
@@ -419,19 +443,32 @@ GDiagram positionGenogram(
     final done = <String>{};
     for (final p in base) {
       if (done.contains(p.id)) continue;
+      final mySpouses = (spousesOf[p.id] ?? [])
+          .where((s) => inGen.contains(s) && !done.contains(s))
+          .toList();
+      // Ex-cônjuges (separação ou divórcio) ficam à esquerda da pessoa.
+      final exes = mySpouses
+          .where((s) => coupleMap[ck(p.id, s)]?.current == false)
+          .toList();
+      // Cônjuge atual fica à direita.
+      final currents = mySpouses
+          .where((s) => coupleMap[ck(p.id, s)]?.current == true)
+          .toList();
+      for (final ex in exes.reversed) {
+        order.add(ex);
+        done.add(ex);
+      }
       order.add(p.id);
       done.add(p.id);
-      final sp = spouse[p.id];
-      if (sp != null && inGen.contains(sp) && !done.contains(sp)) {
-        order.add(sp);
-        done.add(sp);
+      for (final cur in currents) {
+        order.add(cur);
+        done.add(cur);
       }
     }
     rowOrders[g] = order;
   }
 
-  // childrenOf reconstruído dos grupos de irmãos (o motor não guarda a
-  // adjacência pai→filho depois da topologia).
+  // childrenOf reconstruído dos grupos de irmãos.
   final childrenOf = <String, Set<String>>{};
   for (final sg in layout.sibGroups) {
     for (final par in sg.parents) {
@@ -439,9 +476,8 @@ GDiagram positionGenogram(
     }
   }
 
-  // Posiciona da geração mais NOVA (âncora, espaçada por igual) para a mais
-  // velha; cada pai/casal é puxado para a média dos filhos já colocados, e os
-  // tios (sem filhos) encostam no irmão. Coordenadas cruas, normalizadas no fim.
+  // Posiciona da geração mais NOVA para a mais velha. Detecta cadeias de
+  // recasamento [B, A, C] e posiciona cada par de casal sobre seus filhos.
   final xById = <String, double>{};
   for (var r = gens.length - 1; r >= 0; r--) {
     final order = rowOrders[gens[r]]!;
@@ -452,35 +488,64 @@ GDiagram positionGenogram(
       }
       continue;
     }
-    // desejado por nó: casal centra sobre os filhos comuns; solteiro sobre os
-    // seus. Quem não tem filho posicionado fica null (preenchido depois).
+
+    bool areCouple(int i, int j) =>
+        i >= 0 && j >= 0 && i < n && j < n &&
+        coupleMap.containsKey(ck(order[i], order[j]));
+
+    double? kidsCenter(Iterable<String> kids) {
+      final placed = kids.where(xById.containsKey).toList();
+      if (placed.isEmpty) return null;
+      return placed.map((k) => xById[k]!).reduce((a, b) => a + b) /
+          placed.length;
+    }
+
     final desired = List<double?>.filled(n, null);
     var i = 0;
     while (i < n) {
-      final id = order[i];
-      final sp = spouse[id];
-      final couple = i + 1 < n && order[i + 1] == sp;
-      final kids = <String>{
-        ...?childrenOf[id],
-        if (couple) ...?childrenOf[sp],
-      }.where(xById.containsKey).toList();
-      if (kids.isNotEmpty) {
-        var sum = 0.0;
-        for (final k in kids) {
-          sum += xById[k]!;
+      if (areCouple(i, i + 1) && areCouple(i + 1, i + 2)) {
+        // Cadeia de recasamento: [B=i, A=i+1, C=i+2]
+        final meanBA = kidsCenter(coupleKids[ck(order[i], order[i + 1])] ?? {});
+        final meanAC = kidsCenter(coupleKids[ck(order[i + 1], order[i + 2])] ?? {});
+        if (meanBA != null) {
+          desired[i] = meanBA - colWidth / 2;
+          desired[i + 1] = meanBA + colWidth / 2;
         }
-        final mean = sum / kids.length;
-        if (couple) {
+        if (meanAC != null) {
+          final demA = meanAC - colWidth / 2;
+          desired[i + 1] = desired[i + 1] == null
+              ? demA
+              : (desired[i + 1]! + demA) / 2;
+          desired[i + 2] = meanAC + colWidth / 2;
+        } else if (desired[i + 1] != null) {
+          desired[i + 2] = desired[i + 1]! + colWidth;
+        }
+        i += 3;
+      } else if (areCouple(i, i + 1)) {
+        // Par de casal simples — usa filhos específicos do casal, com
+        // fallback para todos os filhos de ambos.
+        final specKids = coupleKids[ck(order[i], order[i + 1])] ?? {};
+        final allKids = specKids.isNotEmpty
+            ? specKids
+            : <String>{
+                ...?childrenOf[order[i]],
+                ...?childrenOf[order[i + 1]],
+              };
+        final mean = kidsCenter(allKids);
+        if (mean != null) {
           desired[i] = mean - colWidth / 2;
           desired[i + 1] = mean + colWidth / 2;
-        } else {
-          desired[i] = mean;
         }
+        i += 2;
+      } else {
+        // Pessoa sem casal nesta faixa — centra sobre seus filhos.
+        final mean = kidsCenter(childrenOf[order[i]] ?? {});
+        if (mean != null) desired[i] = mean;
+        i++;
       }
-      i += couple ? 2 : 1;
     }
-    // preenche os nulos (tios) encostando no vizinho à direita e resolve
-    // sobreposições da esquerda para a direita mantendo a ordem.
+
+    // Preenche nulos, resolve sobreposições e re-centra.
     final prov = List<double>.filled(n, 0);
     for (var k = 0; k < n; k++) {
       prov[k] = desired[k] ?? (k > 0 ? prov[k - 1] + colWidth : 0.0);
@@ -492,8 +557,6 @@ GDiagram positionGenogram(
       final lb = k > 0 ? xById[order[k - 1]]! + colWidth : prov[k];
       xById[order[k]] = prov[k] < lb ? lb : prov[k];
     }
-    // Re-centra a faixa sobre os filhos: o empurrão de espaçamento só desloca
-    // para a direita; este shift devolve os pais para cima da média dos filhos.
     var sumD = 0.0, sumA = 0.0, cnt = 0;
     for (var k = 0; k < n; k++) {
       if (desired[k] != null) {
@@ -510,7 +573,7 @@ GDiagram positionGenogram(
     }
   }
 
-  // ── Normalização: encaixa nas margens e centra na largura final ───────────
+  // ── Normalização ──────────────────────────────────────────────────────────
   var minX = double.infinity, maxX = -double.infinity;
   for (final v in xById.values) {
     if (v < minX) minX = v;

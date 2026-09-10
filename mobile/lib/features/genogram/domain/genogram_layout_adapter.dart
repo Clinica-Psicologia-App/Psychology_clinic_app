@@ -32,12 +32,15 @@ List<GEdge> structuralEdges(List<GenogramRelationship> relationships) {
         edges.add(GEdge(r.personAId, r.personBId, GEdgeType.spouse));
       case GenogramRelationshipType.exSpouse:
         edges.add(GEdge(r.personAId, r.personBId, GEdgeType.exSpouse));
+      case GenogramRelationshipType.separation:
+        edges.add(GEdge(r.personAId, r.personBId, GEdgeType.separation));
       case GenogramRelationshipType.sibling:
       case GenogramRelationshipType.twin:
       case GenogramRelationshipType.conflict:
       case GenogramRelationshipType.distant:
       case GenogramRelationshipType.neutral:
       case GenogramRelationshipType.close:
+      case GenogramRelationshipType.closeAndConflict:
       case GenogramRelationshipType.ruptured:
       case GenogramRelationshipType.other:
         break; // não-estrutural (gêmeos entra por twinPairs, não como aresta)
@@ -64,6 +67,7 @@ List<GEmotionalRel> emotionalRelations(
       GenogramRelationshipType.distant => GEmotion.distant,
       GenogramRelationshipType.conflict => GEmotion.conflict,
       GenogramRelationshipType.ruptured => GEmotion.broken,
+      GenogramRelationshipType.closeAndConflict => GEmotion.closeAndConflict,
       _ => null,
     };
     if (k != null) out.add(GEmotionalRel(r.personAId, r.personBId, k));

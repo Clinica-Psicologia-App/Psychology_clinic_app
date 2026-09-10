@@ -16,7 +16,7 @@ import 'life_chapter_style.dart';
 const double kSpineX = 46;
 
 const double _nodeRadius = 15;
-const Color _railColor = Color(0xFFE2E9F6);
+const Color _railColor = Color(0xFFBBC4D8);
 
 /// O fio, desenhado atrás de tudo em cada bloco.
 class _Rail extends StatelessWidget {
@@ -35,7 +35,7 @@ class _Rail extends StatelessWidget {
       top: top,
       bottom: height == null ? 0 : null,
       height: height,
-      child: Container(width: 2, color: _railColor),
+      child: Container(width: 3, color: _railColor),
     );
   }
 }
@@ -124,7 +124,16 @@ class TimelineTodayCap extends StatelessWidget {
   }
 }
 
-/// Marco de capítulo: um nó maior no próprio fio, com rótulo e o "+" ao lado.
+String _chapterEmoji(LifeChapter? chapter) => switch (chapter) {
+      LifeChapter.childhood => '🧒',
+      LifeChapter.adolescence => '🎓',
+      LifeChapter.adulthood => '💼',
+      LifeChapter.maturity => '🌿',
+      LifeChapter.today => '📍',
+      null => '·',
+    };
+
+/// Marco de capítulo: círculo branco com emoji, rótulo cinza, botão "+".
 class TimelineChapterMarker extends StatelessWidget {
   const TimelineChapterMarker({
     super.key,
@@ -132,13 +141,11 @@ class TimelineChapterMarker extends StatelessWidget {
     required this.onAdd,
   });
 
-  /// Null = "Outros acontecimentos".
   final LifeChapter? chapter;
   final VoidCallback onAdd;
 
   @override
   Widget build(BuildContext context) {
-    final s = styleForChapter(chapter);
     final label = chapter?.label ?? 'Outros acontecimentos';
 
     return SizedBox(
@@ -153,11 +160,16 @@ class TimelineChapterMarker extends StatelessWidget {
               width: 26,
               height: 26,
               decoration: BoxDecoration(
-                color: s.bg,
+                color: Colors.white,
                 shape: BoxShape.circle,
-                border: Border.all(color: s.accent, width: 2),
+                border: Border.all(color: const Color(0xFFC5CADB), width: 1.5),
               ),
-              child: Icon(s.icon, size: 13, color: s.accent),
+              child: Center(
+                child: Text(
+                  _chapterEmoji(chapter),
+                  style: const TextStyle(fontSize: 13),
+                ),
+              ),
             ),
           ),
           Positioned(
@@ -166,40 +178,28 @@ class TimelineChapterMarker extends StatelessWidget {
             top: 8,
             child: Row(
               children: [
-                // flex 0 + loose: o rótulo fica com a largura que precisa e a
-                // régua absorve o resto. Com `Flexible` normal os dois
-                // dividiriam o espaço e o nome do capítulo saía cortado.
                 Flexible(
                   flex: 0,
                   child: Text(
                     label.toUpperCase(),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 10.5,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.8,
-                      color: s.text,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.7,
+                      color: Color(0xFF8892A4),
                     ),
                   ),
                 ),
                 const SizedBox(width: 8),
-                Expanded(
-                  child: Container(
-                    height: 1,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          s.accent.withValues(alpha: 0.35),
-                          s.accent.withValues(alpha: 0),
-                        ],
-                      ),
-                    ),
-                  ),
+                const Expanded(
+                  child: Divider(color: Color(0xFFE4EAF3), thickness: 1),
                 ),
                 IconButton(
                   onPressed: onAdd,
-                  icon: Icon(Icons.add_rounded, size: 18, color: s.accent),
+                  icon: const Icon(Icons.add_rounded,
+                      size: 18, color: AppColors.turquoise),
                   tooltip: 'Adicionar acontecimento em $label',
                   visualDensity: VisualDensity.compact,
                   padding: EdgeInsets.zero,
@@ -359,21 +359,26 @@ class TimelineEventNode extends StatelessWidget {
                                       const SizedBox(height: 5),
                                       Row(
                                         children: [
-                                          if (impact != null) ...[
-                                            ImpactBar(
-                                              value: impact,
-                                              color: impactColor(impact),
-                                            ),
-                                            const SizedBox(width: 6),
-                                            Text(
-                                              'impacto $impact',
-                                              style: TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.w600,
-                                                color: impactColor(impact),
+                                          if (impact != null)
+                                            Container(
+                                              padding:
+                                                  const EdgeInsets.symmetric(
+                                                      horizontal: 7,
+                                                      vertical: 2),
+                                              decoration: BoxDecoration(
+                                                color: const Color(0xFFE8FAF9),
+                                                borderRadius:
+                                                    BorderRadius.circular(20),
+                                              ),
+                                              child: Text(
+                                                'impacto $impact',
+                                                style: const TextStyle(
+                                                  fontSize: 10,
+                                                  fontWeight: FontWeight.w700,
+                                                  color: AppColors.turquoise,
+                                                ),
                                               ),
                                             ),
-                                          ],
                                           if (hasComment) ...[
                                             if (impact != null)
                                               const SizedBox(width: 8),
@@ -439,23 +444,16 @@ class _AgeNode extends StatelessWidget {
         height: _nodeRadius * 2,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: surface,
+          color: Colors.white,
           shape: BoxShape.circle,
-          border: Border.all(color: style.accent, width: 2),
-          boxShadow: [
-            BoxShadow(
-              color: style.accent.withValues(alpha: 0.18),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          border: Border.all(color: const Color(0xFFDDE1EA), width: 1.5),
         ),
         child: Text(
           age?.toString() ?? '–',
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w800,
-            color: style.text,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            color: Color(0xFF8892A4),
           ),
         ),
       ),

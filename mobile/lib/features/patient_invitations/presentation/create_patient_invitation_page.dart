@@ -127,6 +127,9 @@ class _CreatePatientInvitationPageState
                   border: OutlineInputBorder(),
                 ),
                 keyboardType: TextInputType.emailAddress,
+                autocorrect: false,
+                enableSuggestions: false,
+                textCapitalization: TextCapitalization.none,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Informe o e-mail';

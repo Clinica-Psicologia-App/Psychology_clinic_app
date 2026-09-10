@@ -35,12 +35,14 @@ class _GenogramBootstrapPageState extends ConsumerState<GenogramBootstrapPage> {
   static GenogramRelationshipType _mapType(GEdgeType t) => switch (t) {
         GEdgeType.spouse => GenogramRelationshipType.spouse,
         GEdgeType.exSpouse => GenogramRelationshipType.exSpouse,
+        GEdgeType.separation => GenogramRelationshipType.separation,
         GEdgeType.parentChild => GenogramRelationshipType.parentChild,
       };
 
   static String _typeLabel(GEdgeType t) => switch (t) {
         GEdgeType.spouse => 'Casamento',
-        GEdgeType.exSpouse => 'Ex-cônjuge',
+        GEdgeType.exSpouse => 'Ex-cônjuge (divórcio)',
+        GEdgeType.separation => 'Separados',
         GEdgeType.parentChild => 'Pai/mãe → filho(a)',
       };
 

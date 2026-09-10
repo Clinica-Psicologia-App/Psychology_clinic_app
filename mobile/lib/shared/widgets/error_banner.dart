@@ -24,9 +24,13 @@ MaterialBanner buildErrorBanner(
   );
 }
 
-void showErrorBanner(BuildContext context, Object error) {
+void showErrorBanner(BuildContext context, Object error,
+    {Duration duration = const Duration(seconds: 5)}) {
   final messenger = ScaffoldMessenger.of(context);
   messenger
     ..hideCurrentMaterialBanner()
     ..showMaterialBanner(buildErrorBanner(messenger, context, error));
+  Future.delayed(duration, () {
+    messenger.hideCurrentMaterialBanner();
+  });
 }

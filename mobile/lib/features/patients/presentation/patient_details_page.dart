@@ -146,7 +146,7 @@ class _PatientDetailsPageState extends ConsumerState<PatientDetailsPage> {
   }
 }
 
-class _PatientDetailsBody extends StatelessWidget {
+class _PatientDetailsBody extends StatefulWidget {
   const _PatientDetailsBody({
     required this.patient,
     required this.role,
@@ -164,7 +164,30 @@ class _PatientDetailsBody extends StatelessWidget {
   final VoidCallback? onTourTap;
 
   @override
+  State<_PatientDetailsBody> createState() => _PatientDetailsBodyState();
+}
+
+class _PatientDetailsBodyState extends State<_PatientDetailsBody> {
+  bool _navigating = false;
+
+  Future<void> _push(String route, {Object? extra}) async {
+    if (_navigating || !mounted) return;
+    setState(() => _navigating = true);
+    try {
+      await context.push(route, extra: extra);
+    } finally {
+      if (mounted) setState(() => _navigating = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final patient = widget.patient;
+    final role = widget.role;
+    final reportKey = widget.reportKey;
+    final genogramKey = widget.genogramKey;
+    final vitalsKey = widget.vitalsKey;
+    final onTourTap = widget.onTourTap;
     final dateFormat = MaterialLocalizations.of(context);
     final canEdit = role == ProfileRole.psychologist ||
         role == ProfileRole.platformAdmin;
@@ -179,7 +202,7 @@ class _PatientDetailsBody extends StatelessWidget {
               role: role,
               onBack: () => context.pop(),
               onEdit: canEdit
-                  ? () => context.push(
+                  ? () => _push(
                         PatientRoutes.edit(role, patient.id),
                         extra: patient,
                       )
@@ -278,16 +301,18 @@ class _PatientDetailsBody extends StatelessWidget {
                   'Gere um link para o paciente criar senha e concluir o primeiro acesso.',
               action: IconButton(
                 tooltip: 'Convidar paciente',
-                onPressed: () => context.push(
-                  PatientRoutes.invitationCreate(role),
-                  extra: PatientInvitationDraft(
-                    fullName: patient.fullName,
-                    email: patient.email,
-                    phone: patient.phone,
-                    responsiblePsychologistId:
-                        patient.responsiblePsychologistId,
-                  ),
-                ),
+                onPressed: _navigating
+                    ? null
+                    : () => _push(
+                          PatientRoutes.invitationCreate(role),
+                          extra: PatientInvitationDraft(
+                            fullName: patient.fullName,
+                            email: patient.email,
+                            phone: patient.phone,
+                            responsiblePsychologistId:
+                                patient.responsiblePsychologistId,
+                          ),
+                        ),
                 icon: const Icon(Icons.arrow_forward_rounded),
               ),
             ),
@@ -302,12 +327,14 @@ class _PatientDetailsBody extends StatelessWidget {
               tone: AppInfoCardTone.info,
               action: IconButton(
                 tooltip: 'Gerar relatório',
-                onPressed: () => context.push(
-                  ClinicalReportRoutes.staffOptions(
-                    role: role,
-                    patientId: patient.id,
-                  ),
-                ),
+                onPressed: _navigating
+                    ? null
+                    : () => _push(
+                          ClinicalReportRoutes.staffOptions(
+                            role: role,
+                            patientId: patient.id,
+                          ),
+                        ),
                 icon: const Icon(Icons.arrow_forward_rounded),
               ),
             ),
@@ -394,16 +421,30 @@ class _PatientHeroHeader extends StatelessWidget {
         .toUpperCase();
   }
 
+  static bool _isMale(String? gender) {
+    final g = gender?.toLowerCase();
+    return g == 'masculino' || g == 'male';
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final topInset = MediaQuery.paddingOf(context).top;
     final accessLabel = patient.accessStatus?.label;
+    final male = _isMale(patient.gender);
+    final headerColor =
+        male ? const Color(0xFF0A3A5E) : const Color(0xFF4A1528);
+    final blobColor1 = male
+        ? const Color(0xFF00B2A9)
+        : const Color(0xFFDB2777);
+    final blobColor2 = male
+        ? const Color(0xFF3D3F8F)
+        : const Color(0xFF9D174D);
 
     return Container(
       width: double.infinity,
-      decoration: const BoxDecoration(
-        color: Color(0xFF0A3A5E),
+      decoration: BoxDecoration(
+        color: headerColor,
       ),
       child: Stack(
         children: [
@@ -414,10 +455,13 @@ class _PatientHeroHeader extends StatelessWidget {
             child: Container(
               width: 200,
               height: 200,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [Color(0x5500B2A9), Colors.transparent],
+                  colors: [
+                    blobColor1.withValues(alpha: 0.33),
+                    Colors.transparent,
+                  ],
                 ),
               ),
             ),
@@ -429,10 +473,13 @@ class _PatientHeroHeader extends StatelessWidget {
             child: Container(
               width: 160,
               height: 160,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 gradient: RadialGradient(
-                  colors: [Color(0x443D3F8F), Colors.transparent],
+                  colors: [
+                    blobColor2.withValues(alpha: 0.27),
+                    Colors.transparent,
+                  ],
                 ),
               ),
             ),
@@ -762,7 +809,7 @@ class _PatientVitalsSummary extends ConsumerWidget {
   }
 }
 
-class _VitalsPanel extends StatelessWidget {
+class _VitalsPanel extends StatefulWidget {
   const _VitalsPanel({
     required this.role,
     required this.patient,
@@ -774,7 +821,27 @@ class _VitalsPanel extends StatelessWidget {
   final PatientVitals vitals;
 
   @override
+  State<_VitalsPanel> createState() => _VitalsPanelState();
+}
+
+class _VitalsPanelState extends State<_VitalsPanel> {
+  bool _navigating = false;
+
+  Future<void> _push(String route) async {
+    if (_navigating || !mounted) return;
+    setState(() => _navigating = true);
+    try {
+      await context.push(route);
+    } finally {
+      if (mounted) setState(() => _navigating = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final role = widget.role;
+    final patient = widget.patient;
+    final vitals = widget.vitals;
     final theme = Theme.of(context);
 
     return ClayCard(
@@ -810,12 +877,14 @@ class _VitalsPanel extends StatelessWidget {
                     label: 'Último check-in',
                     value: vitals.lastCheckinLabel,
                     daysCount: vitals.lastCheckinDays,
-                    onTap: () => context.push(
-                      PatientCheckInRoutes.staffList(
-                        role: role,
-                        patientId: patient.id,
-                      ),
-                    ),
+                    onTap: _navigating
+                        ? null
+                        : () => _push(
+                              PatientCheckInRoutes.staffList(
+                                role: role,
+                                patientId: patient.id,
+                              ),
+                            ),
                   ),
                 ),
                 Container(width: 1, height: 52, color: Theme.of(context).colorScheme.outline),
@@ -825,12 +894,14 @@ class _VitalsPanel extends StatelessWidget {
                     accent: AppColors.purple,
                     label: 'Metas ativas',
                     value: '${vitals.activeGoals}',
-                    onTap: () => context.push(
-                      TherapyGoalRoutes.staffList(
-                        role: role,
-                        patientId: patient.id,
-                      ),
-                    ),
+                    onTap: _navigating
+                        ? null
+                        : () => _push(
+                              TherapyGoalRoutes.staffList(
+                                role: role,
+                                patientId: patient.id,
+                              ),
+                            ),
                   ),
                 ),
                 Container(width: 1, height: 52, color: Theme.of(context).colorScheme.outline),
@@ -843,12 +914,14 @@ class _VitalsPanel extends StatelessWidget {
                         ? 'Em dia'
                         : '${vitals.pendingQuestionnaires} pend.',
                     highlight: vitals.pendingQuestionnaires > 0,
-                    onTap: () => context.push(
-                      QuestionnaireRoutes.list(
-                        role: role,
-                        patientId: patient.id,
-                      ),
-                    ),
+                    onTap: _navigating
+                        ? null
+                        : () => _push(
+                              QuestionnaireRoutes.list(
+                                role: role,
+                                patientId: patient.id,
+                              ),
+                            ),
                   ),
                 ),
               ],

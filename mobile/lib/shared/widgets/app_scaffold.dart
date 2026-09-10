@@ -4,6 +4,45 @@ import '../../core/theme/app_breakpoints.dart';
 import '../../core/theme/app_spacing.dart';
 import 'responsive_content.dart';
 
+/// Fundo com blobs circulares suaves nos cantos, inspirado no diagrama do
+/// genograma. Quando [accent] é informado, o blob principal usa essa cor;
+/// caso contrário, usa o teal padrão do app.
+class AppBlobBackground extends StatelessWidget {
+  const AppBlobBackground({super.key, required this.child, this.accent});
+
+  final Widget child;
+  final Color? accent;
+
+  static const _defaultBlob = Color(0xFF0F9C90);
+  static const _secondaryBlob = Color(0xFF1F7A8C);
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = accent ?? _defaultBlob;
+    return Stack(
+      children: [
+        Positioned(
+          top: -120,
+          left: -100,
+          child: _blob(340, primary.withValues(alpha: 0.10)),
+        ),
+        Positioned(
+          bottom: -130,
+          right: -110,
+          child: _blob(370, _secondaryBlob.withValues(alpha: 0.09)),
+        ),
+        Positioned.fill(child: child),
+      ],
+    );
+  }
+
+  Widget _blob(double size, Color color) => Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      );
+}
+
 class AppScaffold extends StatelessWidget {
   const AppScaffold({
     super.key,
@@ -58,11 +97,14 @@ class AppScaffold extends StatelessWidget {
         bottom: _accentBarLine(accent),
       ),
       body: SafeArea(
-        child: useResponsivePadding
-            ? ResponsiveContent(
-                child: centerBody ? Center(child: body) : body,
-              )
-            : (centerBody ? Center(child: body) : body),
+        child: AppBlobBackground(
+          accent: accent,
+          child: useResponsivePadding
+              ? ResponsiveContent(
+                  child: centerBody ? Center(child: body) : body,
+                )
+              : (centerBody ? Center(child: body) : body),
+        ),
       ),
       floatingActionButton: floatingActionButton,
     );
@@ -91,7 +133,7 @@ class AppCanopyScaffold extends StatelessWidget {
       backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
       body: SafeArea(
         top: false,
-        child: body,
+        child: AppBlobBackground(child: body),
       ),
       floatingActionButton: floatingActionButton,
     );
@@ -129,12 +171,15 @@ class AppFormScaffold extends StatelessWidget {
         bottom: _accentBarLine(accent),
       ),
       body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              maxWidth: isWide ? 960 : AppSpacing.formMaxWidth,
+        child: AppBlobBackground(
+          accent: accent,
+          child: Center(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: isWide ? 960 : AppSpacing.formMaxWidth,
+              ),
+              child: body,
             ),
-            child: body,
           ),
         ),
       ),

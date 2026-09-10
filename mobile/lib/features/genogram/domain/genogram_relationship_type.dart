@@ -2,12 +2,18 @@
   parentChild,
   spouse,
   exSpouse,
+
+  /// Separação conjugal (uma barra "/") — distinto do divórcio (duas barras).
+  separation,
   sibling,
   twin,
   conflict,
   distant,
   neutral,
   close,
+
+  /// Relação próxima e conflituosa (linha dupla + zigzag).
+  closeAndConflict,
   ruptured,
   other,
 }
@@ -21,6 +27,8 @@ extension GenogramRelationshipTypeX on GenogramRelationshipType {
         return 'spouse';
       case GenogramRelationshipType.exSpouse:
         return 'ex_spouse';
+      case GenogramRelationshipType.separation:
+        return 'separation';
       case GenogramRelationshipType.sibling:
         return 'sibling';
       case GenogramRelationshipType.twin:
@@ -33,6 +41,8 @@ extension GenogramRelationshipTypeX on GenogramRelationshipType {
         return 'neutral';
       case GenogramRelationshipType.close:
         return 'close';
+      case GenogramRelationshipType.closeAndConflict:
+        return 'close_and_conflict';
       case GenogramRelationshipType.ruptured:
         return 'ruptured';
       case GenogramRelationshipType.other:
@@ -47,7 +57,9 @@ extension GenogramRelationshipTypeX on GenogramRelationshipType {
       case GenogramRelationshipType.spouse:
         return 'Cônjuge';
       case GenogramRelationshipType.exSpouse:
-        return 'Ex-cônjuge';
+        return 'Ex-cônjuge (divórcio)';
+      case GenogramRelationshipType.separation:
+        return 'Separados';
       case GenogramRelationshipType.sibling:
         return 'Irmão(ã)';
       case GenogramRelationshipType.twin:
@@ -60,6 +72,8 @@ extension GenogramRelationshipTypeX on GenogramRelationshipType {
         return 'Neutra';
       case GenogramRelationshipType.close:
         return 'Próxima';
+      case GenogramRelationshipType.closeAndConflict:
+        return 'Próxima e conflituosa';
       case GenogramRelationshipType.ruptured:
         return 'Rompida';
       case GenogramRelationshipType.other:

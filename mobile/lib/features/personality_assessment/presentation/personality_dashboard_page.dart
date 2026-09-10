@@ -13,7 +13,7 @@ import '../providers/personality_assessment_providers.dart';
 import 'personality_assessment_routes.dart';
 
 /// Dashboard de uma avaliação: visão geral (5 domínios) e facetas por domínio.
-class PersonalityDashboardPage extends ConsumerWidget {
+class PersonalityDashboardPage extends ConsumerStatefulWidget {
   const PersonalityDashboardPage({
     super.key,
     required this.role,
@@ -25,7 +25,36 @@ class PersonalityDashboardPage extends ConsumerWidget {
   final String patientId;
   final String assessmentId;
 
-  Future<void> _confirmDelete(BuildContext context, WidgetRef ref) async {
+  @override
+  ConsumerState<PersonalityDashboardPage> createState() =>
+      _PersonalityDashboardPageState();
+}
+
+class _PersonalityDashboardPageState
+    extends ConsumerState<PersonalityDashboardPage> {
+  bool _navigating = false;
+
+  Future<void> _openEdit() async {
+    if (_navigating || !mounted) return;
+    setState(() => _navigating = true);
+    try {
+      await context.push(
+        PersonalityAssessmentRoutes.staffEdit(
+          role: widget.role,
+          patientId: widget.patientId,
+          assessmentId: widget.assessmentId,
+        ),
+      );
+      if (mounted) {
+        ref.invalidate(
+            personalityAssessmentByIdProvider(widget.assessmentId));
+      }
+    } finally {
+      if (mounted) setState(() => _navigating = false);
+    }
+  }
+
+  Future<void> _confirmDelete() async {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -51,38 +80,30 @@ class PersonalityDashboardPage extends ConsumerWidget {
     try {
       await ref
           .read(personalityAssessmentRepositoryProvider)
-          .delete(assessmentId);
-      ref.invalidate(personalityAssessmentsProvider(patientId));
-      if (context.mounted) context.pop(true);
+          .delete(widget.assessmentId);
+      ref.invalidate(personalityAssessmentsProvider(widget.patientId));
+      if (mounted) context.pop(true);
     } catch (e) {
-      if (context.mounted) showErrorBanner(context, e);
+      if (mounted) showErrorBanner(context, e);
     }
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final async = ref.watch(personalityAssessmentByIdProvider(assessmentId));
+  Widget build(BuildContext context) {
+    final async =
+        ref.watch(personalityAssessmentByIdProvider(widget.assessmentId));
     return AppScaffold(
       title: 'Perfil de personalidade',
       accent: AppColors.purple,
       actions: [
         IconButton(
           tooltip: 'Editar',
-          onPressed: () async {
-            await context.push(
-              PersonalityAssessmentRoutes.staffEdit(
-                role: role,
-                patientId: patientId,
-                assessmentId: assessmentId,
-              ),
-            );
-            ref.invalidate(personalityAssessmentByIdProvider(assessmentId));
-          },
+          onPressed: _navigating ? null : _openEdit,
           icon: const Icon(Icons.edit_outlined),
         ),
         IconButton(
           tooltip: 'Excluir avaliação',
-          onPressed: () => _confirmDelete(context, ref),
+          onPressed: _confirmDelete,
           icon: const Icon(Icons.delete_outline),
         ),
       ],
@@ -97,9 +118,9 @@ class PersonalityDashboardPage extends ConsumerWidget {
           }
           return _Body(
             assessment: a,
-            role: role,
-            patientId: patientId,
-            assessmentId: assessmentId,
+            role: widget.role,
+            patientId: widget.patientId,
+            assessmentId: widget.assessmentId,
           );
         },
       ),
@@ -107,7 +128,7 @@ class PersonalityDashboardPage extends ConsumerWidget {
   }
 }
 
-class _Body extends StatelessWidget {
+class _Body extends StatefulWidget {
   const _Body({
     required this.assessment,
     required this.role,
@@ -121,7 +142,28 @@ class _Body extends StatelessWidget {
   final String assessmentId;
 
   @override
+  State<_Body> createState() => _BodyState();
+}
+
+class _BodyState extends State<_Body> {
+  bool _navigating = false;
+
+  Future<void> _push(String route) async {
+    if (_navigating || !mounted) return;
+    setState(() => _navigating = true);
+    try {
+      await context.push(route);
+    } finally {
+      if (mounted) setState(() => _navigating = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final assessment = widget.assessment;
+    final role = widget.role;
+    final patientId = widget.patientId;
+    final assessmentId = widget.assessmentId;
     final def = assessment.instrumentDef;
     return ListView(
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 32),
@@ -145,13 +187,15 @@ class _Body extends StatelessWidget {
             side: const BorderSide(color: AppColors.purple),
             minimumSize: const Size.fromHeight(44),
           ),
-          onPressed: () => context.push(
-            PersonalityAssessmentRoutes.staffSynthesis(
-              role: role,
-              patientId: patientId,
-              assessmentId: assessmentId,
-            ),
-          ),
+          onPressed: _navigating
+              ? null
+              : () => _push(
+                    PersonalityAssessmentRoutes.staffSynthesis(
+                      role: role,
+                      patientId: patientId,
+                      assessmentId: assessmentId,
+                    ),
+                  ),
           icon: const Icon(Icons.edit_note_outlined),
           label: Text(
             assessment.hasSynthesis || assessment.hasIntegration

@@ -47,6 +47,8 @@ class _GenogramPersonFormPageState
   final _notesController = TextEditingController();
 
   GenogramGender? _gender;
+  String? _illnessType;
+  String? _pregnancyLossType;
   bool _isDeceased = false;
   bool _isSensitive = false;
   bool _saving = false;
@@ -74,6 +76,8 @@ class _GenogramPersonFormPageState
         input.deathYear != null ? '${input.deathYear}' : '';
     _notesController.text = input.notes ?? '';
     _gender = input.gender;
+    _illnessType = input.illnessType;
+    _pregnancyLossType = input.pregnancyLossType;
     _isDeceased = input.isDeceased;
     _isSensitive = input.isSensitive;
   }
@@ -92,6 +96,8 @@ class _GenogramPersonFormPageState
       birthYear: _parseYear(_birthYearController.text),
       deathYear: _parseYear(_deathYearController.text),
       isDeceased: _isDeceased,
+      illnessType: _illnessType,
+      pregnancyLossType: _pregnancyLossType,
       notes: _notesController.text,
       isSensitive: _isSensitive,
     );
@@ -266,6 +272,62 @@ class _GenogramPersonFormPageState
                   ),
                 ],
                 onChanged: (v) => setState(() => _gender = v),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              DropdownButtonFormField<String?>(
+                initialValue: _pregnancyLossType,
+                decoration: const InputDecoration(
+                  labelText: 'Perda gestacional',
+                  helperText:
+                      'Substitui o símbolo padrão por um triângulo no genograma.',
+                ),
+                items: const [
+                  DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('Nenhuma'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'miscarriage',
+                    child: Text('Aborto espontâneo'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'stillbirth',
+                    child: Text('Natimorto'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'abortion',
+                    child: Text('Interrupção voluntária'),
+                  ),
+                ],
+                onChanged: (v) => setState(() => _pregnancyLossType = v),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              DropdownButtonFormField<String?>(
+                initialValue: _illnessType,
+                decoration: const InputDecoration(
+                  labelText: 'Adoecimento / condição de saúde',
+                  helperText:
+                      'Preenche a metade inferior do símbolo com uma cor de destaque.',
+                ),
+                items: const [
+                  DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('Sem condição registrada'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'physical',
+                    child: Text('Doença física'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'mental',
+                    child: Text('Transtorno mental'),
+                  ),
+                  DropdownMenuItem(
+                    value: 'both',
+                    child: Text('Física e mental'),
+                  ),
+                ],
+                onChanged: (v) => setState(() => _illnessType = v),
               ),
               const SizedBox(height: AppSpacing.lg),
               const AppSectionHeader(

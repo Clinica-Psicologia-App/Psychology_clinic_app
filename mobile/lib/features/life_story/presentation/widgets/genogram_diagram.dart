@@ -436,8 +436,11 @@ class _GenogramPainter extends CustomPainter {
         return const _BondStyle(_BondKind.conflict, Color(0xFFB5651D));
       case GenogramRelationshipType.ruptured:
         return const _BondStyle(_BondKind.broken, Color(0xFFB03A3A));
+      case GenogramRelationshipType.closeAndConflict:
+        return const _BondStyle(_BondKind.close, Color(0xFF2E7D6B));
       case GenogramRelationshipType.spouse:
       case GenogramRelationshipType.exSpouse:
+      case GenogramRelationshipType.separation:
       case GenogramRelationshipType.sibling:
       case GenogramRelationshipType.twin:
       case GenogramRelationshipType.parentChild:

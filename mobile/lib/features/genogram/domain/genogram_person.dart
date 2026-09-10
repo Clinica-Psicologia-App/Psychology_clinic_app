@@ -14,6 +14,8 @@ class GenogramPerson {
     this.deathYear,
     required this.isDeceased,
     this.caregiverRole,
+    this.illnessType,
+    this.pregnancyLossType,
     this.notes,
     required this.isSensitive,
     required this.createdAt,
@@ -35,6 +37,16 @@ class GenogramPerson {
   /// Papel de cuidado na criação do paciente (§22): chave crua do banco
   /// (`important` / `partial` / `no` / `dont_know`), sem acoplar ao enum de A.
   final String? caregiverRole;
+
+  /// Condição de saúde/adoecimento: `physical`, `mental` ou `both`.
+  /// Quando preenchido, o símbolo é desenhado com metade preenchida.
+  final String? illnessType;
+
+  /// Tipo de perda gestacional: `miscarriage` (aborto), `stillbirth` (natimorto)
+  /// ou `abortion` (interrupção voluntária). Quando preenchido, o símbolo é um
+  /// pequeno triângulo em vez de círculo/quadrado.
+  final String? pregnancyLossType;
+
   final String? notes;
 
   /// Cuidador(a) principal (teve papel importante) — destaque no genograma.
@@ -73,6 +85,8 @@ class GenogramPerson {
       deathYear: json['death_year'] as int?,
       isDeceased: json['is_deceased'] as bool? ?? false,
       caregiverRole: json['caregiver_role'] as String?,
+      illnessType: json['illness_type'] as String?,
+      pregnancyLossType: json['pregnancy_loss_type'] as String?,
       notes: json['notes'] as String?,
       isSensitive: json['is_sensitive'] as bool? ?? false,
       createdAt: DateTime.parse(json['created_at'] as String).toLocal(),

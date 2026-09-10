@@ -13,7 +13,7 @@ import '../providers/genogram_providers.dart';
 import 'genogram_routes.dart';
 import '../../../shared/widgets/brand_loading.dart';
 
-class GenogramRelationshipDetailPage extends ConsumerWidget {
+class GenogramRelationshipDetailPage extends ConsumerStatefulWidget {
   const GenogramRelationshipDetailPage({
     super.key,
     required this.role,
@@ -26,17 +26,62 @@ class GenogramRelationshipDetailPage extends ConsumerWidget {
   final String? patientId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final relAsync =
-        ref.watch(genogramRelationshipDetailProvider(relationshipId));
+  ConsumerState<GenogramRelationshipDetailPage> createState() =>
+      _GenogramRelationshipDetailPageState();
+}
 
-    final genogramAsync = role == ProfileRole.patient
+class _GenogramRelationshipDetailPageState
+    extends ConsumerState<GenogramRelationshipDetailPage> {
+  bool _navigating = false;
+
+  Future<void> _openEdit() async {
+    if (_navigating || !mounted) return;
+    setState(() => _navigating = true);
+    try {
+      final updated = await context.push<bool>(
+        widget.role == ProfileRole.patient
+            ? GenogramRoutes.patientRelationshipEdit(widget.relationshipId)
+            : GenogramRoutes.staffRelationshipEdit(
+                role: widget.role,
+                patientId: widget.patientId!,
+                relationshipId: widget.relationshipId,
+              ),
+      );
+      if (!mounted) return;
+      if (updated == true) {
+        ref.invalidate(
+          genogramRelationshipDetailProvider(widget.relationshipId),
+        );
+        if (widget.role == ProfileRole.patient) {
+          ref.read(myGenogramProvider.notifier).refresh();
+        } else {
+          ref.invalidate(
+            staffGenogramProvider(
+              StaffGenogramContext(
+                role: widget.role,
+                patientId: widget.patientId!,
+              ),
+            ),
+          );
+        }
+      }
+    } finally {
+      if (mounted) setState(() => _navigating = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final relAsync =
+        ref.watch(genogramRelationshipDetailProvider(widget.relationshipId));
+
+    final genogramAsync = widget.role == ProfileRole.patient
         ? ref.watch(myGenogramProvider)
         : ref.watch(
             staffGenogramProvider(
               StaffGenogramContext(
-                role: role,
-                patientId: patientId!,
+                role: widget.role,
+                patientId: widget.patientId!,
               ),
             ),
           );
@@ -49,7 +94,7 @@ class GenogramRelationshipDetailPage extends ConsumerWidget {
         error: (_, __) => Center(
           child: FilledButton(
             onPressed: () => ref.invalidate(
-              genogramRelationshipDetailProvider(relationshipId),
+              genogramRelationshipDetailProvider(widget.relationshipId),
             ),
             child: const Text('Tentar novamente'),
           ),
@@ -128,38 +173,7 @@ class GenogramRelationshipDetailPage extends ConsumerWidget {
                     Padding(
                       padding: const EdgeInsets.all(AppSpacing.md),
                       child: FilledButton.icon(
-                        onPressed: () async {
-                          final updated = await context.push<bool>(
-                            role == ProfileRole.patient
-                                ? GenogramRoutes.patientRelationshipEdit(
-                                    relationshipId,
-                                  )
-                                : GenogramRoutes.staffRelationshipEdit(
-                                    role: role,
-                                    patientId: patientId!,
-                                    relationshipId: relationshipId,
-                                  ),
-                          );
-                          if (updated == true) {
-                            ref.invalidate(
-                              genogramRelationshipDetailProvider(
-                                relationshipId,
-                              ),
-                            );
-                            if (role == ProfileRole.patient) {
-                              ref.read(myGenogramProvider.notifier).refresh();
-                            } else {
-                              ref.invalidate(
-                                staffGenogramProvider(
-                                  StaffGenogramContext(
-                                    role: role,
-                                    patientId: patientId!,
-                                  ),
-                                ),
-                              );
-                            }
-                          }
-                        },
+                        onPressed: _navigating ? null : _openEdit,
                         icon: const Icon(Icons.edit_outlined),
                         label: const Text('Editar relação'),
                       ),

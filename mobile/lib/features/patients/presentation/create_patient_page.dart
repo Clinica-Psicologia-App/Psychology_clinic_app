@@ -6,12 +6,9 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../shared/utils/brazil_validators.dart';
 import '../../../shared/utils/input_formatters.dart';
 import '../../../shared/widgets/app_motion.dart';
-import '../../../shared/widgets/app_page_header.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
-import '../../../shared/widgets/form_section.dart';
 import '../../../shared/widgets/error_banner.dart';
-import '../../../shared/widgets/status_chip.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../profile/domain/user_profile.dart';
@@ -19,7 +16,7 @@ import '../domain/create_patient_request.dart';
 import '../domain/psychologist_option.dart';
 import '../providers/patients_providers.dart';
 import 'patient_routes.dart';
-import 'package:terapia_esquema/shared/widgets/clay_card.dart';
+import '../../../shared/widgets/form_section.dart' show FormPageBody;
 
 class CreatePatientPage extends ConsumerStatefulWidget {
   const CreatePatientPage({super.key, required this.role});
@@ -54,6 +51,7 @@ class _CreatePatientPageState extends ConsumerState<CreatePatientPage> {
   bool _submitting = false;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _showOptionalFields = false;
 
   static const _fieldSpacing = 16.0;
   static const _genderOptions = [
@@ -105,19 +103,25 @@ class _CreatePatientPageState extends ConsumerState<CreatePatientPage> {
 
   bool get _isAdmin => false;
 
-  InputDecoration _decoration(String label, {String? hint, String? helper}) {
+  // Campos dentro dos cards — underline limpo, sem fill
+  InputDecoration _cardDecoration(String label, {String? hint, String? helper}) {
     return InputDecoration(
       labelText: label,
       hintText: hint,
       helperText: helper,
-      border: const OutlineInputBorder(),
-      filled: true,
-      fillColor:
-          Theme.of(context).colorScheme.surfaceContainerHighest.withValues(
-                alpha: 0.35,
-              ),
+      border: const UnderlineInputBorder(),
+      enabledBorder: UnderlineInputBorder(
+        borderSide: BorderSide(color: AppColors.border, width: 1),
+      ),
+      focusedBorder: UnderlineInputBorder(
+        borderSide: BorderSide(color: AppColors.blue, width: 1.5),
+      ),
+      filled: false,
+      isDense: true,
+      contentPadding: const EdgeInsets.only(bottom: 8, top: 12),
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -142,33 +146,17 @@ class _CreatePatientPageState extends ConsumerState<CreatePatientPage> {
             children: [
               MotionStaggered(
                 children: [
-                  const AppPageHeader(
-                    icon: Icons.person_add_alt_1_outlined,
-                    title: 'Novo paciente',
-                    subtitle:
-                        'Cadastre dados pessoais, acesso inicial e vínculo com o psicólogo responsável.',
-                    metadata: [
-                      StatusChip(
-                        label: 'Cadastro completo',
-                        tone: AppStatusTone.info,
-                        icon: Icons.assignment_ind_outlined,
-                      ),
-                      StatusChip(
-                        label: 'Senha inicial',
-                        tone: AppStatusTone.neutral,
-                        icon: Icons.lock_outline,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  FormSection(
-                    title: 'Dados pessoais',
-                    subtitle: 'Campos com * são obrigatórios.',
-                    icon: Icons.person_outline,
+                  // ── Card 1: Essencial (obrigatório) ──────────────────────
+                  _SectionCard(
+                    title: 'Essencial',
+                    badge: 'obrigatório',
+                    badgeColor: const Color(0xFF3B6D11),
+                    badgeBg: const Color(0xFFEAF3DE),
+                    dotColor: AppColors.blue,
                     children: [
                       TextFormField(
                         controller: _fullNameController,
-                        decoration: _decoration('Nome completo *'),
+                        decoration: _cardDecoration('Nome completo *'),
                         textCapitalization: TextCapitalization.words,
                         textInputAction: TextInputAction.next,
                         validator: (v) => v == null || v.trim().isEmpty
@@ -178,7 +166,7 @@ class _CreatePatientPageState extends ConsumerState<CreatePatientPage> {
                       const SizedBox(height: _fieldSpacing),
                       TextFormField(
                         controller: _emailController,
-                        decoration: _decoration(
+                        decoration: _cardDecoration(
                           'E-mail de login *',
                           hint: 'paciente@exemplo.com',
                         ),
@@ -194,184 +182,9 @@ class _CreatePatientPageState extends ConsumerState<CreatePatientPage> {
                         },
                       ),
                       const SizedBox(height: _fieldSpacing),
-                      _SimpleDropdownField(
-                        label: 'Gênero',
-                        value: _selectedGender,
-                        hint: 'Selecione',
-                        options: _genderOptions,
-                        onChanged: (value) =>
-                            setState(() => _selectedGender = value),
-                      ),
-                      const SizedBox(height: _fieldSpacing),
-                      TextFormField(
-                        controller: _phoneController,
-                        decoration: _decoration(
-                          'Telefone',
-                          hint: '(51) 99999-9999',
-                        ),
-                        keyboardType: TextInputType.phone,
-                        textInputAction: TextInputAction.next,
-                        inputFormatters: [BrazilPhoneInputFormatter()],
-                        validator: validateOptionalPhone,
-                      ),
-                      const SizedBox(height: _fieldSpacing),
-                      TextFormField(
-                        controller: _cpfController,
-                        decoration: _decoration(
-                          'CPF',
-                          hint: '000.000.000-00',
-                          helper: 'Opcional',
-                        ),
-                        keyboardType: TextInputType.number,
-                        textInputAction: TextInputAction.next,
-                        inputFormatters: [CpfInputFormatter()],
-                        validator: validateOptionalCpf,
-                      ),
-                      const SizedBox(height: _fieldSpacing),
-                      _SimpleDropdownField(
-                        label: 'Estado civil',
-                        value: _selectedRelationshipStatus,
-                        hint: 'Selecione',
-                        options: _relationshipStatusOptions,
-                        onChanged: (value) =>
-                            setState(() => _selectedRelationshipStatus = value),
-                      ),
-                      const SizedBox(height: _fieldSpacing),
-                      _SimpleDropdownField(
-                        label: 'Escolaridade',
-                        value: _selectedEducationLevel,
-                        hint: 'Selecione',
-                        options: _educationLevelOptions,
-                        onChanged: (value) =>
-                            setState(() => _selectedEducationLevel = value),
-                      ),
-                      const SizedBox(height: _fieldSpacing),
-                      TextFormField(
-                        controller: _occupationController,
-                        decoration: _decoration(
-                          'Ocupação',
-                          hint: 'Ex.: Psicóloga clínica',
-                        ),
-                        textCapitalization: TextCapitalization.sentences,
-                        textInputAction: TextInputAction.next,
-                      ),
-                      const SizedBox(height: _fieldSpacing),
-                      InkWell(
-                        onTap: _pickBirthDate,
-                        borderRadius: BorderRadius.circular(4),
-                        child: InputDecorator(
-                          decoration: _decoration(
-                            'Data de nascimento',
-                            hint: 'Toque para selecionar',
-                          ).copyWith(
-                            suffixIcon: IconButton(
-                              icon: const Icon(Icons.calendar_today_outlined),
-                              onPressed: _pickBirthDate,
-                            ),
-                          ),
-                          child: Text(
-                            _birthDate == null
-                                ? 'Opcional'
-                                : _formatDate(_birthDate!),
-                            style:
-                                Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                      color: _birthDate == null
-                                          ? Theme.of(context)
-                                              .colorScheme
-                                              .onSurfaceVariant
-                                          : null,
-                                    ),
-                          ),
-                        ),
-                      ),
-                      if (_birthDate != null) ...[
-                        const SizedBox(height: 8),
-                        Align(
-                          alignment: Alignment.centerLeft,
-                          child: TextButton.icon(
-                            onPressed: () => setState(() => _birthDate = null),
-                            icon: const Icon(Icons.clear, size: 18),
-                            label: const Text('Limpar data'),
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: _fieldSpacing),
-                      TextFormField(
-                        controller: _stateBirthController,
-                        decoration: _decoration(
-                          'Estado de nascimento',
-                          hint: 'Ex.: Rio Grande do Sul',
-                        ),
-                        textCapitalization: TextCapitalization.words,
-                        textInputAction: TextInputAction.next,
-                      ),
-                      const SizedBox(height: _fieldSpacing),
-                      TextFormField(
-                        controller: _countryBirthController,
-                        decoration: _decoration(
-                          'País de nascimento',
-                          hint: 'Ex.: Brasil',
-                        ),
-                        textCapitalization: TextCapitalization.words,
-                        textInputAction: TextInputAction.next,
-                      ),
-                      const SizedBox(height: _fieldSpacing),
-                      TextFormField(
-                        controller: _religiousOrientationController,
-                        decoration: _decoration(
-                          'Orientação religiosa',
-                          hint: 'Opcional',
-                        ),
-                        textCapitalization: TextCapitalization.words,
-                        textInputAction: TextInputAction.next,
-                      ),
-                      const SizedBox(height: _fieldSpacing),
-                      TextFormField(
-                        controller: _ethnicGroupController,
-                        decoration: _decoration(
-                          'Grupo étnico',
-                          hint: 'Opcional',
-                        ),
-                        textCapitalization: TextCapitalization.words,
-                        textInputAction: TextInputAction.next,
-                      ),
-                      const SizedBox(height: _fieldSpacing),
-                      TextFormField(
-                        controller: _sexualOrientationController,
-                        decoration: _decoration(
-                          'Orientação sexual',
-                          hint: 'Opcional',
-                        ),
-                        textCapitalization: TextCapitalization.sentences,
-                        textInputAction: TextInputAction.next,
-                      ),
-                      const SizedBox(height: _fieldSpacing),
-                      _SimpleDropdownField(
-                        label: 'Possui filhos?',
-                        value: switch (_hasChildren) {
-                          true => 'Sim',
-                          false => 'Não',
-                          null => null,
-                        },
-                        hint: 'Selecione',
-                        options: const ['Sim', 'Não'],
-                        onChanged: (value) => setState(
-                          () => _hasChildren = switch (value) {
-                            'Sim' => true,
-                            'Não' => false,
-                            _ => null,
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
-                  FormSection(
-                    title: 'Acesso e responsável',
-                    icon: Icons.lock_outline,
-                    children: [
                       TextFormField(
                         controller: _passwordController,
-                        decoration: _decoration(
+                        decoration: _cardDecoration(
                           'Senha inicial *',
                           helper: 'Mínimo 8 caracteres',
                         ).copyWith(
@@ -397,7 +210,7 @@ class _CreatePatientPageState extends ConsumerState<CreatePatientPage> {
                       const SizedBox(height: _fieldSpacing),
                       TextFormField(
                         controller: _confirmPasswordController,
-                        decoration: _decoration('Confirmar senha *').copyWith(
+                        decoration: _cardDecoration('Confirmar senha *').copyWith(
                           suffixIcon: IconButton(
                             icon: Icon(
                               _obscureConfirmPassword
@@ -426,51 +239,263 @@ class _CreatePatientPageState extends ConsumerState<CreatePatientPage> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: _fieldSpacing),
-                      if (_isAdmin)
-                        psychologistsAsync.when(
-                          loading: () => const Center(
-                            child: Padding(
-                              padding: EdgeInsets.all(16),
-                              child: CircularProgressIndicator(),
-                            ),
-                          ),
-                          error: (_, __) => const Text(
-                            'Não foi possível carregar psicólogos.',
-                          ),
-                          data: (options) => _PsychologistDropdown(
-                            options: options,
-                            value: _selectedPsychologistId,
-                            onChanged: (v) =>
-                                setState(() => _selectedPsychologistId = v),
-                          ),
-                        )
-                      else if (profile != null)
-                        ClayCard(
-                          color: Theme.of(context)
-                              .colorScheme
-                              .surfaceContainerHighest,
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              child: Icon(
-                                Icons.psychology_outlined,
-                                color: Theme.of(context)
-                                    .colorScheme
-                                    .onPrimaryContainer,
-                              ),
-                            ),
-                            title: const Text('Psicólogo responsável'),
-                            subtitle: Text(
-                              profile.fullName,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ),
                     ],
                   ),
+                  const SizedBox(height: AppSpacing.md),
+
+                  // ── Card 2: Perfil clínico (opcional, recolhível) ─────────
+                  _SectionCard(
+                    title: 'Perfil clínico',
+                    badge: 'opcional',
+                    badgeColor: const Color(0xFF6B7A99),
+                    badgeBg: const Color(0xFFF0F4FB),
+                    dotColor: const Color(0xFF8892A4),
+                    trailing: TextButton(
+                      onPressed: () => setState(
+                          () => _showOptionalFields = !_showOptionalFields),
+                      child: Text(
+                        _showOptionalFields ? 'Recolher ↑' : 'Expandir ↓',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: AppColors.blue,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    children: _showOptionalFields
+                        ? [
+                            _SimpleDropdownField(
+                              label: 'Gênero',
+                              value: _selectedGender,
+                              hint: 'Selecione',
+                              options: _genderOptions,
+                              onChanged: (value) =>
+                                  setState(() => _selectedGender = value),
+                              cardStyle: true,
+                            ),
+                            const SizedBox(height: _fieldSpacing),
+                            InkWell(
+                              onTap: _pickBirthDate,
+                              borderRadius: BorderRadius.circular(4),
+                              child: InputDecorator(
+                                decoration: _cardDecoration(
+                                  'Data de nascimento',
+                                ).copyWith(
+                                  suffixIcon: IconButton(
+                                    icon: const Icon(
+                                        Icons.calendar_today_outlined),
+                                    onPressed: _pickBirthDate,
+                                  ),
+                                ),
+                                child: Text(
+                                  _birthDate == null
+                                      ? ''
+                                      : _formatDate(_birthDate!),
+                                  style: Theme.of(context)
+                                      .textTheme
+                                      .bodyLarge
+                                      ?.copyWith(
+                                        color: _birthDate == null
+                                            ? Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant
+                                            : null,
+                                      ),
+                                ),
+                              ),
+                            ),
+                            if (_birthDate != null) ...[
+                              const SizedBox(height: 4),
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: TextButton.icon(
+                                  onPressed: () =>
+                                      setState(() => _birthDate = null),
+                                  icon: const Icon(Icons.clear, size: 16),
+                                  label: const Text('Limpar data'),
+                                  style: TextButton.styleFrom(
+                                    padding: EdgeInsets.zero,
+                                    tapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: _fieldSpacing),
+                            TextFormField(
+                              controller: _phoneController,
+                              decoration: _cardDecoration('Telefone',
+                                  hint: '(51) 99999-9999'),
+                              keyboardType: TextInputType.phone,
+                              textInputAction: TextInputAction.next,
+                              inputFormatters: [BrazilPhoneInputFormatter()],
+                              validator: validateOptionalPhone,
+                            ),
+                            const SizedBox(height: _fieldSpacing),
+                            TextFormField(
+                              controller: _cpfController,
+                              decoration: _cardDecoration('CPF',
+                                  hint: '000.000.000-00'),
+                              keyboardType: TextInputType.number,
+                              textInputAction: TextInputAction.next,
+                              inputFormatters: [CpfInputFormatter()],
+                              validator: validateOptionalCpf,
+                            ),
+                            const SizedBox(height: _fieldSpacing),
+                            _SimpleDropdownField(
+                              label: 'Estado civil',
+                              value: _selectedRelationshipStatus,
+                              hint: 'Selecione',
+                              options: _relationshipStatusOptions,
+                              onChanged: (value) => setState(
+                                  () => _selectedRelationshipStatus = value),
+                              cardStyle: true,
+                            ),
+                            const SizedBox(height: _fieldSpacing),
+                            _SimpleDropdownField(
+                              label: 'Escolaridade',
+                              value: _selectedEducationLevel,
+                              hint: 'Selecione',
+                              options: _educationLevelOptions,
+                              onChanged: (value) => setState(
+                                  () => _selectedEducationLevel = value),
+                              cardStyle: true,
+                            ),
+                            const SizedBox(height: _fieldSpacing),
+                            TextFormField(
+                              controller: _occupationController,
+                              decoration: _cardDecoration('Ocupação',
+                                  hint: 'Ex.: Jornalista'),
+                              textCapitalization: TextCapitalization.sentences,
+                              textInputAction: TextInputAction.next,
+                            ),
+                            const SizedBox(height: _fieldSpacing),
+                            TextFormField(
+                              controller: _stateBirthController,
+                              decoration: _cardDecoration(
+                                  'Estado de nascimento',
+                                  hint: 'Ex.: Rio Grande do Sul'),
+                              textCapitalization: TextCapitalization.words,
+                              textInputAction: TextInputAction.next,
+                            ),
+                            const SizedBox(height: _fieldSpacing),
+                            TextFormField(
+                              controller: _countryBirthController,
+                              decoration: _cardDecoration('País de nascimento',
+                                  hint: 'Ex.: Brasil'),
+                              textCapitalization: TextCapitalization.words,
+                              textInputAction: TextInputAction.next,
+                            ),
+                            const SizedBox(height: _fieldSpacing),
+                            TextFormField(
+                              controller: _religiousOrientationController,
+                              decoration:
+                                  _cardDecoration('Orientação religiosa'),
+                              textCapitalization: TextCapitalization.words,
+                              textInputAction: TextInputAction.next,
+                            ),
+                            const SizedBox(height: _fieldSpacing),
+                            TextFormField(
+                              controller: _ethnicGroupController,
+                              decoration: _cardDecoration('Grupo étnico'),
+                              textCapitalization: TextCapitalization.words,
+                              textInputAction: TextInputAction.next,
+                            ),
+                            const SizedBox(height: _fieldSpacing),
+                            TextFormField(
+                              controller: _sexualOrientationController,
+                              decoration: _cardDecoration('Orientação sexual'),
+                              textCapitalization: TextCapitalization.sentences,
+                              textInputAction: TextInputAction.next,
+                            ),
+                            const SizedBox(height: _fieldSpacing),
+                            _SimpleDropdownField(
+                              label: 'Possui filhos?',
+                              value: switch (_hasChildren) {
+                                true => 'Sim',
+                                false => 'Não',
+                                null => null,
+                              },
+                              hint: 'Selecione',
+                              options: const ['Sim', 'Não'],
+                              onChanged: (value) => setState(
+                                () => _hasChildren = switch (value) {
+                                  'Sim' => true,
+                                  'Não' => false,
+                                  _ => null,
+                                },
+                              ),
+                              cardStyle: true,
+                            ),
+                          ]
+                        : const [],
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+
+                  // ── Psicólogo responsável ─────────────────────────────────
+                  if (_isAdmin)
+                    psychologistsAsync.when(
+                      loading: () => const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(16),
+                          child: CircularProgressIndicator(),
+                        ),
+                      ),
+                      error: (_, __) => const Text(
+                        'Não foi possível carregar psicólogos.',
+                      ),
+                      data: (options) => _PsychologistDropdown(
+                        options: options,
+                        value: _selectedPsychologistId,
+                        onChanged: (v) =>
+                            setState(() => _selectedPsychologistId = v),
+                      ),
+                    )
+                  else if (profile != null)
+                    _SectionCard(
+                      title: 'Responsável',
+                      badge: null,
+                      badgeColor: Colors.transparent,
+                      badgeBg: Colors.transparent,
+                      dotColor: AppColors.blue,
+                      children: [
+                        Row(
+                          children: [
+                            CircleAvatar(
+                              backgroundColor:
+                                  AppColors.blue.withValues(alpha: 0.12),
+                              child: Icon(Icons.psychology_outlined,
+                                  color: AppColors.blue, size: 20),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Psicólogo responsável',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .labelMedium
+                                          ?.copyWith(
+                                              color: AppColors.textSecondary)),
+                                  Text(profile.fullName,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.copyWith(
+                                              fontWeight: FontWeight.w600)),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                 ],
               ),
+              const SizedBox(height: AppSpacing.sm),
               FilledButton.icon(
                 onPressed:
                     _submitting || profile == null || psychologistId == null
@@ -589,6 +614,7 @@ class _SimpleDropdownField extends StatelessWidget {
     required this.hint,
     required this.options,
     required this.onChanged,
+    this.cardStyle = false,
   });
 
   final String label;
@@ -596,21 +622,41 @@ class _SimpleDropdownField extends StatelessWidget {
   final String hint;
   final List<String> options;
   final ValueChanged<String?> onChanged;
+  final bool cardStyle;
 
   @override
   Widget build(BuildContext context) {
+    final InputDecoration deco = cardStyle
+        ? InputDecoration(
+            labelText: label,
+            border: const UnderlineInputBorder(),
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(
+                  color: Theme.of(context).colorScheme.outlineVariant,
+                  width: 1),
+            ),
+            focusedBorder: UnderlineInputBorder(
+              borderSide:
+                  BorderSide(color: AppColors.blue, width: 1.5),
+            ),
+            filled: false,
+            isDense: true,
+            contentPadding:
+                const EdgeInsets.only(bottom: 8, top: 12),
+          )
+        : InputDecoration(
+            labelText: label,
+            border: const OutlineInputBorder(),
+            filled: true,
+            fillColor: Theme.of(context)
+                .colorScheme
+                .surfaceContainerHighest
+                .withValues(alpha: 0.35),
+          );
     return DropdownButtonFormField<String>(
       initialValue: value,
       isExpanded: true,
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-        filled: true,
-        fillColor: Theme.of(context)
-            .colorScheme
-            .surfaceContainerHighest
-            .withValues(alpha: 0.35),
-      ),
+      decoration: deco,
       hint: Text(hint),
       items: options
           .map(
@@ -621,6 +667,95 @@ class _SimpleDropdownField extends StatelessWidget {
           )
           .toList(),
       onChanged: onChanged,
+    );
+  }
+}
+
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({
+    required this.title,
+    required this.badge,
+    required this.badgeColor,
+    required this.badgeBg,
+    required this.dotColor,
+    required this.children,
+    this.trailing,
+  });
+
+  final String title;
+  final String? badge;
+  final Color badgeColor;
+  final Color badgeBg;
+  final Color dotColor;
+  final List<Widget> children;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      elevation: 0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+          width: 1,
+        ),
+      ),
+      color: Theme.of(context).colorScheme.surface,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 8,
+                  height: 8,
+                  margin: const EdgeInsets.only(right: 8),
+                  decoration: BoxDecoration(
+                    color: dotColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.2,
+                      ),
+                ),
+                if (badge != null) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: badgeBg,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      badge!,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: badgeColor,
+                        letterSpacing: 0.2,
+                      ),
+                    ),
+                  ),
+                ],
+                const Spacer(),
+                if (trailing != null) trailing!,
+              ],
+            ),
+            if (children.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              ...children,
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

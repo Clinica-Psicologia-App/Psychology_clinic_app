@@ -143,7 +143,7 @@ class _GenogramPageBody extends StatelessWidget {
   }
 }
 
-class _GenogramContent extends StatelessWidget {
+class _GenogramContent extends StatefulWidget {
   const _GenogramContent({
     required this.data,
     required this.personCreateRoute,
@@ -163,7 +163,26 @@ class _GenogramContent extends StatelessWidget {
   final String? familyPatternsPatientId;
 
   @override
+  State<_GenogramContent> createState() => _GenogramContentState();
+}
+
+class _GenogramContentState extends State<_GenogramContent> {
+  bool _navigating = false;
+
+  Future<void> _push(String route) async {
+    if (_navigating || !mounted) return;
+    _navigating = true;
+    try {
+      await context.push(route);
+      if (mounted) widget.onDataChanged();
+    } finally {
+      if (mounted) _navigating = false;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final data = widget.data;
     final sensitivePeople = data.people.where((p) => p.isSensitive).length;
     final sensitiveRelationships =
         data.relationships.where((r) => r.isSensitive).length;
@@ -201,21 +220,14 @@ class _GenogramContent extends StatelessWidget {
               ),
           ],
           primaryAction: FilledButton.icon(
-            onPressed: () async {
-              final created = await context.push<bool>(personCreateRoute);
-              if (created == true) onDataChanged();
-            },
+            onPressed: () => _push(widget.personCreateRoute),
             icon: const Icon(Icons.person_add_outlined),
             label: const Text('Nova pessoa'),
           ),
           secondaryAction: OutlinedButton.icon(
             onPressed: data.people.length < 2
                 ? null
-                : () async {
-                    final created =
-                        await context.push<bool>(relationshipCreateRoute);
-                    if (created == true) onDataChanged();
-                  },
+                : () => _push(widget.relationshipCreateRoute),
             icon: const Icon(Icons.add_link),
             label: Text(
               data.people.length < 2 ? 'Relação indisponível' : 'Nova relação',
@@ -226,9 +238,11 @@ class _GenogramContent extends StatelessWidget {
         const GenogramGraphicNotice(),
         const SizedBox(height: AppSpacing.md),
         GenogramSummaryCard(data: data),
+        const SizedBox(height: AppSpacing.sm),
+        const GenogramLegendCard(),
         const SizedBox(height: AppSpacing.md),
-        if (familyPatternsPatientId != null) ...[
-          FamilyPatternsCard(patientId: familyPatternsPatientId!),
+        if (widget.familyPatternsPatientId != null) ...[
+          FamilyPatternsCard(patientId: widget.familyPatternsPatientId!),
           const SizedBox(height: AppSpacing.lg),
         ],
         const AppSectionHeader(
@@ -247,10 +261,7 @@ class _GenogramContent extends StatelessWidget {
               for (final p in data.people)
                 GenogramPersonTile(
                   person: p,
-                  onTap: () async {
-                    await context.push(personDetailRoute(p.id));
-                    onDataChanged();
-                  },
+                  onTap: () => _push(widget.personDetailRoute(p.id)),
                 ),
             ],
           ),
@@ -272,10 +283,7 @@ class _GenogramContent extends StatelessWidget {
                 GenogramRelationshipTile(
                   relationship: r,
                   data: data,
-                  onTap: () async {
-                    await context.push(relationshipDetailRoute(r.id));
-                    onDataChanged();
-                  },
+                  onTap: () => _push(widget.relationshipDetailRoute(r.id)),
                 ),
             ],
           ),

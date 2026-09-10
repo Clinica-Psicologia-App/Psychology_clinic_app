@@ -193,6 +193,7 @@ List<GEdgeProposal> proposeStructure({
         existingParentChild.add('${e.a}>${e.b}');
       case GEdgeType.spouse:
       case GEdgeType.exSpouse:
+      case GEdgeType.separation:
         existingCouples.add(_coupleKey(e.a, e.b));
     }
   }

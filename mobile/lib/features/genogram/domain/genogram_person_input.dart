@@ -9,6 +9,8 @@ class GenogramPersonInput {
     this.birthYear,
     this.deathYear,
     this.isDeceased = false,
+    this.illnessType,
+    this.pregnancyLossType,
     this.notes,
     this.isSensitive = false,
   });
@@ -19,6 +21,13 @@ class GenogramPersonInput {
   final int? birthYear;
   final int? deathYear;
   final bool isDeceased;
+
+  /// `physical` | `mental` | `both` — exibe meia-tinta no símbolo.
+  final String? illnessType;
+
+  /// `miscarriage` | `stillbirth` | `abortion` — exibe triângulo no genograma.
+  final String? pregnancyLossType;
+
   final String? notes;
   final bool isSensitive;
 
@@ -30,6 +39,8 @@ class GenogramPersonInput {
       birthYear: person.birthYear,
       deathYear: person.deathYear,
       isDeceased: person.isDeceased,
+      illnessType: person.illnessType,
+      pregnancyLossType: person.pregnancyLossType,
       notes: person.notes,
       isSensitive: person.isSensitive,
     );
@@ -67,6 +78,8 @@ class GenogramPersonInput {
       if (birthYear != null) 'birth_year': birthYear,
       if (deathYear != null) 'death_year': deathYear,
       'is_deceased': isDeceased,
+      'illness_type': illnessType,
+      'pregnancy_loss_type': pregnancyLossType,
       'notes': _nullableTrim(notes),
       'is_sensitive': isSensitive,
     };

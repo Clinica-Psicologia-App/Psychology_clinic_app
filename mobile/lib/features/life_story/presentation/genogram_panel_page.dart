@@ -111,30 +111,23 @@ class GenogramPanelPage extends ConsumerWidget {
               // modo que ver e editar convivem num só lugar.
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
-                child: OutlinedButton.icon(
-                  onPressed: () => context.push(
-                    GenogramRoutes.staffList(
-                      role: ProfileRole.psychologist,
-                      patientId: patientId,
-                    ),
+                child: _NavGuardButton.outlined(
+                  route: GenogramRoutes.staffList(
+                    role: ProfileRole.psychologist,
+                    patientId: patientId,
                   ),
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(46),
-                  ),
-                  label: const Text('Editar pessoas e relações'),
+                  icon: Icons.edit_outlined,
+                  label: 'Editar pessoas e relações',
                 ),
               ),
               // Bootstrap: infere os vínculos estruturais (casamento, pai/mãe–
               // filho) a partir dos papéis, para o terapeuta só confirmar.
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
-                child: TextButton.icon(
-                  onPressed: () => context.push(
-                    GenogramRoutes.bootstrapFor(patientId),
-                  ),
-                  icon: const Icon(Icons.auto_fix_high_outlined, size: 18),
-                  label: const Text('Sugerir vínculos a partir dos papéis'),
+                child: _NavGuardButton.text(
+                  route: GenogramRoutes.bootstrapFor(patientId),
+                  icon: Icons.auto_fix_high_outlined,
+                  label: 'Sugerir vínculos a partir dos papéis',
                 ),
               ),
               _StructureBlock(people: people, patientId: patientId),
@@ -676,5 +669,69 @@ class _WrapChips extends StatelessWidget {
           ),
       ],
     );
+  }
+}
+
+/// Botão com guard de duplo-toque para navegação via [context.push].
+/// Evita o erro `keyReservation.contains(key)` causado por duplas chamadas ao
+/// navigator antes da animação de transição completar.
+class _NavGuardButton extends StatefulWidget {
+  const _NavGuardButton.outlined({
+    required this.route,
+    required this.icon,
+    required this.label,
+  }) : _variant = _Variant.outlined;
+
+  const _NavGuardButton.text({
+    required this.route,
+    required this.icon,
+    required this.label,
+  }) : _variant = _Variant.text;
+
+  final String route;
+  final IconData icon;
+  final String label;
+  final _Variant _variant;
+
+  @override
+  State<_NavGuardButton> createState() => _NavGuardButtonState();
+}
+
+enum _Variant { outlined, text }
+
+class _NavGuardButtonState extends State<_NavGuardButton> {
+  bool _navigating = false;
+
+  Future<void> _push() async {
+    if (_navigating || !mounted) return;
+    setState(() => _navigating = true);
+    try {
+      await context.push(widget.route);
+    } finally {
+      if (mounted) setState(() => _navigating = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = Icon(widget.icon, size: 18);
+    final label = Text(widget.label);
+    final onPressed = _navigating ? null : _push;
+
+    return switch (widget._variant) {
+      _Variant.outlined => OutlinedButton.icon(
+          onPressed: onPressed,
+          icon: icon,
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size.fromHeight(46),
+          ),
+          label: label,
+        ),
+      _Variant.text => TextButton.icon(
+          onPressed: onPressed,
+          icon: icon,
+          label: label,
+        ),
+    };
   }
 }

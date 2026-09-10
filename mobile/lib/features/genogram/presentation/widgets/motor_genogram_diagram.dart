@@ -260,9 +260,12 @@ class _MotorGenogramPainter extends CustomPainter {
       ..color = _teal.withValues(alpha: 0.20 - 0.12 * pulse)
       ..style = PaintingStyle.fill;
 
-    final isFemale = byId[n.id]?.gender == GenogramGender.female;
-    if (isFemale) {
+    final gender = byId[n.id]?.gender;
+    if (gender == GenogramGender.female) {
       canvas.drawCircle(c, r, paint);
+    } else if (gender == GenogramGender.unknown ||
+        gender == GenogramGender.other) {
+      _drawDiamond(canvas, c, r, paint);
     } else {
       canvas.drawRect(
         Rect.fromCenter(center: c, width: r * 2, height: r * 2),
@@ -271,27 +274,54 @@ class _MotorGenogramPainter extends CustomPainter {
     }
   }
 
+  /// Desenha um losango (diamante) centrado em [c] com "raio" [r].
+  void _drawDiamond(Canvas canvas, Offset c, double r, Paint paint) {
+    final path = Path()
+      ..moveTo(c.dx, c.dy - r)
+      ..lineTo(c.dx + r, c.dy)
+      ..lineTo(c.dx, c.dy + r)
+      ..lineTo(c.dx - r, c.dy)
+      ..close();
+    canvas.drawPath(path, paint);
+  }
+
   // ── Camada emocional (overlay) ─────────────────────────────────────────────
   void _emotionalLayer(Canvas canvas) {
     for (final e in emotional) {
       final a = _p(e.a), b = _p(e.b);
       if (a == null || b == null) continue;
+      if (e.kind == GEmotion.closeAndConflict) {
+        // Linha dupla (próxima) + zigzag por cima (conflituosa)
+        _styledLine(canvas, Offset(a.x, a.y), Offset(b.x, b.y),
+            _CurveKind.doubleLine, _green,
+            fromId: e.a, toId: e.b);
+        _styledLine(canvas, Offset(a.x, a.y), Offset(b.x, b.y),
+            _CurveKind.zigzag, _ochre,
+            fromId: e.a, toId: e.b);
+        continue;
+      }
       final (color, draw) = switch (e.kind) {
         GEmotion.close => (_green, _CurveKind.doubleLine),
         GEmotion.distant => (const Color(0xFF6B7A90), _CurveKind.dashed),
         GEmotion.conflict => (_ochre, _CurveKind.zigzag),
         GEmotion.broken => (_red, _CurveKind.slashed),
+        GEmotion.closeAndConflict => (_green, _CurveKind.doubleLine), // unreachable
       };
       _styledLine(canvas, Offset(a.x, a.y), Offset(b.x, b.y), draw, color,
           fromId: e.a, toId: e.b);
     }
   }
 
-  /// Distância do centro até a borda do símbolo na direção `unit`. Círculo é o
-  /// raio; quadrado depende do ângulo (no canto a borda fica mais longe).
+  /// Distância do centro até a borda do símbolo na direção `unit`.
   double _edgeDistance(String id, Offset unit) {
-    final isFemale = byId[id]?.gender == GenogramGender.female;
-    if (isFemale) return _r;
+    final gender = byId[id]?.gender;
+    if (gender == GenogramGender.female) return _r;
+    if (gender == GenogramGender.unknown || gender == GenogramGender.other) {
+      // Losango: borda = r / (|cos| + |sin|) no espaço rotacionado 45°
+      final ax = unit.dx.abs(), ay = unit.dy.abs();
+      final denom = ax + ay;
+      return denom < 1e-6 ? _r : _r / denom * math.sqrt2;
+    }
     final m = math.max(unit.dx.abs(), unit.dy.abs());
     return m < 1e-6 ? _r : _r / m;
   }
@@ -398,7 +428,7 @@ class _MotorGenogramPainter extends CustomPainter {
       final right = a.x < b.x ? b : a;
       canvas.drawLine(
           Offset(left.x + _r, left.y), Offset(right.x - _r, right.y), paint);
-      // Divórcio/separação: duas barras "//" sobre a linha do casal.
+      // Separação (1 barra) ou divórcio (2 barras) sobre a linha do casal.
       if (!c.current) {
         final mx = (left.x + right.x) / 2;
         final my = left.y;
@@ -406,9 +436,16 @@ class _MotorGenogramPainter extends CustomPainter {
           ..color = _red
           ..strokeWidth = 2
           ..style = PaintingStyle.stroke;
-        for (final off in [-4.0, 4.0]) {
+        if (c.separated) {
+          // Uma barra "/" — separação conjugal
           canvas.drawLine(
-              Offset(mx + off - 4, my + 7), Offset(mx + off + 4, my - 7), dp);
+              Offset(mx - 4, my + 7), Offset(mx + 4, my - 7), dp);
+        } else {
+          // Duas barras "//" — divórcio
+          for (final off in [-4.0, 4.0]) {
+            canvas.drawLine(
+                Offset(mx + off - 4, my + 7), Offset(mx + off + 4, my - 7), dp);
+          }
         }
       }
     }
@@ -495,7 +532,18 @@ class _MotorGenogramPainter extends CustomPainter {
     final c = Offset(n.x, n.y);
     final person = byId[n.id];
     final isIndex = n.id == focusId;
-    final isFemale = person?.gender == GenogramGender.female;
+    final gender = person?.gender;
+    final isFemale = gender == GenogramGender.female;
+    final isDiamond =
+        gender == GenogramGender.unknown || gender == GenogramGender.other;
+    final isPregnancyLoss = person?.pregnancyLossType != null;
+
+    // ── Símbolo de perda gestacional: pequeno triângulo ──────────────────────
+    if (isPregnancyLoss) {
+      _drawPregnancyLoss(canvas, c, person!, isIndex);
+      _drawLabel(canvas, n, c, person, isIndex);
+      return;
+    }
 
     final fill = Paint()
       ..color = isIndex ? const Color(0xFFEAFAF7) : Colors.white
@@ -505,13 +553,15 @@ class _MotorGenogramPainter extends CustomPainter {
       ..strokeWidth = isIndex ? 2.6 : 2.2
       ..style = PaintingStyle.stroke;
 
-    // Cuidador(a) principal: halo âmbar atrás do símbolo — segue a forma do símbolo.
+    // Cuidador(a) principal: halo âmbar atrás do símbolo.
     if (person?.isPrimaryCaregiver ?? false) {
       final haloPaint = Paint()
         ..color = _care.withValues(alpha: 0.18)
         ..style = PaintingStyle.fill;
       if (isFemale) {
         canvas.drawCircle(c, _r + 9, haloPaint);
+      } else if (isDiamond) {
+        _drawDiamond(canvas, c, _r + 9, haloPaint);
       } else {
         canvas.drawRect(
             Rect.fromCenter(
@@ -520,18 +570,46 @@ class _MotorGenogramPainter extends CustomPainter {
       }
     }
 
-    // Símbolo: círculo (feminino) ou quadrado (masculino/outro).
-    // O paciente (isIndex) mantém a cor teal mas segue a mesma forma.
+    // ── Símbolo principal ─────────────────────────────────────────────────────
     if (isFemale) {
       canvas.drawCircle(c, _r, fill);
       canvas.drawCircle(c, _r, stroke);
+    } else if (isDiamond) {
+      _drawDiamond(canvas, c, _r, fill);
+      _drawDiamond(canvas, c, _r, stroke);
     } else {
       final rect = Rect.fromCenter(center: c, width: _r * 2, height: _r * 2);
       canvas.drawRect(rect, fill);
       canvas.drawRect(rect, stroke);
     }
 
-    // Anel de cuidador: forma acompanha o símbolo.
+    // ── Adoecimento: metade inferior preenchida ───────────────────────────────
+    final illnessType = person?.illnessType;
+    if (illnessType != null) {
+      final illColor = switch (illnessType) {
+        'mental' => const Color(0xFF7A3A8A),
+        'both' => const Color(0xFF4A4A8A),
+        _ => const Color(0xFF2A5A8A), // physical
+      };
+      final halfFill = Paint()
+        ..color = illColor.withValues(alpha: 0.75)
+        ..style = PaintingStyle.fill;
+      canvas.save();
+      canvas.clipRect(Rect.fromLTRB(
+          c.dx - _r - 2, c.dy, c.dx + _r + 2, c.dy + _r + 2));
+      if (isFemale) {
+        canvas.drawCircle(c, _r, halfFill);
+      } else if (isDiamond) {
+        _drawDiamond(canvas, c, _r, halfFill);
+      } else {
+        canvas.drawRect(
+            Rect.fromCenter(center: c, width: _r * 2, height: _r * 2),
+            halfFill);
+      }
+      canvas.restore();
+    }
+
+    // ── Anel de cuidador ──────────────────────────────────────────────────────
     if (person?.isPrimaryCaregiver ?? false) {
       final ringPaint = Paint()
         ..color = _care
@@ -539,6 +617,8 @@ class _MotorGenogramPainter extends CustomPainter {
         ..style = PaintingStyle.stroke;
       if (isFemale) {
         canvas.drawCircle(c, _r + 6, ringPaint);
+      } else if (isDiamond) {
+        _drawDiamond(canvas, c, _r + 6, ringPaint);
       } else {
         canvas.drawRect(
             Rect.fromCenter(
@@ -552,6 +632,8 @@ class _MotorGenogramPainter extends CustomPainter {
         ..style = PaintingStyle.stroke;
       if (isFemale) {
         canvas.drawCircle(c, _r + 6, ringPaint);
+      } else if (isDiamond) {
+        _drawDiamond(canvas, c, _r + 6, ringPaint);
       } else {
         canvas.drawRect(
             Rect.fromCenter(
@@ -579,7 +661,51 @@ class _MotorGenogramPainter extends CustomPainter {
           Offset(c.dx + _r, c.dy - _r), Offset(c.dx - _r, c.dy + _r), x);
     }
 
-    // Nome (+ papel) abaixo.
+    _drawLabel(canvas, n, c, person, isIndex);
+  }
+
+  /// Símbolo pequeno de perda gestacional (triângulo) + rótulo.
+  void _drawPregnancyLoss(
+      Canvas canvas, Offset c, GenogramPerson person, bool isIndex) {
+    final lossType = person.pregnancyLossType!;
+    // Natimorto: triângulo preenchido; aborto espontâneo: apenas contorno;
+    // interrupção: triângulo com X interno.
+    final isFilled =
+        lossType == 'stillbirth' || lossType == 'abortion';
+    final rSmall = _r * 0.7;
+    final path = Path()
+      ..moveTo(c.dx, c.dy - rSmall)
+      ..lineTo(c.dx + rSmall, c.dy + rSmall * 0.7)
+      ..lineTo(c.dx - rSmall, c.dy + rSmall * 0.7)
+      ..close();
+    if (isFilled) {
+      canvas.drawPath(
+          path, Paint()..color = _navy..style = PaintingStyle.fill);
+    }
+    canvas.drawPath(
+        path,
+        Paint()
+          ..color = _navy
+          ..strokeWidth = 1.8
+          ..style = PaintingStyle.stroke);
+    // Interrupção voluntária: pequeno "X" dentro.
+    if (lossType == 'abortion') {
+      final x = Paint()
+        ..color = Colors.white
+        ..strokeWidth = 1.4
+        ..style = PaintingStyle.stroke;
+      final s = rSmall * 0.45;
+      canvas.drawLine(
+          Offset(c.dx - s, c.dy - s + rSmall * 0.2),
+          Offset(c.dx + s, c.dy + s + rSmall * 0.2), x);
+      canvas.drawLine(
+          Offset(c.dx + s, c.dy - s + rSmall * 0.2),
+          Offset(c.dx - s, c.dy + s + rSmall * 0.2), x);
+    }
+  }
+
+  void _drawLabel(Canvas canvas, GPositioned n, Offset c,
+      GenogramPerson? person, bool isIndex) {
     final name = person == null
         ? n.id
         : (person.nickname != null && person.nickname!.trim().isNotEmpty
@@ -659,21 +785,20 @@ class _GenogramBackdrop extends StatelessWidget {
       child: ClipRect(
         child: Stack(
           children: [
-            Positioned.fill(child: Container(color: const Color(0xFFF7FBFA))),
             Positioned(
-              top: -70,
-              left: -60,
-              child: _blob(210, const Color(0xFF0F9C90).withValues(alpha: 0.09)),
+              top: -120,
+              left: -100,
+              child: _blob(340, const Color(0xFF0F9C90).withValues(alpha: 0.10)),
             ),
             Positioned(
-              bottom: -80,
-              right: -70,
-              child: _blob(240, const Color(0xFF1F7A8C).withValues(alpha: 0.08)),
+              bottom: -130,
+              right: -110,
+              child: _blob(370, const Color(0xFF1F7A8C).withValues(alpha: 0.09)),
             ),
             Positioned(
-              top: 120,
-              right: -40,
-              child: _blob(120, const Color(0xFF8A5CB0).withValues(alpha: 0.06)),
+              top: 80,
+              right: -60,
+              child: _blob(180, const Color(0xFF8A5CB0).withValues(alpha: 0.07)),
             ),
           ],
         ),

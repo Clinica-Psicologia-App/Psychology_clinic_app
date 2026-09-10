@@ -55,7 +55,7 @@ class _ModuleGroup {
 
 /// Seção de módulos clínicos do paciente (visão do psicólogo).
 /// Organizada em 5 grandes eixos: Conhecer, Avaliar, Compreender, Intervir e Acompanhar.
-class FutureModulesSection extends ConsumerWidget {
+class FutureModulesSection extends ConsumerStatefulWidget {
   const FutureModulesSection({
     super.key,
     required this.role,
@@ -66,14 +66,34 @@ class FutureModulesSection extends ConsumerWidget {
   final String patientId;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FutureModulesSection> createState() =>
+      _FutureModulesSectionState();
+}
+
+class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
+  bool _navigating = false;
+
+  Future<void> _push(String route, {Object? extra}) async {
+    if (_navigating || !mounted) return;
+    setState(() => _navigating = true);
+    try {
+      await context.push(route, extra: extra);
+    } finally {
+      if (mounted) setState(() => _navigating = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final role = widget.role;
+    final patientId = widget.patientId;
     final entitlementsAsync = ref.watch(currentClinicEntitlementsProvider);
     final entitlements =
         entitlementsAsync.valueOrNull ?? ClinicFeatureEntitlements.empty;
     final isLoading = entitlementsAsync.isLoading;
 
     VoidCallback? gatedTap(String featureKey, VoidCallback action) {
-      if (isLoading) return null;
+      if (isLoading || _navigating) return null;
       return entitlements.isEnabled(featureKey) ? action : null;
     }
 
@@ -100,7 +120,7 @@ class FutureModulesSection extends ConsumerWidget {
             title: 'Dados Iniciais',
             subtitle: 'Motivo, funcionamento e impressões.',
             accentColor: AppColors.cyan,
-            onTap: () => context.push(
+            onTap: () => _push(
               InitialAssessmentRoutes.staff(role: role, patientId: patientId),
             ),
           ),
@@ -116,7 +136,7 @@ class FutureModulesSection extends ConsumerWidget {
             title: 'Linha do Tempo',
             subtitle: 'Eventos da história terapêutica.',
             accentColor: AppColors.moduleTimeline,
-            onTap: () => context.push(
+            onTap: () => _push(
               InitialAssessmentRoutes.staffHistory(
                 role: role,
                 patientId: patientId,
@@ -128,7 +148,7 @@ class FutureModulesSection extends ConsumerWidget {
             title: 'Demandas Terapêuticas',
             subtitle: 'Queixas e focos de trabalho.',
             accentColor: AppColors.moduleProblems,
-            onTap: () => context.push(
+            onTap: () => _push(
               PatientProblemRoutes.staffList(
                 role: role,
                 patientId: patientId,
@@ -140,7 +160,7 @@ class FutureModulesSection extends ConsumerWidget {
             title: 'Genograma',
             subtitle: 'Pessoas e relações familiares.',
             accentColor: AppColors.moduleGenogram,
-            onTap: () => context.push(
+            onTap: () => _push(
               LifeStoryRoutes.genogramPanelFor(patientId),
             ),
           ),
@@ -156,7 +176,7 @@ class FutureModulesSection extends ConsumerWidget {
             title: 'Síntese',
             subtitle: 'Conceitualização de caso.',
             accentColor: AppColors.cyan,
-            onTap: () => context.push(
+            onTap: () => _push(
               MentalMapRoutes.staffCaseConceptualization(
                 role: role,
                 patientId: patientId,
@@ -182,7 +202,7 @@ class FutureModulesSection extends ConsumerWidget {
             accentColor: AppColors.moduleQuestionnaires,
             onTap: gatedTap(
               'questionnaires',
-              () => context.push(
+              () => _push(
                 QuestionnaireRoutes.list(role: role, patientId: patientId),
               ),
             ),
@@ -192,7 +212,7 @@ class FutureModulesSection extends ConsumerWidget {
             title: 'Personalidade',
             subtitle: 'Registro de resultados (NEO PI-R), perfil e facetas.',
             accentColor: AppColors.purple,
-            onTap: () => context.push(
+            onTap: () => _push(
               PersonalityAssessmentRoutes.staffList(
                 role: role,
                 patientId: patientId,
@@ -209,7 +229,7 @@ class FutureModulesSection extends ConsumerWidget {
             accentColor: AppColors.moduleQuestionnaires,
             onTap: gatedTap(
               'questionnaires',
-              () => context.push(
+              () => _push(
                 QuestionnaireRoutes.list(role: role, patientId: patientId),
                 extra: 'attachment',
               ),
@@ -229,7 +249,7 @@ class FutureModulesSection extends ConsumerWidget {
             title: 'Mapa Mental',
             subtitle: 'Visão integrada dos dados clínicos.',
             accentColor: AppColors.moduleMentalMap,
-            onTap: () => context.push(
+            onTap: () => _push(
               MentalMapRoutes.staffList(role: role, patientId: patientId),
             ),
           ),
@@ -243,7 +263,7 @@ class FutureModulesSection extends ConsumerWidget {
             accentColor: AppColors.purple,
             onTap: gatedTap(
               'reports',
-              () => context.push(
+              () => _push(
                 PatientInfographicRoutes.staffList(
                   role: role,
                   patientId: patientId,
@@ -272,7 +292,7 @@ class FutureModulesSection extends ConsumerWidget {
             title: 'Plano Terapêutico',
             subtitle: 'Metas e objetivos da terapia.',
             accentColor: AppColors.moduleGoals,
-            onTap: () => context.push(
+            onTap: () => _push(
               TherapyGoalRoutes.staffList(role: role, patientId: patientId),
             ),
           ),
@@ -286,7 +306,7 @@ class FutureModulesSection extends ConsumerWidget {
             accentColor: AppColors.moduleResources,
             onTap: gatedTap(
               'resources',
-              () => context.push(
+              () => _push(
                 TherapyResourceRoutes.staffList(
                   role: role,
                   patientId: patientId,
@@ -304,7 +324,7 @@ class FutureModulesSection extends ConsumerWidget {
             accentColor: AppColors.purple,
             onTap: gatedTap(
               'resources',
-              () => context.push(
+              () => _push(
                 PatientLibraryRoutes.staffCatalog(
                   role: role,
                   patientId: patientId,
@@ -322,7 +342,7 @@ class FutureModulesSection extends ConsumerWidget {
             accentColor: AppColors.moduleMentalMap,
             onTap: gatedTap(
               'resources',
-              () => context.push(PsychoeducationRoutes.psychologist),
+              () => _push(PsychoeducationRoutes.psychologist),
             ),
           ),
         ],
@@ -339,7 +359,7 @@ class FutureModulesSection extends ConsumerWidget {
             title: 'Check-in',
             subtitle: 'Humor, modos e esquemas em linha do tempo.',
             accentColor: AppColors.moduleCheckIn,
-            onTap: () => context.push(
+            onTap: () => _push(
               PatientCheckInRoutes.staffList(role: role, patientId: patientId),
             ),
           ),
@@ -348,7 +368,7 @@ class FutureModulesSection extends ConsumerWidget {
             title: 'Diário',
             subtitle: 'Acompanhamentos do paciente.',
             accentColor: AppColors.moduleMonitor,
-            onTap: () => context.push(
+            onTap: () => _push(
               DailyMonitorRoutes.staffHistory(role: role, patientId: patientId),
             ),
           ),

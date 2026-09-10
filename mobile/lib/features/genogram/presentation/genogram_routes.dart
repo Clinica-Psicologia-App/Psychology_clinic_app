@@ -101,6 +101,18 @@ abstract final class GenogramRoutes {
   static String relationshipCreateFor(String patientId) =>
       '/psychologist/genogram-relationship-create/$patientId';
 
+  // Criação de pessoa STANDALONE — para abrir a partir do gerenciador standalone.
+  static const personCreateByPath =
+      '/psychologist/genogram-person-create/:patientId';
+  static String personCreateFor(String patientId) =>
+      '/psychologist/genogram-person-create/$patientId';
+
+  // Lista/gerenciador de pessoas e relações STANDALONE — evita o crash de
+  // chave duplicada ao abrir a partir do GenogramPanelPage (rota standalone).
+  static const staffListByPath = '/psychologist/genogram-manage/:patientId';
+  static String staffListFor(String patientId) =>
+      '/psychologist/genogram-manage/$patientId';
+
   // Detalhe de vínculo STANDALONE — evita cruzar navegador do shell com o
   // navegador top-level (o que causava duplicate page key crash).
   static const relationshipDetailByPath =

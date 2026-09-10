@@ -42,10 +42,17 @@ class StaffPatientGenogramPage extends ConsumerWidget {
     super.key,
     required this.role,
     required this.patientId,
+    this.useStandaloneRoutes = false,
   });
 
   final ProfileRole role;
   final String patientId;
+
+  /// Quando true, usa rotas standalone (top-level) para sub-navegações em
+  /// vez das rotas aninhadas no ShellRoute. Necessário quando esta página
+  /// é acessada a partir de uma rota também standalone (ex.: GenogramPanelPage),
+  /// para evitar o conflito de chave duplicada no Navigator.
+  final bool useStandaloneRoutes;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -59,24 +66,27 @@ class StaffPatientGenogramPage extends ConsumerWidget {
         await ref.read(staffGenogramProvider(ctx).future);
       },
       onRetry: () => ref.invalidate(staffGenogramProvider(ctx)),
-      personCreateRoute: GenogramRoutes.staffPersonCreate(
-        role: role,
-        patientId: patientId,
-      ),
-      relationshipCreateRoute: GenogramRoutes.staffRelationshipCreate(
-        role: role,
-        patientId: patientId,
-      ),
-      personDetailRoute: (id) => GenogramRoutes.staffPersonDetail(
-        role: role,
-        patientId: patientId,
-        personId: id,
-      ),
-      relationshipDetailRoute: (id) => GenogramRoutes.staffRelationshipDetail(
-        role: role,
-        patientId: patientId,
-        relationshipId: id,
-      ),
+      personCreateRoute: useStandaloneRoutes
+          ? GenogramRoutes.personCreateFor(patientId)
+          : GenogramRoutes.staffPersonCreate(role: role, patientId: patientId),
+      relationshipCreateRoute: useStandaloneRoutes
+          ? GenogramRoutes.relationshipCreateFor(patientId)
+          : GenogramRoutes.staffRelationshipCreate(
+              role: role, patientId: patientId),
+      personDetailRoute: useStandaloneRoutes
+          ? (id) => GenogramRoutes.personDetailFor(patientId, id)
+          : (id) => GenogramRoutes.staffPersonDetail(
+                role: role,
+                patientId: patientId,
+                personId: id,
+              ),
+      relationshipDetailRoute: useStandaloneRoutes
+          ? (id) => GenogramRoutes.relationshipDetailFor(patientId, id)
+          : (id) => GenogramRoutes.staffRelationshipDetail(
+                role: role,
+                patientId: patientId,
+                relationshipId: id,
+              ),
       onDataChanged: () => ref.invalidate(staffGenogramProvider(ctx)),
       familyPatternsPatientId:
           role == ProfileRole.psychologist ? patientId : null,

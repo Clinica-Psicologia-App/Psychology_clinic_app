@@ -10,7 +10,6 @@ import '../domain/life_story_enums.dart';
 import '../providers/life_story_providers.dart';
 import 'life_story_routes.dart';
 import '../../genogram/presentation/genogram_routes.dart';
-import '../../profile/domain/profile_role.dart';
 import '../../../shared/widgets/brand_loading.dart';
 
 /// Painel do terapeuta — Genograma (spec §41). Reúne, para uma pessoa/paciente,
@@ -132,10 +131,7 @@ class _GenogramPanelPageState extends ConsumerState<GenogramPanelPage> {
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: _NavGuardButton.outlined(
-                  route: GenogramRoutes.staffList(
-                    role: ProfileRole.psychologist,
-                    patientId: patientId,
-                  ),
+                  route: GenogramRoutes.staffListFor(patientId),
                   icon: Icons.edit_outlined,
                   label: 'Editar pessoas e relações',
                 ),

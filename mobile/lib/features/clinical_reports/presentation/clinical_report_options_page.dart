@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:printing/printing.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
@@ -55,28 +57,36 @@ class _ClinicalReportOptionsPageState
         patientId: widget.patientId,
         include: _include,
       );
-      final file = await repo.savePdfToTemp(
-        bytes: bytes,
-        patientId: widget.patientId,
-      );
-      final result = await repo.openPdfFile(file);
 
-      if (!mounted) return;
-
-      if (result.type != ResultType.done) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              result.message.isNotEmpty
-                  ? result.message
-                  : 'PDF salvo em: ${file.path}',
-            ),
-          ),
+      if (kIsWeb) {
+        await Printing.sharePdf(
+          bytes: bytes,
+          filename: 'relatorio-${widget.patientId}.pdf',
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Relatório PDF gerado.')),
+        final file = await repo.savePdfToTemp(
+          bytes: bytes,
+          patientId: widget.patientId,
         );
+        final result = await repo.openPdfFile(file);
+
+        if (!mounted) return;
+
+        if (result.type != ResultType.done) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                result.message.isNotEmpty
+                    ? result.message
+                    : 'PDF salvo em: ${file.path}',
+              ),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Relatório PDF gerado.')),
+          );
+        }
       }
     } on AppException catch (e) {
       if (mounted) showErrorBanner(context, e);

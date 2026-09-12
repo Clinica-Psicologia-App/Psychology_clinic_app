@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:printing/printing.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
@@ -58,14 +60,24 @@ class _PatientInfographicPageState
       await _ensureAvatarLoaded();
       final png = await InfographicExport.capturePng(_posterKey);
       final base = InfographicExport.fileBase(_patientName);
-      final String path;
-      if (asPdf) {
-        final pdf = await InfographicExport.buildPdf(png);
-        path = await InfographicExport.writeTempFile('$base.pdf', pdf);
+      if (kIsWeb) {
+        // No web, path_provider e share_plus com arquivos locais não funcionam:
+        // usa o pacote printing para abrir a caixa de download/impressão do browser.
+        final pdfBytes = await InfographicExport.buildPdf(png);
+        await Printing.sharePdf(
+          bytes: pdfBytes,
+          filename: '$base.pdf',
+        );
       } else {
-        path = await InfographicExport.writeTempFile('$base.png', png);
+        final String path;
+        if (asPdf) {
+          final pdf = await InfographicExport.buildPdf(png);
+          path = await InfographicExport.writeTempFile('$base.pdf', pdf);
+        } else {
+          path = await InfographicExport.writeTempFile('$base.png', png);
+        }
+        await InfographicExport.share(path, text: 'Infográfico clínico');
       }
-      await InfographicExport.share(path, text: 'Infográfico clínico');
     } catch (e) {
       if (mounted) showErrorBanner(context, e);
     } finally {

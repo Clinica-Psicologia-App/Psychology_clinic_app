@@ -537,7 +537,7 @@ const _platformDestinations = [
     label: 'Pacientes',
     icon: Icons.people_outline,
     selectedIcon: Icons.people,
-    route: '${AppRoutes.platformHome}/patients',
+    route: '${AppRoutes.platformHome}/patient-overview',
   ),
 ];
 

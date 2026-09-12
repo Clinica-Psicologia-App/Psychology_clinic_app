@@ -38,6 +38,24 @@ ignorados pelo `.gitignore` e nunca commitados; RLS presente em todas as tabelas
 - **Responsividade e acessibilidade não auditadas.** Breakpoints existem
   (`core/theme/app_breakpoints.dart`) mas não há verificação de layout em
   dispositivo nem de `Semantics`/contraste/foco.
+- **Coleta de parentesco por texto livre alimenta o motor do genograma.** O campo
+  "Grau de parentesco" (`initial_assessment/presentation/widgets/genogram_person_editor.dart`
+  e o formulário clínico) grava `genogram_people.relationship_to_patient` como
+  texto livre. Essa mesma string é usada por `genogram_layout_adapter.dart`
+  (`buildLayoutInput`, para achar o foco) e classificada por
+  `genogram_bootstrap.dart` (`normalizeRole`/`_classify`) para inferir a
+  estrutura. O parser tolera acento e PT/EN, mas há 3 fragilidades:
+  (1) o nó-foco **precisa** conter "Paciente" — sem isso `buildLayoutInput`
+  retorna `null` e o diagrama não desenha;
+  (2) avós sem lado ("Avó" sem "paterna/materna") caem em `grandparentsNeedingSide`
+  (passo extra) em vez de posicionar direto;
+  (3) papéis fora do conjunto conhecido (padrasto, madrasta, tio, primo, genitora…)
+  viram `unknown` e vão para a faixa de não-conectados, fora da árvore.
+  **Melhoria proposta (pós-auditoria, validar com a cliente por ser fluxo "Conhecer"
+  regido por spec):** separar o *papel estrutural* (seletor com opções canônicas —
+  Paciente, Pai, Mãe, Avó paterna/materna, Irmão, Filho, Cônjuge — que dirige o
+  motor) do *rótulo descritivo* (texto livre "Outro" opcional). Seletor híbrido:
+  robustez na coleta sem perder a cauda longa de parentescos.
 
 ## LOW
 

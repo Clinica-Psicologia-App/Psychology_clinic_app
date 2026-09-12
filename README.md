@@ -2,6 +2,13 @@
 
 Monorepo do MVP clínico: backend Supabase (Postgres + Auth + RLS + Edge Functions) e app mobile Flutter.
 
+> **Agentes de IA e auditoria:** leia [`AGENTS.md`](AGENTS.md) antes de qualquer
+> trabalho — o repositório está em modo diagnóstico (não refatorar / não
+> redesenhar / não trocar bibliotecas). Estado atual e diagnóstico em
+> [`docs/CURRENT_STATE.md`](docs/CURRENT_STATE.md); arquitetura em
+> [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md); dívida técnica em
+> [`docs/TECH_DEBT.md`](docs/TECH_DEBT.md).
+
 ## Homologação e demo (cliente / psicólogas)
 
 **Pacote principal:**

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_animations.dart';
+import '../../../core/theme/app_breakpoints.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -191,6 +192,7 @@ class _PatientDetailsBodyState extends State<_PatientDetailsBody> {
     final dateFormat = MaterialLocalizations.of(context);
     final canEdit = role == ProfileRole.psychologist ||
         role == ProfileRole.platformAdmin;
+    final isWide = AppBreakpoints.isWide(context);
 
     return MotionReveal(
       child: CustomScrollView(
@@ -211,7 +213,10 @@ class _PatientDetailsBodyState extends State<_PatientDetailsBody> {
             ),
           ),
           SliverPadding(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: isWide
+                ? const EdgeInsets.fromLTRB(
+                    AppSpacing.xxxl, AppSpacing.md, AppSpacing.xxxl, AppSpacing.md)
+                : const EdgeInsets.all(AppSpacing.md),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
           _DetailsSectionCard(
@@ -428,6 +433,8 @@ class _PatientHeroHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (AppBreakpoints.isWide(context)) return _buildCompact(context);
+
     final theme = Theme.of(context);
     final topInset = MediaQuery.paddingOf(context).top;
     final accessLabel = patient.accessStatus?.label;
@@ -670,6 +677,113 @@ class _PatientHeroHeader extends StatelessWidget {
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompact(BuildContext context) {
+    final theme = Theme.of(context);
+    final male = _isMale(patient.gender);
+    final headerColor =
+        male ? const Color(0xFF0A3A5E) : const Color(0xFF4A1528);
+    final accentColor =
+        male ? const Color(0xFF00D4C9) : const Color(0xFFDB2777);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.md,
+      ),
+      decoration: BoxDecoration(
+        color: headerColor,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          _NavBtn(icon: Icons.arrow_back_ios_new_rounded, onTap: onBack),
+          const SizedBox(width: AppSpacing.md),
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.3),
+                width: 2,
+              ),
+            ),
+            child: UserAvatar.parts(
+              fullName: patient.fullName,
+              initials: _initialsOf(patient.fullName),
+              role: ProfileRole.patient,
+              avatarType: patient.avatarType,
+              photoUrl: patient.photoUrl,
+              avatarConfig: patient.avatarConfig,
+              size: 48,
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  patient.isActive ? 'PACIENTE ATIVO' : 'PACIENTE INATIVO',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: patient.isActive
+                        ? accentColor
+                        : Colors.white.withValues(alpha: 0.5),
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 1.0,
+                    fontSize: 9,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  patient.fullName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w900,
+                    height: 1.1,
+                  ),
+                ),
+                if (patient.responsiblePsychologistName != null &&
+                    patient.responsiblePsychologistName!.trim().isNotEmpty)
+                  Text(
+                    patient.responsiblePsychologistName!,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.65),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+              ],
+            ),
+          ),
+          if (onTourTap != null) ...[
+            const SizedBox(width: AppSpacing.xs),
+            _NavBtn(icon: Icons.help_outline_rounded, onTap: onTourTap!),
+          ],
+          if (onEdit != null) ...[
+            const SizedBox(width: AppSpacing.sm),
+            _HeroActionBtn(
+              label: 'Editar',
+              icon: Icons.edit_outlined,
+              solid: true,
+              onTap: onEdit!,
+            ),
+          ],
         ],
       ),
     );

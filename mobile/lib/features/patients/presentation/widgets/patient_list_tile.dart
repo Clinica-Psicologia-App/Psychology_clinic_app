@@ -139,11 +139,13 @@ class PatientListTile extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 2),
-                      // ── Subtítulo (e-mail ou último acesso) ─────────────
+                      // ── Subtítulo (e-mail, motivo de atenção, ou último acesso) ─
                       Text(
                         showEmail && email != null && email.isNotEmpty
                             ? email
-                            : _lastAccessLabel(),
+                            : a != null
+                                ? a.label
+                                : _lastAccessLabel(),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodySmall?.copyWith(
@@ -168,7 +170,7 @@ class PatientListTile extends StatelessWidget {
                               color: accent,
                               onPressed: quick.run,
                             ),
-                          ] else if (completion == null || !active)
+                          ] else
                             Icon(
                               Icons.chevron_right_rounded,
                               size: 20,

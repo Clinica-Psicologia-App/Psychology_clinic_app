@@ -74,6 +74,9 @@ class AppScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = this.accent;
+    // On wide screens (web/desktop), always apply responsive max-width so
+    // content doesn't stretch awkwardly across the full viewport.
+    final effectiveResponsive = useResponsivePadding || AppBreakpoints.isWide(context);
     return Scaffold(
       resizeToAvoidBottomInset: true,
       backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
@@ -99,7 +102,7 @@ class AppScaffold extends StatelessWidget {
       body: SafeArea(
         child: AppBlobBackground(
           accent: accent,
-          child: useResponsivePadding
+          child: effectiveResponsive
               ? ResponsiveContent(
                   child: centerBody ? Center(child: body) : body,
                 )

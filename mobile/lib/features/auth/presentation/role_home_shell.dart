@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_breakpoints.dart';
+
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
 import '../../../core/theme/app_animations.dart';
@@ -257,6 +259,42 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
             onHelpTap: _replayTour,
           );
 
+    final isWide = AppBreakpoints.isWide(context);
+
+    // Wide psychologist layout: full-bleed Row (main content + sidebar),
+    // bypassing ResponsiveContent so cards get ~850px+ of breathing room.
+    if (widget.role == ProfileRole.psychologist && isWide) {
+      return ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          header,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xxl,
+              AppSpacing.xl,
+              AppSpacing.xxl,
+              AppSpacing.xxl,
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: _PsychologistWorkspace(
+                    patientsCardKey: _patientsCardKey,
+                    assessmentSectionKey: _assessmentSectionKey,
+                    summaryKey: _headerSummaryKey,
+                    wideLayout: true,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.xl),
+                _WebPsychologistSidebar(summaryKey: _headerSummaryKey),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
     return ListView(
       padding: EdgeInsets.zero,
       children: [
@@ -276,6 +314,7 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                   _PsychologistWorkspace(
                     patientsCardKey: _patientsCardKey,
                     assessmentSectionKey: _assessmentSectionKey,
+                    summaryKey: _headerSummaryKey,
                   ),
                 if (widget.role == ProfileRole.patient) ...[
                   const MotionReveal(
@@ -410,19 +449,21 @@ class _PsychologistWorkspace extends ConsumerWidget {
   const _PsychologistWorkspace({
     required this.patientsCardKey,
     required this.assessmentSectionKey,
+    required this.summaryKey,
+    this.wideLayout = false,
   });
 
   final GlobalKey patientsCardKey;
   final GlobalKey assessmentSectionKey;
+  final GlobalKey summaryKey;
+  // When true, uses 2-column grids (main content is already inside a Row with sidebar).
+  final bool wideLayout;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // O resumo da carteira ("Central de trabalho") agora flutua no canopy
-        // (ver _ProfileHeader.footer); aqui fica só o painel de notificações e
-        // os grupos de módulos.
         const _PsychologistAlertsCard(),
         KeyedSubtree(
           key: patientsCardKey,
@@ -435,10 +476,8 @@ class _PsychologistWorkspace extends ConsumerWidget {
         const SizedBox(height: AppSpacing.sm),
         MotionReveal(
           delay: const Duration(milliseconds: 120),
-          child: ResponsiveGrid(
-            mediumColumns: 2,
-            expandedColumns: 3,
-            children: [
+          child: _cardGrid(
+            [
               ClinicalModuleCard(
                 icon: Icons.people_outline,
                 title: 'Pacientes',
@@ -472,10 +511,8 @@ class _PsychologistWorkspace extends ConsumerWidget {
         const SizedBox(height: AppSpacing.sm),
         MotionReveal(
           delay: const Duration(milliseconds: 160),
-          child: ResponsiveGrid(
-            mediumColumns: 2,
-            expandedColumns: 3,
-            children: [
+          child: _cardGrid(
+            [
               ClinicalModuleCard(
                 icon: Icons.assignment_outlined,
                 title: 'Meus questionários',
@@ -519,6 +556,87 @@ class _PsychologistWorkspace extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+
+  /// 2-column grid when inside the sidebar layout; falls back to
+  /// ResponsiveGrid on narrow screens.
+  Widget _cardGrid(List<Widget> cards) {
+    if (wideLayout) {
+      return LayoutBuilder(
+        builder: (_, box) {
+          const gap = AppSpacing.md;
+          final cardW = (box.maxWidth - gap) / 2;
+          return Wrap(
+            spacing: gap,
+            runSpacing: gap,
+            children: cards
+                .map((c) => SizedBox(width: cardW, child: c))
+                .toList(),
+          );
+        },
+      );
+    }
+    return ResponsiveGrid(mediumColumns: 2, expandedColumns: 3, children: cards);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Sidebar web do psicólogo (stats + calendário semanal)
+// ---------------------------------------------------------------------------
+
+class _WebPsychologistSidebar extends ConsumerWidget {
+  const _WebPsychologistSidebar({required this.summaryKey});
+
+  final GlobalKey summaryKey;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final patients = ref.watch(patientsListProvider).valueOrNull;
+    final invitations = ref.watch(patientInvitationsListProvider).valueOrNull;
+    final questionnaires =
+        ref.watch(psychologistQuestionnairesProvider).valueOrNull ?? const [];
+
+    final activePatients =
+        (patients ?? const []).where((p) => p.isActive).length;
+    final pendingInvitations =
+        (invitations ?? const []).where((i) => i.isPending).length;
+
+    final metrics = [
+      _WorkspaceMetric(
+        icon: Icons.people_outline,
+        label: 'Pacientes',
+        value: activePatients,
+        accent: _WorkspaceAccents.management,
+        onTap: () =>
+            context.push(PatientRoutes.list(ProfileRole.psychologist)),
+      ),
+      _WorkspaceMetric(
+        icon: Icons.mark_email_unread_outlined,
+        label: 'Convites',
+        value: pendingInvitations,
+        accent: pendingInvitations > 0
+            ? AppColors.warning
+            : _WorkspaceAccents.management,
+        onTap: () => context
+            .push(PatientInvitationRoutes.list(ProfileRole.psychologist)),
+      ),
+      _WorkspaceMetric(
+        icon: Icons.assignment_outlined,
+        label: 'Questionários',
+        value: questionnaires.length,
+        accent: _WorkspaceAccents.assessment,
+        onTap: () =>
+            context.push(QuestionnaireRoutes.psychologistCatalog),
+      ),
+    ];
+
+    return SizedBox(
+      width: 280,
+      child: KeyedSubtree(
+        key: summaryKey,
+        child: _PsychologistSummaryFooter(metrics: metrics),
+      ),
     );
   }
 }
@@ -1499,6 +1617,8 @@ class _ProfileHeader extends ConsumerWidget {
         .where((invitation) => invitation.isPending)
         .length;
 
+    final isWide = AppBreakpoints.isWide(context);
+
     return _CupolaHeader(
       profile: profile,
       name: firstName,
@@ -1514,41 +1634,44 @@ class _ProfileHeader extends ConsumerWidget {
         icon: const Icon(Icons.help_outline_rounded),
         color: Colors.white,
       ),
-      footer: KeyedSubtree(
-        key: summaryKey,
-        child: _PsychologistSummaryFooter(
-          metrics: [
-            _WorkspaceMetric(
-              icon: Icons.people_outline,
-              label: 'Pacientes',
-              value: activePatients,
-              accent: _WorkspaceAccents.management,
-              onTap: () => context.push(
-                PatientRoutes.list(ProfileRole.psychologist),
+      // On wide screens the summary moves to the sidebar in _PsychologistWorkspace.
+      footer: isWide
+          ? null
+          : KeyedSubtree(
+              key: summaryKey,
+              child: _PsychologistSummaryFooter(
+                metrics: [
+                  _WorkspaceMetric(
+                    icon: Icons.people_outline,
+                    label: 'Pacientes',
+                    value: activePatients,
+                    accent: _WorkspaceAccents.management,
+                    onTap: () => context.push(
+                      PatientRoutes.list(ProfileRole.psychologist),
+                    ),
+                  ),
+                  _WorkspaceMetric(
+                    icon: Icons.mark_email_unread_outlined,
+                    label: 'Convites',
+                    value: pendingInvitations,
+                    accent: pendingInvitations > 0
+                        ? AppColors.warning
+                        : _WorkspaceAccents.management,
+                    onTap: () => context.push(
+                      PatientInvitationRoutes.list(ProfileRole.psychologist),
+                    ),
+                  ),
+                  _WorkspaceMetric(
+                    icon: Icons.assignment_outlined,
+                    label: 'Questionários',
+                    value: questionnaires.length,
+                    accent: _WorkspaceAccents.assessment,
+                    onTap: () =>
+                        context.push(QuestionnaireRoutes.psychologistCatalog),
+                  ),
+                ],
               ),
             ),
-            _WorkspaceMetric(
-              icon: Icons.mark_email_unread_outlined,
-              label: 'Convites',
-              value: pendingInvitations,
-              accent: pendingInvitations > 0
-                  ? AppColors.warning
-                  : _WorkspaceAccents.management,
-              onTap: () => context.push(
-                PatientInvitationRoutes.list(ProfileRole.psychologist),
-              ),
-            ),
-            _WorkspaceMetric(
-              icon: Icons.assignment_outlined,
-              label: 'Questionários',
-              value: questionnaires.length,
-              accent: _WorkspaceAccents.assessment,
-              onTap: () =>
-                  context.push(QuestionnaireRoutes.psychologistCatalog),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -1611,6 +1734,8 @@ class _CupolaHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (AppBreakpoints.isWide(context)) return _buildCompact(context);
+
     final theme = Theme.of(context);
     final topInset = MediaQuery.paddingOf(context).top;
     final hour = DateTime.now().hour;
@@ -1709,19 +1834,22 @@ class _CupolaHeader extends StatelessWidget {
                 const SizedBox(height: AppSpacing.md),
 
                 // Avatar centralizado com anel
-                GestureDetector(
-                  onTap: onProfileTap,
-                  child: Container(
-                    padding: const EdgeInsets.all(3),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.5),
-                        width: 2.5,
+                MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: GestureDetector(
+                    onTap: onProfileTap,
+                    child: Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.5),
+                          width: 2.5,
+                        ),
+                        color: Colors.white.withValues(alpha: 0.12),
                       ),
-                      color: Colors.white.withValues(alpha: 0.12),
+                      child: UserAvatar(profile: profile, size: 68),
                     ),
-                    child: UserAvatar(profile: profile, size: 68),
                   ),
                 ),
 
@@ -1800,6 +1928,131 @@ class _CupolaHeader extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
             child: footer,
           ),
+        ),
+      ],
+    );
+  }
+
+  /// Variante compacta horizontal para web/desktop (tela larga).
+  Widget _buildCompact(BuildContext context) {
+    final theme = Theme.of(context);
+    final hour = DateTime.now().hour;
+
+    const gradient = LinearGradient(
+      begin: Alignment.centerLeft,
+      end: Alignment.centerRight,
+      colors: [Color(0xFF0A4A6E), Color(0xFF007A73), Color(0xFF00B2A9)],
+      stops: [0.0, 0.5, 1.0],
+    );
+
+    final bar = Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.md,
+      ),
+      decoration: const BoxDecoration(
+        gradient: gradient,
+        boxShadow: [
+          BoxShadow(
+            color: Color(0x3800B2A9),
+            blurRadius: 16,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          MouseRegion(
+            cursor: SystemMouseCursors.click,
+            child: GestureDetector(
+              onTap: onProfileTap,
+              child: Container(
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.5),
+                    width: 2,
+                  ),
+                  color: Colors.white.withValues(alpha: 0.12),
+                ),
+                child: UserAvatar(profile: profile, size: 44),
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    SvgPicture.asset(
+                      _timeAsset(hour),
+                      width: 14,
+                      height: 14,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      '${_greeting(hour).toUpperCase()} · $name',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  contextLine,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.88),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              areaLabel,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: Colors.white.withValues(alpha: 0.95),
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ),
+          if (trailingAction != null) ...[
+            const SizedBox(width: AppSpacing.xs),
+            trailingAction!,
+          ],
+        ],
+      ),
+    );
+
+    if (footer == null) return bar;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        bar,
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.md,
+            0,
+          ),
+          child: footer,
         ),
       ],
     );

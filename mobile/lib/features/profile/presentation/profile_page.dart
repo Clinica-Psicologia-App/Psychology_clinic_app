@@ -6,7 +6,9 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../core/router/app_router.dart';
+import '../../../core/theme/app_breakpoints.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
@@ -153,6 +155,7 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
   }
 
   Widget _buildBody(UserProfile p) {
+    final isWide = AppBreakpoints.isWide(context);
     return ListView(
       padding: EdgeInsets.zero,
       children: [
@@ -163,7 +166,12 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
           onBack: () => Navigator.of(context).maybePop(),
         ),
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+          padding: EdgeInsets.fromLTRB(
+            isWide ? AppSpacing.xxxl : 16,
+            16,
+            isWide ? AppSpacing.xxxl : 16,
+            28,
+          ),
           child: MotionReveal(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../core/theme/app_animations.dart';
+import '../../core/theme/app_breakpoints.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../features/profile/domain/user_profile.dart';
@@ -68,6 +69,8 @@ class AppCanopyHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (AppBreakpoints.isWide(context)) return _buildCompact(context);
+
     final theme = Theme.of(context);
     final topInset = MediaQuery.paddingOf(context).top;
     final hour = DateTime.now().hour;
@@ -213,6 +216,121 @@ class AppCanopyHeader extends StatelessWidget {
 
     if (!AppAnimations.shouldAnimate(context)) return content;
     return _CanopyReveal(child: content);
+  }
+
+  /// Variante compacta horizontal para telas largas (web/desktop).
+  /// Ocupa muito menos espaço vertical que o hero full-bleed do mobile.
+  Widget _buildCompact(BuildContext context) {
+    final theme = Theme.of(context);
+    final hour = DateTime.now().hour;
+    final greeting = _greetingForHour(hour);
+
+    final gradient = LinearGradient(
+      begin: Alignment.centerLeft,
+      end: Alignment.centerRight,
+      colors: [
+        Color.lerp(accent, Colors.white, 0.10)!,
+        accent,
+        Color.lerp(accent, AppColors.navy, 0.42)!,
+      ],
+      stops: const [0.0, 0.55, 1.0],
+    );
+
+    final bar = Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.md,
+      ),
+      decoration: BoxDecoration(
+        gradient: gradient,
+        boxShadow: [
+          BoxShadow(
+            color: Color.lerp(accent, AppColors.navy, 0.3)!
+                .withValues(alpha: 0.22),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          _AvatarBadge(profile: profile, onTap: onProfileTap),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Row(
+                  children: [
+                    SvgPicture.asset(
+                      _timeAsset(hour),
+                      width: 14,
+                      height: 14,
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      '${greeting.toUpperCase()} · $name',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  contextLine,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.88),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              areaLabel,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: Colors.white.withValues(alpha: 0.95),
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ),
+          if (trailingAction != null) ...[
+            const SizedBox(width: AppSpacing.xs),
+            trailingAction!,
+          ],
+        ],
+      ),
+    );
+
+    if (footer == null) return bar;
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        bar,
+        Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.md,
+            0,
+          ),
+          child: footer,
+        ),
+      ],
+    );
   }
 }
 

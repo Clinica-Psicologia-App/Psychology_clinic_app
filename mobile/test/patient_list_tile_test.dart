@@ -48,7 +48,6 @@ void main() {
       (tester) async {
     await _pump(tester);
 
-    expect(find.text('5/7'), findsOneWidget);
     expect(find.text('50'), findsOneWidget); // anel de preenchimento
     expect(find.byIcon(Icons.chevron_right_rounded), findsOneWidget);
     expect(find.byIcon(Icons.phone_rounded), findsNothing);

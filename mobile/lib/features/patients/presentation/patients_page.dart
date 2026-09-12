@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_breakpoints.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_empty_state.dart';
+import '../../../shared/widgets/responsive_content.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
@@ -65,6 +67,8 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
         }
       }
     }
+
+    final isWide = AppBreakpoints.isWide(context);
 
     // Derived always-available values (empty lists during loading/error).
     final patients = listState.valueOrNull ?? [];
@@ -131,14 +135,8 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
             else ...[
               // ── Busca + filtros ────────────────────────────────────────
               SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md,
-                    AppSpacing.sm,
-                    AppSpacing.md,
-                    AppSpacing.sm,
-                  ),
-                  child: Column(
+                child: () {
+                  final inner = Column(
                     children: [
                       SearchBar(
                         controller: _searchController,
@@ -187,8 +185,27 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
                         ),
                       ),
                     ],
-                  ),
-                ),
+                  );
+                  if (isWide) {
+                    return ResponsiveContent(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: AppSpacing.sm,
+                        ),
+                        child: inner,
+                      ),
+                    );
+                  }
+                  return Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.sm,
+                      AppSpacing.md,
+                      AppSpacing.sm,
+                    ),
+                    child: inner,
+                  );
+                }(),
               ),
 
               // ── Lista ou estado vazio ──────────────────────────────────
@@ -226,14 +243,27 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
                   ),
                 )
               else
-                ..._flatSortedSlivers(
-                  context: context,
-                  patients: filtered,
-                  pendingReleaseIds: pendingReleaseIds,
-                  checkinMissingMap: checkinMissingMap,
-                  dataCompletionMap: dataCompletionMap,
-                  showEmail: normalized.isNotEmpty,
-                ),
+                ...() {
+                  final listSlivers = _flatSortedSlivers(
+                    context: context,
+                    patients: filtered,
+                    pendingReleaseIds: pendingReleaseIds,
+                    checkinMissingMap: checkinMissingMap,
+                    dataCompletionMap: dataCompletionMap,
+                    showEmail: normalized.isNotEmpty,
+                  );
+                  if (isWide && listSlivers.isNotEmpty) {
+                    return [
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.xxxl,
+                        ),
+                        sliver: listSlivers.first,
+                      ),
+                    ];
+                  }
+                  return listSlivers;
+                }(),
 
               const SliverToBoxAdapter(
                 child: SizedBox(height: AppSpacing.xl),
@@ -373,6 +403,8 @@ class _PatientsHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (AppBreakpoints.isWide(context)) return _buildCompact(context);
+
     final theme = Theme.of(context);
     final statusBarTop = MediaQuery.paddingOf(context).top;
 
@@ -539,6 +571,122 @@ class _PatientsHeader extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildCompact(BuildContext context) {
+    final theme = Theme.of(context);
+
+    const gradient = LinearGradient(
+      begin: Alignment.centerLeft,
+      end: Alignment.centerRight,
+      colors: [Color(0xFF1B2D5B), Color(0xFF1E4D8C), Color(0xFF0D7A75)],
+      stops: [0.0, 0.55, 1.0],
+    );
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.xl,
+        vertical: AppSpacing.md,
+      ),
+      decoration: BoxDecoration(
+        gradient: gradient,
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF1E4D8C).withValues(alpha: 0.22),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'PACIENTES',
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.55),
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.7,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
+                      '$totalActive',
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: const Color(0xFF00D4C9),
+                        height: 1,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'ativos · $totalAll total',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.8),
+                      ),
+                    ),
+                    if (alertCount > 0) ...[
+                      const SizedBox(width: AppSpacing.sm),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFBBF24).withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(999),
+                          border: Border.all(
+                            color: const Color(0xFFFBBF24).withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: Text(
+                          '$alertCount alertas',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: const Color(0xFFFBBF24),
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+          if (showActions) ...[
+            const SizedBox(width: AppSpacing.md),
+            _GlassButton(
+              onPressed: onInvite,
+              icon: Icons.mark_email_unread_outlined,
+              label: 'Convidar',
+            ),
+            const SizedBox(width: AppSpacing.xs),
+            _GlassButton(
+              onPressed: onNew,
+              icon: Icons.person_add_outlined,
+              label: 'Novo paciente',
+              filled: true,
+            ),
+          ],
+          const SizedBox(width: AppSpacing.xs),
+          IconButton(
+            onPressed: onRefresh,
+            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
+            tooltip: 'Atualizar',
+          ),
+        ],
       ),
     );
   }

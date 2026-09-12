@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/theme/app_branding_assets.dart';
 import '../../core/theme/app_breakpoints.dart';
-import 'esquema_core_logo.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
 
 /// Destino de navegação do shell lateral.
 class AppNavDestination {
@@ -63,11 +65,9 @@ class AppNavShell extends StatelessWidget {
           child: NavigationRail(
             backgroundColor: Theme.of(context).colorScheme.surface,
             selectedIndex: selectedIndex < 0 ? null : selectedIndex,
-            labelType: NavigationRailLabelType.all,
-            leading: const Padding(
-              padding: EdgeInsets.symmetric(vertical: 16),
-              child: EsquemaCoreLogo(size: 36),
-            ),
+            extended: true,
+            minExtendedWidth: 220,
+            leading: const _NavBrandHeader(),
             onDestinationSelected: (index) {
               final destination = destinations[index];
               if (!destination.matches(location) || destination.exactMatch) {
@@ -87,6 +87,111 @@ class AppNavShell extends StatelessWidget {
         const VerticalDivider(width: 1),
         Expanded(child: child),
       ],
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Cabeçalho de marca do sidebar web
+// ---------------------------------------------------------------------------
+
+class _NavBrandHeader extends StatelessWidget {
+  const _NavBrandHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        AppSpacing.xl,
+        AppSpacing.lg,
+        AppSpacing.lg,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Ícone com sombra colorida
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: isDark
+                  ? const Color(0xFF1A2A3A)
+                  : Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.turquoise.withValues(alpha: 0.30),
+                  blurRadius: 18,
+                  offset: const Offset(0, 6),
+                ),
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            padding: const EdgeInsets.all(10),
+            child: Image.asset(
+              AppBrandingAssets.icon,
+              fit: BoxFit.contain,
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.md),
+
+          // Nome com cores de marca
+          RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: 'Esquema',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: theme.colorScheme.onSurface,
+                    letterSpacing: -0.3,
+                    height: 1.1,
+                  ),
+                ),
+                TextSpan(
+                  text: 'Core',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.turquoise,
+                    letterSpacing: -0.3,
+                    height: 1.1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 3),
+
+          // Tagline
+          Text(
+            'raciocínio clínico em mapa',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              letterSpacing: 0.1,
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.lg),
+
+          // Divisória suave
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: theme.colorScheme.outlineVariant,
+          ),
+        ],
+      ),
     );
   }
 }

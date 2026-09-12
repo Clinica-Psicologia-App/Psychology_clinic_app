@@ -100,7 +100,7 @@ class PlatformAdminHomePage extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.sm),
                   ResponsiveGrid(
                     mediumColumns: 2,
-                    expandedColumns: 2,
+                    expandedColumns: 3,
                     children: [
                       MotionReveal(
                         delay: staggerDelay(2),

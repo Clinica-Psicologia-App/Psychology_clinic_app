@@ -80,10 +80,10 @@ class PlatformAdminHomePage extends ConsumerWidget {
                       MotionReveal(
                         delay: staggerDelay(1),
                         child: ClinicalModuleCard(
-                          icon: Icons.psychology_alt_outlined,
-                          title: 'Psicólogos',
+                          icon: Icons.groups_outlined,
+                          title: 'Usuários',
                           subtitle:
-                              'Gerenciar profissionais, CRP, clínica e vagas.',
+                              'Psicólogos e administradores, separados por abas.',
                           accentColor: AppColors.blue,
                           onTap: () =>
                               context.push(UserManagementRoutes.platformList),
@@ -111,18 +111,6 @@ class PlatformAdminHomePage extends ConsumerWidget {
                               'Ver clínicas, individuais, status e volumes.',
                           accentColor: AppColors.blue,
                           onTap: () => context.push(ClinicRoutes.platformList),
-                        ),
-                      ),
-                      MotionReveal(
-                        delay: staggerDelay(3),
-                        child: ClinicalModuleCard(
-                          icon: Icons.admin_panel_settings_outlined,
-                          title: 'Administradores',
-                          subtitle:
-                              'Gerenciar acessos administrativos globais.',
-                          accentColor: AppColors.purple,
-                          onTap: () =>
-                              context.push(UserManagementRoutes.platformList),
                         ),
                       ),
                       MotionReveal(

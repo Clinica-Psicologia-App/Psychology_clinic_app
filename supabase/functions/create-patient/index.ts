@@ -151,8 +151,6 @@ serve(async (req) => {
         email_confirm: true,
         user_metadata: {
           full_name: body.full_name.trim(),
-          clinic_id: targetClinicId,
-          role: "patient",
           phone: body.phone ?? null,
         },
       });
@@ -171,6 +169,33 @@ serve(async (req) => {
     }
 
     const profileId = authData.user.id;
+
+    // Auth signup never provisions a clinical profile. These authorization
+    // fields come only from the validated server context above.
+    const { error: profileError } = await serviceClient.from("profiles").insert({
+      id: profileId,
+      clinic_id: targetClinicId,
+      role: "patient",
+      is_active: true,
+      full_name: body.full_name.trim(),
+      email: body.email.trim().toLowerCase(),
+      phone: body.phone ?? null,
+    });
+
+    if (profileError) {
+      const { error: cleanupError } = await serviceClient.auth.admin.deleteUser(profileId);
+      logger.error(`${FN}.profile_insert_failed`, {
+        profile_id: profileId,
+        message: profileError.message,
+        cleanup_failed: Boolean(cleanupError),
+      });
+      throw new AppError(
+        "INTERNAL_ERROR",
+        "Failed to create patient profile",
+        500,
+        { hint: profileError.message },
+      );
+    }
 
     // Insert com service role após validações (evita race/trigger com RLS no mesmo request).
     const { data: patient, error: patientError } = await serviceClient

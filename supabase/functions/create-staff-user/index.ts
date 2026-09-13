@@ -114,8 +114,6 @@ serve(async (req) => {
         email_confirm: true,
         user_metadata: {
           full_name: fullName,
-          clinic_id: targetClinicId,
-          role: body.role,
           phone,
         },
       });

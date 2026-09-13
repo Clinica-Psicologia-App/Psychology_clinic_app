@@ -4,7 +4,7 @@
 -- UUIDs fixos: docs/database-model.md | Roteiro: docs/demo-script.md
 --
 -- Login demo (após db reset): senha TesteMVP2025! — ver docs/demo-checklist.md
--- Profiles são criados pelo trigger handle_new_user ao inserir auth.users.
+-- Profiles são provisionados explicitamente por este seed confiável, não por metadata.
 -- =============================================================================
 
 BEGIN;
@@ -42,7 +42,7 @@ VALUES (
 )
 ON CONFLICT (id) DO NOTHING;
 
--- 2–4. auth.users + identities (trigger cria profiles com mesmo id)
+-- 2–4. auth.users + identities (sem provisionamento automático de profiles)
 INSERT INTO auth.users (
   instance_id,
   id,
@@ -76,8 +76,6 @@ VALUES
     '{"provider":"email","providers":["email"]}',
     jsonb_build_object(
       'full_name', 'Ricardo Mendes (admin demo)',
-      'clinic_id', '11111111-1111-1111-1111-111111111101',
-      'role', 'platform_admin',
       'phone', '+5511999990002'
     ),
     timezone('utc', now()),
@@ -98,8 +96,6 @@ VALUES
     '{"provider":"email","providers":["email"]}',
     jsonb_build_object(
       'full_name', 'Dra. Ana Costa (psicóloga demo)',
-      'clinic_id', '11111111-1111-1111-1111-111111111101',
-      'role', 'psychologist',
       'phone', '+5511999990003'
     ),
     timezone('utc', now()),
@@ -120,8 +116,6 @@ VALUES
     '{"provider":"email","providers":["email"]}',
     jsonb_build_object(
       'full_name', 'Maria Silva (paciente demo)',
-      'clinic_id', '11111111-1111-1111-1111-111111111101',
-      'role', 'patient',
       'phone', '+5511999990004'
     ),
     timezone('utc', now()),
@@ -181,7 +175,18 @@ VALUES
   )
 ON CONFLICT (id) DO NOTHING;
 
--- 4b. Nomes legíveis nos profiles (após upsert em auth.users)
+-- 4b. Provisionamento explícito e idempotente dos perfis demo.
+INSERT INTO public.profiles (id, clinic_id, full_name, email, phone, role, is_active)
+VALUES
+  ('11111111-1111-1111-1111-111111111102', '11111111-1111-1111-1111-111111111101',
+   'Ricardo Mendes (admin demo)', 'admin@clinicateste-mvp.example', '+5511999990002', 'platform_admin', true),
+  ('11111111-1111-1111-1111-111111111103', '11111111-1111-1111-1111-111111111101',
+   'Dra. Ana Costa (psicóloga demo)', 'psicologo@clinicateste-mvp.example', '+5511999990003', 'psychologist', true),
+  ('11111111-1111-1111-1111-111111111104', '11111111-1111-1111-1111-111111111101',
+   'Maria Silva (paciente demo)', 'paciente.login@clinicateste-mvp.example', '+5511999990004', 'patient', true)
+ON CONFLICT (id) DO NOTHING;
+
+-- Nomes legíveis nos profiles (após provisionamento explícito).
 UPDATE public.profiles SET full_name = 'Ricardo Mendes (admin demo)'
   WHERE id = '11111111-1111-1111-1111-111111111102';
 UPDATE public.profiles SET full_name = 'Dra. Ana Costa (psicóloga demo)'

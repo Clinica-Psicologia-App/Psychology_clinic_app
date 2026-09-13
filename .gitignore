@@ -29,3 +29,6 @@ supabase/.temp/
 # Dumps de produção (contêm dados reais/PII — nunca versionar)
 backup_prod_*.sql
 *.dump
+
+# Local Claude settings (housekeeping, independent of database hardening)
+.claude/settings.local.json

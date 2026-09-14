@@ -622,17 +622,28 @@ class _AppPageTransitionsBuilder extends PageTransitionsBuilder {
       curve: AppAnimations.standardCurve,
     );
 
-    // Fade-through: a tela que entra surge com fade + leve scale; a tela
-    // que fica embaixo recua discretamente quando outra é empilhada.
-    return FadeTransition(
-      opacity: curved,
-      child: ScaleTransition(
-        scale: Tween<double>(begin: 0.985, end: 1).animate(curved),
-        child: FadeTransition(
-          opacity: Tween<double>(begin: 1, end: 0.6).animate(secondaryCurved),
-          child: ScaleTransition(
-            scale: Tween<double>(begin: 1, end: 0.99).animate(secondaryCurved),
-            child: child,
+    // Eixo compartilhado (X): a tela que entra desliza da direita com fade +
+    // leve scale; a que fica embaixo recua um pouco para a esquerda e escurece
+    // quando outra é empilhada. Perceptível, mas suave.
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: const Offset(0.08, 0),
+        end: Offset.zero,
+      ).animate(curved),
+      child: FadeTransition(
+        opacity: curved,
+        child: ScaleTransition(
+          scale: Tween<double>(begin: 0.98, end: 1).animate(curved),
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: Offset.zero,
+              end: const Offset(-0.04, 0),
+            ).animate(secondaryCurved),
+            child: FadeTransition(
+              opacity:
+                  Tween<double>(begin: 1, end: 0.7).animate(secondaryCurved),
+              child: child,
+            ),
           ),
         ),
       ),

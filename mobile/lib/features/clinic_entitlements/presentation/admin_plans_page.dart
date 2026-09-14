@@ -24,9 +24,8 @@ class AdminPlansPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final clinicsAsync = ref.watch(clinicsProvider);
 
-    return AppScaffold(
+    return AppSectionScaffold(
       title: 'Planos e permissões',
-      accent: AppColors.blue,
       subtitle: 'Liberar módulos por clínica',
       actions: [
         IconButton(
@@ -48,15 +47,14 @@ class AdminPlansPage extends ConsumerWidget {
             padding: const EdgeInsets.fromLTRB(
                 AppSpacing.xl, AppSpacing.lg, AppSpacing.xl, AppSpacing.xxl),
             children: [
-              const AppPageHeader(
-                icon: Icons.tune_outlined,
+              const AppSectionHeader(
                 title: 'Liberação de módulos',
                 subtitle:
                     'Ligue ou desligue módulos por clínica. O que estiver ligado '
                     'fica disponível para os psicólogos daquela clínica, '
                     'independentemente do plano.',
               ),
-              const SizedBox(height: AppSpacing.lg),
+              const SizedBox(height: AppSpacing.md),
               if (clinics.isEmpty)
                 const Padding(
                   padding: EdgeInsets.only(top: 80),

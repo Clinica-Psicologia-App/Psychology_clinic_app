@@ -34,12 +34,33 @@ class UserManagementPage extends ConsumerWidget {
     final profile = ref.watch(authControllerProvider).valueOrNull;
     final isPlatformAdmin = profile?.role == ProfileRole.platformAdmin;
 
-    return AppScaffold(
-      title: 'Equipe e permissões',
-      accent: AppColors.blue,
-      subtitle: isPlatformAdmin
-          ? 'Psicólogos e administradores da plataforma'
-          : 'Gestão da equipe da clínica',
+    final users = usersState.valueOrNull ?? const <ClinicUser>[];
+    final loaded = usersState.hasValue;
+    final active = users.where((u) => u.isActive).length;
+    final personal = users.where((u) => u.isPersonalClinic).length;
+
+    return AppSectionScaffold(
+      title: 'Usuários',
+      subtitle:
+          'Quem acessa a plataforma, por clínica ou consultório individual.',
+      stats: [
+        AppSectionStat(
+          value: loaded ? '$active' : '—',
+          label: 'Ativos',
+          accent: const Color(0xFF00D4C9),
+        ),
+        AppSectionStat(
+          value: loaded ? '$personal' : '—',
+          label: 'Individuais',
+        ),
+        AppSectionStat(
+          value: loaded ? '${users.length}' : '—',
+          label: 'Total',
+        ),
+      ],
+      primaryActionLabel: 'Novo acesso',
+      primaryActionIcon: Icons.person_add_alt_1_outlined,
+      onPrimaryAction: () => _showCreateUserSheet(context, ref),
       actions: [
         IconButton(
           tooltip: 'Atualizar',
@@ -48,7 +69,7 @@ class UserManagementPage extends ConsumerWidget {
         ),
       ],
       body: usersState.when(
-        loading: () => const BrandLoader(),
+        loading: () => const Center(child: BrandLoader()),
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
@@ -69,7 +90,6 @@ class UserManagementPage extends ConsumerWidget {
               _updatePsychologistAccess(context, ref, user),
           onChangeRole: (user) => _changeRole(context, ref, user),
           onDelete: (user) => _deleteUser(context, ref, user),
-          onCreate: () => _showCreateUserSheet(context, ref),
         ),
       ),
     );
@@ -333,7 +353,6 @@ class _UsersList extends StatefulWidget {
     required this.onUpdateAccess,
     required this.onChangeRole,
     required this.onDelete,
-    required this.onCreate,
   });
 
   final List<ClinicUser> users;
@@ -343,7 +362,6 @@ class _UsersList extends StatefulWidget {
   final ValueChanged<ClinicUser> onUpdateAccess;
   final ValueChanged<ClinicUser> onChangeRole;
   final ValueChanged<ClinicUser> onDelete;
-  final VoidCallback onCreate;
 
   @override
   State<_UsersList> createState() => _UsersListState();
@@ -363,7 +381,6 @@ class _UsersListState extends State<_UsersList> {
     final onUpdateAccess = widget.onUpdateAccess;
     final onChangeRole = widget.onChangeRole;
     final onDelete = widget.onDelete;
-    final onCreate = widget.onCreate;
 
     final filtered = switch (_filter) {
       _RoleFilter.all => users,
@@ -375,11 +392,8 @@ class _UsersListState extends State<_UsersList> {
     final adminsAll =
         users.where((u) => u.role == ProfileRole.platformAdmin).length;
     final groups = _groupUsersByClinic(filtered);
-    final active = users.where((user) => user.isActive).length;
-    final inactive = users.length - active;
     final psychologists =
         users.where((user) => user.role == ProfileRole.psychologist).length;
-    final personal = users.where((user) => user.isPersonalClinic).length;
 
     return ResponsiveContent(
       child: ListView(
@@ -390,42 +404,6 @@ class _UsersListState extends State<_UsersList> {
           AppSpacing.xxxl + 40,
         ),
         children: [
-          AppPageHeader(
-            icon: Icons.groups_outlined,
-            title: 'Usuários',
-            subtitle:
-                'Gerencie quem acessa a plataforma, separado por clínica ou consultório individual.',
-            metadata: [
-              StatusChip(
-                label: '${users.length} acesso(s)',
-                tone: AppStatusTone.info,
-                icon: Icons.badge_outlined,
-              ),
-              StatusChip(
-                label: '$active ativo(s)',
-                tone: AppStatusTone.completed,
-                icon: Icons.check_circle_outline,
-              ),
-              if (inactive > 0)
-                StatusChip(
-                  label: '$inactive inativo(s)',
-                  tone: AppStatusTone.warning,
-                  icon: Icons.pause_circle_outline,
-                ),
-              if (personal > 0)
-                StatusChip(
-                  label: '$personal individual(is)',
-                  tone: AppStatusTone.info,
-                  icon: Icons.person_pin_circle_outlined,
-                ),
-            ],
-            primaryAction: FilledButton.icon(
-              onPressed: onCreate,
-              icon: const Icon(Icons.person_add_alt_1_outlined),
-              label: const Text('Novo acesso'),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
           _RoleTabs(
             filter: _filter,
             total: users.length,
@@ -437,7 +415,8 @@ class _UsersListState extends State<_UsersList> {
           AppSectionHeader(
             title: 'Separação por vínculo',
             subtitle:
-                'Cada bloco representa uma clínica ou um consultório individual. Dentro dele ficam os profissionais vinculados.',
+                'Cada bloco representa uma clínica ou um consultório '
+                'individual. Dentro dele ficam os profissionais vinculados.',
             action: StatusChip(
               label: '${groups.length} grupo(s)',
               tone: AppStatusTone.neutral,
@@ -590,6 +569,7 @@ class _ClinicGroupCard extends StatelessWidget {
     return MotionSurface(
       borderRadius: AppRadius.xlAll,
       child: Container(
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
           borderRadius: AppRadius.xlAll,

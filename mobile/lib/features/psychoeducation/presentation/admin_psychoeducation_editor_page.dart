@@ -193,9 +193,8 @@ class _AdminPsychoeducationEditorPageState
 
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
+    return AppSectionScaffold(
       title: _isEditing ? 'Editar módulo' : 'Novo módulo',
-      accent: AppColors.purple,
       subtitle: 'Biblioteca de Psicoeducação',
       actions: [
         if (_isEditing)

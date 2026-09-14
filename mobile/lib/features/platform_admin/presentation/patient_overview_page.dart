@@ -21,11 +21,42 @@ class PatientOverviewPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final usersAsync = ref.watch(clinicUsersProvider);
 
-    return AppScaffold(
+    const subtitle = 'Pacientes e convites por psicólogo';
+    final users = usersAsync.valueOrNull ?? const <ClinicUser>[];
+    final loaded = usersAsync.hasValue;
+    final psychologists = users
+        .where((u) => u.role == ProfileRole.psychologist)
+        .toList()
+      ..sort((a, b) => a.fullName.compareTo(b.fullName));
+    final totalActive = psychologists.fold<int>(
+      0,
+      (sum, u) => sum + u.assignedPatientsCount,
+    );
+    final totalPending = psychologists.fold<int>(
+      0,
+      (sum, u) => sum + u.pendingPatientInvitationsCount,
+    );
+
+    return AppSectionScaffold(
       title: 'Distribuição de Pacientes',
-      accent: AppColors.blue,
+      subtitle: subtitle,
+      stats: [
+        AppSectionStat(
+          value: loaded ? '${psychologists.length}' : '—',
+          label: 'Psicólogos',
+        ),
+        AppSectionStat(
+          value: loaded ? '$totalActive' : '—',
+          label: 'Pacientes',
+          accent: const Color(0xFF00D4C9),
+        ),
+        AppSectionStat(
+          value: loaded ? '$totalPending' : '—',
+          label: 'Convites',
+        ),
+      ],
       body: usersAsync.when(
-        loading: () => const BrandLoader(),
+        loading: () => const Center(child: BrandLoader()),
         error: (e, _) => Center(
           child: Text(
             'Erro ao carregar dados.',
@@ -35,230 +66,41 @@ class PatientOverviewPage extends ConsumerWidget {
                 ?.copyWith(color: AppColors.error),
           ),
         ),
-        data: (users) {
-          final psychologists = users
-              .where((u) => u.role == ProfileRole.psychologist)
-              .toList()
-            ..sort((a, b) => a.fullName.compareTo(b.fullName));
-
-          final totalActive = psychologists.fold<int>(
-            0,
-            (sum, u) => sum + u.assignedPatientsCount,
-          );
-          final totalPending = psychologists.fold<int>(
-            0,
-            (sum, u) => sum + u.pendingPatientInvitationsCount,
-          );
-
-          return RefreshIndicator(
-            onRefresh: () => ref.read(clinicUsersProvider.notifier).refresh(),
-            child: ResponsiveContent(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  AppSpacing.lg,
-                  AppSpacing.md,
-                  AppSpacing.xxl,
-                ),
-                children: [
-                  MotionReveal(
-                    child: _SummaryHeader(
-                      totalActive: totalActive,
-                      totalPending: totalPending,
-                      psychologistCount: psychologists.length,
+        data: (_) => RefreshIndicator(
+          onRefresh: () => ref.read(clinicUsersProvider.notifier).refresh(),
+          child: ResponsiveContent(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.lg,
+                AppSpacing.md,
+                AppSpacing.xxl,
+              ),
+              children: [
+                if (psychologists.isEmpty)
+                  const Center(
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 48),
+                      child: Text('Nenhum psicólogo cadastrado.'),
                     ),
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  if (psychologists.isEmpty)
-                    const Center(
-                      child: Padding(
-                        padding: EdgeInsets.only(top: 48),
-                        child: Text('Nenhum psicólogo cadastrado.'),
-                      ),
-                    )
-                  else
-                    ...psychologists.asMap().entries.map(
-                          (entry) => MotionReveal(
-                            delay: staggerDelay(entry.key),
-                            child: Padding(
-                              padding: const EdgeInsets.only(
-                                bottom: AppSpacing.sm,
-                              ),
-                              child: _PsychologistPatientCard(
-                                user: entry.value,
-                              ),
+                  )
+                else
+                  ...psychologists.asMap().entries.map(
+                        (entry) => MotionReveal(
+                          delay: staggerDelay(entry.key),
+                          child: Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: AppSpacing.sm,
+                            ),
+                            child: _PsychologistPatientCard(
+                              user: entry.value,
                             ),
                           ),
                         ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _SummaryHeader extends StatelessWidget {
-  const _SummaryHeader({
-    required this.totalActive,
-    required this.totalPending,
-    required this.psychologistCount,
-  });
-
-  final int totalActive;
-  final int totalPending;
-  final int psychologistCount;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: AppRadius.xlAll,
-        boxShadow: AppShadows.card,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: AppColors.turquoise,
-                    borderRadius: AppRadius.lgAll,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.white.withValues(alpha: 0.45),
-                        blurRadius: 4,
-                        offset: const Offset(-2, -2),
                       ),
-                      BoxShadow(
-                        color: AppColors.turquoise.withValues(alpha: 0.38),
-                        blurRadius: 10,
-                        offset: const Offset(3, 5),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.people_alt_outlined,
-                    color: Colors.white,
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Visão geral da clínica',
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          color: theme.colorScheme.onSurface,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      Text(
-                        '$psychologistCount psicólogo${psychologistCount != 1 ? 's' : ''} cadastrado${psychologistCount != 1 ? 's' : ''}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
               ],
             ),
-            const SizedBox(height: AppSpacing.md),
-            const Divider(height: 1),
-            const SizedBox(height: AppSpacing.md),
-            Row(
-              children: [
-                Expanded(
-                  child: _StatCell(
-                    label: 'Pacientes ativos',
-                    value: '$totalActive',
-                    color: AppColors.turquoise,
-                    icon: Icons.person_outline,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: _StatCell(
-                    label: 'Convites pendentes',
-                    value: '$totalPending',
-                    color: AppColors.warning,
-                    icon: Icons.mail_outline,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _StatCell extends StatelessWidget {
-  const _StatCell({
-    required this.label,
-    required this.value,
-    required this.color,
-    required this.icon,
-  });
-
-  final String label;
-  final String value;
-  final Color color;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: AppRadius.lgAll,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 18, color: color),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    value,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      color: color,
-                      fontWeight: FontWeight.w800,
-                      height: 1,
-                    ),
-                  ),
-                  Text(
-                    label,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                    ),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

@@ -35,61 +35,58 @@ class _QuestionnaireAccessManagementPageState
 
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
-      title: 'Questionários',
-      accent: AppColors.blue,
-      subtitle: 'Catálogo, edição e permissões',
-      actions: [
-        IconButton(
-          tooltip: 'Atualizar',
-          onPressed: () {
-            ref.invalidate(questionnaireAdminCatalogProvider);
-            ref.invalidate(questionnaireStaffOptionsProvider);
-            final professionalId = _selectedProfessionalId;
-            if (professionalId != null) {
-              ref.invalidate(
-                questionnaireAccessManagementProvider(professionalId),
-              );
-            }
-          },
-          icon: const Icon(Icons.refresh),
-        ),
-      ],
-      body: DefaultTabController(
-        length: 2,
-        child: Column(
-          children: [
-            const TabBar(
-              tabs: [
-                Tab(
-                  icon: Icon(Icons.fact_check_outlined),
-                  text: 'Catálogo',
-                ),
-                Tab(
-                  icon: Icon(Icons.assignment_ind_outlined),
-                  text: 'Permissões',
-                ),
-              ],
+    return DefaultTabController(
+      length: 2,
+      child: AppSectionScaffold(
+        title: 'Questionários',
+        subtitle: 'Catálogo, edição e permissões',
+        actions: [
+          IconButton(
+            tooltip: 'Atualizar',
+            onPressed: () {
+              ref.invalidate(questionnaireAdminCatalogProvider);
+              ref.invalidate(questionnaireStaffOptionsProvider);
+              final professionalId = _selectedProfessionalId;
+              if (professionalId != null) {
+                ref.invalidate(
+                  questionnaireAccessManagementProvider(professionalId),
+                );
+              }
+            },
+            icon: const Icon(Icons.refresh),
+          ),
+        ],
+        bottom: const TabBar(
+          indicatorColor: Colors.white,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
+          dividerColor: Colors.transparent,
+          tabs: [
+            Tab(
+              icon: Icon(Icons.fact_check_outlined),
+              text: 'Catálogo',
             ),
-            Expanded(
-              child: TabBarView(
-                children: [
-                  _QuestionnaireCatalogTab(
-                    onEdit: (questionnaire) =>
-                        _showQuestionnaireForm(questionnaire: questionnaire),
-                    onQuestions: _showQuestionsManager,
-                    onDelete: _confirmDeleteQuestionnaire,
-                    onCreate: () => _showQuestionnaireForm(),
-                  ),
-                  _QuestionnaireAccessTab(
-                    selectedProfessionalId: _selectedProfessionalId,
-                    saving: _savingAccess,
-                    onProfessionalChanged: (value) =>
-                        setState(() => _selectedProfessionalId = value),
-                    onToggleAccess: _toggleAccess,
-                  ),
-                ],
-              ),
+            Tab(
+              icon: Icon(Icons.assignment_ind_outlined),
+              text: 'Permissões',
+            ),
+          ],
+        ),
+        body: TabBarView(
+          children: [
+            _QuestionnaireCatalogTab(
+              onEdit: (questionnaire) =>
+                  _showQuestionnaireForm(questionnaire: questionnaire),
+              onQuestions: _showQuestionsManager,
+              onDelete: _confirmDeleteQuestionnaire,
+              onCreate: () => _showQuestionnaireForm(),
+            ),
+            _QuestionnaireAccessTab(
+              selectedProfessionalId: _selectedProfessionalId,
+              saving: _savingAccess,
+              onProfessionalChanged: (value) =>
+                  setState(() => _selectedProfessionalId = value),
+              onToggleAccess: _toggleAccess,
             ),
           ],
         ),
@@ -265,12 +262,11 @@ class _QuestionnaireCatalogTab extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.md),
       children: [
-        AppPageHeader(
-          icon: Icons.fact_check_outlined,
+        AppSectionHeader(
           title: 'Catálogo de questionários',
           subtitle:
               'Crie, edite, organize perguntas e controle o status clínico dos instrumentos. Permissões por psicólogo ficam na próxima aba.',
-          primaryAction: FilledButton.icon(
+          action: FilledButton.icon(
             onPressed: onCreate,
             icon: const Icon(Icons.add),
             label: const Text('Novo questionário'),
@@ -361,8 +357,7 @@ class _QuestionnaireAccessTab extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.md),
       children: [
-        const AppPageHeader(
-          icon: Icons.psychology_alt_outlined,
+        const AppSectionHeader(
           title: 'Permissões por psicólogo',
           subtitle:
               'Escolha um profissional e defina quais instrumentos ele pode aplicar. Esta aba não edita perguntas nem dados do catálogo.',

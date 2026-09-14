@@ -20,9 +20,8 @@ class AdminPsychoeducationCatalogPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(adminPsychoListProvider);
 
-    return AppScaffold(
+    return AppSectionScaffold(
       title: 'Psicoeducação',
-      accent: AppColors.purple,
       subtitle: 'Módulos da Biblioteca · liberação aos psicólogos e pacientes',
       actions: [
         IconButton(

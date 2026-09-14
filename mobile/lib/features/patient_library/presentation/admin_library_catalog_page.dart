@@ -33,9 +33,8 @@ class _AdminLibraryCatalogPageState
   Widget build(BuildContext context) {
     final listAsync = ref.watch(adminLibraryListProvider(_queryArg));
 
-    return AppScaffold(
+    return AppSectionScaffold(
       title: 'Catálogo da Biblioteca',
-      accent: AppColors.cyan,
       subtitle: 'Curadoria de filmes e séries · liberação para os psicólogos',
       actions: [
         IconButton(

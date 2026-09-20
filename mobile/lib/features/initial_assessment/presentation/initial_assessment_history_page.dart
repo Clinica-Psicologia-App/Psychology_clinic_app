@@ -348,6 +348,7 @@ class _EventCard extends StatelessWidget {
 }
 
 Color _chapterAccentColor(LifeChapter chapter) => switch (chapter) {
+      LifeChapter.birth => const Color(0xFF9B59B6),
       LifeChapter.childhood => const Color(0xFFD85A30),
       LifeChapter.adolescence => const Color(0xFFBA7517),
       LifeChapter.adulthood => const Color(0xFF1D9E75),

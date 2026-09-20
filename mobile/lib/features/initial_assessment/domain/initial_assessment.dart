@@ -51,9 +51,10 @@ class InitialAssessment {
 
   // ── Progresso da trilha ("Conhecendo você") ─────────────────────────────
   //
-  // Bloco 1: 8 campos fixos + campos condicionais (medicationNotes só conta
+  // Bloco 1: 7 campos fixos + campos condicionais (medicationNotes só conta
   // quando usesMedication=true; psychiatristNotes só quando
-  // psychiatricFollowup=true). Bloco 2: 5 campos. Bloco 3: 9 áreas.
+  // psychiatricFollowup=true). importantToKnow é opcional — soma se
+  // preenchido mas não bloqueia o 100%. Bloco 2: 5 campos. Bloco 3: 9 áreas.
   // O total é dinâmico para não travar o progresso em pacientes que não
   // usam medicação ou não têm acompanhamento psiquiátrico.
 
@@ -61,9 +62,10 @@ class InitialAssessment {
 
   /// Total aplicável ao paciente — varia conforme respostas condicionais do Bloco 1.
   int get totalFieldCount {
-    var total = 8 + block2FieldTotal + 9; // 8 campos fixos do Bloco 1
+    var total = 7 + block2FieldTotal + 9; // 7 campos fixos do Bloco 1
     if (basics?.usesMedication == true) total++; // medicationNotes aplicável
     if (basics?.psychiatricFollowup == true) total++; // psychiatristNotes aplicável
+    if ((basics?.importantToKnow ?? '').trim().isNotEmpty) total++; // opcional: só entra se preenchido
     return total;
   }
 

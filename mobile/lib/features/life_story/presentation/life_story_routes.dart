@@ -8,6 +8,9 @@ abstract final class LifeStoryRoutes {
   /// O fluxo em etapas para registrar um novo acontecimento.
   static const newEvent = '/patient/my-history/new';
 
+  /// O mesmo fluxo em modo de edição — recebe o evento via `extra`.
+  static const editEvent = '/patient/my-history/edit';
+
   /// "Aprofundar este momento" — recebe o evento via `extra`.
   static const deepen = '/patient/my-history/deepen';
 

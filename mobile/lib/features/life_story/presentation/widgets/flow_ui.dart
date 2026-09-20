@@ -36,6 +36,53 @@ Widget flowHint(String text) => Padding(
       ),
     );
 
+/// Grade de 2 colunas para listas longas de FlowChip.
+///
+/// Cada chip ocupa exatamente metade da largura disponível e a altura de cada
+/// linha se ajusta ao chip mais alto da linha — sem gaps verticais irregulares.
+/// Use em lugar do Wrap sempre que os labels forem frases longas ou a lista
+/// tiver mais de ~6 itens.
+/// Grade de 2 colunas para listas longas de FlowChip.
+///
+/// Cada chip ocupa exatamente metade da largura disponível e a altura de cada
+/// linha se ajusta ao chip mais alto da linha — sem gaps verticais irregulares.
+/// Use em lugar do Wrap sempre que os labels forem frases longas ou a lista
+/// tiver mais de ~6 itens.
+Widget flowChipGrid<T>({
+  required List<T> items,
+  required String Function(T) labelOf,
+  required bool Function(T) isSelected,
+  required void Function(T) onTap,
+  bool Function(T)? dimmedOf,
+}) {
+  FlowChip chip(T item) => FlowChip(
+        label: labelOf(item),
+        selected: isSelected(item),
+        dimmed: dimmedOf?.call(item) ?? false,
+        onTap: () => onTap(item),
+      );
+
+  final rows = <Widget>[];
+  for (var i = 0; i < items.length; i += 2) {
+    final a = items[i];
+    final b = i + 1 < items.length ? items[i + 1] : null;
+    rows.add(
+      IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(child: chip(a)),
+            const SizedBox(width: 8),
+            Expanded(child: b != null ? chip(b) : const SizedBox()),
+          ],
+        ),
+      ),
+    );
+    if (i + 2 < items.length) rows.add(const SizedBox(height: 8));
+  }
+  return Column(children: rows);
+}
+
 /// Chip selecionável (single ou multi). `dimmed` desabilita visualmente
 /// (ex.: já atingiu o limite de seleção).
 class FlowChip extends StatelessWidget {
@@ -61,6 +108,7 @@ class FlowChip extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          alignment: Alignment.centerLeft,
           decoration: BoxDecoration(
             color: selected ? const Color(0xFFE0F2F1) : Colors.white,
             border: Border.all(

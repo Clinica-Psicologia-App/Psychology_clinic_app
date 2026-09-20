@@ -155,18 +155,12 @@ class _DeepenRelationshipFlowPageState
         flowQuestion('Essa pessoa participou da sua criação ou cuidou de você '
             'durante sua infância ou adolescência?'),
         const SizedBox(height: 14),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final r in kCaregiverRolesInOrder)
-              FlowChip(
-                label: r.label,
-                selected: _caregiverRole == r,
-                onTap: () => setState(
-                    () => _caregiverRole = _caregiverRole == r ? null : r),
-              ),
-          ],
+        flowChipGrid<CaregiverRole>(
+          items: kCaregiverRolesInOrder,
+          labelOf: (r) => r.label,
+          isSelected: (r) => _caregiverRole == r,
+          onTap: (r) =>
+              setState(() => _caregiverRole = _caregiverRole == r ? null : r),
         ),
       ],
     );
@@ -189,18 +183,12 @@ class _DeepenRelationshipFlowPageState
         const SizedBox(height: 22),
         flowLabel('De forma geral, como você descreveria essa relação?'),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final b in kBondTypesInOrder)
-              FlowChip(
-                label: b.label,
-                selected: _bondType == b,
-                onTap: () =>
-                    setState(() => _bondType = _bondType == b ? null : b),
-              ),
-          ],
+        flowChipGrid<BondType>(
+          items: kBondTypesInOrder,
+          labelOf: (b) => b.label,
+          isSelected: (b) => _bondType == b,
+          onTap: (b) =>
+              setState(() => _bondType = _bondType == b ? null : b),
         ),
         if (_bondType == BondType.changed) ...[
           const SizedBox(height: 12),
@@ -260,23 +248,18 @@ class _DeepenRelationshipFlowPageState
       children: [
         flowQuestion('O que você gostaria de ter recebido mais?'),
         const SizedBox(height: 14),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final n in kRelationalNeedsInOrder)
-              FlowChip(
-                label: n.label,
-                selected: _wished.contains(n),
-                onTap: () => setState(() =>
-                    _wished.contains(n) ? _wished.remove(n) : _wished.add(n)),
-              ),
-            FlowChip(
-              label: 'Sinto que recebi o que precisava',
-              selected: _gotWhatNeeded,
-              onTap: () => setState(() => _gotWhatNeeded = !_gotWhatNeeded),
-            ),
-          ],
+        flowChipGrid<RelationalNeed>(
+          items: kRelationalNeedsInOrder,
+          labelOf: (n) => n.label,
+          isSelected: (n) => _wished.contains(n),
+          onTap: (n) => setState(() =>
+              _wished.contains(n) ? _wished.remove(n) : _wished.add(n)),
+        ),
+        const SizedBox(height: 8),
+        FlowChip(
+          label: 'Sinto que recebi o que precisava',
+          selected: _gotWhatNeeded,
+          onTap: () => setState(() => _gotWhatNeeded = !_gotWhatNeeded),
         ),
       ],
     );
@@ -289,18 +272,12 @@ class _DeepenRelationshipFlowPageState
       children: [
         flowQuestion('Como está sua relação com essa pessoa hoje?'),
         const SizedBox(height: 14),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final c in kCurrentRelationshipInOrder)
-              FlowChip(
-                label: c.label,
-                selected: _current == c,
-                onTap: () =>
-                    setState(() => _current = _current == c ? null : c),
-              ),
-          ],
+        flowChipGrid<CurrentRelationship>(
+          items: kCurrentRelationshipInOrder,
+          labelOf: (c) => c.label,
+          isSelected: (c) => _current == c,
+          onTap: (c) =>
+              setState(() => _current = _current == c ? null : c),
         ),
         const SizedBox(height: 22),
         flowLabel('Existe algo importante sobre essa relação hoje que você '
@@ -321,14 +298,11 @@ class _DeepenRelationshipFlowPageState
     bool Function(T) selected,
     void Function(T) onTap,
   ) =>
-      Wrap(
-        spacing: 8,
-        runSpacing: 8,
-        children: [
-          for (final it in items)
-            FlowChip(
-                label: label(it), selected: selected(it), onTap: () => onTap(it)),
-        ],
+      flowChipGrid<T>(
+        items: items,
+        labelOf: label,
+        isSelected: selected,
+        onTap: onTap,
       );
 
   Widget _scale(

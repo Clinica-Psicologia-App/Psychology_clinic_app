@@ -27,6 +27,12 @@ class LifeChapterStyle {
 }
 
 LifeChapterStyle styleForChapter(LifeChapter? chapter) => switch (chapter) {
+      LifeChapter.birth => const LifeChapterStyle(
+          accent: Color(0xFF9B59B6),
+          bg: Color(0xFFF5EEF8),
+          text: Color(0xFF6C3483),
+          icon: Icons.child_friendly_rounded,
+        ),
       LifeChapter.childhood => const LifeChapterStyle(
           accent: Color(0xFFD85A30),
           bg: Color(0xFFFAECE7),

@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/error_banner.dart';
+import '../../../../shared/widgets/relationship_role_picker.dart';
 import '../../domain/genogram_enums.dart';
 import '../../domain/genogram_person_entry.dart';
 import '../../providers/patient_family_providers.dart';
+import '../../../life_story/domain/life_story_enums.dart';
 
 /// Abre o editor de uma pessoa do genograma (criar ou editar).
 Future<void> showGenogramPersonEditor({
@@ -36,8 +38,8 @@ class _GenogramPersonEditor extends ConsumerStatefulWidget {
 
 class _GenogramPersonEditorState extends ConsumerState<_GenogramPersonEditor> {
   late final TextEditingController _fullName;
-  late final TextEditingController _relationship;
   late final TextEditingController _age;
+  RelationshipRole? _role;
   late final TextEditingController _traitsOther;
   late final TextEditingController _eventsOther;
   String? _gender;
@@ -59,7 +61,7 @@ class _GenogramPersonEditorState extends ConsumerState<_GenogramPersonEditor> {
     super.initState();
     final p = widget.person;
     _fullName = TextEditingController(text: p?.fullName ?? '');
-    _relationship = TextEditingController(text: p?.relationshipToPatient ?? '');
+    _role = relationshipRoleFromKey(p?.relationshipToPatient);
     final age = p?.birthYear == null
         ? ''
         : (DateTime.now().year - p!.birthYear!).toString();
@@ -81,7 +83,6 @@ class _GenogramPersonEditorState extends ConsumerState<_GenogramPersonEditor> {
   @override
   void dispose() {
     _fullName.dispose();
-    _relationship.dispose();
     _age.dispose();
     _traitsOther.dispose();
     _eventsOther.dispose();
@@ -105,7 +106,7 @@ class _GenogramPersonEditorState extends ConsumerState<_GenogramPersonEditor> {
         await notifier.updatePerson(
           personId: widget.person!.id,
           fullName: _fullName.text,
-          relationshipToPatient: _nullIfEmpty(_relationship.text),
+          relationshipToPatient: _role?.key,
           gender: _gender,
           birthYear: birthYear,
           isDeceased: _isDeceased,
@@ -123,7 +124,7 @@ class _GenogramPersonEditorState extends ConsumerState<_GenogramPersonEditor> {
       } else {
         await notifier.createPerson(
           fullName: _fullName.text,
-          relationshipToPatient: _nullIfEmpty(_relationship.text),
+          relationshipToPatient: _role?.key,
           gender: _gender,
           birthYear: birthYear,
           isDeceased: _isDeceased,
@@ -219,12 +220,12 @@ class _GenogramPersonEditorState extends ConsumerState<_GenogramPersonEditor> {
                     controller: _fullName,
                     decoration: const InputDecoration(labelText: 'Nome'),
                   ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _relationship,
-                    decoration: const InputDecoration(
-                      labelText: 'Grau de parentesco (ex.: Mãe, Irmão)',
-                    ),
+                  const SizedBox(height: 14),
+                  _label('Essa pessoa é seu/sua...'),
+                  const SizedBox(height: 8),
+                  RelationshipRolePicker(
+                    selected: _role,
+                    onChanged: (r) => setState(() => _role = r),
                   ),
                   const SizedBox(height: 12),
                   Row(

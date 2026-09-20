@@ -11,10 +11,15 @@ import '../domain/timeline_person.dart';
 import '../providers/life_story_providers.dart';
 import '../../../shared/widgets/brand_loading.dart';
 
-/// Fluxo em etapas para registrar um acontecimento — núcleo do Conhecer.
-/// Textos e opções literais do documento da cliente (spec §3–9, §13).
+/// Fluxo em etapas para registrar ou editar um acontecimento.
+///
+/// Quando [event] é passado, o widget entra em modo de edição: pré-preenche
+/// todos os campos e chama [updateTimelineEventProvider] ao salvar.
 class TimelineEventFlowPage extends ConsumerStatefulWidget {
-  const TimelineEventFlowPage({super.key});
+  const TimelineEventFlowPage({super.key, this.event});
+
+  /// Evento existente a editar; `null` = criar novo.
+  final LifeTimelineEvent? event;
 
   @override
   ConsumerState<TimelineEventFlowPage> createState() =>
@@ -22,9 +27,13 @@ class TimelineEventFlowPage extends ConsumerStatefulWidget {
 }
 
 class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
-  static const _stepCount = 5;
+  static const _stepCountCreate = 5;
+  static const _stepCountEdit = 4; // pula etapa "Quem"
   int _step = 0;
   bool _busy = false;
+
+  bool get _isEditing => widget.event != null;
+  int get _stepCount => _isEditing ? _stepCountEdit : _stepCountCreate;
 
   // Etapa 1 — quando
   LifeChapter? _chapter;
@@ -43,6 +52,27 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
   final _emotionOtherController = TextEditingController();
   bool _emotionOtherOn = false;
   double _impact = 5;
+
+  @override
+  void initState() {
+    super.initState();
+    final e = widget.event;
+    if (e == null) return;
+    _chapter = e.lifeChapter;
+    _dontRememberAge = e.agePrecision == AgePrecision.approximate;
+    if (!_dontRememberAge && e.ageAtEvent != null) {
+      _ageController.text = e.ageAtEvent.toString();
+    }
+    _titleController.text = e.title;
+    _descriptionController.text = e.description ?? '';
+    _selectedPeople.addAll(e.peopleIds);
+    _emotions.addAll(e.emotions);
+    if (e.emotionOther != null) {
+      _emotionOtherOn = true;
+      _emotionOtherController.text = e.emotionOther!;
+    }
+    _impact = (e.emotionalImpact ?? 5).toDouble();
+  }
 
   @override
   void dispose() {
@@ -78,31 +108,57 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
     if (_busy) return;
     setState(() => _busy = true);
     final age = int.tryParse(_ageController.text.trim());
-    final event = LifeTimelineEvent(
-      id: '',
-      patientId: '',
+    final orig = widget.event;
+    final updated = LifeTimelineEvent(
+      id: orig?.id ?? '',
+      patientId: orig?.patientId ?? '',
       title: _titleController.text.trim(),
       description: _descriptionController.text.trim().isEmpty
           ? null
           : _descriptionController.text.trim(),
       lifeChapter: _chapter,
       ageAtEvent: _dontRememberAge ? null : age,
-      agePrecision:
-          _dontRememberAge ? AgePrecision.approximate : (age != null ? AgePrecision.exact : null),
+      agePrecision: _dontRememberAge
+          ? AgePrecision.approximate
+          : (age != null ? AgePrecision.exact : null),
       emotions: _emotions.toList(),
-      emotionOther: _emotionOtherOn && _emotionOtherController.text.trim().isNotEmpty
-          ? _emotionOtherController.text.trim()
-          : null,
+      emotionOther:
+          _emotionOtherOn && _emotionOtherController.text.trim().isNotEmpty
+              ? _emotionOtherController.text.trim()
+              : null,
       emotionalImpact: _impact.round(),
+      // campos de "aprofundar" preservados no modo de edição
+      eventRecurrence: orig?.eventRecurrence,
+      ageFrom: orig?.ageFrom,
+      ageTo: orig?.ageTo,
+      categories: orig?.categories ?? const [],
+      needs: orig?.needs ?? const [],
+      needOther: orig?.needOther,
+      needWasMet: orig?.needWasMet,
+      meaning: orig?.meaning,
+      presentInfluence: orig?.presentInfluence,
+      stillInfluences: orig?.stillInfluences,
+      presentAreas: orig?.presentAreas ?? const [],
     );
     try {
-      await ref.read(createTimelineEventProvider.notifier).submit(
-            event: event,
-            personIds: _selectedPeople.toList(),
-          );
+      if (_isEditing) {
+        await ref.read(updateTimelineEventProvider.notifier).submit(
+              eventId: orig!.id,
+              event: updated,
+            );
+      } else {
+        await ref.read(createTimelineEventProvider.notifier).submit(
+              event: updated,
+              personIds: _selectedPeople.toList(),
+            );
+      }
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Este momento foi adicionado à sua história.')),
+        SnackBar(
+          content: Text(_isEditing
+              ? 'Momento atualizado.'
+              : 'Este momento foi adicionado à sua história.'),
+        ),
       );
       context.pop();
     } catch (e) {
@@ -139,7 +195,7 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
                     _circleIcon(Icons.arrow_back_rounded, () => context.pop()),
                     const SizedBox(width: 10),
                     Text(
-                      'Minha História',
+                      _isEditing ? 'Editar momento' : 'Minha História',
                       style: theme.textTheme.titleMedium?.copyWith(
                         color: Colors.white,
                         fontWeight: FontWeight.w700,
@@ -181,13 +237,23 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
     );
   }
 
-  Widget _buildStep(ThemeData theme) => switch (_step) {
+  Widget _buildStep(ThemeData theme) {
+    if (_isEditing) {
+      return switch (_step) {
         0 => _stepWhen(theme),
         1 => _stepWhat(theme),
-        2 => _stepWho(theme),
-        3 => _stepFelt(theme),
+        2 => _stepFelt(theme),
         _ => _stepReview(theme),
       };
+    }
+    return switch (_step) {
+      0 => _stepWhen(theme),
+      1 => _stepWhat(theme),
+      2 => _stepWho(theme),
+      3 => _stepFelt(theme),
+      _ => _stepReview(theme),
+    };
+  }
 
   // ── Etapa 1 · Quando (§4) ────────────────────────────────────────────────
   Widget _stepWhen(ThemeData theme) {
@@ -196,6 +262,9 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
       children: [
         _question('Em qual período da sua vida aconteceu?'),
         _hint('Comece pela lembrança que vier primeiro.'),
+        // Card largo para Nascimento
+        _phaseCardWide(LifeChapter.birth),
+        const SizedBox(height: 8),
         // Grade 2×2 para os quatro capítulos principais
         GridView.count(
           crossAxisCount: 2,
@@ -382,6 +451,13 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
     Color textColor,
     String ageRange,
   }) _chapterMeta(LifeChapter chapter) => switch (chapter) {
+        LifeChapter.birth => (
+            icon: Icons.child_friendly_rounded,
+            accent: const Color(0xFF9B59B6),
+            bg: const Color(0xFFF5EEF8),
+            textColor: const Color(0xFF6C3483),
+            ageRange: 'Ao nascer',
+          ),
         LifeChapter.earlyYears => (
             icon: Icons.child_care,
             accent: const Color(0xFFD85A30),
@@ -812,14 +888,18 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
                   height: 18,
                   child:
                       CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-              : const Text('Adicionar à minha história',
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+              : Text(
+                  _isEditing ? 'Salvar alterações' : 'Adicionar à minha história',
+                  style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                ),
         ),
-        const SizedBox(height: 8),
-        const Center(
-          child: Text('Você pode editar depois tocando no evento.',
-              style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
-        ),
+        if (!_isEditing) ...[
+          const SizedBox(height: 8),
+          const Center(
+            child: Text('Você pode editar depois tocando no evento.',
+                style: TextStyle(fontSize: 11, color: AppColors.textMuted)),
+          ),
+        ],
       ],
     );
   }

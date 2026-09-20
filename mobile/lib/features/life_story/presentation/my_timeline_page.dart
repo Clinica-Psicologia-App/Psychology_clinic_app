@@ -836,7 +836,7 @@ void _showEventDetail(BuildContext context, LifeTimelineEvent event) {
                 subtitle: 'Corrigir título, emoções ou descrição',
                 onTap: () {
                   Navigator.of(sheetContext).pop();
-                  // TODO: rota de edição do evento
+                  context.push(LifeStoryRoutes.editEvent, extra: event);
                 },
               ),
             ],

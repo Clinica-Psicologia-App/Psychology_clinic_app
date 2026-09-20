@@ -117,18 +117,12 @@ class _FamilyContextFlowPageState extends ConsumerState<FamilyContextFlowPage> {
         flowHint('Pensando na família em que você cresceu...'),
         flowQuestion('O que costumava acontecer em casa?'),
         const SizedBox(height: 14),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final t in kClimateTraitsInOrder)
-              FlowChip(
-                label: t.label,
-                selected: _climate.contains(t),
-                onTap: () => setState(() =>
-                    _climate.contains(t) ? _climate.remove(t) : _climate.add(t)),
-              ),
-          ],
+        flowChipGrid<ClimateTrait>(
+          items: kClimateTraitsInOrder,
+          labelOf: (t) => t.label,
+          isSelected: (t) => _climate.contains(t),
+          onTap: (t) => setState(
+              () => _climate.contains(t) ? _climate.remove(t) : _climate.add(t)),
         ),
         const SizedBox(height: 24),
         flowLabel('Se tivesse que descrever o clima da sua família em poucas '
@@ -153,18 +147,12 @@ class _FamilyContextFlowPageState extends ConsumerState<FamilyContextFlowPage> {
             'existem situações ou formas de se relacionar que parecem se '
             'repetir?'),
         const SizedBox(height: 14),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final h in kHasPatternsInOrder)
-              FlowChip(
-                label: h.label,
-                selected: _hasPatterns == h,
-                onTap: () =>
-                    setState(() => _hasPatterns = _hasPatterns == h ? null : h),
-              ),
-          ],
+        flowChipGrid<HasPatterns>(
+          items: kHasPatternsInOrder,
+          labelOf: (h) => h.label,
+          isSelected: (h) => _hasPatterns == h,
+          onTap: (h) =>
+              setState(() => _hasPatterns = _hasPatterns == h ? null : h),
         ),
         if (_showPatternDetail) ...[
           const SizedBox(height: 24),
@@ -177,38 +165,28 @@ class _FamilyContextFlowPageState extends ConsumerState<FamilyContextFlowPage> {
                     fontWeight: FontWeight.w700,
                     color: AppColors.textSecondary)),
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final p
-                    in kPatternTraitsInOrder.where((p) => p.group == group))
-                  FlowChip(
-                    label: p.label,
-                    selected: _patterns.contains(p),
-                    onTap: () => setState(() => _patterns.contains(p)
-                        ? _patterns.remove(p)
-                        : _patterns.add(p)),
-                  ),
-              ],
+            flowChipGrid<PatternTrait>(
+              items: kPatternTraitsInOrder
+                  .where((p) => p.group == group)
+                  .toList(),
+              labelOf: (p) => p.label,
+              isSelected: (p) => _patterns.contains(p),
+              onTap: (p) => setState(() =>
+                  _patterns.contains(p)
+                      ? _patterns.remove(p)
+                      : _patterns.add(p)),
             ),
           ],
           const SizedBox(height: 24),
           flowLabel('Em quais gerações você percebe esse padrão?'),
           const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final g in kPatternGenerationsInOrder)
-                FlowChip(
-                  label: g.label,
-                  selected: _generations.contains(g),
-                  onTap: () => setState(() => _generations.contains(g)
-                      ? _generations.remove(g)
-                      : _generations.add(g)),
-                ),
-            ],
+          flowChipGrid<PatternGeneration>(
+            items: kPatternGenerationsInOrder,
+            labelOf: (g) => g.label,
+            isSelected: (g) => _generations.contains(g),
+            onTap: (g) => setState(() => _generations.contains(g)
+                ? _generations.remove(g)
+                : _generations.add(g)),
           ),
           const SizedBox(height: 24),
           flowLabel('Existe algum padrão da sua família que você considera '

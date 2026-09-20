@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/error_banner.dart';
+import '../../../shared/widgets/relationship_role_picker.dart';
 import '../../coach/domain/coach_step.dart';
 import '../../coach/domain/coach_tour.dart';
 import '../../coach/providers/coach_providers.dart';
@@ -455,17 +456,9 @@ class _AddFamilyPersonSheetState extends ConsumerState<_AddFamilyPersonSheet> {
             const SizedBox(height: 16),
             flowLabel('Essa pessoa é seu/sua...'),
             const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final r in kRelationshipRolesInOrder)
-                  FlowChip(
-                    label: r.label,
-                    selected: _role == r,
-                    onTap: () => setState(() => _role = _role == r ? null : r),
-                  ),
-              ],
+            RelationshipRolePicker(
+              selected: _role,
+              onChanged: (r) => setState(() => _role = r),
             ),
             const SizedBox(height: 16),
             flowLabel('Gênero'),

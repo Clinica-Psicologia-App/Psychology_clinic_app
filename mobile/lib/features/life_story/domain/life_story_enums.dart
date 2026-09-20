@@ -6,6 +6,7 @@ library;
 
 /// Etapa 1 (spec §4) — "Em qual período da sua vida você gostaria de começar?"
 enum LifeChapter {
+  birth,
   earlyYears,
   childhood,
   adolescence,
@@ -17,6 +18,7 @@ enum LifeChapter {
 extension LifeChapterMeta on LifeChapter {
   /// Chave persistida em `patient_timeline_events.life_chapter`.
   String get key => switch (this) {
+        LifeChapter.birth => 'birth',
         LifeChapter.earlyYears => 'early_years',
         LifeChapter.childhood => 'childhood',
         LifeChapter.adolescence => 'adolescence',
@@ -27,6 +29,7 @@ extension LifeChapterMeta on LifeChapter {
 
   /// Texto exibido ao paciente (spec §4).
   String get label => switch (this) {
+        LifeChapter.birth => 'Nascimento',
         LifeChapter.earlyYears => 'Primeiros anos',
         LifeChapter.childhood => 'Infância',
         LifeChapter.adolescence => 'Adolescência',

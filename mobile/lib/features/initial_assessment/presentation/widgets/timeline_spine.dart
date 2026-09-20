@@ -125,6 +125,7 @@ class TimelineTodayCap extends StatelessWidget {
 }
 
 String _chapterEmoji(LifeChapter? chapter) => switch (chapter) {
+      LifeChapter.birth => '👶',
       LifeChapter.childhood => '🧒',
       LifeChapter.adolescence => '🎓',
       LifeChapter.adulthood => '💼',

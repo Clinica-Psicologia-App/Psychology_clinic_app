@@ -177,18 +177,12 @@ class _DeepenEventFlowPageState extends ConsumerState<DeepenEventFlowPage> {
       children: [
         flowQuestion('Isso aconteceu...'),
         const SizedBox(height: 14),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final r in kEventRecurrenceInOrder)
-              FlowChip(
-                label: r.label,
-                selected: _recurrence == r,
-                onTap: () =>
-                    setState(() => _recurrence = _recurrence == r ? null : r),
-              ),
-          ],
+        flowChipGrid<EventRecurrence>(
+          items: kEventRecurrenceInOrder,
+          labelOf: (r) => r.label,
+          isSelected: (r) => _recurrence == r,
+          onTap: (r) =>
+              setState(() => _recurrence = _recurrence == r ? null : r),
         ),
         if (prolonged) ...[
           const SizedBox(height: 22),
@@ -228,24 +222,18 @@ class _DeepenEventFlowPageState extends ConsumerState<DeepenEventFlowPage> {
       children: [
         flowQuestion('Esse acontecimento estava relacionado principalmente a...'),
         flowHint('Selecione até duas opções.'),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final c in kLifeCategoriesInOrder)
-              FlowChip(
-                label: c.label,
-                selected: _categories.contains(c),
-                dimmed: full && !_categories.contains(c),
-                onTap: () => setState(() {
-                  if (_categories.contains(c)) {
-                    _categories.remove(c);
-                  } else if (_categories.length < 2) {
-                    _categories.add(c);
-                  }
-                }),
-              ),
-          ],
+        flowChipGrid<LifeCategory>(
+          items: kLifeCategoriesInOrder,
+          labelOf: (c) => c.label,
+          isSelected: (c) => _categories.contains(c),
+          dimmedOf: (c) => full && !_categories.contains(c),
+          onTap: (c) => setState(() {
+            if (_categories.contains(c)) {
+              _categories.remove(c);
+            } else if (_categories.length < 2) {
+              _categories.add(c);
+            }
+          }),
         ),
       ],
     );
@@ -258,25 +246,19 @@ class _DeepenEventFlowPageState extends ConsumerState<DeepenEventFlowPage> {
       children: [
         flowQuestion('Naquele momento, do que você mais precisava?'),
         const SizedBox(height: 14),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final n in kEmotionalNeedsInOrder)
-              if (n != EmotionalNeed.other)
-                FlowChip(
-                  label: n.label,
-                  selected: _needs.contains(n),
-                  onTap: () => setState(() {
-                    _needs.contains(n) ? _needs.remove(n) : _needs.add(n);
-                  }),
-                ),
-            FlowChip(
-              label: 'Outro',
-              selected: _needOtherOn,
-              onTap: () => setState(() => _needOtherOn = !_needOtherOn),
-            ),
-          ],
+        flowChipGrid<EmotionalNeed>(
+          items:
+              kEmotionalNeedsInOrder.where((n) => n != EmotionalNeed.other).toList(),
+          labelOf: (n) => n.label,
+          isSelected: (n) => _needs.contains(n),
+          onTap: (n) => setState(
+              () => _needs.contains(n) ? _needs.remove(n) : _needs.add(n)),
+        ),
+        const SizedBox(height: 8),
+        FlowChip(
+          label: 'Outro',
+          selected: _needOtherOn,
+          onTap: () => setState(() => _needOtherOn = !_needOtherOn),
         ),
         if (_needOtherOn) ...[
           const SizedBox(height: 10),
@@ -288,18 +270,12 @@ class _DeepenEventFlowPageState extends ConsumerState<DeepenEventFlowPage> {
         const SizedBox(height: 24),
         flowLabel('Você recebeu isso naquela época?'),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final m in kNeedWasMetInOrder)
-              FlowChip(
-                label: m.label,
-                selected: _needWasMet == m,
-                onTap: () =>
-                    setState(() => _needWasMet = _needWasMet == m ? null : m),
-              ),
-          ],
+        flowChipGrid<NeedWasMet>(
+          items: kNeedWasMetInOrder,
+          labelOf: (m) => m.label,
+          isSelected: (m) => _needWasMet == m,
+          onTap: (m) =>
+              setState(() => _needWasMet = _needWasMet == m ? null : m),
         ),
       ],
     );
@@ -346,38 +322,24 @@ class _DeepenEventFlowPageState extends ConsumerState<DeepenEventFlowPage> {
         flowLabel('Você sente que essa experiência ainda influencia alguma '
             'parte da sua vida?'),
         const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final s in kStillInfluencesInOrder)
-              FlowChip(
-                label: s.label,
-                selected: _stillInfluences == s,
-                onTap: () => setState(
-                    () => _stillInfluences = _stillInfluences == s ? null : s),
-              ),
-          ],
+        flowChipGrid<StillInfluences>(
+          items: kStillInfluencesInOrder,
+          labelOf: (s) => s.label,
+          isSelected: (s) => _stillInfluences == s,
+          onTap: (s) => setState(
+              () => _stillInfluences = _stillInfluences == s ? null : s),
         ),
         if (showAreas) ...[
           const SizedBox(height: 22),
           flowLabel('Em quais partes?'),
           const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final a in kPresentAreasInOrder)
-                FlowChip(
-                  label: a.label,
-                  selected: _presentAreas.contains(a),
-                  onTap: () => setState(() {
-                    _presentAreas.contains(a)
-                        ? _presentAreas.remove(a)
-                        : _presentAreas.add(a);
-                  }),
-                ),
-            ],
+          flowChipGrid<PresentArea>(
+            items: kPresentAreasInOrder,
+            labelOf: (a) => a.label,
+            isSelected: (a) => _presentAreas.contains(a),
+            onTap: (a) => setState(() => _presentAreas.contains(a)
+                ? _presentAreas.remove(a)
+                : _presentAreas.add(a)),
           ),
         ],
       ],

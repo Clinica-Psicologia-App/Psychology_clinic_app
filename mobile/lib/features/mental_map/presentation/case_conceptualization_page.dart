@@ -197,30 +197,34 @@ class _Body extends StatelessWidget {
                 ),
         ),
 
-        // 5. Funcionamento — áreas da vida (do fluxo Conhecer, escala 1–10).
+        // 5. Funcionamento — avaliação clínica do terapeuta (documento §5).
         _Section(
           number: '5',
-          title: 'Funcionamento · áreas da vida',
-          child: _lifeAreas(),
+          title: 'Nível de funcionamento',
+          child: (concept?.hasFunctioning ?? false)
+              ? _FunctioningView(functioning: concept!.functioning)
+              : _lifeAreas(),
         ),
 
-        // 6. Problemas de vida
+        // 6. Problemas de vida — narrativa do terapeuta (documento §6).
         _Section(
           number: '6',
           title: 'Principais problemas de vida',
-          child: data.activeProblems.isEmpty
-              ? const _Placeholder('Nenhum problema registrado ainda.')
-              : Column(
-                  children: [
-                    for (final p in data.activeProblems)
-                      _BulletRow(
-                        text: p.title,
-                        trailing: p.intensity == null
-                            ? null
-                            : '${p.intensity}/10',
-                      ),
-                  ],
-                ),
+          child: (concept?.hasLifeProblems ?? false)
+              ? _LifeProblemsView(problems: concept!.lifeProblems)
+              : data.activeProblems.isEmpty
+                  ? const _Placeholder('Nenhum problema registrado ainda.')
+                  : Column(
+                      children: [
+                        for (final p in data.activeProblems)
+                          _BulletRow(
+                            text: p.title,
+                            trailing: p.intensity == null
+                                ? null
+                                : '${p.intensity}/10',
+                          ),
+                      ],
+                    ),
         ),
 
         // 7. Origens infantis e adolescentes dos problemas atuais.
@@ -230,22 +234,26 @@ class _Body extends StatelessWidget {
           child: _OriginsSection(concept: concept),
         ),
 
-        // 8. Esquemas centrais
+        // 8. Esquemas centrais — seleção curada do terapeuta (documento §8).
         _Section(
           number: '8',
-          title: 'Esquemas centrais',
-          child: core.topSchemas.isEmpty
-              ? const _Placeholder('Sem YSQ concluído.')
-              : _SchemasList(schemas: core.topSchemas),
+          title: 'Esquemas desadaptativos centrais',
+          child: (concept?.hasCentralSchemas ?? false)
+              ? _CentralSchemasView(schemas: concept!.centralSchemas)
+              : core.topSchemas.isEmpty
+                  ? const _Placeholder('Sem YSQ concluído.')
+                  : _SchemasList(schemas: core.topSchemas),
         ),
 
-        // 9. Modos
+        // 9. Modos — avaliação do terapeuta (documento §9.1–9.4).
         _Section(
           number: '9',
-          title: 'Modos',
-          child: core.topModes.isEmpty
-              ? const _Placeholder('Sem YAMI concluído.')
-              : _ModesList(modes: core.topModes),
+          title: 'Modos de esquema',
+          child: (concept?.hasModeAssessment ?? false)
+              ? _ModeAssessmentView(modes: concept!.modeAssessment)
+              : core.topModes.isEmpty
+                  ? const _Placeholder('Sem YAMI concluído.')
+                  : _ModesList(modes: core.topModes),
         ),
 
         // 10. Sequência de modos (campos do terapeuta).
@@ -268,18 +276,20 @@ class _Body extends StatelessWidget {
                 ),
         ),
 
-        // 12. Objetivos da terapia
+        // 12. Objetivos da terapia — plano detalhado do terapeuta (documento §12).
         _Section(
           number: '12',
           title: 'Objetivos da terapia',
-          child: data.activeGoals.isEmpty
-              ? const _Placeholder('Nenhum objetivo ativo.')
-              : Column(
-                  children: [
-                    for (var i = 0; i < data.activeGoals.length; i++)
-                      _GoalRow(index: i + 1, goal: data.activeGoals[i]),
-                  ],
-                ),
+          child: (concept?.hasTherapyObjectives ?? false)
+              ? _TherapyObjectivesView(objectives: concept!.therapyObjectives)
+              : data.activeGoals.isEmpty
+                  ? const _Placeholder('Nenhum objetivo ativo.')
+                  : Column(
+                      children: [
+                        for (var i = 0; i < data.activeGoals.length; i++)
+                          _GoalRow(index: i + 1, goal: data.activeGoals[i]),
+                      ],
+                    ),
         ),
 
         // 13. Comentários adicionais (campo do terapeuta).
@@ -1569,6 +1579,439 @@ class _ModesList extends StatelessWidget {
               ),
             );
           }),
+      ],
+    );
+  }
+}
+
+// ── Seção 5: Funcionamento (avaliação clínica do terapeuta) ──────────────────
+
+class _FunctioningView extends StatelessWidget {
+  const _FunctioningView({required this.functioning});
+
+  final FunctioningAssessment functioning;
+
+  Color _ratingColor(int? v) {
+    if (v == null) return AppColors.textMuted;
+    if (v <= 2) return AppColors.error;
+    if (v <= 4) return AppColors.warning;
+    return AppColors.success;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final entries = [
+      for (final area in kFunctioningAreas)
+        (area, functioning.entries[area.key]),
+    ].where((e) => e.$2 != null && e.$2!.rating != null).toList();
+
+    if (entries.isEmpty) {
+      return const _Placeholder('Nível de funcionamento ainda não avaliado.');
+    }
+
+    return Column(
+      children: [
+        for (var i = 0; i < entries.length; i++)
+          Padding(
+            padding: EdgeInsets.only(bottom: i == entries.length - 1 ? 0 : 10),
+            child: Builder(builder: (ctx) {
+              final area = entries[i].$1;
+              final entry = entries[i].$2!;
+              final color = _ratingColor(entry.rating);
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 28,
+                    alignment: Alignment.center,
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.14),
+                      borderRadius: BorderRadius.circular(7),
+                    ),
+                    child: Text(
+                      '${entry.rating}',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: color,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          area.label,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                        if ((entry.explanation ?? '').trim().isNotEmpty)
+                          Text(
+                            entry.explanation!.trim(),
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: AppColors.textSecondary,
+                              height: 1.4,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            }),
+          ),
+      ],
+    );
+  }
+}
+
+// ── Seção 6: Problemas de vida (narrativa do terapeuta) ──────────────────────
+
+class _LifeProblemsView extends StatelessWidget {
+  const _LifeProblemsView({required this.problems});
+
+  final TherapistLifeProblems problems;
+
+  @override
+  Widget build(BuildContext context) {
+    final items = [
+      problems.problem1,
+      problems.problem2,
+      problems.problem3,
+      problems.problem4,
+    ].where((p) => (p ?? '').trim().isNotEmpty).toList();
+
+    return Column(
+      children: [
+        for (final p in items) _BulletRow(text: p!.trim()),
+      ],
+    );
+  }
+}
+
+// ── Seção 8: Esquemas curados pelo terapeuta ──────────────────────────────────
+
+class _CentralSchemasView extends StatelessWidget {
+  const _CentralSchemasView({required this.schemas});
+
+  final List<CentralSchemaEntry> schemas;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final filled = schemas.where((s) => !s.isEmpty).toList();
+
+    return Column(
+      children: [
+        for (var i = 0; i < filled.length; i++)
+          Padding(
+            padding: EdgeInsets.only(bottom: i == filled.length - 1 ? 0 : 10),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 4,
+                  height: 34,
+                  margin: const EdgeInsets.only(top: 2, right: 10),
+                  decoration: BoxDecoration(
+                    color: AppColors.navy,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        filled[i].name?.trim() ?? '',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      if ((filled[i].description ?? '').trim().isNotEmpty)
+                        Text(
+                          filled[i].description!.trim(),
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: AppColors.textSecondary,
+                            height: 1.4,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
+// ── Seção 9: Modos de esquema (avaliação completa do terapeuta) ───────────────
+
+class _ModeAssessmentView extends StatelessWidget {
+  const _ModeAssessmentView({required this.modes});
+
+  final SchemaModeAssessment modes;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    Widget subTitle(String text) => Padding(
+          padding: const EdgeInsets.only(top: 14, bottom: 6),
+          child: Text(
+            text.toUpperCase(),
+            style: theme.textTheme.labelSmall?.copyWith(
+              fontSize: 9,
+              letterSpacing: 0.4,
+              fontWeight: FontWeight.w800,
+              color: AppColors.navy,
+            ),
+          ),
+        );
+
+    Widget textLine(String label, String? value) {
+      if ((value ?? '').trim().isEmpty) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 4),
+        child: RichText(
+          text: TextSpan(
+            style: theme.textTheme.labelSmall
+                ?.copyWith(color: AppColors.textSecondary, height: 1.4),
+            children: [
+              TextSpan(
+                  text: '$label ',
+                  style: const TextStyle(fontWeight: FontWeight.w700)),
+              TextSpan(text: value!.trim()),
+            ],
+          ),
+        ),
+      );
+    }
+
+    Widget exampleBlock(String label, ModeExample e) {
+      final hasContent = (e.trigger ?? '').trim().isNotEmpty ||
+          (e.experience ?? '').trim().isNotEmpty ||
+          (e.coping ?? '').trim().isNotEmpty;
+      if (!hasContent) return const SizedBox.shrink();
+      return Container(
+        margin: const EdgeInsets.only(top: 6),
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceTint,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label,
+                style: theme.textTheme.labelSmall?.copyWith(
+                    fontWeight: FontWeight.w700, color: AppColors.navy)),
+            textLine('Gatilho:', e.trigger),
+            textLine('Experiência:', e.experience),
+            textLine('Enfrentamento:', e.coping),
+          ],
+        ),
+      );
+    }
+
+    final m = modes;
+    final hm = m.healthyModes;
+    final vc = m.vulnerableChild;
+    final oc = m.otherChild;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // 9.1 Modos saudáveis
+        subTitle('9.1 Modos saudáveis'),
+        textLine('Naturalidade e espontaneidade:', hm.happyChildSpontaneity),
+        textLine('Brincar e divertir-se:', hm.happyChildPlay),
+        textLine('Criatividade:', hm.happyChildCreativity),
+        textLine('1. Meta-consciência:', hm.adultMetaAwareness),
+        textLine('2. Conexão emocional:', hm.adultEmotionalConnection),
+        textLine('3. Orientação para a realidade:', hm.adultRealityOrientation),
+        textLine('4. Identidade coerente:', hm.adultIdentity),
+        textLine('5. Autoafirmação:', hm.adultSelfAssertion),
+        textLine('6. Agência:', hm.adultAgency),
+        textLine('7. Cuidar além de si:', hm.adultCareForOthers),
+        textLine('8. Esperança e significado:', hm.adultHope),
+
+        // 9.2 Modos infantis — Criança Vulnerável
+        subTitle('9.2 Criança Vulnerável'),
+        textLine('Nome/subtipos:', vc.description),
+        textLine('Esquemas:', vc.schemas),
+        for (var i = 0; i < vc.examples.length; i++)
+          exampleBlock('Exemplo ${i + 1}', vc.examples[i]),
+
+        // 9.2 Outros modos infantis
+        if ((oc.description ?? '').trim().isNotEmpty ||
+            oc.examples.any((e) =>
+                (e.trigger ?? '').isNotEmpty || (e.experience ?? '').isNotEmpty ||
+                (e.coping ?? '').isNotEmpty)) ...[
+          subTitle('9.2 Outros modos infantis'),
+          textLine('Descrição:', oc.description),
+          textLine('Esquemas:', oc.schemas),
+          for (var i = 0; i < oc.examples.length; i++)
+            exampleBlock('Exemplo ${i + 1}', oc.examples[i]),
+        ],
+
+        // 9.3 Modos parentais
+        if (m.parentalModes.isNotEmpty) ...[
+          subTitle('9.3 Modos parentais disfuncionais'),
+          for (final p in m.parentalModes.where((e) => !e.isEmpty))
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    p.name?.trim() ?? '',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textPrimary),
+                  ),
+                  if ((p.messages ?? '').trim().isNotEmpty)
+                    Text(
+                      p.messages!.trim(),
+                      style: theme.textTheme.labelSmall?.copyWith(
+                          color: AppColors.textSecondary, height: 1.4),
+                    ),
+                ],
+              ),
+            ),
+        ],
+
+        // 9.4 Modos de enfrentamento
+        if (m.copingModes.isNotEmpty) ...[
+          subTitle('9.4 Modos de enfrentamento desadaptativos'),
+          for (final c in m.copingModes.where((e) => !e.isEmpty))
+            Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceTint,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    [
+                      if ((c.name ?? '').trim().isNotEmpty) c.name!.trim(),
+                      if ((c.category ?? '').trim().isNotEmpty)
+                        '(${c.category!.trim()})',
+                    ].join(' '),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w800, color: AppColors.navy),
+                  ),
+                  textLine('Esquemas:', c.schemas),
+                  textLine('Exemplo:', c.example),
+                  textLine('Experiência:', c.experience),
+                  textLine('Necessidades:', c.addresses),
+                  textLine('Valor percebido:', c.perceivedValue),
+                  textLine('Consequências:', c.consequences),
+                ],
+              ),
+            ),
+        ],
+      ],
+    );
+  }
+}
+
+// ── Seção 12: Objetivos detalhados do terapeuta ──────────────────────────────
+
+class _TherapyObjectivesView extends StatelessWidget {
+  const _TherapyObjectivesView({required this.objectives});
+
+  final List<TherapyObjectiveEntry> objectives;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final filled = objectives.where((o) => !o.isEmpty).toList();
+
+    Widget line(String label, String? value) {
+      if ((value ?? '').trim().isEmpty) return const SizedBox.shrink();
+      return Padding(
+        padding: const EdgeInsets.only(top: 3),
+        child: RichText(
+          text: TextSpan(
+            style: theme.textTheme.labelSmall
+                ?.copyWith(color: AppColors.textSecondary, height: 1.4),
+            children: [
+              TextSpan(
+                  text: '$label ',
+                  style: const TextStyle(fontWeight: FontWeight.w700)),
+              TextSpan(text: value!.trim()),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: [
+        for (var i = 0; i < filled.length; i++)
+          Container(
+            margin: EdgeInsets.only(bottom: i == filled.length - 1 ? 0 : 8),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceTint,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 18,
+                      height: 18,
+                      alignment: Alignment.center,
+                      decoration: const BoxDecoration(
+                        color: AppColors.surfaceTintBlue,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Text(
+                        '${i + 1}',
+                        style: const TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.blue,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        filled[i].goal?.trim() ?? '',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.textPrimary,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                line('Esquemas/modos:', filled[i].schemasModes),
+                line('Comportamentos saudáveis:', filled[i].healthyBehaviors),
+                line('Intervenções:', filled[i].interventions),
+                line('Progresso:', filled[i].progress),
+              ],
+            ),
+          ),
       ],
     );
   }

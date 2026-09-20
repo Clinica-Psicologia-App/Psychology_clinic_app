@@ -55,7 +55,7 @@ class PatientJourneyPage extends ConsumerWidget {
                     child: JourneyTrail(
                       steps: steps,
                       onStepTap: (step) =>
-                          navigateFromJourneyStep(context, step),
+                          navigateFromJourneyStep(context, ref, step),
                     ),
                   ),
                 ),

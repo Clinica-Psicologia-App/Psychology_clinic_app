@@ -33,6 +33,7 @@ class AppCanopyHeader extends StatelessWidget {
     required this.contextLine,
     required this.areaLabel,
     required this.watermarkIcon,
+    this.onAreaLabelTap,
     this.onProfileTap,
     this.footer,
     this.trailingAction,
@@ -46,6 +47,9 @@ class AppCanopyHeader extends StatelessWidget {
   /// Rótulo curto da área ("Profissional", "Meu espaço", "Plataforma"),
   /// exibido como pílula discreta ao lado da marca.
   final String areaLabel;
+
+  /// Quando fornecido, a pílula [areaLabel] se torna clicável.
+  final VoidCallback? onAreaLabelTap;
   final IconData watermarkIcon;
   final VoidCallback? onProfileTap;
   final Widget? trailingAction;
@@ -131,6 +135,7 @@ class AppCanopyHeader extends StatelessWidget {
             children: [
               _WordmarkRow(
                 areaLabel: areaLabel,
+                onAreaLabelTap: onAreaLabelTap,
                 trailingAction: trailingAction,
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -291,20 +296,9 @@ class AppCanopyHeader extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.md),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(999),
-            ),
-            child: Text(
-              areaLabel,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: Colors.white.withValues(alpha: 0.95),
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.3,
-              ),
-            ),
+          _AreaLabelPill(
+            label: areaLabel,
+            onTap: onAreaLabelTap,
           ),
           if (trailingAction != null) ...[
             const SizedBox(width: AppSpacing.xs),
@@ -337,10 +331,12 @@ class AppCanopyHeader extends StatelessWidget {
 class _WordmarkRow extends StatelessWidget {
   const _WordmarkRow({
     required this.areaLabel,
+    this.onAreaLabelTap,
     this.trailingAction,
   });
 
   final String areaLabel;
+  final VoidCallback? onAreaLabelTap;
   final Widget? trailingAction;
 
   @override
@@ -376,25 +372,9 @@ class _WordmarkRow extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               Flexible(
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.16),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                  child: Text(
-                    areaLabel,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: Colors.white.withValues(alpha: 0.95),
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
+                child: _AreaLabelPill(
+                  label: areaLabel,
+                  onTap: onAreaLabelTap,
                 ),
               ),
               if (trailingAction != null) ...[
@@ -405,6 +385,65 @@ class _WordmarkRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Pílula do rótulo de área — torna-se clicável quando [onTap] é fornecido,
+/// exibindo uma seta discreta para sinalizar a interação.
+class _AreaLabelPill extends StatelessWidget {
+  const _AreaLabelPill({required this.label, this.onTap});
+
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final pill = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Flexible(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: Colors.white.withValues(alpha: 0.95),
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.3,
+              ),
+            ),
+          ),
+          if (onTap != null) ...[
+            const SizedBox(width: 4),
+            Icon(
+              Icons.keyboard_arrow_down_rounded,
+              size: 14,
+              color: Colors.white.withValues(alpha: 0.8),
+            ),
+          ],
+        ],
+      ),
+    );
+
+    if (onTap == null) return pill;
+    return Semantics(
+      button: true,
+      label: label,
+      child: InkWell(
+        customBorder: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(999),
+        ),
+        onTap: onTap,
+        child: pill,
+      ),
     );
   }
 }

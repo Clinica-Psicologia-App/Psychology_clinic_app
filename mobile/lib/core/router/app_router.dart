@@ -233,6 +233,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (_, __) => const TimelineEventFlowPage(),
       ),
       GoRoute(
+        path: LifeStoryRoutes.editEvent,
+        builder: (_, state) => TimelineEventFlowPage(
+          event: state.extra as LifeTimelineEvent,
+        ),
+      ),
+      GoRoute(
         path: LifeStoryRoutes.deepen,
         builder: (_, state) =>
             DeepenEventFlowPage(event: state.extra as LifeTimelineEvent),

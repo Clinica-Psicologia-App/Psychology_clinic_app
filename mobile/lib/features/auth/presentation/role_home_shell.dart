@@ -948,14 +948,32 @@ class _AlertRow extends StatelessWidget {
 
 /// Cabeçalho acolhedor da home do paciente: saudação pelo nome e
 /// período do dia, no lugar do cartão de perfil institucional.
-class _PatientGreetingHeader extends StatelessWidget {
+class _PatientGreetingHeader extends ConsumerWidget {
   const _PatientGreetingHeader({required this.profile, this.onHelpTap});
 
   final UserProfile profile;
   final VoidCallback? onHelpTap;
 
+  void _showAccountSheet(BuildContext context, WidgetRef ref) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetCtx) => _AccountBottomSheet(
+        profile: profile,
+        onViewProfile: () {
+          Navigator.of(sheetCtx).pop();
+          context.push(ProfileRoutes.me);
+        },
+        onSignOut: () {
+          Navigator.of(sheetCtx).pop();
+          ref.read(authControllerProvider.notifier).signOut();
+        },
+      ),
+    );
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final firstName = profile.fullName.trim().split(RegExp(r'\s+')).first;
     return AppCanopyHeader(
       profile: profile,
@@ -964,6 +982,7 @@ class _PatientGreetingHeader extends StatelessWidget {
       areaLabel: 'Meu espaço',
       contextLine: 'Que bom te ver por aqui. Este é o seu espaço de cuidado.',
       watermarkIcon: Icons.spa_outlined,
+      onAreaLabelTap: () => _showAccountSheet(context, ref),
       onProfileTap: () => context.push(ProfileRoutes.me),
       trailingAction: onHelpTap == null
           ? null
@@ -973,6 +992,144 @@ class _PatientGreetingHeader extends StatelessWidget {
               icon: const Icon(Icons.help_outline_rounded),
               color: Colors.white,
             ),
+    );
+  }
+}
+
+/// Bottom sheet de conta — avatar, nome, e-mail, "Ver perfil" e "Sair".
+class _AccountBottomSheet extends StatelessWidget {
+  const _AccountBottomSheet({
+    required this.profile,
+    required this.onViewProfile,
+    required this.onSignOut,
+  });
+
+  final UserProfile profile;
+  final VoidCallback onViewProfile;
+  final VoidCallback onSignOut;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return SafeArea(
+      child: Container(
+        margin: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        decoration: BoxDecoration(
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 24,
+              offset: const Offset(0, -4),
+            ),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Puxador
+            Center(
+              child: Container(
+                margin: const EdgeInsets.only(top: 10),
+                width: 36,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.outline.withValues(alpha: 0.4),
+                  borderRadius: BorderRadius.circular(99),
+                ),
+              ),
+            ),
+            // Identidade
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 4),
+              child: Row(
+                children: [
+                  UserAvatar(profile: profile, size: 48),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          profile.fullName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        if (profile.email.isNotEmpty)
+                          Text(
+                            profile.email,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 24, thickness: 0.5, indent: 20, endIndent: 20),
+            // Ações
+            _SheetAction(
+              icon: Icons.person_outline_rounded,
+              label: 'Ver perfil',
+              onTap: onViewProfile,
+            ),
+            _SheetAction(
+              icon: Icons.logout_rounded,
+              label: 'Sair',
+              color: theme.colorScheme.error,
+              onTap: onSignOut,
+            ),
+            const SizedBox(height: 8),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _SheetAction extends StatelessWidget {
+  const _SheetAction({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final fg = color ?? theme.colorScheme.onSurface;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: fg),
+            const SizedBox(width: 14),
+            Text(
+              label,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: fg,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

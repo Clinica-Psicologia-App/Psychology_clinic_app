@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../daily_monitors/presentation/daily_monitor_routes.dart';
@@ -15,51 +16,59 @@ import '../../therapy_goals/presentation/therapy_goal_routes.dart';
 import '../domain/journey_step.dart';
 import '../domain/journey_step_availability.dart';
 import '../domain/journey_step_id.dart';
+import '../providers/patient_journey_providers.dart';
 import 'patient_journey_routes.dart';
 
-void navigateFromJourneyStep(BuildContext context, JourneyStep step) {
+Future<void> navigateFromJourneyStep(
+  BuildContext context,
+  WidgetRef ref,
+  JourneyStep step,
+) async {
   if (step.availability.opensPlaceholder) {
-    context.push(PatientJourneyRoutes.upcoming(step.id));
+    await context.push(PatientJourneyRoutes.upcoming(step.id));
     return;
   }
 
   if (!step.availability.isNavigableToModule) {
-    context.push(PatientJourneyRoutes.upcoming(step.id));
+    await context.push(PatientJourneyRoutes.upcoming(step.id));
     return;
   }
 
   switch (step.id) {
     case JourneyStepId.initialAssessment:
-      context.push(InitialAssessmentRoutes.patient);
+      await context.push(InitialAssessmentRoutes.patient);
     case JourneyStepId.psychoeducation:
-      context.push(PsychoeducationRoutes.patient);
+      await context.push(PsychoeducationRoutes.patient);
     case JourneyStepId.questionnaires:
-      context.push(
+      await context.push(
         QuestionnaireRoutes.list(role: ProfileRole.patient),
       );
     case JourneyStepId.dailyMonitor:
-      context.push(DailyMonitorRoutes.patientList);
+      await context.push(DailyMonitorRoutes.patientList);
     case JourneyStepId.library:
-      context.push(PatientLibraryRoutes.patient);
+      await context.push(PatientLibraryRoutes.patient);
     case JourneyStepId.results:
       // Lista de resultados liberados; o dashboard de gráficos é acessível
       // a partir dela.
-      context.push('/patient/results');
+      await context.push('/patient/results');
     case JourneyStepId.therapyGoals:
-      context.push(TherapyGoalRoutes.patientList);
+      await context.push(TherapyGoalRoutes.patientList);
     case JourneyStepId.problems:
-      context.push(PatientProblemRoutes.patientList);
+      await context.push(PatientProblemRoutes.patientList);
     case JourneyStepId.checkIn:
-      context.push(PatientCheckInRoutes.patientList);
+      await context.push(PatientCheckInRoutes.patientList);
     case JourneyStepId.timeline:
       // Novo fluxo unificado "Minha História" (Tela 2). A tela antiga
       // (InitialAssessmentRoutes.patientHistory) segue no código, aposentada.
-      context.push(LifeStoryRoutes.myHistory);
+      await context.push(LifeStoryRoutes.myHistory);
     case JourneyStepId.genogram:
       // Novo fluxo unificado "Minha Família" (Tela 3). A tela antiga
       // (InitialAssessmentRoutes.patientFamily) segue no código, aposentada.
-      context.push(LifeStoryRoutes.myFamily);
+      await context.push(LifeStoryRoutes.myFamily);
     case JourneyStepId.mentalMap:
-      context.push(MentalMapRoutes.patientList);
+      await context.push(MentalMapRoutes.patientList);
   }
+
+  ref.invalidate(patientJourneyProgressProvider);
+  ref.invalidate(patientJourneyStepsProvider);
 }

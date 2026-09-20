@@ -467,7 +467,7 @@ class _IllnessPainter extends CustomPainter {
     canvas.clipRect(Rect.fromLTRB(c.dx - r - 1, c.dy, c.dx + r + 1, c.dy + r + 1));
     canvas.drawRect(
         Rect.fromCenter(center: c, width: r * 2, height: r * 2),
-        Paint()..color = const Color(0xFF2A5A8A).withValues(alpha: 0.75)..style = PaintingStyle.fill);
+        Paint()..color = const Color(0xFFE24B4A).withValues(alpha: 0.80)..style = PaintingStyle.fill);
     canvas.restore();
     canvas.drawRect(
         Rect.fromCenter(center: c, width: r * 2, height: r * 2),

@@ -587,12 +587,12 @@ class _MotorGenogramPainter extends CustomPainter {
     final illnessType = person?.illnessType;
     if (illnessType != null) {
       final illColor = switch (illnessType) {
-        'mental' => const Color(0xFF7A3A8A),
-        'both' => const Color(0xFF4A4A8A),
-        _ => const Color(0xFF2A5A8A), // physical
+        'mental' => const Color(0xFF7240C0),   // roxo — transtorno mental
+        'both'   => const Color(0xFFBA7517),   // âmbar — física e mental
+        _        => const Color(0xFFE24B4A),   // vermelho — doença física
       };
       final halfFill = Paint()
-        ..color = illColor.withValues(alpha: 0.75)
+        ..color = illColor.withValues(alpha: 0.80)
         ..style = PaintingStyle.fill;
       canvas.save();
       canvas.clipRect(Rect.fromLTRB(

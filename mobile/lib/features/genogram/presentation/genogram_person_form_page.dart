@@ -17,6 +17,8 @@ import '../domain/genogram_person.dart';
 import '../domain/genogram_person_input.dart';
 import '../providers/genogram_providers.dart';
 import '../../../shared/widgets/brand_loading.dart';
+import '../../../shared/widgets/relationship_role_picker.dart';
+import '../../life_story/domain/life_story_enums.dart';
 
 class GenogramPersonFormPage extends ConsumerStatefulWidget {
   const GenogramPersonFormPage({
@@ -41,7 +43,7 @@ class _GenogramPersonFormPageState
     extends ConsumerState<GenogramPersonFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _fullNameController = TextEditingController();
-  final _relationshipController = TextEditingController();
+  RelationshipRole? _relationshipRole;
   final _birthYearController = TextEditingController();
   final _deathYearController = TextEditingController();
   final _notesController = TextEditingController();
@@ -57,7 +59,6 @@ class _GenogramPersonFormPageState
   @override
   void dispose() {
     _fullNameController.dispose();
-    _relationshipController.dispose();
     _birthYearController.dispose();
     _deathYearController.dispose();
     _notesController.dispose();
@@ -69,7 +70,7 @@ class _GenogramPersonFormPageState
     _loaded = true;
     final input = GenogramPersonInput.fromPerson(person);
     _fullNameController.text = input.fullName;
-    _relationshipController.text = input.relationshipToPatient ?? '';
+    _relationshipRole = relationshipRoleFromKey(input.relationshipToPatient);
     _birthYearController.text =
         input.birthYear != null ? '${input.birthYear}' : '';
     _deathYearController.text =
@@ -91,7 +92,7 @@ class _GenogramPersonFormPageState
   GenogramPersonInput _buildInput() {
     return GenogramPersonInput(
       fullName: _fullNameController.text,
-      relationshipToPatient: _relationshipController.text,
+      relationshipToPatient: _relationshipRole?.key,
       gender: _gender,
       birthYear: _parseYear(_birthYearController.text),
       deathYear: _parseYear(_deathYearController.text),
@@ -247,13 +248,16 @@ class _GenogramPersonFormPageState
                     v == null || v.trim().isEmpty ? 'Informe o nome.' : null,
               ),
               const SizedBox(height: AppSpacing.md),
-              TextFormField(
-                controller: _relationshipController,
-                decoration: const InputDecoration(
-                  labelText: 'Relação com o paciente',
-                  hintText: 'Ex.: Mãe, Pai, Avó',
-                ),
-                textCapitalization: TextCapitalization.sentences,
+              Text(
+                'Relação com o paciente',
+                style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+              const SizedBox(height: 8),
+              RelationshipRolePicker(
+                selected: _relationshipRole,
+                onChanged: (r) => setState(() => _relationshipRole = r),
               ),
               const SizedBox(height: AppSpacing.md),
               DropdownButtonFormField<GenogramGender?>(

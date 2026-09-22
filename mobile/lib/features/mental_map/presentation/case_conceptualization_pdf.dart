@@ -115,43 +115,55 @@ class CaseConceptualizationPdf {
                     'Sistema (CID-11/DSM-5) e diagnósticos — a preencher.'),
           ),
 
-          // 5. Funcionamento — áreas da vida
-          _section('5', 'Funcionamento · áreas da vida', _lifeAreas(assessment)),
+          // 5. Nível de funcionamento
+          _section(
+            '5',
+            'Nível de funcionamento',
+            (concept?.hasFunctioning ?? false)
+                ? _functioning(concept!.functioning)
+                : _lifeAreas(assessment),
+          ),
 
           // 6. Problemas de vida
           _section(
             '6',
-            'Principais problemas de vida',
-            data.activeProblems.isEmpty
-                ? _placeholder('Nenhum problema registrado ainda.')
-                : [
-                    for (final p in data.activeProblems)
-                      _bullet(p.title,
-                          trailing: p.intensity == null
-                              ? null
-                              : '${p.intensity}/10'),
-                  ],
+            'Problemas de vida',
+            (concept?.hasLifeProblems ?? false)
+                ? _lifeProblems(concept!.lifeProblems)
+                : data.activeProblems.isEmpty
+                    ? _placeholder('Nenhum problema registrado ainda.')
+                    : [
+                        for (final p in data.activeProblems)
+                          _bullet(p.title,
+                              trailing: p.intensity == null
+                                  ? null
+                                  : '${p.intensity}/10'),
+                      ],
           ),
 
           // 7. Origens infantis e adolescentes dos problemas atuais (terapeuta)
           _section('7', 'Origens infantis e adolescentes', _origins(concept)),
 
-          // 8. Esquemas centrais
+          // 8. Esquemas desadaptativos centrais
           _section(
             '8',
-            'Esquemas centrais',
-            core.topSchemas.isEmpty
-                ? _placeholder('Sem YSQ concluído.')
-                : _schemas(core.topSchemas),
+            'Esquemas desadaptativos centrais',
+            (concept?.hasCentralSchemas ?? false)
+                ? _centralSchemasTherapist(concept!.centralSchemas)
+                : core.topSchemas.isEmpty
+                    ? _placeholder('Sem YSQ concluído.')
+                    : _schemas(core.topSchemas),
           ),
 
-          // 9. Modos
+          // 9. Modos de esquema
           _section(
             '9',
-            'Modos',
-            core.topModes.isEmpty
-                ? _placeholder('Sem YAMI concluído.')
-                : _modes(core.topModes),
+            'Modos de esquema',
+            (concept?.hasModeAssessment ?? false)
+                ? _modeAssessmentTherapist(concept!.modeAssessment)
+                : core.topModes.isEmpty
+                    ? _placeholder('Sem YAMI concluído.')
+                    : _modes(core.topModes),
           ),
 
           // 10. Sequência de modos (terapeuta)
@@ -173,16 +185,18 @@ class CaseConceptualizationPdf {
                     'Colaboração e vínculo de reparentalização (1–5) — a preencher.'),
           ),
 
-          // 12. Objetivos da terapia
+          // 12. Objetivos terapêuticos
           _section(
             '12',
-            'Objetivos da terapia',
-            data.activeGoals.isEmpty
-                ? _placeholder('Nenhum objetivo ativo.')
-                : [
-                    for (var i = 0; i < data.activeGoals.length; i++)
-                      _goal(i + 1, data.activeGoals[i]),
-                  ],
+            'Objetivos terapêuticos',
+            (concept?.hasTherapyObjectives ?? false)
+                ? _therapyObjectivesPdf(concept!.therapyObjectives)
+                : data.activeGoals.isEmpty
+                    ? _placeholder('Nenhum objetivo ativo.')
+                    : [
+                        for (var i = 0; i < data.activeGoals.length; i++)
+                          _goal(i + 1, data.activeGoals[i]),
+                      ],
           ),
 
           // 13. Comentários adicionais (terapeuta)
@@ -680,6 +694,299 @@ class CaseConceptualizationPdf {
       note('Colaboração:', rel.collaborationNotes),
       note('Vínculo:', rel.bondNotes),
       note('Reações do terapeuta:', rel.therapistReactions),
+    ];
+  }
+
+  // ── Seções terapeuta (5, 6, 8, 9, 12) ────────────────────────────────────
+
+  static List<pw.Widget> _functioning(FunctioningAssessment f) {
+    final filled = [
+      for (final area in kFunctioningAreas)
+        if (!f.entryFor(area.key).isEmpty) (area, f.entryFor(area.key)),
+    ];
+    if (filled.isEmpty) return _placeholder('Nenhuma área avaliada.');
+
+    PdfColor ratingColor(int r) =>
+        r >= 5 ? _success : (r >= 3 ? _warning : _error);
+
+    return [
+      for (final pair in filled)
+        pw.Padding(
+          padding: const pw.EdgeInsets.only(bottom: 9),
+          child: pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Row(
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Expanded(
+                    child: pw.Text(pair.$1.label,
+                        style: pw.TextStyle(
+                            fontSize: 10,
+                            fontWeight: pw.FontWeight.bold,
+                            color: _navy)),
+                  ),
+                  if (pair.$2.rating != null) ...[
+                    pw.SizedBox(width: 8),
+                    pw.Text('${pair.$2.rating}/6',
+                        style: pw.TextStyle(
+                            fontSize: 9,
+                            fontWeight: pw.FontWeight.bold,
+                            color: ratingColor(pair.$2.rating!))),
+                  ],
+                ],
+              ),
+              if (pair.$2.rating != null) ...[
+                pw.SizedBox(height: 3),
+                _bar(pair.$2.rating!, 6, ratingColor(pair.$2.rating!)),
+              ],
+              if ((pair.$2.explanation ?? '').trim().isNotEmpty) ...[
+                pw.SizedBox(height: 3),
+                pw.Text(pair.$2.explanation!.trim(),
+                    style: const pw.TextStyle(
+                        fontSize: 9, color: _secondary, lineSpacing: 2)),
+              ],
+            ],
+          ),
+        ),
+    ];
+  }
+
+  static List<pw.Widget> _lifeProblems(TherapistLifeProblems lp) {
+    final problems = [lp.problem1, lp.problem2, lp.problem3, lp.problem4]
+        .where((p) => (p ?? '').trim().isNotEmpty)
+        .map((p) => p!.trim())
+        .toList();
+    return [for (final p in problems) _bullet(p)];
+  }
+
+  static List<pw.Widget> _centralSchemasTherapist(
+      List<CentralSchemaEntry> schemas) {
+    final filled = schemas.where((e) => !e.isEmpty).toList();
+    if (filled.isEmpty) return _placeholder('Nenhum esquema central registrado.');
+    return [
+      for (var i = 0; i < filled.length; i++)
+        pw.Container(
+          margin: pw.EdgeInsets.only(bottom: i == filled.length - 1 ? 0 : 8),
+          child: pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Container(
+                width: 3,
+                height: 28,
+                margin: const pw.EdgeInsets.only(top: 1, right: 8),
+                decoration: pw.BoxDecoration(
+                  color: _navy,
+                  borderRadius: pw.BorderRadius.circular(2),
+                ),
+              ),
+              pw.Expanded(
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text((filled[i].name ?? '').trim(),
+                        style: pw.TextStyle(
+                            fontSize: 10,
+                            fontWeight: pw.FontWeight.bold,
+                            color: _navy)),
+                    if ((filled[i].description ?? '').trim().isNotEmpty)
+                      pw.Text(filled[i].description!.trim(),
+                          style: const pw.TextStyle(
+                              fontSize: 9, color: _secondary, lineSpacing: 2)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+    ];
+  }
+
+  static List<pw.Widget> _modeAssessmentTherapist(SchemaModeAssessment ma) {
+    final out = <pw.Widget>[];
+
+    pw.Widget subHeader(String number, String title) => pw.Padding(
+          padding: const pw.EdgeInsets.only(bottom: 4, top: 2),
+          child: pw.RichText(
+            text: pw.TextSpan(children: [
+              pw.TextSpan(
+                  text: '$number ',
+                  style: pw.TextStyle(
+                      fontSize: 8.5,
+                      fontWeight: pw.FontWeight.bold,
+                      color: _navy)),
+              pw.TextSpan(
+                  text: title.toUpperCase(),
+                  style: pw.TextStyle(
+                      fontSize: 8,
+                      letterSpacing: 0.3,
+                      fontWeight: pw.FontWeight.bold,
+                      color: _muted)),
+            ]),
+          ),
+        );
+
+    pw.Widget freeText(String? v) => (v ?? '').trim().isEmpty
+        ? pw.SizedBox()
+        : pw.Padding(
+            padding: const pw.EdgeInsets.only(bottom: 3),
+            child: pw.Text(v!.trim(),
+                style: const pw.TextStyle(
+                    fontSize: 9, color: _secondary, lineSpacing: 2)),
+          );
+
+    // 9.1 Modos saudáveis
+    if (!ma.healthyModes.isEmpty) {
+      out.add(subHeader('9.1', 'Modos saudáveis'));
+      final hm = ma.healthyModes;
+      final fields = <(String, String?)>[
+        ('Espontaneidade', hm.happyChildSpontaneity),
+        ('Brincadeira', hm.happyChildPlay),
+        ('Criatividade', hm.happyChildCreativity),
+        ('Meta-consciência', hm.adultMetaAwareness),
+        ('Conexão emocional', hm.adultEmotionalConnection),
+        ('Orientação para a realidade', hm.adultRealityOrientation),
+        ('Identidade', hm.adultIdentity),
+        ('Autoafirmação', hm.adultSelfAssertion),
+        ('Agência', hm.adultAgency),
+        ('Cuidado com os outros', hm.adultCareForOthers),
+        ('Esperança', hm.adultHope),
+      ].where((e) => (e.$2 ?? '').trim().isNotEmpty).toList();
+      for (final f in fields) {
+        out.add(pw.Padding(
+          padding: const pw.EdgeInsets.only(bottom: 2),
+          child: pw.RichText(
+            text: pw.TextSpan(
+              style: const pw.TextStyle(fontSize: 9, color: _secondary, lineSpacing: 2),
+              children: [
+                pw.TextSpan(
+                    text: '${f.$1}: ',
+                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                pw.TextSpan(text: f.$2!.trim()),
+              ],
+            ),
+          ),
+        ));
+      }
+      out.add(pw.SizedBox(height: 6));
+    }
+
+    // 9.2 Criança vulnerável
+    if (!ma.vulnerableChild.isEmpty) {
+      out.add(subHeader('9.2', 'Criança vulnerável'));
+      out.add(freeText(ma.vulnerableChild.description));
+      if ((ma.vulnerableChild.schemas ?? '').trim().isNotEmpty)
+        out.add(freeText('Esquemas: ${ma.vulnerableChild.schemas!.trim()}'));
+      final exs = ma.vulnerableChild.examples.where((e) => !e.isEmpty).toList();
+      for (final e in exs) {
+        if ((e.trigger ?? '').trim().isNotEmpty)
+          out.add(_bullet(e.trigger!.trim()));
+      }
+      out.add(pw.SizedBox(height: 6));
+    }
+
+    // 9.3 Outros modos da criança
+    if (!ma.otherChild.isEmpty) {
+      out.add(subHeader('9.3', 'Outros modos da criança'));
+      out.add(freeText(ma.otherChild.description));
+      if ((ma.otherChild.schemas ?? '').trim().isNotEmpty)
+        out.add(freeText('Esquemas: ${ma.otherChild.schemas!.trim()}'));
+      final exs = ma.otherChild.examples.where((e) => !e.isEmpty).toList();
+      for (final e in exs) {
+        if ((e.trigger ?? '').trim().isNotEmpty)
+          out.add(_bullet(e.trigger!.trim()));
+      }
+      out.add(pw.SizedBox(height: 6));
+    }
+
+    // 9.4 Modos parentais + coping
+    final pm = ma.parentalModes.where((e) => !e.isEmpty).toList();
+    final cm = ma.copingModes.where((e) => !e.isEmpty).toList();
+    if (pm.isNotEmpty || cm.isNotEmpty) {
+      out.add(subHeader('9.4', 'Modos parentais e de enfrentamento'));
+      for (final p in pm) {
+        final label = (p.name ?? '').trim();
+        final msgs = (p.messages ?? '').trim();
+        out.add(_bullet(msgs.isNotEmpty ? '$label — $msgs' : label));
+      }
+      for (final c in cm) {
+        final label = [c.category, c.name]
+            .where((v) => (v ?? '').trim().isNotEmpty)
+            .map((v) => v!.trim())
+            .join(' · ');
+        final detail = (c.example ?? '').trim();
+        out.add(_bullet(detail.isNotEmpty ? '$label — $detail' : label));
+      }
+    }
+
+    if (out.isEmpty) return _placeholder('Avaliação de modos não preenchida.');
+    return out;
+  }
+
+  static List<pw.Widget> _therapyObjectivesPdf(
+      List<TherapyObjectiveEntry> objectives) {
+    final filled = objectives.where((e) => !e.isEmpty).toList();
+    if (filled.isEmpty) return _placeholder('Nenhum objetivo terapêutico registrado.');
+
+    pw.Widget subLine(String label, String? value) {
+      if ((value ?? '').trim().isEmpty) return pw.SizedBox();
+      return pw.Padding(
+        padding: const pw.EdgeInsets.only(top: 2),
+        child: pw.RichText(
+          text: pw.TextSpan(
+            style: const pw.TextStyle(fontSize: 9, color: _secondary, lineSpacing: 2),
+            children: [
+              pw.TextSpan(
+                  text: '$label ',
+                  style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+              pw.TextSpan(text: value!.trim()),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return [
+      for (var i = 0; i < filled.length; i++)
+        pw.Container(
+          margin: pw.EdgeInsets.only(bottom: i == filled.length - 1 ? 0 : 8),
+          child: pw.Row(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Container(
+                width: 15,
+                height: 15,
+                alignment: pw.Alignment.center,
+                decoration: const pw.BoxDecoration(
+                    color: _tint, shape: pw.BoxShape.circle),
+                child: pw.Text('${i + 1}',
+                    style: pw.TextStyle(
+                        fontSize: 8,
+                        fontWeight: pw.FontWeight.bold,
+                        color: _blue)),
+              ),
+              pw.SizedBox(width: 7),
+              pw.Expanded(
+                child: pw.Column(
+                  crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    if ((filled[i].goal ?? '').trim().isNotEmpty)
+                      pw.Text(filled[i].goal!.trim(),
+                          style: pw.TextStyle(
+                              fontSize: 10,
+                              fontWeight: pw.FontWeight.bold,
+                              color: _navy,
+                              lineSpacing: 2)),
+                    subLine('Esquemas/modos:', filled[i].schemasModes),
+                    subLine('Comportamentos saudáveis:', filled[i].healthyBehaviors),
+                    subLine('Intervenções:', filled[i].interventions),
+                    subLine('Progresso:', filled[i].progress),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
     ];
   }
 

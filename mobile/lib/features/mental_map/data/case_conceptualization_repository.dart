@@ -16,7 +16,9 @@ class CaseConceptualizationRepository {
   static const _select =
       'id, clinic_id, patient_id, unmet_needs, mode_sequences, '
       'therapeutic_relationship, general_impressions, diagnosis, '
-      'origins, motivo_notes, additional_comments, updated_at';
+      'origins, motivo_notes, additional_comments, '
+      'functioning, life_problems, central_schemas, mode_assessment, '
+      'therapy_objectives, updated_at';
 
   /// Carrega o documento do paciente; se ainda não existe, devolve um vazio.
   Future<CaseConceptualization> load(String patientId) async {
@@ -55,6 +57,11 @@ class CaseConceptualizationRepository {
               (data.additionalComments ?? '').trim().isEmpty
                   ? null
                   : data.additionalComments!.trim(),
+          'functioning': data.functioning.isEmpty ? null : data.functioning.toJson(),
+          'life_problems': data.lifeProblems.isEmpty ? null : data.lifeProblems.toJson(),
+          'central_schemas': data.centralSchemasJson(),
+          'mode_assessment': data.modeAssessment.isEmpty ? null : data.modeAssessment.toJson(),
+          'therapy_objectives': data.therapyObjectivesJson(),
         },
         onConflict: 'patient_id',
       );

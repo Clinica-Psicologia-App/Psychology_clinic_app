@@ -13,26 +13,44 @@ import 'package:terapia_esquema/features/initial_assessment/domain/patient_intak
 void main() {
   // ── totalFieldCount dinâmico ────────────────────────────────────────────
 
-  test('sem basics: total mínimo = 22 (8 fixos + 5 bloco2 + 9 áreas)', () {
+  test('sem basics: total mínimo = 21 (7 fixos + 5 bloco2 + 9 áreas)', () {
     const assessment = InitialAssessment(patientId: 'p1');
-    expect(assessment.totalFieldCount, 22);
+    expect(assessment.totalFieldCount, 21);
   });
 
-  test('usesMedication=true: total sobe para 23', () {
+  test('usesMedication=true: total sobe para 22', () {
     const assessment = InitialAssessment(
       patientId: 'p1',
       basics: PatientBasics(usesMedication: true),
     );
-    expect(assessment.totalFieldCount, 23);
+    expect(assessment.totalFieldCount, 22);
   });
 
-  test('usesMedication=true + psychiatricFollowup=true: total sobe para 24',
+  test('usesMedication=true + psychiatricFollowup=true: total sobe para 23',
       () {
     const assessment = InitialAssessment(
       patientId: 'p1',
       basics: PatientBasics(usesMedication: true, psychiatricFollowup: true),
     );
-    expect(assessment.totalFieldCount, 24);
+    expect(assessment.totalFieldCount, 23);
+  });
+
+  test('importantToKnow só aumenta total e preenchidos quando preenchido', () {
+    const semOpcional = InitialAssessment(patientId: 'p1');
+    for (final valor in ['', '   ']) {
+      final vazio = InitialAssessment(
+        patientId: 'p1',
+        basics: PatientBasics(importantToKnow: valor),
+      );
+      expect(vazio.totalFieldCount, semOpcional.totalFieldCount);
+      expect(vazio.filledBlock1Count, semOpcional.filledBlock1Count);
+    }
+    const preenchido = InitialAssessment(
+      patientId: 'p1',
+      basics: PatientBasics(importantToKnow: 'Informação adicional'),
+    );
+    expect(preenchido.totalFieldCount, semOpcional.totalFieldCount + 1);
+    expect(preenchido.filledBlock1Count, semOpcional.filledBlock1Count + 1);
   });
 
   // ── filledBlock1Count ───────────────────────────────────────────────────
@@ -128,13 +146,13 @@ void main() {
 
   // ── completionFraction ─────────────────────────────────────────────────
 
-  test('fração usa o total dinâmico (sem campos condicionais = 22)', () {
+  test('fração usa o total dinâmico (sem campos condicionais = 21)', () {
     const assessment = InitialAssessment(
       patientId: 'p1',
       basics: PatientBasics(
         preferredName: 'Bia',
         occupation: 'Designer',
-      ), // 2 de 8 fixos
+      ), // 2 de 7 fixos
       intake: PatientIntake(
         reasonForSeeking: 'Ansiedade',
       ), // 1 de 5
@@ -144,9 +162,9 @@ void main() {
         LifeAreaAssessment(area: LifeArea.selfCare, score: 3),
       ], // 3 de 9
     );
-    // (2 + 1 + 3) / 22 ≈ 0.2727
-    expect(assessment.totalFieldCount, 22);
-    expect(assessment.completionFraction, closeTo(6 / 22, 1e-9));
+    // (2 + 1 + 3) / 21 ≈ 0.2857
+    expect(assessment.totalFieldCount, 21);
+    expect(assessment.completionFraction, closeTo(6 / 21, 1e-9));
   });
 
   test(
@@ -179,8 +197,8 @@ void main() {
           LifeAreaAssessment(area: area, score: 5),
       ],
     );
-    expect(fullAssessment.filledBlock1Count, 8); // 8 campos fixos
-    expect(fullAssessment.totalFieldCount, 22); // sem os condicionais
+    expect(fullAssessment.filledBlock1Count, 8); // 7 fixos + importantToKnow
+    expect(fullAssessment.totalFieldCount, 22); // 21 + importantToKnow preenchido
     expect(fullAssessment.completionFraction, 1.0);
   });
 

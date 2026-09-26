@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../domain/exercise_definitions_data.dart';
 import '../domain/psychoeducation_module.dart';
 import '../providers/psychoeducation_providers.dart';
 import '../../../shared/widgets/brand_loading.dart';
+import 'psychoeducation_exercise_page.dart';
 
 /// Leitor de um módulo de psicoeducação: apresentação → cards → fechamento,
 /// numa jornada paginada.
@@ -91,6 +93,7 @@ class _PsychoeducationModulePageState
             page: _page,
             total: total,
             color: color,
+            hasExercise: kExerciseDefinitions.containsKey(module.number),
             onBack: _page == 0
                 ? null
                 : () => _controller.previousPage(
@@ -103,6 +106,12 @@ class _PsychoeducationModulePageState
                       duration: const Duration(milliseconds: 260),
                       curve: Curves.easeOut,
                     ),
+            onExercise: _page == total - 1
+                ? () => Navigator.of(context).push(MaterialPageRoute(
+                      builder: (_) =>
+                          PsychoeducationExercisePage(module: module),
+                    ))
+                : null,
             isLast: _page == total - 1,
           ),
         ],
@@ -331,6 +340,8 @@ class _BottomBar extends StatelessWidget {
     required this.onBack,
     required this.onNext,
     required this.isLast,
+    required this.hasExercise,
+    this.onExercise,
   });
   final int page;
   final int total;
@@ -338,40 +349,67 @@ class _BottomBar extends StatelessWidget {
   final VoidCallback? onBack;
   final VoidCallback onNext;
   final bool isLast;
+  final bool hasExercise;
+  final VoidCallback? onExercise;
 
   @override
   Widget build(BuildContext context) {
+    final showExerciseButton = isLast && hasExercise;
     return SafeArea(
       top: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(
             AppSpacing.xl, AppSpacing.sm, AppSpacing.xl, AppSpacing.md),
-        child: Row(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            TextButton(
-              onPressed: onBack,
-              child: const Text('Voltar'),
-            ),
-            const Spacer(),
+            if (showExerciseButton) ...[
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: onExercise,
+                  icon: const Icon(Icons.edit_note),
+                  label: const Text('Fazer exercício'),
+                  style: FilledButton.styleFrom(backgroundColor: color),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+            ],
             Row(
               children: [
-                for (var i = 0; i < total; i++)
-                  Container(
-                    width: 7,
-                    height: 7,
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: i == page ? color : color.withValues(alpha: 0.25),
-                    ),
+                TextButton(
+                  onPressed: onBack,
+                  child: const Text('Voltar'),
+                ),
+                const Spacer(),
+                Row(
+                  children: [
+                    for (var i = 0; i < total; i++)
+                      Container(
+                        width: 7,
+                        height: 7,
+                        margin: const EdgeInsets.symmetric(horizontal: 3),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color:
+                              i == page ? color : color.withValues(alpha: 0.25),
+                        ),
+                      ),
+                  ],
+                ),
+                const Spacer(),
+                if (!showExerciseButton)
+                  FilledButton(
+                    onPressed: onNext,
+                    style: FilledButton.styleFrom(backgroundColor: color),
+                    child: Text(isLast ? 'Concluir' : 'Avançar'),
+                  )
+                else
+                  TextButton(
+                    onPressed: onNext,
+                    child: const Text('Concluir'),
                   ),
               ],
-            ),
-            const Spacer(),
-            FilledButton(
-              onPressed: onNext,
-              style: FilledButton.styleFrom(backgroundColor: color),
-              child: Text(isLast ? 'Concluir' : 'Avançar'),
             ),
           ],
         ),

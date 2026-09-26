@@ -69,20 +69,19 @@ class _AmbiencePainter extends CustomPainter {
   /// Fase do ciclo de respiração, 0..1.
   final double t;
 
-  // Gradiente de base: parte do fundo azulado do app e migra para um neutro
-  // levemente quente na base, dando profundidade sem trocar a identidade.
-  static const _skyTop = Color(0xFFE9EEF9);
-  static const _skyMid = Color(0xFFEDF1F7);
-  static const _skyLow = Color(0xFFF0F1EF);
-  static const _skyBottom = Color(0xFFF2F0EC);
+  // Gradiente de base: leve toque teal no topo, neutro quente embaixo.
+  static const _skyTop = Color(0xFFE2EEF5);
+  static const _skyMid = Color(0xFFE8F2F5);
+  static const _skyLow = Color(0xFFEDF0EE);
+  static const _skyBottom = Color(0xFFF0EDE8);
 
   // Uma aura por fase clínica: Conhecer, Avaliar, Compreender.
   static const _auraConhecer = Color(0xFF00B2A9);
   static const _auraAvaliar = Color(0xFF7B5CF6);
   static const _auraCompreender = Color(0xFFC98F52);
 
-  static const _horizon = Color(0xFFDFE7F2);
-  static const _stem = Color(0xFF8FA6B8);
+  static const _horizon = Color(0xFFCBD9E8);
+  static const _stem = Color(0xFF6A9BB8);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -93,6 +92,7 @@ class _AmbiencePainter extends CustomPainter {
     _paintSky(canvas, rect);
     _paintHorizons(canvas, w, h);
     _paintAuras(canvas, w, h);
+    _paintDecorativeCircles(canvas, w, h);
     _paintVegetation(canvas, w, h);
     _paintParticles(canvas, w, h);
   }
@@ -110,10 +110,9 @@ class _AmbiencePainter extends CustomPainter {
     );
   }
 
-  /// Planos de horizonte: curvas largas e de baixíssimo contraste que dão
-  /// noção de profundidade sem virar "colina de desenho".
+  /// Planos de horizonte: curvas largas e visíveis que dão profundidade.
   void _paintHorizons(Canvas canvas, double w, double h) {
-    const alphas = [0.55, 0.42, 0.34];
+    const alphas = [0.20, 0.15, 0.10];
     const ys = [0.27, 0.52, 0.77];
 
     for (var i = 0; i < ys.length; i++) {
@@ -126,7 +125,7 @@ class _AmbiencePainter extends CustomPainter {
         ..close();
       canvas.drawPath(
         path,
-        Paint()..color = _horizon.withValues(alpha: alphas[i] * 0.5),
+        Paint()..color = _horizon.withValues(alpha: alphas[i]),
       );
     }
   }
@@ -146,7 +145,7 @@ class _AmbiencePainter extends CustomPainter {
       final phase = (t + i / specs.length) % 1.0;
       final breath = (math.sin(phase * 2 * math.pi) + 1) / 2; // 0..1
       final scale = 1.0 + 0.05 * breath;
-      final alpha = 0.085 + 0.045 * breath;
+      final alpha = 0.15 + 0.08 * breath;
 
       final center = Offset(w * cx, h * cy);
       final rx = w * 0.62 * scale;
@@ -167,21 +166,19 @@ class _AmbiencePainter extends CustomPainter {
     }
   }
 
-  /// Hastes com folhas nas bordas — legíveis como "orgânico", nunca como uma
-  /// espécie identificável. Opacidade baixa para não disputar com os nós.
+  /// Hastes com folhas nas bordas — mais visíveis e em mais posições.
   void _paintVegetation(Canvas canvas, double w, double h) {
     final stroke = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.1
+      ..strokeWidth = 1.3
       ..strokeCap = StrokeCap.round
-      ..color = _stem.withValues(alpha: 0.26);
-    final leaf = Paint()..color = _stem.withValues(alpha: 0.20);
+      ..color = _stem.withValues(alpha: 0.42);
+    final leaf = Paint()..color = _stem.withValues(alpha: 0.34);
 
     void sprig(double x, double baseY, double height, bool toRight) {
       final dir = toRight ? 1.0 : -1.0;
       final tipY = baseY - height;
 
-      // Haste principal com leve curvatura.
       canvas.drawPath(
         Path()
           ..moveTo(x, baseY)
@@ -193,7 +190,6 @@ class _AmbiencePainter extends CustomPainter {
         stroke,
       );
 
-      // Dois ramos com folha na ponta.
       void branch(double atFraction, double len, double lift) {
         final sy = baseY - height * atFraction;
         final ex = x + len * dir;
@@ -208,7 +204,7 @@ class _AmbiencePainter extends CustomPainter {
         canvas.translate(ex, ey);
         canvas.rotate(dir * -0.5);
         canvas.drawOval(
-          Rect.fromCenter(center: Offset.zero, width: 17, height: 7),
+          Rect.fromCenter(center: Offset.zero, width: 18, height: 8),
           leaf,
         );
         canvas.restore();
@@ -218,25 +214,63 @@ class _AmbiencePainter extends CustomPainter {
       branch(0.78, 12, 10);
     }
 
+    // Hastes nas bordas — mais posições que antes.
     sprig(w * 0.055, h * 0.50, h * 0.14, true);
     sprig(w * 0.945, h * 0.34, h * 0.12, false);
-    sprig(w * 0.94, h * 0.93, h * 0.11, false);
-    sprig(w * 0.05, h * 0.98, h * 0.10, true);
+    sprig(w * 0.94,  h * 0.93, h * 0.11, false);
+    sprig(w * 0.05,  h * 0.98, h * 0.10, true);
+    sprig(w * 0.06,  h * 0.22, h * 0.10, true);
+    sprig(w * 0.94,  h * 0.65, h * 0.12, false);
+    sprig(w * 0.055, h * 0.76, h * 0.09, true);
+    sprig(w * 0.945, h * 0.10, h * 0.08, false);
+  }
+
+  /// Círculos decorativos sutis — reforçam a sensação de profundidade de mapa.
+  void _paintDecorativeCircles(Canvas canvas, double w, double h) {
+    const specs = <(double, double, double, Color)>[
+      (0.88, 0.18, 38, _auraConhecer),
+      (0.12, 0.42, 28, _auraAvaliar),
+      (0.90, 0.72, 32, _auraCompreender),
+      (0.08, 0.88, 24, _auraConhecer),
+    ];
+    for (final (fx, fy, r, color) in specs) {
+      canvas.drawCircle(
+        Offset(w * fx, h * fy),
+        r,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.0
+          ..color = color.withValues(alpha: 0.14),
+      );
+      canvas.drawCircle(
+        Offset(w * fx, h * fy),
+        r * 1.55,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 0.6
+          ..color = color.withValues(alpha: 0.08),
+      );
+    }
   }
 
   /// Partículas de luz: pontos brancos difusos que dão vida ao campo vazio.
   void _paintParticles(Canvas canvas, double w, double h) {
     const spots = <(double, double, double, double)>[
-      (0.26, 0.14, 2.3, 0.55),
-      (0.83, 0.28, 1.8, 0.42),
-      (0.17, 0.47, 2.1, 0.40),
-      (0.87, 0.55, 1.7, 0.38),
-      (0.39, 0.70, 1.9, 0.42),
-      (0.79, 0.86, 1.7, 0.34),
-      (0.13, 0.22, 1.6, 0.38),
-      (0.47, 0.38, 1.5, 0.30),
-      (0.62, 0.62, 1.5, 0.30),
-      (0.30, 0.92, 1.6, 0.32),
+      (0.26, 0.14, 3.0, 0.65),
+      (0.83, 0.28, 2.5, 0.55),
+      (0.17, 0.47, 2.8, 0.52),
+      (0.87, 0.55, 2.4, 0.50),
+      (0.39, 0.70, 2.6, 0.55),
+      (0.79, 0.86, 2.3, 0.48),
+      (0.13, 0.22, 2.2, 0.50),
+      (0.47, 0.38, 2.0, 0.45),
+      (0.62, 0.62, 2.0, 0.42),
+      (0.30, 0.92, 2.2, 0.45),
+      (0.55, 0.18, 1.8, 0.40),
+      (0.72, 0.44, 1.6, 0.38),
+      (0.22, 0.68, 1.7, 0.40),
+      (0.91, 0.40, 1.8, 0.38),
+      (0.48, 0.82, 1.6, 0.36),
     ];
 
     for (final (fx, fy, r, a) in spots) {

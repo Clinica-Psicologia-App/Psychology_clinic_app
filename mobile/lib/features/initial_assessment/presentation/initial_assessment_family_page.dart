@@ -11,6 +11,7 @@ import '../domain/genogram_person_entry.dart';
 import '../domain/patient_family.dart';
 import '../providers/patient_family_providers.dart';
 import 'widgets/genogram_person_editor.dart';
+import '../../../features/life_story/domain/life_story_enums.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 /// Tela 3 do fluxo Conhecer na lente do paciente — "Minha Família": pessoas do
@@ -153,6 +154,15 @@ class _InitialAssessmentFamilyPageState
                     ),
               ),
               const SizedBox(height: 16),
+              if (family.people.isEmpty)
+                _QuickAddCatalog(
+                  ctx: _ctx,
+                  onRoleSelected: (role) => showGenogramPersonEditor(
+                    context: context,
+                    ctx: _ctx,
+                    initialRole: role,
+                  ),
+                ),
               for (final person in family.people)
                 _PersonCard(ctx: _ctx, person: person),
               const SizedBox(height: 4),
@@ -457,4 +467,118 @@ class _PatternsSection extends StatelessWidget {
       ],
     );
   }
+}
+
+/// Catálogo de parentescos sugeridos exibido quando a lista de pessoas está
+/// vazia — guia o paciente a começar pelo núcleo familiar mais próximo.
+class _QuickAddCatalog extends StatelessWidget {
+  const _QuickAddCatalog({
+    required this.ctx,
+    required this.onRoleSelected,
+  });
+
+  final InitialAssessmentContext ctx;
+  final void Function(RelationshipRole role) onRoleSelected;
+
+  static const _groups = [
+    _CatalogGroup(label: 'Pais', roles: [
+      RelationshipRole.mother,
+      RelationshipRole.father,
+      RelationshipRole.stepmother,
+      RelationshipRole.stepfather,
+    ]),
+    _CatalogGroup(label: 'Irmãos', roles: [
+      RelationshipRole.sister,
+      RelationshipRole.brother,
+    ]),
+    _CatalogGroup(label: 'Avós', roles: [
+      RelationshipRole.grandmother,
+      RelationshipRole.grandfather,
+    ]),
+    _CatalogGroup(label: 'Tios / Primos', roles: [
+      RelationshipRole.aunt,
+      RelationshipRole.uncle,
+      RelationshipRole.cousinF,
+      RelationshipRole.cousinM,
+    ]),
+    _CatalogGroup(label: 'Cônjuge / Filhos', roles: [
+      RelationshipRole.partner,
+      RelationshipRole.daughter,
+      RelationshipRole.son,
+    ]),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.fromLTRB(14, 13, 14, 14),
+      decoration: BoxDecoration(
+        color: AppColors.turquoise.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: AppColors.turquoise.withValues(alpha: 0.22),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.people_outline,
+                  size: 17, color: AppColors.turquoise),
+              const SizedBox(width: 8),
+              Text(
+                'Por onde começar?',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: AppColors.turquoise,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Toque em um parentesco para adicionar rapidamente.',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          const SizedBox(height: 12),
+          for (final group in _groups) ...[
+            Text(
+              group.label,
+              style: theme.textTheme.labelSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.4,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 8,
+              runSpacing: 6,
+              children: [
+                for (final role in group.roles)
+                  ActionChip(
+                    avatar: const Icon(Icons.add, size: 15),
+                    label: Text(role.label),
+                    onPressed: () => onRoleSelected(role),
+                    visualDensity: VisualDensity.compact,
+                  ),
+              ],
+            ),
+            const SizedBox(height: 10),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _CatalogGroup {
+  const _CatalogGroup({required this.label, required this.roles});
+  final String label;
+  final List<RelationshipRole> roles;
 }

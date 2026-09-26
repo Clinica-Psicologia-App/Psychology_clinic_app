@@ -89,11 +89,14 @@ class _JourneyCanopyHeader extends StatelessWidget {
         .length;
     final current = _currentStep(list);
     final fraction = total == 0 ? 0.0 : done / total;
+    final isComplete = total > 0 && done == total;
 
-    final eyebrow = current == null
-        ? 'SUA TRILHA TERAPÊUTICA'
-        : 'SUA TRILHA · FASE ${current.phase.stepNumber} · '
-            '${current.phase.label.toUpperCase()}';
+    final eyebrow = isComplete
+        ? 'TRILHA CONCLUÍDA 🎉'
+        : current == null
+            ? 'SUA TRILHA TERAPÊUTICA'
+            : 'SUA TRILHA · FASE ${current.phase.stepNumber} · '
+                '${current.phase.label.toUpperCase()}';
 
     return Container(
       decoration: BoxDecoration(
@@ -175,7 +178,7 @@ class _JourneyCanopyHeader extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xs),
-                    _ContextLine(step: current),
+                    _ContextLine(step: current, isComplete: isComplete),
                   ],
                 ),
               ),
@@ -198,9 +201,10 @@ class _JourneyCanopyHeader extends StatelessWidget {
 }
 
 class _ContextLine extends StatelessWidget {
-  const _ContextLine({required this.step});
+  const _ContextLine({required this.step, this.isComplete = false});
 
   final JourneyStep? step;
+  final bool isComplete;
 
   @override
   Widget build(BuildContext context) {
@@ -209,6 +213,14 @@ class _ContextLine extends StatelessWidget {
       color: Colors.white.withValues(alpha: 0.9),
       height: 1.35,
     );
+    if (isComplete) {
+      return Text(
+        'Você concluiu toda a sua trilha terapêutica!',
+        style: base?.copyWith(fontWeight: FontWeight.w700),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+      );
+    }
     if (step == null) {
       return Text('Siga os passos no seu ritmo.', style: base);
     }

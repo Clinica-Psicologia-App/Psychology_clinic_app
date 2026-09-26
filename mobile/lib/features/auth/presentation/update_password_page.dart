@@ -146,6 +146,7 @@ class _UpdatePasswordPageState extends ConsumerState<UpdatePasswordPage> {
           );
       await ref.read(authRepositoryProvider).signOut();
       if (!mounted) return;
+      ref.read(passwordRecoveryActiveProvider.notifier).state = false;
       ref.read(authRedirectMessageProvider.notifier).state =
           'Senha alterada com sucesso.';
       context.go(AppRoutes.login);

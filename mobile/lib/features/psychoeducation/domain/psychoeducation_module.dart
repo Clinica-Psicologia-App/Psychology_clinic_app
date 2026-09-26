@@ -70,6 +70,7 @@ class PsychoeducationModule {
     return switch (stage) {
       'Conhecer' => const Color(0xFF14B8A6),
       'Transformar' => const Color(0xFF059669),
+      'Praticar' => const Color(0xFFD97706),
       _ => const Color(0xFF6366F1),
     };
   }
@@ -102,7 +103,9 @@ enum PsychoeducationStage {
   compreender(
       'Compreender', 'Identifique sua história, seus padrões e esquemas.'),
   transformar(
-      'Transformar', 'Reconheça a ativação e fortaleça o Adulto Saudável.');
+      'Transformar', 'Reconheça a ativação e fortaleça o Adulto Saudável.'),
+  praticar(
+      'Praticar', 'Exercite novas formas de sentir, pensar e agir.');
 
   const PsychoeducationStage(this.label, this.subtitle);
   final String label;

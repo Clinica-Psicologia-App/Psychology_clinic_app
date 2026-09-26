@@ -122,7 +122,7 @@ List<JourneyStep> buildPatientJourneySteps(
     if (!p.hasClinicalDashboardData) {
       return JourneyStepAvailability.available;
     }
-    return JourneyStepAvailability.inProgress;
+    return JourneyStepAvailability.completed;
   }
 
   String? clinicalDashboardHint() {

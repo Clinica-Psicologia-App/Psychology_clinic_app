@@ -56,20 +56,26 @@ enum CaregiverTrait {
 /// Necessidades emocionais em linguagem experiencial. Serve tanto para
 /// "geralmente se sentia..." (felt) quanto "o que gostaria de ter recebido"
 /// (wished) — o banco usa o mesmo conjunto em ambas as colunas.
+///
+/// [label] é adjetival ("Seguro(a)") para a pergunta de sentimento;
+/// [nounLabel] é substantivo ("Segurança") para a pergunta de desejo.
 enum CaregiverNeed {
-  safe('safe', 'Seguro(a)'),
-  loved('loved', 'Amado(a)'),
-  accepted('accepted', 'Aceito(a)'),
-  understood('understood', 'Compreendido(a)'),
-  valued('valued', 'Valorizado(a)'),
-  respected('respected', 'Respeitado(a)'),
-  freeToBe('free_to_be', 'Livre para ser quem era'),
-  encouraged('encouraged', 'Incentivado(a)'),
-  protected('protected', 'Protegido(a)');
+  safe('safe', 'Seguro(a)', 'Segurança'),
+  loved('loved', 'Amado(a)', 'Amor'),
+  accepted('accepted', 'Aceito(a)', 'Aceitação'),
+  understood('understood', 'Compreendido(a)', 'Compreensão'),
+  valued('valued', 'Valorizado(a)', 'Valorização'),
+  respected('respected', 'Respeitado(a)', 'Respeito'),
+  freeToBe('free_to_be', 'Livre para ser quem era', 'Liberdade para ser quem eu era'),
+  encouraged('encouraged', 'Incentivado(a)', 'Incentivo'),
+  protected('protected', 'Protegido(a)', 'Proteção'),
+  guided('guidance', 'Orientado(a)', 'Orientação'),
+  stable('stability', 'Em ambiente previsível e estável', 'Previsibilidade e estabilidade');
 
-  const CaregiverNeed(this.key, this.label);
+  const CaregiverNeed(this.key, this.label, this.nounLabel);
   final String key;
   final String label;
+  final String nounLabel;
 }
 
 /// "Existe algum acontecimento importante relacionado a essa pessoa?"

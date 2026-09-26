@@ -11,25 +11,33 @@ import '../../providers/patient_family_providers.dart';
 import '../../../life_story/domain/life_story_enums.dart';
 
 /// Abre o editor de uma pessoa do genograma (criar ou editar).
+/// [initialRole] pré-seleciona o parentesco quando [person] é null.
 Future<void> showGenogramPersonEditor({
   required BuildContext context,
   required InitialAssessmentContext ctx,
   GenogramPersonEntry? person,
+  RelationshipRole? initialRole,
 }) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
     backgroundColor: AppColors.background,
-    builder: (_) => _GenogramPersonEditor(ctx: ctx, person: person),
+    builder: (_) =>
+        _GenogramPersonEditor(ctx: ctx, person: person, initialRole: initialRole),
   );
 }
 
 class _GenogramPersonEditor extends ConsumerStatefulWidget {
-  const _GenogramPersonEditor({required this.ctx, this.person});
+  const _GenogramPersonEditor({
+    required this.ctx,
+    this.person,
+    this.initialRole,
+  });
 
   final InitialAssessmentContext ctx;
   final GenogramPersonEntry? person;
+  final RelationshipRole? initialRole;
 
   @override
   ConsumerState<_GenogramPersonEditor> createState() =>
@@ -61,7 +69,7 @@ class _GenogramPersonEditorState extends ConsumerState<_GenogramPersonEditor> {
     super.initState();
     final p = widget.person;
     _fullName = TextEditingController(text: p?.fullName ?? '');
-    _role = relationshipRoleFromKey(p?.relationshipToPatient);
+    _role = relationshipRoleFromKey(p?.relationshipToPatient) ?? widget.initialRole;
     final age = p?.birthYear == null
         ? ''
         : (DateTime.now().year - p!.birthYear!).toString();
@@ -349,7 +357,7 @@ class _GenogramPersonEditorState extends ConsumerState<_GenogramPersonEditor> {
                     'O que você mais gostaria de ter recebido dessa pessoa?',
                     CaregiverNeed.values,
                     _wishedNeeds,
-                    (e) => e.label,
+                    (e) => e.nounLabel,
                   ),
                 ],
               ),

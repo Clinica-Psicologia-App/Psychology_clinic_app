@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -129,6 +130,10 @@ class _IntroPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final coverUrl = module.coverUrl;
+    if (coverUrl != null) {
+      return _ImageCard(imageUrl: coverUrl);
+    }
     final theme = Theme.of(context);
     final color = module.color;
     return SingleChildScrollView(
@@ -187,6 +192,9 @@ class _CardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (card.imageUrl != null) {
+      return _ImageCard(imageUrl: card.imageUrl!);
+    }
     final theme = Theme.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.xl),
@@ -223,6 +231,22 @@ class _CardPage extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+class _ImageCard extends StatelessWidget {
+  const _ImageCard({required this.imageUrl});
+  final String imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    return CachedNetworkImage(
+      imageUrl: imageUrl,
+      fit: BoxFit.contain,
+      width: double.infinity,
+      placeholder: (_, __) => const Center(child: CircularProgressIndicator()),
+      errorWidget: (_, __, ___) => const Center(child: Icon(Icons.broken_image)),
     );
   }
 }

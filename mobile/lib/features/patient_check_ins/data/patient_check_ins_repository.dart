@@ -13,7 +13,7 @@ class PatientCheckInsRepository {
   final SupabaseClient _client;
 
   static const _select =
-      'id, clinic_id, patient_id, created_by, mood_score, anxiety_score, energy_score, problem_intensity_score, notes, checked_in_at, created_at, updated_at';
+      'id, clinic_id, patient_id, created_by, mood_score, mood_emotions, anxiety_score, energy_score, problem_intensity_score, selected_mode, notes, checked_in_at, created_at, updated_at';
 
   Future<String> getPatientIdForCurrentProfile() async {
     try {

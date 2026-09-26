@@ -7,6 +7,7 @@ import '../../../core/errors/error_mapper.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../domain/check_in_mode.dart';
 import '../domain/patient_check_in.dart';
 import '../domain/patient_check_in_input.dart';
 import '../providers/patient_check_ins_providers.dart';
@@ -27,22 +28,26 @@ class PatientCheckInFormPage extends ConsumerStatefulWidget {
 class _PatientCheckInFormPageState
     extends ConsumerState<PatientCheckInFormPage> {
   final _notesController = TextEditingController();
+  final _nicknameController = TextEditingController();
 
   int _mood = 5;
+  List<String> _moodEmotions = [];
   int _anxiety = 5;
   int _energy = 5;
   int _problemIntensity = 5;
+  CheckInMode? _selectedMode;
+  String? _expandedFamilyId;
   bool _saving = false;
   bool _loaded = false;
 
-  /// Passo atual do fluxo: 0–3 escalas (humor, ansiedade, energia,
-  /// intensidade) e 4 = observações + envio.
+  /// Passos: 0=humor, 1=ansiedade, 2=energia, 3=intensidade, 4=modos, 5=notas
   int _step = 0;
-  static const int _kTotalSteps = 5;
+  static const int _kTotalSteps = 6;
 
   @override
   void dispose() {
     _notesController.dispose();
+    _nicknameController.dispose();
     super.dispose();
   }
 
@@ -50,18 +55,39 @@ class _PatientCheckInFormPageState
     if (_loaded) return;
     _loaded = true;
     _mood = checkIn.moodScore ?? 5;
+    _moodEmotions = List.of(checkIn.moodEmotions);
     _anxiety = checkIn.anxietyScore ?? 5;
     _energy = checkIn.energyScore ?? 5;
     _problemIntensity = checkIn.problemIntensityScore ?? 5;
+    _selectedMode = checkIn.selectedMode;
+    _nicknameController.text = checkIn.selectedMode?.nickname ?? '';
     _notesController.text = checkIn.notes ?? '';
   }
 
+  void _onMoodChanged(int value) {
+    setState(() {
+      _mood = value;
+      _moodEmotions = [];
+    });
+  }
+
   PatientCheckInInput _buildInput() {
+    final nickname = _nicknameController.text.trim();
+    final mode = _selectedMode;
     return PatientCheckInInput(
       moodScore: _mood,
+      moodEmotions: _moodEmotions,
       anxietyScore: _anxiety,
       energyScore: _energy,
       problemIntensityScore: _problemIntensity,
+      selectedMode: mode == null
+          ? null
+          : CheckInMode(
+              family: mode.family,
+              clinicalName: mode.clinicalName,
+              patientLabel: mode.patientLabel,
+              nickname: nickname.isEmpty ? null : nickname,
+            ),
       notes: _notesController.text,
     );
   }
@@ -188,11 +214,7 @@ class _PatientCheckInFormPageState
   }
 
   Widget _buildForm(BuildContext context, {required bool isEditToday}) {
-    final theme = Theme.of(context);
     final isLast = _step == _kTotalSteps - 1;
-    final greeting = _step < 4
-        ? 'Como você está hoje?'
-        : 'Quase lá — quer contar algo?';
 
     return AppScaffold(
       title: widget.isEdit || isEditToday ? 'Editar check-in' : 'Check-in',
@@ -204,19 +226,8 @@ class _PatientCheckInFormPageState
           children: [
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md, AppSpacing.md, AppSpacing.md, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    greeting,
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                  const SizedBox(height: 10),
-                  _ProgressDots(count: _kTotalSteps, index: _step),
-                ],
-              ),
+                  AppSpacing.md, AppSpacing.sm, AppSpacing.md, 0),
+              child: _ProgressDots(count: _kTotalSteps, index: _step),
             ),
             Expanded(
               child: AnimatedSwitcher(
@@ -239,16 +250,7 @@ class _PatientCheckInFormPageState
   Widget _stepContent() {
     switch (_step) {
       case 0:
-        return _scoreStep(
-          question: 'Como está seu humor?',
-          helper: 'Arraste até a carinha que combina com o seu dia.',
-          lowLabel: 'Muito baixo',
-          highLabel: 'Muito bom',
-          faces: const ['😭', '😞', '😐', '🙂', '😄'],
-          positiveHigh: true,
-          value: _mood,
-          onChanged: (v) => setState(() => _mood = v),
-        );
+        return _moodStep();
       case 1:
         return _scoreStep(
           question: 'Como está sua ansiedade?',
@@ -282,10 +284,370 @@ class _PatientCheckInFormPageState
           value: _problemIntensity,
           onChanged: (v) => setState(() => _problemIntensity = v),
         );
+      case 4:
+        return _modesStep();
       default:
         return _notesStep();
     }
   }
+
+  // ── Passo 0: Humor — Opção A ───────────────────────────────────────────
+
+  Widget _moodStep() {
+    final theme = Theme.of(context);
+    final emotions = emotionsForScore(_mood);
+    final label = kMoodLabels[_mood] ?? '';
+    final surfaceVariant = theme.colorScheme.onSurfaceVariant;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Como está seu humor agora?',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w800,
+            color: AppColors.navy,
+          ),
+        ),
+        const SizedBox(height: 28),
+
+        // ── Emoji grande + score ──
+        Column(
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 200),
+              transitionBuilder: (child, anim) => ScaleTransition(
+                scale: anim,
+                child: FadeTransition(opacity: anim, child: child),
+              ),
+              child: Text(
+                kMoodEmojis[_mood],
+                key: ValueKey(_mood),
+                style: const TextStyle(fontSize: 80),
+              ),
+            ),
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
+                  '$_mood',
+                  style: theme.textTheme.displaySmall?.copyWith(
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.turquoise,
+                    height: 1,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '— $label',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: surfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 24),
+
+        // ── Strip com fundo cinza ──
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest
+                .withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: List.generate(11, (i) {
+              final selected = _mood == i;
+              return GestureDetector(
+                onTap: () => _onMoodChanged(i),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 160),
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? AppColors.turquoise
+                        : Colors.transparent,
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    kMoodEmojis[i],
+                    style: const TextStyle(fontSize: 19),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+        const SizedBox(height: 6),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text('Péssimo',
+                  style: theme.textTheme.labelSmall
+                      ?.copyWith(color: surfaceVariant)),
+              Text('Excelente',
+                  style: theme.textTheme.labelSmall
+                      ?.copyWith(color: surfaceVariant)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 28),
+
+        // ── Emoções ──
+        Text(
+          'Quer contar um pouco mais? Escolha uma ou mais.',
+          style: theme.textTheme.bodyMedium?.copyWith(color: surfaceVariant),
+        ),
+        const SizedBox(height: 12),
+        ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 160),
+          child: Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: emotions.map((emotion) {
+            final selected = _moodEmotions.contains(emotion);
+            return FilterChip(
+              label: Text(emotion),
+              selected: selected,
+              onSelected: (on) {
+                setState(() {
+                  if (on) {
+                    _moodEmotions = [..._moodEmotions, emotion];
+                  } else {
+                    _moodEmotions =
+                        _moodEmotions.where((e) => e != emotion).toList();
+                  }
+                });
+              },
+              selectedColor: AppColors.turquoise.withValues(alpha: 0.18),
+              checkmarkColor: AppColors.turquoise,
+              side: BorderSide(
+                color: selected
+                    ? AppColors.turquoise
+                    : theme.colorScheme.outlineVariant,
+              ),
+            );
+          }).toList(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ── Passo 4: Modos ───────────────────────────────────────────────────────
+
+  Widget _modesStep() {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Que modo está aparecendo agora?',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: AppColors.navy,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Toque na opção que mais se parece com você neste momento.',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodySmall
+              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+        ),
+        const SizedBox(height: 20),
+        ...kModeFamilies.map((family) => _familyCard(family, theme)),
+        if (_selectedMode != null) ...[
+          const SizedBox(height: 20),
+          Text(
+            'Esse modo tem um nome para você? (opcional)',
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: 8),
+          TextField(
+            controller: _nicknameController,
+            decoration: const InputDecoration(
+              hintText: 'Ex: General, A Sombra, O Crítico...',
+              prefixIcon: Icon(Icons.edit_outlined),
+            ),
+            textCapitalization: TextCapitalization.sentences,
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _familyCard(ModeFamily family, ThemeData theme) {
+    final isExpanded = _expandedFamilyId == family.id;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          InkWell(
+            onTap: () {
+              setState(() {
+                _expandedFamilyId = isExpanded ? null : family.id;
+              });
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: isExpanded
+                    ? AppColors.turquoise.withValues(alpha: 0.1)
+                    : theme.colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isExpanded
+                      ? AppColors.turquoise
+                      : theme.colorScheme.outlineVariant,
+                  width: isExpanded ? 1.5 : 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Text(family.icon,
+                      style: const TextStyle(fontSize: 24)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      family.patientLabel,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    isExpanded
+                        ? Icons.expand_less_rounded
+                        : Icons.expand_more_rounded,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (isExpanded)
+            Container(
+              margin: const EdgeInsets.only(top: 4),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerLowest,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                    color: AppColors.turquoise.withValues(alpha: 0.3)),
+              ),
+              child: Column(
+                children: family.submodes.asMap().entries.map((entry) {
+                  final i = entry.key;
+                  final option = entry.value;
+                  final isSelected = _selectedMode?.clinicalName ==
+                          option.clinicalName &&
+                      _selectedMode?.patientLabel == option.patientLabel &&
+                      _selectedMode?.family == family.id;
+
+                  return InkWell(
+                    onTap: () {
+                      setState(() {
+                        _selectedMode = CheckInMode(
+                          family: family.id,
+                          clinicalName: option.clinicalName,
+                          patientLabel: option.patientLabel,
+                        );
+                        _nicknameController.clear();
+                      });
+                    },
+                    borderRadius: BorderRadius.vertical(
+                      top: i == 0
+                          ? const Radius.circular(12)
+                          : Radius.zero,
+                      bottom: i == family.submodes.length - 1
+                          ? const Radius.circular(12)
+                          : Radius.zero,
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppColors.turquoise.withValues(alpha: 0.12)
+                            : null,
+                        border: i < family.submodes.length - 1
+                            ? Border(
+                                bottom: BorderSide(
+                                  color: theme.colorScheme.outlineVariant
+                                      .withValues(alpha: 0.4),
+                                ),
+                              )
+                            : null,
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(option.icon,
+                              style: const TextStyle(fontSize: 20)),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  option.patientLabel,
+                                  style:
+                                      theme.textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: isSelected
+                                        ? AppColors.turquoise
+                                        : null,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '"${option.patientDescription}"',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color:
+                                        theme.colorScheme.onSurfaceVariant,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (isSelected)
+                            Icon(Icons.check_circle_rounded,
+                                color: AppColors.turquoise, size: 20),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  // ── Passos de escala genérica ─────────────────────────────────────────────
 
   Widget _scoreStep({
     required String question,
@@ -326,7 +688,6 @@ class _PatientCheckInFormPageState
               ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
         const SizedBox(height: 22),
-        // Carinha grande que reage ao valor.
         Center(
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 180),
@@ -378,6 +739,8 @@ class _PatientCheckInFormPageState
     );
   }
 
+  // ── Passo de notas ────────────────────────────────────────────────────────
+
   Widget _notesStep() {
     final theme = Theme.of(context);
     return Column(
@@ -411,6 +774,8 @@ class _PatientCheckInFormPageState
       ],
     );
   }
+
+  // ── Barra de navegação ────────────────────────────────────────────────────
 
   Widget _navBar({required bool isLast}) {
     return SafeArea(

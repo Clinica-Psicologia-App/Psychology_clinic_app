@@ -1,26 +1,33 @@
-﻿import 'patient_check_in.dart';
+﻿import 'check_in_mode.dart';
+import 'patient_check_in.dart';
 
 class PatientCheckInInput {
   const PatientCheckInInput({
     this.moodScore,
+    this.moodEmotions = const [],
     this.anxietyScore,
     this.energyScore,
     this.problemIntensityScore,
+    this.selectedMode,
     this.notes,
   });
 
   final int? moodScore;
+  final List<String> moodEmotions;
   final int? anxietyScore;
   final int? energyScore;
   final int? problemIntensityScore;
+  final CheckInMode? selectedMode;
   final String? notes;
 
   factory PatientCheckInInput.fromCheckIn(PatientCheckIn checkIn) {
     return PatientCheckInInput(
       moodScore: checkIn.moodScore,
+      moodEmotions: checkIn.moodEmotions,
       anxietyScore: checkIn.anxietyScore,
       energyScore: checkIn.energyScore,
       problemIntensityScore: checkIn.problemIntensityScore,
+      selectedMode: checkIn.selectedMode,
       notes: checkIn.notes,
     );
   }
@@ -50,9 +57,11 @@ class PatientCheckInInput {
   Map<String, dynamic> toRowJson() {
     return {
       'mood_score': moodScore,
+      'mood_emotions': moodEmotions,
       'anxiety_score': anxietyScore,
       'energy_score': energyScore,
       'problem_intensity_score': problemIntensityScore,
+      'selected_mode': selectedMode?.toJson(),
       'notes': _nullableTrim(notes),
     };
   }

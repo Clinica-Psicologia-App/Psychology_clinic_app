@@ -12,6 +12,27 @@ if (([uri]$apiBase).Host -notin @('127.0.0.1', 'localhost', '::1')) {
 $anonKey = $localConfig.ANON_KEY
 $serviceKey = $localConfig.SERVICE_ROLE_KEY
 if (!$anonKey -or !$serviceKey) { throw 'Local API keys unavailable' }
+# Follow the Lote F harness: resolve from this execution's Supabase project_id.
+# Validate the Docker identity and DB_URL port before creating any fixtures.
+$configText = Get-Content -Raw 'supabase/config.toml'
+$projectMatches = [regex]::Matches($configText, '(?m)^project_id\s*=\s*"([^"]+)"')
+if ($projectMatches.Count -ne 1) { throw 'Cannot identify one local Supabase project_id' }
+$projectId = $projectMatches[0].Groups[1].Value
+$dbContainer = "supabase_db_$projectId"
+$dbUri = [uri]$localConfig.DB_URL
+if ($dbUri.Host -notin @('127.0.0.1', 'localhost', '::1') -or $dbUri.Port -le 0) {
+  throw 'Local Supabase DB endpoint unavailable'
+}
+$inspection = docker inspect --format '{{json .State.Running}}|{{index .Config.Labels "com.supabase.cli.project"}}|{{json .NetworkSettings.Ports}}' $dbContainer
+if ($LASTEXITCODE -ne 0) { throw "Local Supabase DB container unavailable: $dbContainer" }
+$parts = $inspection -split '\|', 3
+if ($parts.Count -ne 3 -or $parts[0] -ne 'true' -or $parts[1] -ne $projectId) {
+  throw 'Supabase DB container is not running or does not match project_id'
+}
+$ports = $parts[2] | ConvertFrom-Json
+if (@($ports.'5432/tcp' | Where-Object { $_.HostPort -eq [string]$dbUri.Port }).Count -eq 0) {
+  throw 'Supabase DB container does not match the current status DB_URL port'
+}
 $fixturePrefix = 'f03-http-' + [guid]::NewGuid().ToString('N')
 $fixturePassword = 'TestAa1!' + [guid]::NewGuid().ToString('N')
 $clinicId = '11111111-1111-1111-1111-111111111101'
@@ -186,7 +207,7 @@ DELETE FROM public.audit_events WHERE entity_id IN (SELECT id FROM f03_http_ids)
   OR actor_profile_id IN (SELECT id FROM f03_http_ids);
 COMMIT;
 "@
-  $cleanupSql | docker exec -i supabase_db_App_Clinica_Psicologia psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 | Out-Null
+  $cleanupSql | docker exec -i $dbContainer psql -U postgres -d postgres -X -v ON_ERROR_STOP=1 | Out-Null
   if ($LASTEXITCODE -ne 0) { throw "Fixture cleanup failed for prefix $fixturePrefix" }
   Write-Host 'F03 HTTP fixtures cleaned up'
 }

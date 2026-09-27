@@ -755,7 +755,7 @@ void main() {
     expect(dashboard, isNull);
   });
 
-  test('journey dashboard inProgress when YSQ result exists', () {
+  test('journey dashboard completed when YSQ result exists', () {
     const progress = PatientJourneyProgress(
       activeQuestionnaireCount: 0,
       completedQuestionnaireCount: 0,
@@ -778,7 +778,7 @@ void main() {
 
     final steps = buildPatientJourneySteps(progress);
     final dash = steps.firstWhere((s) => s.id == JourneyStepId.results);
-    expect(dash.availability, JourneyStepAvailability.inProgress);
+    expect(dash.availability, JourneyStepAvailability.completed);
     expect(dash.title, 'Meus resultados');
   });
 }

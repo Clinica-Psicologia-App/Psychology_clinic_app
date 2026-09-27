@@ -13,72 +13,22 @@ class ResultsRepository {
 
   final SupabaseClient _client;
 
-  static const _listSelect = '''
-id,
-status,
-started_at,
-completed_at,
-created_at,
-questionnaire_id,
-reviewed_at,
-review_notes,
-reviewed_by:profiles!questionnaire_responses_reviewed_by_profile_id_fkey(full_name),
-questionnaire:questionnaires(id, code, name),
-questionnaire_answers(count),
-questionnaire_results(count)
-''';
-
-  static const _detailSelect = '''
-id,
-patient_id,
-questionnaire_id,
-status,
-started_at,
-completed_at,
-reviewed_at,
-review_notes,
-reviewed_by:profiles!questionnaire_responses_reviewed_by_profile_id_fkey(full_name),
-questionnaire:questionnaires(id, code, name, description),
-questionnaire_answers(
-  id,
-  question_id,
-  response_context:questionnaire_response_contexts(context_label),
-  answer_value,
-  professional_value,
-  professional_note,
-  question:questions(id, code, text, order_index, answer_type, scale_min, scale_max)
-),
-questionnaire_results(
-  id,
-  category_id,
-  total_score,
-  average_score,
-  classification,
-  professional_average_score,
-  professional_note,
-  snapshot,
-  category:question_categories(id, code, name)
-)
-''';
-
   /// Respostas do paciente (RLS: staff com acesso ao paciente).
   Future<List<PatientResponseSummary>> listPatientResponses(
     String patientId, {
     bool onlyReviewed = false,
   }) async {
     try {
-      var query = _client
-          .from('questionnaire_responses')
-          .select(_listSelect)
-          .eq('patient_id', patientId);
-
-      if (onlyReviewed) {
-        query = query.not('reviewed_at', 'is', null);
-      }
-
-      final rows = await query.order('created_at', ascending: false);
-
-      return (rows as List)
+      final payload = await _client.rpc(
+        'list_questionnaire_response_summaries',
+        params: {'p_patient_id': patientId},
+      );
+      final rows = (payload as List)
+          .where(
+            (row) => !onlyReviewed || row['reviewed_at'] != null,
+          )
+          .toList();
+      return rows
           .map(
             (row) => PatientResponseSummary.fromJson(
               Map<String, dynamic>.from(row),
@@ -100,17 +50,12 @@ questionnaire_results(
     bool requireReviewed = false,
   }) async {
     try {
-      var query = _client
-          .from('questionnaire_responses')
-          .select(_detailSelect)
-          .eq('id', responseId);
-
-      if (requireReviewed) {
-        query = query.not('reviewed_at', 'is', null);
-      }
-
-      final row = await query.maybeSingle();
-
+      final payload = await _client.rpc(
+        'get_questionnaire_response_detail',
+        params: {'p_response_id': responseId},
+      );
+      final row = payload as Map?;
+      if (requireReviewed && row?['reviewed_at'] == null) return null;
       if (row == null) return null;
       final detail =
           PatientResultDetail.fromJson(Map<String, dynamic>.from(row));
@@ -124,15 +69,6 @@ questionnaire_results(
   }
 
   // ── Schema activations (régua manual) ──────────────────────────────────
-
-  static const _activationSelectBase = '''
-id,
-questionnaire_response_id,
-schema_code,
-schema_name,
-activated_by_profile_id,
-created_at
-''';
 
   static const _activationSelectStaff = '''
 id,
@@ -149,12 +85,13 @@ created_at
     bool includeObservation = false,
   }) async {
     try {
-      final rows = await _client
-          .from('questionnaire_schema_activations')
-          .select(
-            includeObservation ? _activationSelectStaff : _activationSelectBase,
-          )
-          .eq('questionnaire_response_id', responseId);
+      final rows = includeObservation
+          ? await _client
+              .from('questionnaire_schema_activations')
+              .select(_activationSelectStaff)
+              .eq('questionnaire_response_id', responseId)
+          : await _client.rpc('get_patient_schema_activations',
+              params: {'p_response_id': responseId});
       return (rows as List)
           .map(
             (r) =>

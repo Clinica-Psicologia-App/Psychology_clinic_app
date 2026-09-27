@@ -1,4 +1,4 @@
-﻿import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
@@ -62,19 +62,17 @@ class PatientJourneyRepository {
       );
       final activeIds = visibleQuestionnaires.map((item) => item.id).toSet();
 
-      final completedRows = await _client
-          .from('questionnaire_responses')
-          .select(
-            'questionnaire_id, questionnaire:questionnaires(code), questionnaire_results(count)',
-          )
-          .eq('patient_id', patientId)
-          .eq('status', 'completed');
-
+      final summaries = await _client.rpc(
+        'list_questionnaire_response_summaries',
+        params: {'p_patient_id': patientId},
+      );
+      final completedRows = (summaries as List)
+          .where((row) => row['status'] == 'completed').toList();
       var hasYsqStructuredResult = false;
       var hasYamiStructuredResult = false;
 
       final completedQuestionnaireIds = <String>{};
-      for (final row in completedRows as List) {
+      for (final row in completedRows) {
         final qId = row['questionnaire_id'] as String?;
         if (qId != null && activeIds.contains(qId)) {
           completedQuestionnaireIds.add(qId);

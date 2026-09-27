@@ -38,7 +38,8 @@ class CategoryResult {
       totalScore: _num(json['total_score']),
       averageScore: _num(json['average_score']),
       classification: json['classification'] as String?,
-      snapshot: ResultSnapshot.fromJson(json['snapshot']),
+      snapshot:
+          ResultSnapshot.fromJson(json['patient_result'] ?? json['snapshot']),
       professionalAverageScore: _num(json['professional_average_score']),
       professionalNote: json['professional_note'] as String?,
     );

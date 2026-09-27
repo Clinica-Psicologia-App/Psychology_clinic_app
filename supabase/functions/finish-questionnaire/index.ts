@@ -77,7 +77,7 @@ serve(async (req) => {
         responseId,
         response,
       });
-      return jsonResponse({ ok: true, data });
+      return jsonResponse({ ok: true, data: { response: data.response } });
     }
 
     const { data: answers, error: answersError } = await client
@@ -237,7 +237,6 @@ serve(async (req) => {
       ok: true,
       data: {
         response: completedResponse,
-        results: resultsPayload,
       },
     });
   } catch (error) {

@@ -27,7 +27,7 @@ class SchemaActivation {
       schemaCode: json['schema_code'] as String,
       schemaName: json['schema_name'] as String,
       psiObservation: json['psi_observation'] as String?,
-      activatedByProfileId: json['activated_by_profile_id'] as String,
+      activatedByProfileId: json['activated_by_profile_id'] as String? ?? '',
       createdAt: DateTime.parse(json['created_at'] as String),
     );
   }

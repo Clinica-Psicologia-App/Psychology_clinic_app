@@ -16,7 +16,7 @@ class CaseConceptualizationRepository {
   static const _select =
       'id, clinic_id, patient_id, unmet_needs, mode_sequences, '
       'therapeutic_relationship, general_impressions, diagnosis, '
-      'origins, motivo_notes, additional_comments, '
+      'origins, motivo_initial, motivo_current, all_schemas, additional_comments, '
       'functioning, life_problems, central_schemas, mode_assessment, '
       'therapy_objectives, updated_at';
 
@@ -50,9 +50,15 @@ class CaseConceptualizationRepository {
           'general_impressions': data.generalImpressions.toJson(),
           'diagnosis': data.diagnosis.toJson(),
           'origins': data.origins.toJson(),
-          'motivo_notes': (data.motivoNotes ?? '').trim().isEmpty
+          'motivo_initial': (data.motivoInitial ?? '').trim().isEmpty
               ? null
-              : data.motivoNotes!.trim(),
+              : data.motivoInitial!.trim(),
+          'motivo_current': (data.motivoCurrent ?? '').trim().isEmpty
+              ? null
+              : data.motivoCurrent!.trim(),
+          'all_schemas': (data.allSchemas ?? '').trim().isEmpty
+              ? null
+              : data.allSchemas!.trim(),
           'additional_comments':
               (data.additionalComments ?? '').trim().isEmpty
                   ? null

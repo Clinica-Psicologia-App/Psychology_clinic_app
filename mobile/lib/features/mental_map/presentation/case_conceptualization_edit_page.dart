@@ -249,8 +249,12 @@ class _EditState extends ConsumerState<_EditForm> {
   late final TextEditingController _collabNotes;
   late final TextEditingController _bondNotes;
   late final TextEditingController _therapistReactions;
-  // 2 · motivo (complemento do terapeuta)
-  late final TextEditingController _motivoNotes;
+  // 2 · motivo (2a + 2b)
+  late final TextEditingController _motivoInitial;
+  late final TextEditingController _motivoCurrent;
+
+  // 8.1 · lista completa de esquemas antes de selecionar os centrais
+  late final TextEditingController _allSchemas;
 
   // 3 · impressões gerais / 4 · diagnóstico / 13 · comentários
   late final TextEditingController _impInitial;
@@ -360,7 +364,9 @@ class _EditState extends ConsumerState<_EditForm> {
     ];
     _comments = TextEditingController(text: data.additionalComments ?? '');
 
-    _motivoNotes = TextEditingController(text: data.motivoNotes ?? '');
+    _motivoInitial = TextEditingController(text: data.motivoInitial ?? '');
+    _motivoCurrent = TextEditingController(text: data.motivoCurrent ?? '');
+    _allSchemas = TextEditingController(text: data.allSchemas ?? '');
 
     final o = data.origins;
     _earlyHistory = TextEditingController(text: o.earlyHistory ?? '');
@@ -470,7 +476,9 @@ class _EditState extends ConsumerState<_EditForm> {
       p.$2.dispose();
     }
     _comments.dispose();
-    _motivoNotes.dispose();
+    _motivoInitial.dispose();
+    _motivoCurrent.dispose();
+    _allSchemas.dispose();
     _earlyHistory.dispose();
     _temperament.dispose();
     _cultural.dispose();
@@ -595,7 +603,9 @@ class _EditState extends ConsumerState<_EditForm> {
         copingModes: [for (final c in _copingModes) c.toModel()],
       ),
       therapyObjectives: [for (final t in _therapyObjs) t.toModel()],
-      motivoNotes: _motivoNotes.text,
+      motivoInitial: _motivoInitial.text,
+      motivoCurrent: _motivoCurrent.text,
+      allSchemas: _allSchemas.text,
       additionalComments: _comments.text,
     );
     try {
@@ -629,8 +639,11 @@ class _EditState extends ConsumerState<_EditForm> {
                 icon: Icons.chat_bubble_outline,
                 title: '2 · Motivo da terapia',
                 subtitle:
-                    'Complemento seu ao motivo/queixa (contexto e demandas já vêm do Mapa mental).',
-                children: [_field(_motivoNotes, 'Complemento do terapeuta')],
+                    'Complemento do terapeuta (contexto e demandas já vêm do Mapa mental).',
+                children: [
+                  _field(_motivoInitial, 'a. Inicialmente'),
+                  _field(_motivoCurrent, 'b. Atualmente'),
+                ],
               ),
               _card(
                 icon: Icons.visibility_outlined,
@@ -780,12 +793,23 @@ class _EditState extends ConsumerState<_EditForm> {
                 ],
               ),
 
-              // ── 8 · Esquemas centrais ────────────────────────────────────
+              // ── 8.1 · Lista completa de esquemas ─────────────────────────
+              _card(
+                icon: Icons.list_alt_outlined,
+                title: '8.1 · Todos os esquemas identificados',
+                subtitle:
+                    'Liste todos os esquemas identificados nas 9 necessidades (7.2) antes de selecionar os centrais.',
+                children: [
+                  _field(_allSchemas, 'Esquemas identificados (um por linha ou por vírgula)'),
+                ],
+              ),
+
+              // ── 8.2 · Esquemas centrais ───────────────────────────────────
               _card(
                 icon: Icons.hub_outlined,
-                title: '8 · Esquemas desadaptativos centrais',
+                title: '8.2 · Esquemas desadaptativos centrais',
                 subtitle:
-                    'Selecione 4–6 esquemas mais centrais (8.2) e descreva a experiência do cliente quando ativados.',
+                    'Selecione 4–6 esquemas mais centrais e descreva a experiência do cliente quando ativados.',
                 children: [
                   for (var i = 0; i < _centralSchemas.length; i++) ...[
                     if (i > 0) const Divider(height: 20),

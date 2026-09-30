@@ -93,7 +93,8 @@ class CaseConceptualizationPdf {
           pw.SizedBox(height: 16),
 
           // 2. Motivo da terapia
-          _section('2', 'Motivo da terapia', _motivo(summary, concept?.motivoNotes)),
+          _section('2', 'Motivo da terapia',
+              _motivo(summary, concept?.motivoInitial, concept?.motivoCurrent)),
 
           // 3. Impressões gerais (terapeuta)
           _section(
@@ -144,9 +145,19 @@ class CaseConceptualizationPdf {
           // 7. Origens infantis e adolescentes dos problemas atuais (terapeuta)
           _section('7', 'Origens infantis e adolescentes', _origins(concept)),
 
-          // 8. Esquemas desadaptativos centrais
+          // 8.1. Todos os esquemas identificados nas 9 necessidades
           _section(
-            '8',
+            '8.1',
+            'Todos os esquemas identificados',
+            (concept?.hasAllSchemas ?? false)
+                ? [pw.Text(concept!.allSchemas!.trim(),
+                    style: const pw.TextStyle(fontSize: 10, lineSpacing: 2))]
+                : _placeholder('Lista completa de esquemas — a preencher.'),
+          ),
+
+          // 8.2. Esquemas desadaptativos centrais
+          _section(
+            '8.2',
             'Esquemas desadaptativos centrais',
             (concept?.hasCentralSchemas ?? false)
                 ? _centralSchemasTherapist(concept!.centralSchemas)
@@ -313,12 +324,14 @@ class CaseConceptualizationPdf {
       ];
 
   // ── Conteúdos ──────────────────────────────────────────────────────────
-  static List<pw.Widget> _motivo(MentalMapCaseSummary s, String? therapistNote) {
+  static List<pw.Widget> _motivo(MentalMapCaseSummary s,
+      String? motivoInitial, String? motivoCurrent) {
     final parts = <(String, String?)>[
       ('Contexto de vida atual', s.currentLifeContext),
       ('Demandas terapêuticas', s.therapyDemands),
       ('Resumo da queixa', s.intakeSummary),
-      ('Complemento do terapeuta', therapistNote),
+      ('a. Inicialmente', motivoInitial),
+      ('b. Atualmente', motivoCurrent),
     ].where((e) => (e.$2 ?? '').trim().isNotEmpty).toList();
     if (parts.isEmpty) return _placeholder('Motivo/queixa ainda não registrado.');
     return [for (final p in parts) _labeledBlock(p.$1, p.$2!.trim())];

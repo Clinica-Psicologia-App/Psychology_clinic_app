@@ -800,7 +800,9 @@ class CaseConceptualization {
     this.centralSchemas = const [],
     this.modeAssessment = const SchemaModeAssessment(),
     this.therapyObjectives = const [],
-    this.motivoNotes,
+    this.motivoInitial,
+    this.motivoCurrent,
+    this.allSchemas,
     this.additionalComments,
   });
 
@@ -826,8 +828,16 @@ class CaseConceptualization {
   /// Seção 12 — objetivos de terapia com sub-campos (a)–(e).
   final List<TherapyObjectiveEntry> therapyObjectives;
 
-  /// Seção 2 — complemento do terapeuta ao motivo/queixa.
-  final String? motivoNotes;
+  /// Seção 2a — situação inicial que levou à terapia (perspectiva do terapeuta).
+  final String? motivoInitial;
+
+  /// Seção 2b — situação atual / razão presente (perspectiva do terapeuta).
+  final String? motivoCurrent;
+
+  /// Seção 8.1 — lista completa de todos os esquemas identificados nas 9
+  /// necessidades (7.2), antes de selecionar os 4–6 centrais (8.2).
+  final String? allSchemas;
+
   final String? additionalComments;
 
   /// Documento vazio — todas as necessidades em branco.
@@ -859,8 +869,11 @@ class CaseConceptualization {
   bool get hasCentralSchemas => centralSchemas.any((e) => !e.isEmpty);
   bool get hasModeAssessment => !modeAssessment.isEmpty;
   bool get hasTherapyObjectives => therapyObjectives.any((e) => !e.isEmpty);
-  bool get hasMotivoNotes => (motivoNotes ?? '').trim().isNotEmpty;
+  bool get hasMotivoNotes =>
+      (motivoInitial ?? '').trim().isNotEmpty ||
+      (motivoCurrent ?? '').trim().isNotEmpty;
   bool get hasComments => (additionalComments ?? '').trim().isNotEmpty;
+  bool get hasAllSchemas => (allSchemas ?? '').trim().isNotEmpty;
 
   factory CaseConceptualization.fromJson(Map<String, dynamic> j) {
     final needsRaw = (j['unmet_needs'] as List?) ?? const [];
@@ -916,7 +929,9 @@ class CaseConceptualization {
       therapyObjectives: toLoaded.isEmpty
           ? List.generate(5, (_) => const TherapyObjectiveEntry())
           : toLoaded,
-      motivoNotes: j['motivo_notes'] as String?,
+      motivoInitial: j['motivo_initial'] as String?,
+      motivoCurrent: j['motivo_current'] as String?,
+      allSchemas: j['all_schemas'] as String?,
       additionalComments: j['additional_comments'] as String?,
     );
   }

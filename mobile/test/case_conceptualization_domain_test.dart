@@ -3,7 +3,7 @@ import 'package:terapia_esquema/features/mental_map/domain/case_conceptualizatio
 
 void main() {
   group('CaseConceptualization fromJson', () {
-    test('lê origins (7.1/7.3/7.4), motivo_notes e demais seções', () {
+    test('lê origins (7.1/7.3/7.4), motivo_initial/current, all_schemas e demais seções', () {
       final c = CaseConceptualization.fromJson({
         'general_impressions': {'initial': 'reservada', 'current': 'aberta'},
         'diagnosis': {
@@ -17,7 +17,9 @@ void main() {
           'temperament': 'sensível',
           'cultural': 'ênfase em status',
         },
-        'motivo_notes': 'complemento do terapeuta',
+        'motivo_initial': 'procurou por ansiedade',
+        'motivo_current': 'manter progresso',
+        'all_schemas': 'Abandono, Desconfiança, Privação emocional',
         'additional_comments': 'reavaliar',
       });
 
@@ -27,10 +29,13 @@ void main() {
       expect(c.origins.earlyHistory, 'pais distantes');
       expect(c.origins.temperament, 'sensível');
       expect(c.origins.cultural, 'ênfase em status');
-      expect(c.motivoNotes, 'complemento do terapeuta');
+      expect(c.motivoInitial, 'procurou por ansiedade');
+      expect(c.motivoCurrent, 'manter progresso');
+      expect(c.allSchemas, 'Abandono, Desconfiança, Privação emocional');
       expect(c.additionalComments, 'reavaliar');
       expect(c.hasOrigins, isTrue);
       expect(c.hasMotivoNotes, isTrue);
+      expect(c.hasAllSchemas, isTrue);
     });
 
     test('documento vazio: getters has* são falsos', () {

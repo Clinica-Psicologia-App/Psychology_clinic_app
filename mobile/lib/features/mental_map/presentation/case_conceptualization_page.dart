@@ -7,7 +7,6 @@ import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../initial_assessment/domain/initial_assessment.dart';
-import '../../initial_assessment/domain/life_area.dart';
 import '../../initial_assessment/domain/patient_basics.dart';
 import '../../initial_assessment/providers/initial_assessment_providers.dart';
 import '../../personality_assessment/domain/personality_assessment.dart';
@@ -172,7 +171,7 @@ class _Body extends StatelessWidget {
         _Section(
           number: '2',
           title: 'Motivo da terapia',
-          child: _motivo(context, summary, concept?.motivoNotes),
+          child: _motivo(context, summary, concept?.motivoInitial, concept?.motivoCurrent),
         ),
 
         // 3. Impressões gerais (campos do terapeuta).
@@ -203,7 +202,9 @@ class _Body extends StatelessWidget {
           title: 'Nível de funcionamento',
           child: (concept?.hasFunctioning ?? false)
               ? _FunctioningView(functioning: concept!.functioning)
-              : _lifeAreas(),
+              : const _Placeholder(
+                  'Avaliação clínica do terapeuta (escala 1–6) — a preencher.',
+                ),
         ),
 
         // 6. Problemas de vida — narrativa do terapeuta (documento §6).
@@ -234,9 +235,18 @@ class _Body extends StatelessWidget {
           child: _OriginsSection(concept: concept),
         ),
 
-        // 8. Esquemas centrais — seleção curada do terapeuta (documento §8).
+        // 8.1. Todos os esquemas identificados nas 9 necessidades.
         _Section(
-          number: '8',
+          number: '8.1',
+          title: 'Todos os esquemas identificados',
+          child: (concept?.hasAllSchemas ?? false)
+              ? Text(concept!.allSchemas!, style: const TextStyle(height: 1.6))
+              : const _Placeholder('Lista completa de esquemas — a preencher.'),
+        ),
+
+        // 8.2. Esquemas centrais — seleção curada do terapeuta (documento §8.2).
+        _Section(
+          number: '8.2',
           title: 'Esquemas desadaptativos centrais',
           child: (concept?.hasCentralSchemas ?? false)
               ? _CentralSchemasView(schemas: concept!.centralSchemas)
@@ -440,14 +450,15 @@ class _Body extends StatelessWidget {
     );
   }
 
-  Widget _motivo(
-      BuildContext context, MentalMapCaseSummary s, String? therapistNote) {
+  Widget _motivo(BuildContext context, MentalMapCaseSummary s,
+      String? motivoInitial, String? motivoCurrent) {
     final hasPatientReason = (s.patientReason ?? '').trim().isNotEmpty;
     final parts = <({String label, String? value})>[
       (label: 'Contexto de vida atual', value: s.currentLifeContext),
       (label: 'Demandas terapêuticas', value: s.therapyDemands),
       (label: 'Resumo da queixa', value: s.intakeSummary),
-      (label: 'Complemento do terapeuta', value: therapistNote),
+      (label: 'a. Inicialmente', value: motivoInitial),
+      (label: 'b. Atualmente', value: motivoCurrent),
     ].where((e) => (e.value ?? '').trim().isNotEmpty).toList();
 
     if (!hasPatientReason && parts.isEmpty) {
@@ -526,126 +537,6 @@ class _Body extends StatelessWidget {
     );
   }
 
-  Widget _lifeAreas() {
-    final a = assessment;
-    final rated = a == null
-        ? const <(LifeArea, int)>[]
-        : [
-            for (final area in kLifeAreasInOrder)
-              if (a.lifeAreaFor(area).score != null)
-                (area, a.lifeAreaFor(area).score!),
-          ];
-    if (rated.isEmpty) {
-      return const _Placeholder('Áreas da vida ainda não avaliadas.');
-    }
-
-    // Agrupa nos domínios clínicos de funcionamento (visão do terapeuta).
-    final byGroup = <FunctioningGroup, List<(LifeArea, int)>>{};
-    for (final r in rated) {
-      byGroup.putIfAbsent(r.$1.group, () => []).add(r);
-    }
-    final groups = [
-      for (final g in FunctioningGroup.values)
-        if (byGroup.containsKey(g)) g,
-    ];
-
-    return Builder(builder: (context) {
-      final theme = Theme.of(context);
-      Color tone(num s) => s >= 7
-          ? AppColors.success
-          : s >= 4
-              ? AppColors.warning
-              : AppColors.error;
-
-      Widget areaRow((LifeArea, int) e, bool last) => Padding(
-            padding: EdgeInsets.only(bottom: last ? 0 : 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        e.$1.label,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.textPrimary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      '${e.$2}/10',
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: tone(e.$2),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(3),
-                  child: LinearProgressIndicator(
-                    value: (e.$2 / 10).clamp(0.0, 1.0),
-                    minHeight: 5,
-                    backgroundColor: tone(e.$2).withValues(alpha: 0.15),
-                    color: tone(e.$2),
-                  ),
-                ),
-              ],
-            ),
-          );
-
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          for (var gi = 0; gi < groups.length; gi++)
-            Builder(builder: (context) {
-              final items = byGroup[groups[gi]]!;
-              final avg =
-                  items.map((e) => e.$2).reduce((x, y) => x + y) / items.length;
-              final avgLabel = avg == avg.roundToDouble()
-                  ? '${avg.toInt()}'
-                  : avg.toStringAsFixed(1);
-              return Padding(
-                padding:
-                    EdgeInsets.only(bottom: gi == groups.length - 1 ? 0 : 14),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            groups[gi].label,
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              fontSize: 9,
-                              letterSpacing: 0.3,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.navy,
-                            ),
-                          ),
-                        ),
-                        Text(
-                          'média $avgLabel/10',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            fontWeight: FontWeight.w800,
-                            color: tone(avg),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    for (var i = 0; i < items.length; i++)
-                      areaRow(items[i], i == items.length - 1),
-                  ],
-                ),
-              );
-            }),
-        ],
-      );
-    });
-  }
 }
 
 class _Section extends StatelessWidget {

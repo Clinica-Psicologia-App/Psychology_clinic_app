@@ -53,7 +53,14 @@ class EdgeApiClient {
         message: 'Resposta inválida da API.',
         details: {'status': response.status, 'body': parsed},
       );
-    } on AppException {
+    } on AppException catch (ex) {
+      // Quando a edge retorna 401 (JWT expirado), o Supabase Flutter não emite
+      // signedOut automaticamente para chamadas de Functions — ao contrário das
+      // queries PostgREST. Forçar signOut aqui dispara o evento que o
+      // AuthController já ouve e redireciona para /login com a mensagem correta.
+      if (ex.code == AppExceptionCodes.sessionExpired) {
+        _client.auth.signOut().ignore();
+      }
       rethrow;
     } catch (e) {
       throw mapToAppException(e);

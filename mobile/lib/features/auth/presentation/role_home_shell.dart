@@ -1326,16 +1326,9 @@ class _PatientNextStep extends ConsumerWidget {
       );
     }
 
-    if (todayCheckIn.valueOrNull == null) {
-      return ClinicalModuleCard(
-        icon: Icons.favorite_border,
-        title: 'Como você está hoje?',
-        subtitle:
-            'Seu check-in de hoje ainda não foi feito — leva menos de um minuto.',
-        accentColor: AppColors.turquoise,
-        onTap: () => context.push(PatientCheckInRoutes.patientCreate),
-      );
-    }
+    // O card de check-in já aparece no _PatientMoodPulse acima — não
+    // duplicar aqui quando o único pendente for o check-in do dia.
+    if (todayCheckIn.valueOrNull == null) return const SizedBox.shrink();
 
     // Mesma sombra clay dos dois estados acima (ClinicalModuleCard já a usa)
     // — antes este era o único card da tela com borda simples em vez de

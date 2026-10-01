@@ -18,10 +18,18 @@ const _kPageCurve = Curves.easeInOutCubic;
 
 /// Leitor de um módulo de psicoeducação: apresentação → cards → fechamento,
 /// numa jornada paginada.
+///
+/// [staffView] deve ser `true` apenas na rota do psicólogo — é o único
+/// contexto onde o botão "Fazer exercício" é exibido.
 class PsychoeducationModulePage extends ConsumerStatefulWidget {
-  const PsychoeducationModulePage({super.key, required this.moduleId});
+  const PsychoeducationModulePage({
+    super.key,
+    required this.moduleId,
+    this.staffView = false,
+  });
 
   final String moduleId;
+  final bool staffView;
 
   @override
   ConsumerState<PsychoeducationModulePage> createState() =>
@@ -136,7 +144,8 @@ class _PsychoeducationModulePageState
             page: _page,
             total: total,
             color: color,
-            hasExercise: kExerciseDefinitions.containsKey(module.number),
+            hasExercise: widget.staffView &&
+                kExerciseDefinitions.containsKey(module.number),
             onBack: _page == 0
                 ? null
                 : () => _controller.previousPage(

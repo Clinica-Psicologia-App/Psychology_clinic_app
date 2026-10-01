@@ -56,6 +56,7 @@ List<RouteBase> psychoeducationPsychologistRoutes() {
           path: ':moduleId',
           builder: (_, state) => PsychoeducationModulePage(
             moduleId: state.pathParameters['moduleId']!,
+            staffView: true,
           ),
         ),
       ],

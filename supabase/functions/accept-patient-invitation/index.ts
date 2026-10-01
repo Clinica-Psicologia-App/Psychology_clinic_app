@@ -12,6 +12,7 @@ import {
   invalidInvitationError,
 } from "../_shared/invitations.ts";
 import { logger } from "../_shared/logger.ts";
+import { sendPushToUser } from "../_shared/push.ts";
 import { createServiceClient } from "../_shared/supabase.ts";
 
 type AcceptPatientInvitationBody = {
@@ -259,6 +260,19 @@ serve(async (req) => {
       profile_id: profileId,
       clinic_id: invitation.clinic_id,
     });
+
+    // Notifica o psicólogo responsável.
+    if (invitation.responsible_psychologist_id) {
+      try {
+        await sendPushToUser(serviceClient, invitation.responsible_psychologist_id as string, {
+          title: "Paciente cadastrado",
+          body: `${fullName} aceitou o convite e criou sua conta.`,
+          data: { type: "invitation_accepted", patient_id: patient.id },
+        });
+      } catch (e) {
+        console.error("[accept-patient-invitation] push failed", e);
+      }
+    }
 
     return jsonResponse({
       ok: true,

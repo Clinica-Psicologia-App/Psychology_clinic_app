@@ -24,10 +24,21 @@ export function invitationExpiresAt(days = DEFAULT_EXPIRY_DAYS) {
   return expiresAt.toISOString();
 }
 export function buildInviteUrl(token) {
-  const path = `/accept-invitation?token=${encodeURIComponent(token)}`;
+  const encodedToken = encodeURIComponent(token);
   const baseUrl = Deno.env.get("PATIENT_INVITATION_BASE_URL")?.trim();
-  if (!baseUrl) return path;
-  return `${baseUrl.replace(/\/$/, "")}${path}`;
+
+  // Sem baseUrl: deep link direto (funciona em apps de e-mail nativos).
+  if (!baseUrl) return `esquemacore://app/accept-invitation?token=${encodedToken}`;
+
+  // URL HTTPS (ex.: edge function invite-redirect): envia token como query param.
+  if (baseUrl.startsWith("http")) {
+    const url = new URL(baseUrl.replace(/\/$/, ""));
+    url.searchParams.set("token", token);
+    return url.toString();
+  }
+
+  // Custom scheme (ex.: esquemacore://app): monta deep link diretamente.
+  return `${baseUrl.replace(/\/$/, "")}/accept-invitation?token=${encodedToken}`;
 }
 export function invalidInvitationError() {
   return new AppError("VALIDATION_ERROR", "Convite inválido ou expirado.", 400);

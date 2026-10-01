@@ -7,13 +7,12 @@ import '../../../core/errors/error_mapper.dart';
 import '../../../core/legal/legal_documents.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_gradients.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/utils/brazil_validators.dart';
 import '../../../shared/utils/input_formatters.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
-import '../../../shared/widgets/brand_constellation.dart';
+import '../../../shared/widgets/brand_brain_mark.dart';
 import '../../../shared/widgets/esquema_core_logo.dart';
 import '../../../shared/widgets/form_section.dart';
 import '../../../shared/widgets/responsive_content.dart';
@@ -120,124 +119,61 @@ class _AcceptPatientInvitationPageState
   Widget build(BuildContext context) {
     final token = widget.token?.trim();
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
+    final topInset = MediaQuery.paddingOf(context).top;
 
     return Scaffold(
-      body: SafeArea(
-        child: token == null || token.isEmpty
-            ? const _InvalidInvitationBody(
+      body: token == null || token.isEmpty
+          ? const SafeArea(
+              child: _InvalidInvitationBody(
                 icon: Icons.link_off_outlined,
                 title: 'Convite inválido',
-                message:
-                    'O link de convite não foi reconhecido. Solicite um novo '
-                    'convite à clínica.',
-              )
-            : SingleChildScrollView(
-                padding: EdgeInsets.fromLTRB(16, 16, 16, 24 + bottomInset),
-                keyboardDismissBehavior:
-                    ScrollViewKeyboardDismissBehavior.onDrag,
-                child: ResponsiveContent(
-                  maxWidth: 560,
-                  child: MotionReveal(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        ClipRRect(
-                          borderRadius:
-                              const BorderRadius.all(Radius.circular(20)),
-                          child: DecoratedBox(
-                            decoration: const BoxDecoration(
-                              gradient: AppGradients.brand,
+                message: 'O link de convite não foi reconhecido. Solicite um '
+                    'novo convite à clínica.',
+              ),
+            )
+          : SingleChildScrollView(
+              padding: EdgeInsets.only(bottom: 24 + bottomInset),
+              keyboardDismissBehavior:
+                  ScrollViewKeyboardDismissBehavior.onDrag,
+              child: MotionReveal(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _InvitationCanopyHeader(topInset: topInset),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                          16, AppSpacing.lg, 16, 0),
+                      child: ResponsiveContent(
+                        maxWidth: 560,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            const AppInfoCard(
+                              title: 'Privacidade',
+                              icon: Icons.lock_outline,
+                              body:
+                                  'Seus dados serão usados apenas para cadastro e '
+                                  'acompanhamento clínico na clínica que enviou o convite.',
+                              tone: AppInfoCardTone.info,
                             ),
-                            child: Stack(
-                              children: [
-                                // Constelação no hero — mesma consistência
-                                // visual do login.
-                                Positioned(
-                                  top: -30,
-                                  right: -20,
-                                  child: BrandConstellation(
-                                    size: const Size(160, 160),
-                                    opacity: 0.16,
-                                    preset: BrandConstellationPreset.scatter,
-                                  ),
+                            const SizedBox(height: AppSpacing.lg),
+                            if (ref
+                                .watch(acceptPatientInvitationProvider)
+                                .hasError)
+                              Padding(
+                                padding:
+                                    const EdgeInsets.only(bottom: AppSpacing.md),
+                                child: _InvitationErrorPanel(
+                                  error: ref
+                                      .watch(acceptPatientInvitationProvider)
+                                      .error!,
                                 ),
-                                Positioned(
-                                  bottom: -30,
-                                  left: -20,
-                                  child: BrandConstellation(
-                                    size: const Size(150, 150),
-                                    opacity: 0.16,
-                                    preset: BrandConstellationPreset.path,
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.all(AppSpacing.xl),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      const EsquemaCoreLogo.monochrome(
-                                        size: 56,
-                                        showTagline: true,
-                                        taglineColor: AppColors.textOnBrand,
-                                      ),
-                                      const SizedBox(height: AppSpacing.md),
-                                      Text(
-                                        'Primeiro acesso',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .headlineSmall
-                                            ?.copyWith(
-                                              color: AppColors.textOnBrand,
-                                              fontWeight: FontWeight.w700,
-                                            ),
-                                      ),
-                                      const SizedBox(height: AppSpacing.xs),
-                                      Text(
-                                        'Você foi convidado(a) a acessar a plataforma '
-                                        'clínica. Complete seus dados e crie uma senha '
-                                        'para entrar.',
-                                        style: Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium
-                                            ?.copyWith(
-                                              color: AppColors.textOnBrand
-                                                  .withValues(alpha: 0.92),
-                                              height: 1.45,
-                                            ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-                        const AppInfoCard(
-                          title: 'Privacidade',
-                          icon: Icons.lock_outline,
-                          body:
-                              'Seus dados serão usados apenas para cadastro e '
-                              'acompanhamento clínico na clínica que enviou o convite.',
-                          tone: AppInfoCardTone.info,
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-                        if (ref.watch(acceptPatientInvitationProvider).hasError)
-                          Padding(
-                            padding:
-                                const EdgeInsets.only(bottom: AppSpacing.md),
-                            child: _InvitationErrorPanel(
-                              error: ref
-                                  .watch(acceptPatientInvitationProvider)
-                                  .error!,
-                            ),
-                          ),
-                        Form(
-                          key: _formKey,
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
+                              ),
+                            Form(
+                              key: _formKey,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
                               FormSection(
                                 title: 'Dados pessoais',
                                 subtitle:
@@ -487,15 +423,17 @@ class _AcceptPatientInvitationPageState
                                     : () => context.go(AppRoutes.login),
                                 child: const Text('Já tenho conta'),
                               ),
-                            ],
-                          ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ),
-      ),
+            ),
     );
   }
 
@@ -685,6 +623,119 @@ class _InvitationErrorPanel extends StatelessWidget {
       return (Icons.block_outlined, 'Convite revogado');
     }
     return (Icons.error_outline, 'Não foi possível concluir');
+  }
+}
+
+class _InvitationCanopyHeader extends StatelessWidget {
+  const _InvitationCanopyHeader({required this.topInset});
+
+  final double topInset;
+
+  static const _accent = AppColors.blue;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final gradient = LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [
+        Color.lerp(_accent, Colors.white, 0.10)!,
+        _accent,
+        Color.lerp(_accent, AppColors.navy, 0.42)!,
+      ],
+      stops: const [0.0, 0.45, 1.0],
+    );
+
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.xl,
+        topInset + AppSpacing.sm,
+        AppSpacing.xl,
+        AppSpacing.xxl,
+      ),
+      decoration: BoxDecoration(
+        gradient: gradient,
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
+        boxShadow: [
+          BoxShadow(
+            color: Color.lerp(_accent, AppColors.navy, 0.3)!
+                .withValues(alpha: 0.28),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            right: -12,
+            top: 8,
+            child: Icon(
+              Icons.person_add_outlined,
+              size: 116,
+              color: Colors.white.withValues(alpha: 0.09),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  const BrandBrainMark(size: 20, color: Colors.white),
+                  const SizedBox(width: 7),
+                  Text(
+                    'EsquemaCore',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      'Convite',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: Colors.white.withValues(alpha: 0.95),
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              Text(
+                'Primeiro acesso',
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Você foi convidado(a) a acessar a plataforma '
+                'clínica. Complete seus dados e crie uma senha '
+                'para entrar.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: Colors.white.withValues(alpha: 0.92),
+                  height: 1.45,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
 

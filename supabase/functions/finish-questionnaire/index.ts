@@ -33,6 +33,7 @@ import {
   type MergedResultSnapshot,
   type ScoringPayload,
 } from "../_shared/scoring/types.ts";
+import { sendPushToUser } from "../_shared/push.ts";
 import {
   createServiceClient,
   createUserClient,
@@ -232,6 +233,31 @@ serve(async (req) => {
       results_count: resultsPayload.length,
       scoring_engine: scoringPayload != null,
     });
+
+    // Notifica o psicólogo responsável (fire-and-forget).
+    const { data: patientRow } = await serviceClient
+      .from("patients")
+      .select("full_name, responsible_psychologist_id")
+      .eq("id", completedResponse.patient_id)
+      .maybeSingle();
+
+    if (patientRow?.responsible_psychologist_id) {
+      const { data: qRow } = await serviceClient
+        .from("questionnaires")
+        .select("name")
+        .eq("id", completedResponse.questionnaire_id)
+        .maybeSingle();
+
+      try {
+        await sendPushToUser(serviceClient, patientRow.responsible_psychologist_id as string, {
+          title: "Questionário respondido",
+          body: `${patientRow.full_name} concluiu o questionário${qRow?.name ? ` "${qRow.name}"` : ""}.`,
+          data: { type: "questionnaire_completed", response_id: responseId },
+        });
+      } catch (e) {
+        console.error("[finish-questionnaire] push failed", e);
+      }
+    }
 
     return jsonResponse({
       ok: true,

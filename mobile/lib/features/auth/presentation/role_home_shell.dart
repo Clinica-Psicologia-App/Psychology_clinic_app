@@ -817,6 +817,12 @@ class _AlertsPanelState extends State<_AlertsPanel> {
         fg: AppColors.success,
         bg: AppColors.successContainer,
       );
+    case PsychologistAlertKind.recentCheckin:
+      return (
+        icon: Icons.check_circle_outline,
+        fg: AppColors.turquoise,
+        bg: AppColors.turquoise.withValues(alpha: 0.12),
+      );
   }
 }
 
@@ -937,6 +943,15 @@ class _AlertRow extends StatelessWidget {
         if (alert.patientId != null) {
           context.push(
             QuestionnaireRoutes.list(
+              role: ProfileRole.psychologist,
+              patientId: alert.patientId!,
+            ),
+          );
+        }
+      case PsychologistAlertKind.recentCheckin:
+        if (alert.patientId != null) {
+          context.push(
+            PatientCheckInRoutes.staffList(
               role: ProfileRole.psychologist,
               patientId: alert.patientId!,
             ),
@@ -2272,6 +2287,8 @@ class _PsychologistSummaryFooter extends ConsumerWidget {
         return AppColors.info;
       case PsychologistAlertKind.pendingResultsRelease:
         return AppColors.success;
+      case PsychologistAlertKind.recentCheckin:
+        return AppColors.turquoise;
     }
   }
 

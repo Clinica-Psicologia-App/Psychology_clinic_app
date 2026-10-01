@@ -14,7 +14,8 @@ import {
   requirePost,
 } from "../_shared/http.ts";
 import { logger } from "../_shared/logger.ts";
-import { createUserClient, getBearerToken } from "../_shared/supabase.ts";
+import { sendPushToUser } from "../_shared/push.ts";
+import { createServiceClient, createUserClient, getBearerToken } from "../_shared/supabase.ts";
 
 type AssignQuestionnaireBody = {
   patient_id: string;
@@ -84,10 +85,10 @@ serve(async (req) => {
       );
     }
 
-    // Resolve patient row to get clinic_id-scoped patient id
+    // Resolve patient row to get clinic_id and profile_id for push
     const { data: patient, error: patientError } = await client
       .from("patients")
-      .select("id, clinic_id")
+      .select("id, clinic_id, profile_id")
       .eq("id", patientId)
       .maybeSingle();
 
@@ -123,6 +124,20 @@ serve(async (req) => {
       patient_id: patientId,
       questionnaire_id: questionnaireId,
     });
+
+    // Notifica o paciente.
+    if (patient.profile_id) {
+      const serviceClient = createServiceClient();
+      try {
+        await sendPushToUser(serviceClient, patient.profile_id as string, {
+          title: "Novo questionário",
+          body: `Você tem um novo questionário disponível: ${questionnaire.name}.`,
+          data: { type: "questionnaire_assigned", questionnaire_id: questionnaireId },
+        });
+      } catch (e) {
+        console.error("[assign-questionnaire] push failed", e);
+      }
+    }
 
     return jsonResponse({
       ok: true,

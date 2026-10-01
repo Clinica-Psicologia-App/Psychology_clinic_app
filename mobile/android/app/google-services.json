@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "19415851681",
+    "project_id": "esquemacore",
+    "storage_bucket": "esquemacore.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:19415851681:android:d1263269b6ce3dfe42c6e0",
+        "android_client_info": {
+          "package_name": "br.com.esquemacore.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCmQPRf08VrAC7eKA3GNBt20sETW8yySeU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

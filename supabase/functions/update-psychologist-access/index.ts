@@ -9,6 +9,7 @@ import {
   requirePost,
 } from "../_shared/http.ts";
 import { logger } from "../_shared/logger.ts";
+import { sendPushToUser } from "../_shared/push.ts";
 import {
   createServiceClient,
   createUserClient,
@@ -105,6 +106,19 @@ serve(async (req) => {
       can_receive_patients: body.can_receive_patients,
       patient_assignment_limit: limit,
     });
+
+    // Notifica o psicólogo quando recebe permissão para atender pacientes.
+    if (body.can_receive_patients) {
+      try {
+        await sendPushToUser(serviceClient, profileId, {
+          title: "Acesso liberado",
+          body: "Você foi habilitado para receber pacientes.",
+          data: { type: "can_receive_patients_granted" },
+        });
+      } catch (e) {
+        console.error("[update-psychologist-access] push failed", e);
+      }
+    }
 
     return jsonResponse({
       ok: true,

@@ -247,13 +247,26 @@ class _TimelineTrail extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Garante ordenação por fase (índice do enum) e depois por idade, para que
+    // `birth` sem idade cadastrada não caia no final da lista.
+    final sorted = [...events]..sort((a, b) {
+        final ci =
+            (a.lifeChapter?.index ?? 99) - (b.lifeChapter?.index ?? 99);
+        if (ci != 0) return ci;
+        final ai = a.ageAtEvent;
+        final bi = b.ageAtEvent;
+        if (ai == null && bi == null) return 0;
+        if (ai == null) return 1;
+        if (bi == null) return -1;
+        return ai - bi;
+      });
+
     // Monta a lista de "linhas": um cabeçalho quando a fase muda em relação ao
-    // evento anterior + os cards. Como a ordem chega agrupada por fase (mesma
-    // fase adjacente), o consecutivo já produz um cabeçalho por capítulo.
+    // evento anterior + os cards.
     final rows = <Widget>[];
     LifeChapter? current;
     bool sawAny = false;
-    for (final event in events) {
+    for (final event in sorted) {
       final chapter = event.lifeChapter;
       if (!sawAny || chapter != current) {
         rows.add(_ChapterHeaderNode(chapter: chapter));
@@ -308,6 +321,7 @@ class _NoMomentsForPerson extends StatelessWidget {
 
 /// Emoji do capítulo para o marcador na espinha.
 String _chapterEmoji(LifeChapter? chapter) => switch (chapter) {
+      LifeChapter.birth => '👶',
       LifeChapter.earlyYears => '🌱',
       LifeChapter.childhood => '🧒',
       LifeChapter.adolescence => '🎓',
@@ -357,7 +371,7 @@ class _ChapterHeaderNode extends StatelessWidget {
                     width: 26,
                     height: 26,
                     decoration: BoxDecoration(
-                      color: Colors.white,
+                      color: Theme.of(context).colorScheme.surface,
                       shape: BoxShape.circle,
                       border: Border.all(
                           color: const Color(0xFFC5CADB), width: 1.5),
@@ -461,7 +475,7 @@ class _EventCardNode extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: Material(
-                color: Colors.white,
+                color: Theme.of(context).colorScheme.surface,
                 borderRadius: BorderRadius.circular(13),
                 clipBehavior: Clip.antiAlias,
                 child: InkWell(
@@ -676,7 +690,6 @@ void _showEventDetail(BuildContext context, LifeTimelineEvent event) {
   showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Colors.white,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
     ),
@@ -925,6 +938,11 @@ Widget _actionTile({
 ({Color accent, Color bg, IconData icon}) _chapterDetailColors(
     LifeChapter? chapter) =>
     switch (chapter) {
+      LifeChapter.birth => (
+          accent: const Color(0xFF9B59B6),
+          bg: const Color(0xFFF5EEF8),
+          icon: Icons.child_friendly_rounded,
+        ),
       LifeChapter.earlyYears => (
           accent: const Color(0xFFD85A30),
           bg: const Color(0xFFFFF0EB),

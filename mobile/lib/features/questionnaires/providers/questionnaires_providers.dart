@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../clinical_dashboard/providers/clinical_dashboard_providers.dart';
 import '../../mental_map/providers/mental_map_providers.dart';
+import '../../patient_journey/providers/patient_journey_providers.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../results/providers/results_providers.dart';
 import '../data/questionnaires_repository.dart';
@@ -278,5 +279,7 @@ class FinishQuestionnaireNotifier extends FamilyAsyncNotifier<
     ref.invalidate(staffMentalMapProvider);
     ref.invalidate(patientResultsListProvider);
     ref.invalidate(patientResultDetailProvider);
+    ref.invalidate(patientJourneyProgressProvider);
+    ref.invalidate(patientJourneyStepsProvider);
   }
 }

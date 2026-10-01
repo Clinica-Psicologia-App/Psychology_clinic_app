@@ -2,18 +2,21 @@
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
+import '../../../core/network/edge_api_client.dart';
 import '../../../core/supabase/supabase_bootstrap.dart';
 import '../domain/patient_check_in.dart';
 import '../domain/patient_check_in_input.dart';
 
 class PatientCheckInsRepository {
-  PatientCheckInsRepository({SupabaseClient? client})
-      : _client = client ?? SupabaseBootstrap.client;
+  PatientCheckInsRepository({SupabaseClient? client, EdgeApiClient? edgeApi})
+      : _client = client ?? SupabaseBootstrap.client,
+        _edgeApi = edgeApi ?? EdgeApiClient();
 
   final SupabaseClient _client;
+  final EdgeApiClient _edgeApi;
 
   static const _select =
-      'id, clinic_id, patient_id, created_by, mood_score, mood_emotions, anxiety_score, energy_score, problem_intensity_score, selected_mode, notes, checked_in_at, created_at, updated_at';
+      'id, clinic_id, patient_id, created_by, mood_score, mood_emotions, anxiety_score, energy_score, sleep_score, stress_score, selected_modes, selected_mode, notes, checked_in_at, created_at, updated_at';
 
   Future<String> getPatientIdForCurrentProfile() async {
     try {
@@ -128,23 +131,15 @@ class PatientCheckInsRepository {
       );
     }
 
-    try {
-      final userId = _client.auth.currentUser?.id;
-      final row = await _client
-          .from('patient_check_ins')
-          .insert({
-            'clinic_id': clinicId,
-            'patient_id': patientId,
-            if (userId != null) 'created_by': userId,
-            ...input.toRowJson(),
-          })
-          .select(_select)
-          .single();
-
-      return PatientCheckIn.fromJson(Map<String, dynamic>.from(row));
-    } catch (e) {
-      throw mapToAppException(e);
+    final data = await _edgeApi.invoke('submit-check-in', body: input.toRowJson());
+    final raw = data['check_in'];
+    if (raw == null) {
+      throw AppException(
+        code: AppExceptionCodes.unknown,
+        message: 'Resposta inválida ao salvar check-in.',
+      );
     }
+    return PatientCheckIn.fromJson(Map<String, dynamic>.from(raw as Map));
   }
 
   Future<PatientCheckIn> update({

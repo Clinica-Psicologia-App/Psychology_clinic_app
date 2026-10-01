@@ -28,26 +28,29 @@ class PatientCheckInFormPage extends ConsumerStatefulWidget {
 class _PatientCheckInFormPageState
     extends ConsumerState<PatientCheckInFormPage> {
   final _notesController = TextEditingController();
-  final _nicknameController = TextEditingController();
 
   int _mood = 5;
   List<String> _moodEmotions = [];
   int _anxiety = 5;
   int _energy = 5;
-  int _problemIntensity = 5;
-  CheckInMode? _selectedMode;
+  int _sleep = 5;
+  int _stress = 5;
+  List<CheckInMode> _selectedModes = [];
+  final Map<String, TextEditingController> _nicknameControllers = {};
   String? _expandedFamilyId;
   bool _saving = false;
   bool _loaded = false;
 
-  /// Passos: 0=humor, 1=ansiedade, 2=energia, 3=intensidade, 4=modos, 5=notas
+  /// Passos: 0=humor, 1=ansiedade, 2=energia, 3=sono, 4=estresse, 5=modos, 6=notas
   int _step = 0;
-  static const int _kTotalSteps = 6;
+  static const int _kTotalSteps = 7;
 
   @override
   void dispose() {
     _notesController.dispose();
-    _nicknameController.dispose();
+    for (final c in _nicknameControllers.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -58,11 +61,17 @@ class _PatientCheckInFormPageState
     _moodEmotions = List.of(checkIn.moodEmotions);
     _anxiety = checkIn.anxietyScore ?? 5;
     _energy = checkIn.energyScore ?? 5;
-    _problemIntensity = checkIn.problemIntensityScore ?? 5;
-    _selectedMode = checkIn.selectedMode;
-    _nicknameController.text = checkIn.selectedMode?.nickname ?? '';
+    _sleep = checkIn.sleepScore ?? 5;
+    _stress = checkIn.stressScore ?? 5;
+    _selectedModes = List.of(checkIn.effectiveModes);
+    for (final mode in _selectedModes) {
+      final key = _modeKey(mode.family, mode.clinicalName);
+      _nicknameControllers[key] = TextEditingController(text: mode.nickname ?? '');
+    }
     _notesController.text = checkIn.notes ?? '';
   }
+
+  String _modeKey(String family, String clinicalName) => '${family}_$clinicalName';
 
   void _onMoodChanged(int value) {
     setState(() {
@@ -71,23 +80,52 @@ class _PatientCheckInFormPageState
     });
   }
 
+  void _toggleMode(String family, ModeOption option) {
+    setState(() {
+      final key = _modeKey(family, option.clinicalName);
+      final idx = _selectedModes.indexWhere(
+        (m) => m.family == family && m.clinicalName == option.clinicalName,
+      );
+      if (idx >= 0) {
+        _selectedModes.removeAt(idx);
+        _nicknameControllers.remove(key)?.dispose();
+      } else {
+        _selectedModes.add(CheckInMode(
+          family: family,
+          clinicalName: option.clinicalName,
+          patientLabel: option.patientLabel,
+        ));
+        _nicknameControllers[key] = TextEditingController();
+      }
+    });
+  }
+
+  bool _isModeSelected(String family, String clinicalName) {
+    return _selectedModes.any(
+      (m) => m.family == family && m.clinicalName == clinicalName,
+    );
+  }
+
   PatientCheckInInput _buildInput() {
-    final nickname = _nicknameController.text.trim();
-    final mode = _selectedMode;
+    final modes = _selectedModes.map((m) {
+      final key = _modeKey(m.family, m.clinicalName);
+      final nick = _nicknameControllers[key]?.text.trim();
+      return CheckInMode(
+        family: m.family,
+        clinicalName: m.clinicalName,
+        patientLabel: m.patientLabel,
+        nickname: (nick != null && nick.isNotEmpty) ? nick : null,
+      );
+    }).toList();
+
     return PatientCheckInInput(
       moodScore: _mood,
       moodEmotions: _moodEmotions,
       anxietyScore: _anxiety,
       energyScore: _energy,
-      problemIntensityScore: _problemIntensity,
-      selectedMode: mode == null
-          ? null
-          : CheckInMode(
-              family: mode.family,
-              clinicalName: mode.clinicalName,
-              patientLabel: mode.patientLabel,
-              nickname: nickname.isEmpty ? null : nickname,
-            ),
+      sleepScore: _sleep,
+      stressScore: _stress,
+      selectedModes: modes,
       notes: _notesController.text,
     );
   }
@@ -260,38 +298,53 @@ class _PatientCheckInFormPageState
           faces: const ['😌', '🙂', '😐', '😰', '😱'],
           positiveHigh: false,
           value: _anxiety,
+          labels: kAnxietyLabels,
           onChanged: (v) => setState(() => _anxiety = v),
         );
       case 2:
         return _scoreStep(
           question: 'Como está sua energia?',
-          helper: 'Quanto pique você sentiu hoje.',
+          helper: 'Avalie o seu nível de energia ao longo do dia.',
           lowLabel: 'Exausto(a)',
           highLabel: 'Muita energia',
           faces: const ['😴', '😪', '🙂', '😀', '🤩'],
           positiveHigh: true,
           value: _energy,
+          labels: kEnergyLabels,
           onChanged: (v) => setState(() => _energy = v),
         );
       case 3:
         return _scoreStep(
-          question: 'E os problemas, como pesaram?',
-          helper: 'O quanto os problemas te afetaram hoje.',
-          lowLabel: 'Leve',
-          highLabel: 'Muito intenso',
-          faces: const ['🙂', '😐', '😕', '😣', '😖'],
-          positiveHigh: false,
-          value: _problemIntensity,
-          onChanged: (v) => setState(() => _problemIntensity = v),
+          question: 'Como foi sua qualidade de sono?',
+          helper: 'Considere a noite anterior.',
+          lowLabel: 'Péssima',
+          highLabel: 'Excelente',
+          faces: const ['😵', '😴', '😪', '😌', '😇'],
+          positiveHigh: true,
+          value: _sleep,
+          labels: kSleepLabels,
+          onChanged: (v) => setState(() => _sleep = v),
         );
       case 4:
+        return _scoreStep(
+          question: 'Como está seu estresse?',
+          helper: 'O quanto você se sentiu pressionado(a) hoje.',
+          lowLabel: 'Nenhum',
+          highLabel: 'Muito alto',
+          faces: const ['😌', '🙂', '😐', '😤', '🤯'],
+          positiveHigh: false,
+          value: _stress,
+          labels: kStressLabels,
+          onChanged: (v) => setState(() => _stress = v),
+        );
+      case 5:
         return _modesStep();
       default:
         return _notesStep();
     }
   }
 
-  // ── Passo 0: Humor — Opção A ───────────────────────────────────────────
+  // ── Passo 0: Humor ────────────────────────────────────────────────────────
 
   Widget _moodStep() {
     final theme = Theme.of(context);
@@ -312,7 +365,6 @@ class _PatientCheckInFormPageState
         ),
         const SizedBox(height: 28),
 
-        // ── Emoji grande + score ──
         Column(
           children: [
             AnimatedSwitcher(
@@ -355,7 +407,6 @@ class _PatientCheckInFormPageState
         ),
         const SizedBox(height: 24),
 
-        // ── Strip com fundo cinza ──
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
           decoration: BoxDecoration(
@@ -406,7 +457,6 @@ class _PatientCheckInFormPageState
         ),
         const SizedBox(height: 28),
 
-        // ── Emoções ──
         Text(
           'Quer contar um pouco mais? Escolha uma ou mais.',
           style: theme.textTheme.bodyMedium?.copyWith(color: surfaceVariant),
@@ -415,235 +465,54 @@ class _PatientCheckInFormPageState
         ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 160),
           child: Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: emotions.map((emotion) {
-            final selected = _moodEmotions.contains(emotion);
-            return FilterChip(
-              label: Text(emotion),
-              selected: selected,
-              onSelected: (on) {
-                setState(() {
-                  if (on) {
-                    _moodEmotions = [..._moodEmotions, emotion];
-                  } else {
-                    _moodEmotions =
-                        _moodEmotions.where((e) => e != emotion).toList();
-                  }
-                });
-              },
-              selectedColor: AppColors.turquoise.withValues(alpha: 0.18),
-              checkmarkColor: AppColors.turquoise,
-              side: BorderSide(
-                color: selected
-                    ? AppColors.turquoise
-                    : theme.colorScheme.outlineVariant,
-              ),
-            );
-          }).toList(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  // ── Passo 4: Modos ───────────────────────────────────────────────────────
-
-  Widget _modesStep() {
-    final theme = Theme.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          'Que modo está aparecendo agora?',
-          textAlign: TextAlign.center,
-          style: theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: AppColors.navy,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'Toque na opção que mais se parece com você neste momento.',
-          textAlign: TextAlign.center,
-          style: theme.textTheme.bodySmall
-              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-        ),
-        const SizedBox(height: 20),
-        ...kModeFamilies.map((family) => _familyCard(family, theme)),
-        if (_selectedMode != null) ...[
-          const SizedBox(height: 20),
-          Text(
-            'Esse modo tem um nome para você? (opcional)',
-            style: theme.textTheme.bodyMedium
-                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-          ),
-          const SizedBox(height: 8),
-          TextField(
-            controller: _nicknameController,
-            decoration: const InputDecoration(
-              hintText: 'Ex: General, A Sombra, O Crítico...',
-              prefixIcon: Icon(Icons.edit_outlined),
-            ),
-            textCapitalization: TextCapitalization.sentences,
-          ),
-        ],
-      ],
-    );
-  }
-
-  Widget _familyCard(ModeFamily family, ThemeData theme) {
-    final isExpanded = _expandedFamilyId == family.id;
-
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          InkWell(
-            onTap: () {
-              setState(() {
-                _expandedFamilyId = isExpanded ? null : family.id;
-              });
-            },
-            borderRadius: BorderRadius.circular(12),
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 14),
-              decoration: BoxDecoration(
-                color: isExpanded
-                    ? AppColors.turquoise.withValues(alpha: 0.1)
-                    : theme.colorScheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: isExpanded
-                      ? AppColors.turquoise
-                      : theme.colorScheme.outlineVariant,
-                  width: isExpanded ? 1.5 : 1,
+            spacing: 8,
+            runSpacing: 8,
+            children: emotions.map((emotion) {
+              final selected = _moodEmotions.contains(emotion);
+              return GestureDetector(
+                onTap: () {
+                  setState(() {
+                    if (selected) {
+                      _moodEmotions =
+                          _moodEmotions.where((e) => e != emotion).toList();
+                    } else {
+                      _moodEmotions = [..._moodEmotions, emotion];
+                    }
+                  });
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 160),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: selected
+                        ? AppColors.turquoise
+                        : theme.colorScheme.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: selected
+                          ? AppColors.turquoise
+                          : theme.colorScheme.outlineVariant,
+                      width: selected ? 0 : 1,
+                    ),
+                  ),
+                  child: Text(
+                    emotion,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: selected
+                          ? Colors.white
+                          : theme.colorScheme.onSurface,
+                      fontWeight: selected
+                          ? FontWeight.w600
+                          : FontWeight.w400,
+                    ),
+                  ),
                 ),
-              ),
-              child: Row(
-                children: [
-                  Text(family.icon,
-                      style: const TextStyle(fontSize: 24)),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      family.patientLabel,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  Icon(
-                    isExpanded
-                        ? Icons.expand_less_rounded
-                        : Icons.expand_more_rounded,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ],
-              ),
-            ),
+              );
+            }).toList(),
           ),
-          if (isExpanded)
-            Container(
-              margin: const EdgeInsets.only(top: 4),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerLowest,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                    color: AppColors.turquoise.withValues(alpha: 0.3)),
-              ),
-              child: Column(
-                children: family.submodes.asMap().entries.map((entry) {
-                  final i = entry.key;
-                  final option = entry.value;
-                  final isSelected = _selectedMode?.clinicalName ==
-                          option.clinicalName &&
-                      _selectedMode?.patientLabel == option.patientLabel &&
-                      _selectedMode?.family == family.id;
-
-                  return InkWell(
-                    onTap: () {
-                      setState(() {
-                        _selectedMode = CheckInMode(
-                          family: family.id,
-                          clinicalName: option.clinicalName,
-                          patientLabel: option.patientLabel,
-                        );
-                        _nicknameController.clear();
-                      });
-                    },
-                    borderRadius: BorderRadius.vertical(
-                      top: i == 0
-                          ? const Radius.circular(12)
-                          : Radius.zero,
-                      bottom: i == family.submodes.length - 1
-                          ? const Radius.circular(12)
-                          : Radius.zero,
-                    ),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? AppColors.turquoise.withValues(alpha: 0.12)
-                            : null,
-                        border: i < family.submodes.length - 1
-                            ? Border(
-                                bottom: BorderSide(
-                                  color: theme.colorScheme.outlineVariant
-                                      .withValues(alpha: 0.4),
-                                ),
-                              )
-                            : null,
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(option.icon,
-                              style: const TextStyle(fontSize: 20)),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  option.patientLabel,
-                                  style:
-                                      theme.textTheme.titleSmall?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: isSelected
-                                        ? AppColors.turquoise
-                                        : null,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '"${option.patientDescription}"',
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color:
-                                        theme.colorScheme.onSurfaceVariant,
-                                    fontStyle: FontStyle.italic,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          if (isSelected)
-                            Icon(Icons.check_circle_rounded,
-                                color: AppColors.turquoise, size: 20),
-                        ],
-                      ),
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -658,6 +527,7 @@ class _PatientCheckInFormPageState
     required bool positiveHigh,
     required int value,
     required ValueChanged<int> onChanged,
+    Map<int, String>? labels,
   }) {
     final theme = Theme.of(context);
     final goodness = positiveHigh ? value / 10 : 1 - value / 10;
@@ -668,6 +538,7 @@ class _PatientCheckInFormPageState
             : AppColors.error;
     final faceIndex =
         ((value / 10) * (faces.length - 1)).round().clamp(0, faces.length - 1);
+    final label = labels?[value];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -704,12 +575,30 @@ class _PatientCheckInFormPageState
         ),
         const SizedBox(height: 14),
         Center(
-          child: Text(
-            '$value/10',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
-              color: tone,
-            ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                '$value',
+                style: theme.textTheme.displaySmall?.copyWith(
+                  fontWeight: FontWeight.w900,
+                  color: tone,
+                  height: 1,
+                ),
+              ),
+              if (label != null) ...[
+                const SizedBox(width: 8),
+                Text(
+                  '— $label',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
         const SizedBox(height: 8),
@@ -718,7 +607,7 @@ class _PatientCheckInFormPageState
           max: 10,
           divisions: 10,
           activeColor: tone,
-          label: '$value',
+          label: label ?? '$value',
           onChanged: (v) => onChanged(v.round()),
         ),
         Padding(
@@ -736,6 +625,210 @@ class _PatientCheckInFormPageState
           ),
         ),
       ],
+    );
+  }
+
+  // ── Passo 5: Modos (múltipla seleção) ────────────────────────────────────
+
+  Widget _modesStep() {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Que modo está aparecendo agora?',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: AppColors.navy,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Você pode escolher mais de um.',
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodySmall
+              ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+        ),
+        const SizedBox(height: 20),
+        ...kModeFamilies.map((family) => _familyCard(family, theme)),
+        if (_selectedModes.isNotEmpty) ...[
+          const SizedBox(height: 24),
+          Text(
+            'Dê um apelido para cada modo (opcional)',
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: AppColors.navy,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Um nome pessoal que facilita reconhecê-lo.',
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+          ),
+          const SizedBox(height: 12),
+          ..._selectedModes.map((mode) {
+            final key = _modeKey(mode.family, mode.clinicalName);
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: TextField(
+                controller: _nicknameControllers[key],
+                decoration: InputDecoration(
+                  labelText: mode.patientLabel,
+                  hintText: 'Ex: O General, A Sombra, O Crítico...',
+                  prefixIcon: const Icon(Icons.edit_outlined),
+                ),
+                textCapitalization: TextCapitalization.sentences,
+              ),
+            );
+          }),
+        ],
+      ],
+    );
+  }
+
+  Widget _familyCard(ModeFamily family, ThemeData theme) {
+    final isExpanded = _expandedFamilyId == family.id;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          InkWell(
+            onTap: () {
+              setState(() {
+                _expandedFamilyId = isExpanded ? null : family.id;
+              });
+            },
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              decoration: BoxDecoration(
+                color: isExpanded
+                    ? AppColors.turquoise.withValues(alpha: 0.1)
+                    : theme.colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isExpanded
+                      ? AppColors.turquoise
+                      : theme.colorScheme.outlineVariant,
+                  width: isExpanded ? 1.5 : 1,
+                ),
+              ),
+              child: Row(
+                children: [
+                  Text(family.icon, style: const TextStyle(fontSize: 24)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      family.patientLabel,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    isExpanded
+                        ? Icons.expand_less_rounded
+                        : Icons.expand_more_rounded,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (isExpanded)
+            Container(
+              margin: const EdgeInsets.only(top: 4),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surfaceContainerLowest,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                    color: AppColors.turquoise.withValues(alpha: 0.3)),
+              ),
+              child: Column(
+                children: family.submodes.asMap().entries.map((entry) {
+                  final i = entry.key;
+                  final option = entry.value;
+                  final isSelected =
+                      _isModeSelected(family.id, option.clinicalName);
+
+                  return InkWell(
+                    onTap: () => _toggleMode(family.id, option),
+                    borderRadius: BorderRadius.vertical(
+                      top: i == 0
+                          ? const Radius.circular(12)
+                          : Radius.zero,
+                      bottom: i == family.submodes.length - 1
+                          ? const Radius.circular(12)
+                          : Radius.zero,
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? AppColors.turquoise.withValues(alpha: 0.12)
+                            : null,
+                        border: i < family.submodes.length - 1
+                            ? Border(
+                                bottom: BorderSide(
+                                  color: theme.colorScheme.outlineVariant
+                                      .withValues(alpha: 0.4),
+                                ),
+                              )
+                            : null,
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(option.icon,
+                              style: const TextStyle(fontSize: 20)),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  option.patientLabel,
+                                  style: theme.textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                    color: isSelected
+                                        ? AppColors.turquoise
+                                        : null,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  '"${option.patientDescription}"',
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Checkbox(
+                            value: isSelected,
+                            onChanged: (_) => _toggleMode(family.id, option),
+                            activeColor: AppColors.turquoise,
+                            materialTapTargetSize:
+                                MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+        ],
+      ),
     );
   }
 

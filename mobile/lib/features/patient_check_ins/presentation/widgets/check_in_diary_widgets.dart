@@ -532,6 +532,15 @@ class CheckInDiaryEntry extends StatelessWidget {
                               label: 'Ene',
                               value: checkIn.energyScore,
                             ),
+                            _MiniScore(
+                              label: 'Son',
+                              value: checkIn.sleepScore,
+                            ),
+                            _MiniScore(
+                              label: 'Est',
+                              value: checkIn.stressScore,
+                              inverse: true,
+                            ),
                           ],
                         ),
                         if (notes.isNotEmpty) ...[

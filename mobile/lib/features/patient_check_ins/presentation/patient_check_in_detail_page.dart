@@ -98,6 +98,14 @@ class PatientCheckInDetailPage extends ConsumerWidget {
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       CheckInScoresSummary(checkIn: checkIn),
+                      if (checkIn.moodEmotions.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        CheckInEmotionsCard(checkIn: checkIn),
+                      ],
+                      if (checkIn.effectiveModes.isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        CheckInModesCard(checkIn: checkIn),
+                      ],
                       if (checkIn.notes != null &&
                           checkIn.notes!.trim().isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.xl),

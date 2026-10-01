@@ -1,4 +1,4 @@
-﻿import 'check_in_mode.dart';
+import 'check_in_mode.dart';
 import 'patient_check_in.dart';
 
 class PatientCheckInInput {
@@ -7,8 +7,9 @@ class PatientCheckInInput {
     this.moodEmotions = const [],
     this.anxietyScore,
     this.energyScore,
-    this.problemIntensityScore,
-    this.selectedMode,
+    this.sleepScore,
+    this.stressScore,
+    this.selectedModes = const [],
     this.notes,
   });
 
@@ -16,8 +17,9 @@ class PatientCheckInInput {
   final List<String> moodEmotions;
   final int? anxietyScore;
   final int? energyScore;
-  final int? problemIntensityScore;
-  final CheckInMode? selectedMode;
+  final int? sleepScore;
+  final int? stressScore;
+  final List<CheckInMode> selectedModes;
   final String? notes;
 
   factory PatientCheckInInput.fromCheckIn(PatientCheckIn checkIn) {
@@ -26,8 +28,9 @@ class PatientCheckInInput {
       moodEmotions: checkIn.moodEmotions,
       anxietyScore: checkIn.anxietyScore,
       energyScore: checkIn.energyScore,
-      problemIntensityScore: checkIn.problemIntensityScore,
-      selectedMode: checkIn.selectedMode,
+      sleepScore: checkIn.sleepScore,
+      stressScore: checkIn.stressScore,
+      selectedModes: checkIn.effectiveModes,
       notes: checkIn.notes,
     );
   }
@@ -36,13 +39,13 @@ class PatientCheckInInput {
     if (!_scoreValid(moodScore)) return 'Humor deve ser entre 0 e 10.';
     if (!_scoreValid(anxietyScore)) return 'Ansiedade deve ser entre 0 e 10.';
     if (!_scoreValid(energyScore)) return 'Energia deve ser entre 0 e 10.';
-    if (!_scoreValid(problemIntensityScore)) {
-      return 'Intensidade dos problemas deve ser entre 0 e 10.';
-    }
+    if (!_scoreValid(sleepScore)) return 'Sono deve ser entre 0 e 10.';
+    if (!_scoreValid(stressScore)) return 'Estresse deve ser entre 0 e 10.';
     if (moodScore == null &&
         anxietyScore == null &&
         energyScore == null &&
-        problemIntensityScore == null &&
+        sleepScore == null &&
+        stressScore == null &&
         (notes == null || notes!.trim().isEmpty)) {
       return 'Informe ao menos uma escala ou observação.';
     }
@@ -60,8 +63,10 @@ class PatientCheckInInput {
       'mood_emotions': moodEmotions,
       'anxiety_score': anxietyScore,
       'energy_score': energyScore,
-      'problem_intensity_score': problemIntensityScore,
-      'selected_mode': selectedMode?.toJson(),
+      'sleep_score': sleepScore,
+      'stress_score': stressScore,
+      'selected_modes':
+          selectedModes.isEmpty ? null : selectedModes.map((m) => m.toJson()).toList(),
       'notes': _nullableTrim(notes),
     };
   }

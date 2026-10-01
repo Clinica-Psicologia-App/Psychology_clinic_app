@@ -329,6 +329,26 @@ const Map<int, String> kMoodLabels = {
   10: 'Excelente',
 };
 
+const Map<int, String> kAnxietyLabels = {
+  0: 'Sem ansiedade', 1: 'Quase nenhuma', 2: 'Muito leve', 3: 'Leve', 4: 'Um pouco ansioso(a)',
+  5: 'Moderada', 6: 'Considerável', 7: 'Forte', 8: 'Muito forte', 9: 'Intensa', 10: 'Extrema',
+};
+
+const Map<int, String> kEnergyLabels = {
+  0: 'Sem energia', 1: 'Quase nenhuma', 2: 'Muito baixa', 3: 'Baixa', 4: 'Um pouco baixa',
+  5: 'Moderada', 6: 'Um pouco alta', 7: 'Alta', 8: 'Muito alta', 9: 'Intensa', 10: 'Máxima',
+};
+
+const Map<int, String> kSleepLabels = {
+  0: 'Péssima', 1: 'Muito ruim', 2: 'Ruim', 3: 'Pouco reparadora', 4: 'Abaixo do ideal',
+  5: 'Razoável', 6: 'Satisfatória', 7: 'Boa', 8: 'Muito boa', 9: 'Ótima', 10: 'Excelente',
+};
+
+const Map<int, String> kStressLabels = {
+  0: 'Sem estresse', 1: 'Quase nenhum', 2: 'Muito leve', 3: 'Leve', 4: 'Leve a moderado',
+  5: 'Moderado', 6: 'Moderado a forte', 7: 'Forte', 8: 'Muito forte', 9: 'Intenso', 10: 'Extremo',
+};
+
 const List<String> kMoodEmojis = [
   '😭', // 0
   '😞', // 1

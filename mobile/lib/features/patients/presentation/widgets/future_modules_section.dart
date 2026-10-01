@@ -147,7 +147,7 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
             icon: Icons.report_problem_outlined,
             title: 'Demandas Terapêuticas',
             subtitle: 'Queixas e focos de trabalho.',
-            accentColor: AppColors.moduleProblems,
+            accentColor: AppColors.blue,
             onTap: () => _push(
               PatientProblemRoutes.staffList(
                 role: role,

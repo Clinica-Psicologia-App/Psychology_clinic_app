@@ -317,33 +317,14 @@ class QuestionnairesRepository {
     required String questionnaireId,
     required bool isEnabled,
   }) async {
-    try {
-      final currentUserId = _currentProfileId();
-      final clinicId = await _getProfessionalClinicId(professionalId);
-
-      await _client.from('questionnaire_professional_access').upsert(
-        {
-          'clinic_id': clinicId,
-          'questionnaire_id': questionnaireId,
-          'professional_id': professionalId,
-          'granted_by': currentUserId,
-          'is_enabled': isEnabled,
-        },
-        onConflict: 'questionnaire_id,professional_id',
-      );
-    } on PostgrestException catch (e) {
-      if (_isMissingQuestionnaireAccessSchemaError(e)) {
-        throw AppException(
-          code: AppExceptionCodes.validation,
-          message: 'Controle de acesso dos questionários disponível após '
-              'atualização do banco.',
-          cause: e,
-        );
-      }
-      throw mapToAppException(e);
-    } catch (e) {
-      throw mapToAppException(e);
-    }
+    await _edgeApi.invoke(
+      'set-questionnaire-access',
+      body: {
+        'professional_id': professionalId,
+        'questionnaire_id': questionnaireId,
+        'is_enabled': isEnabled,
+      },
+    );
   }
 
   Future<List<Questionnaire>> _listCatalogQuestionnaires() async {

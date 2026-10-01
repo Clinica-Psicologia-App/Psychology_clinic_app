@@ -3,6 +3,7 @@ enum PsychologistAlertKind {
   expiringInvitation,
   staleQuestionnaire,
   pendingResultsRelease,
+  recentCheckin,
 }
 
 class PsychologistAlert {
@@ -33,6 +34,9 @@ class PsychologistAlert {
         return '$patientName com questionário em andamento há $daysCount dias';
       case PsychologistAlertKind.pendingResultsRelease:
         return '$patientName com resultado pronto, aguardando liberação';
+      case PsychologistAlertKind.recentCheckin:
+        if (daysCount == 0) return '$patientName acabou de fazer check-in';
+        return '$patientName fez check-in há ${daysCount}h';
     }
   }
 
@@ -47,6 +51,8 @@ class PsychologistAlert {
         return 'Questionário em andamento';
       case PsychologistAlertKind.pendingResultsRelease:
         return 'Resultado pendente de liberação';
+      case PsychologistAlertKind.recentCheckin:
+        return 'Check-in realizado';
     }
   }
 
@@ -66,6 +72,9 @@ class PsychologistAlert {
         return daysCount == 1 ? '1 dia' : '$daysCount dias';
       case PsychologistAlertKind.pendingResultsRelease:
         return daysCount == 1 ? '1 dia' : '$daysCount dias';
+      case PsychologistAlertKind.recentCheckin:
+        if (daysCount == 0) return 'agora';
+        return 'há ${daysCount}h';
     }
   }
 
@@ -108,6 +117,15 @@ class PsychologistAlert {
         kind: PsychologistAlertKind.missingCheckin,
         patientName: j['patient_name'] as String,
         daysCount: (j['days_since_checkin'] as num).toInt(),
+        patientId: j['patient_id'] as String?,
+      ));
+    }
+    for (final item in (json['recent_checkins'] as List? ?? [])) {
+      final j = Map<String, dynamic>.from(item as Map);
+      alerts.add(PsychologistAlert(
+        kind: PsychologistAlertKind.recentCheckin,
+        patientName: j['patient_name'] as String,
+        daysCount: (j['hours_ago'] as num).toInt(),
         patientId: j['patient_id'] as String?,
       ));
     }

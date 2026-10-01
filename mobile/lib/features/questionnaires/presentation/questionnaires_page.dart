@@ -335,9 +335,14 @@ class _QuestionnairesPageState extends ConsumerState<QuestionnairesPage> {
           : 'Nenhum questionário disponível no momento.',
       emptyIcon: Icons.assignment_outlined,
       dataBuilder: (allItems) {
-        final items = widget.attachmentOnly
-            ? allItems.where((q) => q.isAttachmentStyles).toList()
-            : allItems.where((q) => !q.isAttachmentStyles).toList();
+        // Para o psicólogo, o filtro separa a aba "Apego" da aba "Esquemas".
+        // Para o paciente, não há rota com extra:'attachment' — ele acessa
+        // um único ponto de entrada e deve ver TODOS os questionários liberados.
+        final items = !isStaff
+            ? allItems
+            : widget.attachmentOnly
+                ? allItems.where((q) => q.isAttachmentStyles).toList()
+                : allItems.where((q) => !q.isAttachmentStyles).toList();
         return RefreshIndicator(
           onRefresh: () async {
             ref.invalidate(questionnairesListProvider(_listContext));

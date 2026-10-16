@@ -1,10 +1,12 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../clinical_dashboard/providers/clinical_dashboard_providers.dart';
+import '../../genogram/domain/genogram_data.dart';
 import '../../genogram/providers/genogram_providers.dart';
 import '../../initial_assessment/providers/initial_assessment_providers.dart';
 import '../../mental_map/providers/case_conceptualization_providers.dart';
 import '../../mental_map/providers/mental_map_providers.dart';
+import '../../patient_problems/domain/patient_problem.dart';
 import '../../patient_problems/providers/patient_problems_providers.dart';
 import '../../patient_timeline/providers/patient_timeline_providers.dart';
 import '../../patients/providers/patients_providers.dart';
@@ -69,21 +71,33 @@ final patientInfographicProvider =
     caseConceptualizationProvider(ctx.patientId).future,
   );
 
-  final problems = await ref.watch(
-    staffPatientProblemsProvider(
-      StaffPatientProblemsContext(role: ctx.role, patientId: ctx.patientId),
-    ).future,
-  );
+  // Fetches opcionais: falha silenciosa para não quebrar o infográfico quando
+  // o paciente ainda não tem dados nesses módulos.
+  List<PatientProblem> problems = const [];
+  try {
+    problems = await ref.watch(
+      staffPatientProblemsProvider(
+        StaffPatientProblemsContext(role: ctx.role, patientId: ctx.patientId),
+      ).future,
+    );
+  } catch (_) {}
 
-  final mentalMap = await ref.watch(
-    staffMentalMapProvider(
-      StaffMentalMapContext(role: ctx.role, patientId: ctx.patientId),
-    ).future,
-  );
+  String? attachmentStyle;
+  try {
+    final mentalMap = await ref.watch(
+      staffMentalMapProvider(
+        StaffMentalMapContext(role: ctx.role, patientId: ctx.patientId),
+      ).future,
+    );
+    attachmentStyle = mentalMap.historyLinks.topAttachmentStyle;
+  } catch (_) {}
 
-  final genogramData = await ref.watch(
-    genogramDataForPatientProvider(ctx.patientId).future,
-  );
+  GenogramData? genogramData;
+  try {
+    genogramData = await ref.watch(
+      genogramDataForPatientProvider(ctx.patientId).future,
+    );
+  } catch (_) {}
 
   return buildPatientInfographic(
     patient: patient,
@@ -93,7 +107,7 @@ final patientInfographicProvider =
     personalityAssessments: personalityAssessments,
     concept: concept,
     problems: problems,
-    attachmentStyle: mentalMap.historyLinks.topAttachmentStyle,
+    attachmentStyle: attachmentStyle,
     genogramData: genogramData,
   );
 });

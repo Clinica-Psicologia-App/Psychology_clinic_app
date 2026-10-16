@@ -1,9 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../clinical_dashboard/providers/clinical_dashboard_providers.dart';
+import '../../genogram/providers/genogram_providers.dart';
 import '../../initial_assessment/providers/initial_assessment_providers.dart';
+import '../../mental_map/providers/case_conceptualization_providers.dart';
+import '../../mental_map/providers/mental_map_providers.dart';
+import '../../patient_problems/providers/patient_problems_providers.dart';
 import '../../patient_timeline/providers/patient_timeline_providers.dart';
 import '../../patients/providers/patients_providers.dart';
+import '../../personality_assessment/providers/personality_assessment_providers.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/patient_infographic_builder.dart';
 import '../domain/patient_infographic_data.dart';
@@ -56,10 +61,39 @@ final patientInfographicProvider =
     ).future,
   );
 
+  final personalityAssessments = await ref.watch(
+    personalityAssessmentsProvider(ctx.patientId).future,
+  );
+
+  final concept = await ref.watch(
+    caseConceptualizationProvider(ctx.patientId).future,
+  );
+
+  final problems = await ref.watch(
+    staffPatientProblemsProvider(
+      StaffPatientProblemsContext(role: ctx.role, patientId: ctx.patientId),
+    ).future,
+  );
+
+  final mentalMap = await ref.watch(
+    staffMentalMapProvider(
+      StaffMentalMapContext(role: ctx.role, patientId: ctx.patientId),
+    ).future,
+  );
+
+  final genogramData = await ref.watch(
+    genogramDataForPatientProvider(ctx.patientId).future,
+  );
+
   return buildPatientInfographic(
     patient: patient,
     dashboard: dashboard,
     assessment: assessment,
     timelineEvents: timeline,
+    personalityAssessments: personalityAssessments,
+    concept: concept,
+    problems: problems,
+    attachmentStyle: mentalMap.historyLinks.topAttachmentStyle,
+    genogramData: genogramData,
   );
 });

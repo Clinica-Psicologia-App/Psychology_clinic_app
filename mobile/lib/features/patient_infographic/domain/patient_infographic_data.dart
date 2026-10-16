@@ -22,6 +22,10 @@ class PatientInfographicData {
     this.directions = const [],
     this.personality = const [],
     this.resources = const [],
+    this.demands = const [],
+    this.lifeAreas = const [],
+    this.attachmentStyle,
+    this.genogramMembers = const [],
     this.closingLine,
     this.generatedOn,
   });
@@ -51,6 +55,18 @@ class PatientInfographicData {
   /// Recursos e forças (chips curtos).
   final List<InfographicItem> resources;
 
+  /// Demandas terapêuticas abertas (patient_problems).
+  final List<InfographicItem> demands;
+
+  /// Contexto de vida atual — Roda da Vida (9 áreas, nota 1–10).
+  final List<InfographicLifeArea> lifeAreas;
+
+  /// Estilo de apego dominante (top do questionário ATTACHMENT_STYLES_V1).
+  final String? attachmentStyle;
+
+  /// Membros do genograma (sem sensíveis).
+  final List<InfographicGenogramMember> genogramMembers;
+
   /// Mensagem final de acolhimento (rodapé).
   final String? closingLine;
 
@@ -66,6 +82,10 @@ class PatientInfographicData {
   bool get hasDirections => directions.isNotEmpty;
   bool get hasPersonality => personality.isNotEmpty;
   bool get hasResources => resources.isNotEmpty;
+  bool get hasDemands => demands.isNotEmpty;
+  bool get hasLifeAreas => lifeAreas.isNotEmpty;
+  bool get hasAttachmentStyle => attachmentStyle != null;
+  bool get hasGenogramMembers => genogramMembers.isNotEmpty;
 
   /// Quantas seções de conteúdo (fora o cabeçalho) têm dados.
   int get contentSectionCount => [
@@ -78,10 +98,14 @@ class PatientInfographicData {
         hasDirections,
         hasPersonality,
         hasResources,
+        hasDemands,
+        hasLifeAreas,
+        hasAttachmentStyle,
+        hasGenogramMembers,
       ].where((v) => v).length;
 
   /// Há ao menos uma seção de conteúdo preenchida.
-  bool get hasAnyContent => contentSectionCount > 0;
+  bool get hasAnyContent => contentSectionCount > 0 || quote != null;
 
   /// Conteúdo mínimo — sugere ao profissional completar a conceitualização.
   bool get isSparse => contentSectionCount <= 2;
@@ -172,6 +196,37 @@ class InfographicItem {
   final List<String> bullets;
   final IconData icon;
   final Color? accent;
+}
+
+/// Área da Roda da Vida com rótulo e nota 1–10.
+class InfographicLifeArea {
+  const InfographicLifeArea({
+    required this.label,
+    required this.score,
+    this.accent,
+  });
+
+  final String label;
+
+  /// Nota de satisfação 1–10 (preenchida pelo paciente).
+  final int score;
+
+  final Color? accent;
+
+  double get fraction => score / 10.0;
+}
+
+/// Membro do genograma resumido para o pôster.
+class InfographicGenogramMember {
+  const InfographicGenogramMember({
+    required this.name,
+    this.relationship,
+    this.isDeceased = false,
+  });
+
+  final String name;
+  final String? relationship;
+  final bool isDeceased;
 }
 
 /// Necessidade emocional + evento(s) de vida relacionado(s).

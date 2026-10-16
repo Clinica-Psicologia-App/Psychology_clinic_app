@@ -129,6 +129,49 @@ class PatientInfographicPoster extends StatelessWidget {
               _GhostCard(
                   title: 'DIREÇÕES TERAPÊUTICAS', accent: AppColors.cyan),
             ),
+      if (data.hasDemands)
+        _WeightedSection(
+          1 + data.demands.length,
+          _SectionCard(
+            title: 'DEMANDAS TERAPÊUTICAS',
+            subtitle: 'Problemas abertos',
+            accent: AppColors.error,
+            icon: Icons.flag_outlined,
+            child: _items(data.demands, AppColors.error),
+          ),
+        ),
+      if (data.hasLifeAreas)
+        _WeightedSection(
+          2 + (data.lifeAreas.length / 3).ceil(),
+          _SectionCard(
+            title: 'CONTEXTO DE VIDA ATUAL',
+            subtitle: 'Roda da Vida — satisfação',
+            accent: AppColors.turquoise,
+            icon: Icons.donut_large_outlined,
+            child: _lifeAreasGrid(data.lifeAreas),
+          ),
+        ),
+      if (data.hasAttachmentStyle)
+        _WeightedSection(
+          2,
+          _SectionCard(
+            title: 'ESTILO DE APEGO',
+            accent: AppColors.purple,
+            icon: Icons.link_outlined,
+            child: _attachmentChip(data.attachmentStyle!),
+          ),
+        ),
+      if (data.hasGenogramMembers)
+        _WeightedSection(
+          1 + (data.genogramMembers.length / 2).ceil(),
+          _SectionCard(
+            title: 'GENOGRAMA',
+            subtitle: 'Figuras do sistema familiar',
+            accent: AppColors.cyan,
+            icon: Icons.account_tree_outlined,
+            child: _genogramChips(data.genogramMembers),
+          ),
+        ),
     ];
     final (left, right) = _balanceColumns(flow);
 
@@ -428,6 +471,142 @@ class PatientInfographicPoster extends StatelessWidget {
                 Text(r.title,
                     style: const TextStyle(
                         fontWeight: FontWeight.w600, color: AppColors.navy)),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  // ── Roda da Vida (grid 3 colunas) ─────────────────────────────────────────
+  Widget _lifeAreasGrid(List<InfographicLifeArea> areas) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 10,
+      children: [
+        for (final a in areas)
+          SizedBox(
+            width: 130,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  a.label,
+                  style: const TextStyle(
+                      fontSize: 11, color: AppColors.textSecondary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 3),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        height: 7,
+                        decoration: BoxDecoration(
+                          color: (a.accent ?? AppColors.turquoise)
+                              .withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: FractionallySizedBox(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: a.fraction,
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: a.accent ?? AppColors.turquoise,
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${a.score}',
+                      style: TextStyle(
+                          fontWeight: FontWeight.w800,
+                          fontSize: 12,
+                          color: a.accent ?? AppColors.turquoise),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  // ── Estilo de Apego (chip único destacado) ─────────────────────────────────
+  Widget _attachmentChip(String style) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceTintPurple,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Icon(Icons.link_outlined, color: AppColors.purple, size: 22),
+          const SizedBox(width: 10),
+          Text(
+            style,
+            style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                color: AppColors.purple,
+                fontSize: 16),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Genograma (chips de membros) ───────────────────────────────────────────
+  Widget _genogramChips(List<InfographicGenogramMember> members) {
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: [
+        for (final m in members)
+          Container(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceTintTurquoise,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  m.isDeceased
+                      ? Icons.person_off_outlined
+                      : Icons.person_outline,
+                  size: 15,
+                  color: AppColors.cyan,
+                ),
+                const SizedBox(width: 6),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      m.name,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 12,
+                          color: AppColors.navy),
+                    ),
+                    if (m.relationship != null)
+                      Text(
+                        m.relationship!,
+                        style: const TextStyle(
+                            fontSize: 10,
+                            color: AppColors.textMuted),
+                      ),
+                  ],
+                ),
               ],
             ),
           ),

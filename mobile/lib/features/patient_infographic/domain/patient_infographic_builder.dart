@@ -5,8 +5,6 @@ import '../../clinical_dashboard/domain/clinical_dashboard_data.dart';
 import '../../genogram/domain/genogram_data.dart';
 import '../../initial_assessment/domain/clinical_impressions.dart';
 import '../../initial_assessment/domain/initial_assessment.dart';
-import '../../initial_assessment/domain/life_area.dart';
-import '../../initial_assessment/domain/life_area_assessment.dart';
 import '../../mental_map/domain/case_conceptualization.dart';
 import '../../patient_problems/domain/patient_problem.dart';
 import '../../patient_timeline/domain/patient_timeline_event.dart';
@@ -68,7 +66,7 @@ PatientInfographicData buildPatientInfographic({
       8,
     ),
     demands: _cap(_buildDemands(problems), maxSection),
-    lifeAreas: _cap(_buildLifeAreas(assessment?.lifeAreas ?? const []), 9),
+    lifeAreas: _buildLifeAreas(concept?.functioning),
     attachmentStyle: attachmentStyle,
     genogramMembers: _cap(_buildGenogramMembers(genogramData), 10),
     closingLine:
@@ -387,21 +385,25 @@ List<InfographicItem> _buildDemands(List<PatientProblem> problems) {
       .toList();
 }
 
-List<InfographicLifeArea> _buildLifeAreas(List<LifeAreaAssessment> areas) {
-  final rated = areas.where((a) => a.hasRating).toList()
-    ..sort((a, b) => (a.score ?? 0).compareTo(b.score ?? 0));
-  return rated
-      .map((a) => InfographicLifeArea(
-            label: a.area.label,
-            score: a.score!,
-            accent: _lifeAreaColor(a.score!),
-          ))
-      .toList();
+/// Funcionamento atual — Seção 5 da Conceitualização, avaliada pelo terapeuta.
+/// Escala 1–6 (1 = Não Funcional … 6 = Excelente).
+List<InfographicLifeArea> _buildLifeAreas(FunctioningAssessment? functioning) {
+  if (functioning == null || functioning.isEmpty) return const [];
+  return [
+    for (final area in kFunctioningAreas)
+      if (!(functioning.entryFor(area.key).isEmpty))
+        InfographicLifeArea(
+          label: area.label,
+          score: functioning.entryFor(area.key).rating ?? 0,
+          maxScore: 6,
+          accent: _functioningColor(functioning.entryFor(area.key).rating ?? 0),
+        ),
+  ];
 }
 
-Color _lifeAreaColor(int score) {
-  if (score <= 4) return AppColors.error;
-  if (score <= 6) return AppColors.warning;
+Color _functioningColor(int score) {
+  if (score <= 2) return AppColors.error;
+  if (score <= 4) return AppColors.warning;
   return AppColors.success;
 }
 

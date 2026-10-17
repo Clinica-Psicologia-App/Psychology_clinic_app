@@ -198,22 +198,25 @@ class InfographicItem {
   final Color? accent;
 }
 
-/// Área da Roda da Vida com rótulo e nota 1–10.
+/// Área de funcionamento com rótulo e nota (terapeuta, Seção 5 Conceitualização).
 class InfographicLifeArea {
   const InfographicLifeArea({
     required this.label,
     required this.score,
+    this.maxScore = 6,
     this.accent,
   });
 
   final String label;
 
-  /// Nota de satisfação 1–10 (preenchida pelo paciente).
+  /// Nota 1–[maxScore] avaliada pelo terapeuta.
   final int score;
+
+  final int maxScore;
 
   final Color? accent;
 
-  double get fraction => score / 10.0;
+  double get fraction => maxScore > 0 ? (score / maxScore).clamp(0.0, 1.0) : 0;
 }
 
 /// Membro do genograma resumido para o pôster.

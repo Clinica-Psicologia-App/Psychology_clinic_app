@@ -145,7 +145,7 @@ class PatientInfographicPoster extends StatelessWidget {
           2 + (data.lifeAreas.length / 3).ceil(),
           _SectionCard(
             title: 'CONTEXTO DE VIDA ATUAL',
-            subtitle: 'Roda da Vida — satisfação',
+            subtitle: 'Funcionamento atual — avaliação do terapeuta (1–6)',
             accent: AppColors.turquoise,
             icon: Icons.donut_large_outlined,
             child: _lifeAreasGrid(data.lifeAreas),

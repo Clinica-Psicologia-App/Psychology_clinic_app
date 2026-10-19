@@ -157,8 +157,26 @@ serve(async (req) => {
 
     if (authError || !authData.user) {
       logger.warn(`${FN}.auth_create_failed`, { message: authError?.message });
-      if (authError?.message?.toLowerCase().includes("already")) {
+      const errMsg = authError?.message?.toLowerCase() ?? "";
+      if (
+        errMsg.includes("already") ||
+        errMsg.includes("exists") ||
+        errMsg.includes("registered")
+      ) {
         throw new AppError("CONFLICT", "Email already registered", 409);
+      }
+      if (
+        errMsg.includes("password") ||
+        errMsg.includes("weak") ||
+        errMsg.includes("breach") ||
+        errMsg.includes("leaked") ||
+        errMsg.includes("hibp")
+      ) {
+        throw new AppError(
+          "VALIDATION_ERROR",
+          "Senha inválida: use ao menos 8 caracteres combinando letras e números.",
+          400,
+        );
       }
       throw new AppError(
         "INTERNAL_ERROR",

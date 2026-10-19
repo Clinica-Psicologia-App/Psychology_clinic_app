@@ -16,11 +16,11 @@ import '../../../patient_infographic/presentation/patient_infographic_route_help
 import '../../../patient_library/presentation/patient_library_routes.dart';
 import '../../../psychoeducation/presentation/psychoeducation_routes.dart';
 import '../../../patient_check_ins/presentation/patient_check_in_routes.dart';
-import '../../../patient_problems/presentation/patient_problem_routes.dart';
 import '../../../personality_assessment/presentation/personality_assessment_routes.dart';
 import '../../../profile/domain/profile_role.dart';
 import '../../../questionnaires/presentation/questionnaire_routes.dart';
 import '../../../therapy_goals/presentation/therapy_goal_routes.dart';
+import '../../../healthy_resources/presentation/healthy_resources_routes.dart';
 import '../../../therapy_resources/presentation/therapy_resource_routes.dart';
 
 class _ModuleSpec {
@@ -125,7 +125,7 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
             ),
           ),
           const _ModuleSpec(
-            icon: Icons.workspaces_outlined,
+            icon: Icons.donut_large_outlined,
             title: 'Contexto de Vida',
             subtitle: 'Em breve',
             accentColor: AppColors.cyan,
@@ -144,32 +144,34 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
             ),
           ),
           _ModuleSpec(
-            icon: Icons.report_problem_outlined,
-            title: 'Demandas Terapêuticas',
-            subtitle: 'Queixas e focos de trabalho.',
-            accentColor: AppColors.blue,
-            onTap: () => _push(
-              PatientProblemRoutes.staffList(
-                role: role,
-                patientId: patientId,
-              ),
-            ),
-          ),
-          _ModuleSpec(
             icon: Icons.family_restroom_outlined,
             title: 'Genograma',
             subtitle: 'Pessoas e relações familiares.',
-            accentColor: AppColors.moduleGenogram,
+            accentColor: AppColors.cyan,
             onTap: () => _push(
               LifeStoryRoutes.genogramPanelFor(patientId),
             ),
           ),
-          const _ModuleSpec(
-            icon: Icons.self_improvement_outlined,
-            title: 'Recursos Internos',
-            subtitle: 'Em breve',
+          _ModuleSpec(
+            icon: Icons.flag_outlined,
+            title: 'Plano Terapêutico',
+            subtitle: 'Demandas, metas e objetivos da terapia.',
             accentColor: AppColors.cyan,
-            onTap: null,
+            onTap: () => _push(
+              TherapyGoalRoutes.staffList(role: role, patientId: patientId),
+            ),
+          ),
+          _ModuleSpec(
+            icon: Icons.spa_outlined,
+            title: 'Recursos Saudáveis',
+            subtitle: 'Capacidades e apoios presentes no paciente.',
+            accentColor: AppColors.cyan,
+            onTap: () => _push(
+              HealthyResourcesRoutes.staffList(
+                role: role,
+                patientId: patientId,
+              ),
+            ),
           ),
         ],
       ),
@@ -199,7 +201,7 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
             icon: Icons.psychology_alt_outlined,
             title: 'Personalidade',
             subtitle: 'Registro de resultados (NEO PI-R), perfil e facetas.',
-            accentColor: AppColors.purple,
+            accentColor: AppColors.blue,
             onTap: () => _push(
               PersonalityAssessmentRoutes.staffList(
                 role: role,
@@ -234,8 +236,8 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
         modules: [
           _ModuleSpec(
             icon: Icons.summarize_outlined,
-            title: 'Síntese',
-            subtitle: 'Conceitualização de caso.',
+            title: 'Conceitualização de Caso',
+            subtitle: 'Formulação clínica integrada.',
             accentColor: AppColors.purple,
             onTap: () => _push(
               MentalMapRoutes.staffCaseConceptualization(
@@ -271,13 +273,6 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
               ),
             ),
           ),
-          const _ModuleSpec(
-            icon: Icons.description_outlined,
-            title: 'Formulação em Word',
-            subtitle: 'Em breve',
-            accentColor: AppColors.purple,
-            onTap: null,
-          ),
         ],
       ),
 
@@ -285,17 +280,8 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
       _ModuleGroup(
         title: 'Intervir',
         subtitle: 'Planejamento e recursos de intervenção.',
-        accentColor: AppColors.moduleGoals,
+        accentColor: AppColors.purple,
         modules: [
-          _ModuleSpec(
-            icon: Icons.flag_outlined,
-            title: 'Plano Terapêutico',
-            subtitle: 'Metas e objetivos da terapia.',
-            accentColor: AppColors.moduleGoals,
-            onTap: () => _push(
-              TherapyGoalRoutes.staffList(role: role, patientId: patientId),
-            ),
-          ),
           _ModuleSpec(
             icon: Icons.menu_book_outlined,
             title: 'Recursos Terapêuticos',

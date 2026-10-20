@@ -48,6 +48,11 @@ resolvidos somente na preparação dos testes: o card do plano tem animação co
 incompatível com `pumpAndSettle`. Agora são renderizados dois segundos em passos
 de 100 ms, preservando as verificações e a animação real. Os oito testes das homes
 passaram. As sete falhas inicialmente conhecidas estão resolvidas na suíte atual.
+Na sequência, login real de paciente e os quatro atalhos da home foram
+homologados no Android: plano, mapa mental, biblioteca/recursos e monitor diário,
+todos com retorno à home. Estados vazios e contexto do paciente conferidos;
+conta/cadastro temporários removidos, sem tocar na conta demo anterior.
+Veja [escopo e limites da homologação](qa/patient-home-android-smoke.md).
 
 > Baseline pré-auditoria. Diagnóstico executado em **2026-09-11**, branch `staging`.
 > Nada foi corrigido — apenas medido a partir do código real (ver `AGENTS.md`).

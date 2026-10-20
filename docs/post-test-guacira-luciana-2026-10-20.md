@@ -285,3 +285,24 @@ inicial estão resolvidas. Esta etapa valida widgets com dados simulados; não
 substitui navegação real pelos atalhos, backend ou homologação em dispositivo.
 `flutter analyze` executado antes do commit: **exit 1, 144 ocorrências —
 0 errors, 12 warnings e 132 infos**, sem novas ocorrências ou supressões.
+
+## Continuação — navegação real da home do paciente no Android
+
+Homologação com um novo paciente e login temporários na clínica sintética
+existente, pelo formulário real de autenticação. No AVD Small_Phone, os cards
+de plano terapêutico, mapa mental, biblioteca/recursos e monitor diário abriram
+os destinos esperados com o mesmo contexto de paciente. Os quatro retornos
+pelo Voltar do Android preservaram a home.
+
+Estados vazios foram conferidos por árvore de acessibilidade e capturas visuais;
+no mapa, a leitura da árvore falhou e a captura confirmou o estado carregado.
+A amostra final de logs não mostrou exceções Flutter. Não houve mudança de
+aplicação nem teste de gravação clínica nesta etapa.
+
+O paciente, perfil e usuário temporários foram removidos; consulta independente
+confirmou zero registros, identidades e sessões desse conjunto. Credenciais
+locais removidas, instância descartável encerrada e demo anterior preservada.
+Veja [procedimento, evidências e limites](qa/patient-home-android-smoke.md).
+Análise reexecutada antes do commit documental: **exit 1, 0 errors, 12 warnings
+e 132 infos**, sem mudança da baseline. A suíte de 492 aprovados da etapa
+anterior não foi repetida, pois não houve alteração de código nesta etapa.

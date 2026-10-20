@@ -85,7 +85,8 @@ Nenhuma outra funcionalidade foi refeita nesta continuação.
 - Suíte completa após a correção: **481 aprovados e as mesmas 7 falhas**
   relacionadas acima. Não houve nova falha na suíte.
 - A homologação REST remota foi posteriormente concluída, conforme a seção
-  seguinte. RLS entre contas autenticadas e homologação visual continuam pendentes.
+  seguinte. RLS entre contas autenticadas e homologação visual dos demais módulos
+  continuam pendentes; o formulário Android foi validado posteriormente.
 
 ## Limites e próxima homologação
 
@@ -98,16 +99,25 @@ Os 8 testes locais do script também passaram. A conta e o paciente sintéticos
 foram mantidos; credenciais somente no arquivo local ignorado pelo Git.
 Veja [procedimento e evidência remota](qa/personality-remote-smoke.md).
 
-O teste de persistência usa repositório simulado: confirma a chamada e o ciclo
-do formulário; separadamente, o smoke REST confirmou a escrita na instância remota
-com a nova conta de teste. Não foram executados o formulário real em dispositivo,
-isolamento RLS entre contas autenticadas, build de release ou validação visual.
+O teste automatizado de persistência usa repositório simulado; separadamente,
+o smoke REST confirmou a escrita remota e a homologação Android executou o
+formulário real com a nova conta de teste. Em emulador de 360 × 640, a avaliação
+parcial persistiu após encerrar e reabrir o processo. Com a rede desligada,
+o salvamento manteve o valor e a etapa, exibiu erro e não alterou o banco.
+Após reconectar, a nova tentativa funcionou sem redigitar. Os cinco domínios
+e a faceta de teste ficaram no mesmo registro não compartilhado, com as
+classificações corretas, e o perfil completo reabriu após novo reinício.
+A avaliação temporária foi excluída e a ausência confirmada. Build APK debug
+concluído, sem mudança de código nesta homologação. Não foram executados
+isolamento RLS entre contas autenticadas, build de release ou validação visual
+completa dos demais módulos.
 Nenhum schema, migration ou Edge Function foi alterado; nenhum deploy ou push foi
 realizado.
 
-Antes de liberar: no formulário Flutter em dispositivo, registrar uma avaliação
-de teste, avançar um domínio, sair/reabrir e confirmar persistência; repetir após falha
-de rede; conferir YAMI/YSQ com snapshots reais e as cores nas telas.
+Antes de liberar: conferir YAMI/YSQ com snapshots reais e as cores nas demais
+telas; validar isolamento autenticado e build de release. O fluxo de formulário,
+reabertura e falha de rede foi aprovado no emulador Android; aparelho físico e
+outras plataformas continuam fora desta evidência.
 Salvar por etapa aumenta as escritas (um INSERT seguido de UPDATEs), mantendo
 um único registro por preenchimento. Não foi adicionada recuperação automática
 de INSERT cujo resultado se perca na rede; esse caso exige consulta antes de

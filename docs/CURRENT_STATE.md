@@ -8,8 +8,11 @@ Validação: 46 testes direcionados aprovados; suíte completa com 481 aprovados
 Persistência pelo contrato REST remoto validada com um novo psicólogo e paciente
 sintéticos em clínica isolada: criação, cinco atualizações/releituras, bloqueio
 de leitura anônima e limpeza aprovados. Script com 8 testes locais aprovados.
-Homologação do formulário em dispositivo e isolamento autenticado entre clínicas
-continuam pendentes. A conta demo antiga retornou `invalid_credentials`.
+Homologação do formulário Android aprovada em emulador de 360 × 640: gravação
+por etapa no mesmo registro, reabertura após encerrar o processo, erro com a rede
+desligada e nova tentativa sem redigitar. Avaliação sintética removida após a
+conferência. Isolamento autenticado entre clínicas continua pendente.
+A conta demo antiga retornou `invalid_credentials`.
 Veja [procedimento e evidências](qa/personality-remote-smoke.md).
 Na continuação, o Top 5 passou a excluir resultados sem média, evitando comparar
 pontos brutos com médias em snapshots legados. Os detalhes permanecem disponíveis.

@@ -248,3 +248,20 @@ jornada passaram**. A suíte completa teve **487 aprovados e 5 falhas**, sem
 falhas novas: permanecem o título da biblioteca e os quatro timeouts da home.
 `flutter analyze` executado antes do commit: **exit 1, 144 ocorrências —
 0 errors, 12 warnings e 132 infos**, sem novas ocorrências ou supressões.
+
+## Continuação — teste de indicação na biblioteca
+
+A falha de `staff_library_catalog_indicate_test.dart` foi reproduzida no teste
+de confirmação: a indicação para o paciente e a obra corretos já passava, mas
+a expectativa ainda procurava dois títulos `Biblioteca clínica`. A tela atual
+usa um cabeçalho único com `BIBLIOTECA CLÍNICA`.
+
+Foi alterado somente o teste, preservando as mudanças locais na tela. Além do
+título atual, ele exige o fechamento do formulário, a permanência da mesma
+instância de estado do catálogo e a obra ainda visível após confirmar.
+Os **três testes da biblioteca passaram**. A suíte completa teve **488 aprovados
+e 4 falhas**, todas os timeouts já conhecidos em `patient_home_test.dart`.
+Não houve mudança na aplicação, navegação, persistência ou permissões. A
+verificação usa um notifier de teste; não representa indicação no backend real.
+`flutter analyze` executado antes do commit: **exit 1, 144 ocorrências —
+0 errors, 12 warnings e 132 infos**, sem novas ocorrências ou supressões.

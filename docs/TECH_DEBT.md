@@ -15,8 +15,11 @@ Os 47 testes direcionados do mapa passaram. Na sequência, a falha da jornada
 foi identificada como uma expectativa antiga de ordenação, sem falha nas regras
 de disponibilidade: Problemas e demandas já está antes dos questionários.
 Somente o teste foi alinhado, com 19 testes de jornada aprovados.
-A suíte mais recente tem **487 aprovados e 5 falhas**: título da biblioteca e
-os quatro timeouts da home.
+A expectativa do título da biblioteca também foi corrigida somente no teste:
+o cabeçalho atual tem um título em maiúsculas, em vez dos dois títulos antigos.
+Os três testes de indicação passaram, verificando também que o formulário fecha
+e o mesmo catálogo permanece aberto. A suíte mais recente tem **488 aprovados e
+4 falhas**, todas timeouts da home.
 
 ### Mapa Mental — nó Personalidade não exibido (corrigido)
 

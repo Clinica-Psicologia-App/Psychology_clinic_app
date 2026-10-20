@@ -70,6 +70,7 @@ void main() {
       (tester) async {
     final notifier = _RecordingIndicateNotifier();
     await pumpCatalog(tester, notifier: notifier);
+    final catalogState = tester.state(find.byType(StaffLibraryCatalogPage));
 
     await tester.tap(find.text('Indicar ao paciente'));
     await tester.pumpAndSettle();
@@ -83,10 +84,11 @@ void main() {
     expect(notifier.calls.single.patientId, 'patient-1');
     expect(notifier.calls.single.workId, 'work-1');
 
-    // Voltou para o catálogo (o sheet fechou) — não navegou para a ficha.
-    // "Biblioteca clínica" aparece duas vezes de propósito: no AppBar e no
-    // cabeçalho da página.
-    expect(find.text('Biblioteca clínica'), findsNWidgets(2));
+    // O sheet fechou e o mesmo catálogo continua aberto no cabeçalho atual.
+    expect(find.text('Indicar “A viagem de Chihiro”'), findsNothing);
+    expect(tester.state(find.byType(StaffLibraryCatalogPage)), same(catalogState));
+    expect(find.text('BIBLIOTECA CLÍNICA'), findsOneWidget);
+    expect(find.text('A viagem de Chihiro'), findsOneWidget);
     expect(find.text('Obra indicada ao paciente.'), findsOneWidget);
   });
 

@@ -3,8 +3,8 @@
 ## Atualização de 2026-10-20 — ajustes pós-teste
 
 Na branch `audit/astra`, os sete ajustes de Guacira/Luciana foram implementados.
-Validação inicial: 46 testes direcionados aprovados; suíte mais recente com 487 aprovados e
-5 falhas; analyzer sem errors, com 12 warnings e 132 infos em trechos preexistentes.
+Validação inicial: 46 testes direcionados aprovados; suíte mais recente com 488 aprovados e
+4 falhas; analyzer sem errors, com 12 warnings e 132 infos em trechos preexistentes.
 Persistência pelo contrato REST remoto validada com um novo psicólogo e paciente
 sintéticos em clínica isolada: criação, cinco atualizações/releituras, bloqueio
 de leitura anônima e limpeza aprovados. Script com 8 testes locais aprovados.
@@ -41,7 +41,9 @@ Personalidade. Agora são conferidos os cinco módulos e o estado pendente, sem
 alterar o builder. Os 47 testes direcionados do mapa passaram. A falha da jornada
 também foi corrigida somente no teste: a ordem esperada de Problemas e demandas
 estava desatualizada. Os 19 testes de jornada passaram, preservando a implementação
-existente. Restam a falha do título da biblioteca e quatro timeouts da home do paciente.
+existente. A expectativa antiga de dois títulos na biblioteca também foi corrigida
+somente no teste. Os três testes de indicação passaram, incluindo fechamento do
+formulário e permanência no mesmo catálogo. Restam quatro timeouts da home do paciente.
 
 > Baseline pré-auditoria. Diagnóstico executado em **2026-09-11**, branch `staging`.
 > Nada foi corrigido — apenas medido a partir do código real (ver `AGENTS.md`).

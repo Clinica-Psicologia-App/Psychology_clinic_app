@@ -3,7 +3,7 @@
 ## Atualização de 2026-10-20 — ajustes pós-teste
 
 Na branch `audit/astra`, os sete ajustes de Guacira/Luciana foram implementados.
-Validação: 46 testes direcionados aprovados; suíte completa com 481 aprovados e
+Validação inicial: 46 testes direcionados aprovados; suíte mais recente com 485 aprovados e
 7 falhas; analyzer sem errors, com 12 warnings e 132 infos em trechos preexistentes.
 Persistência pelo contrato REST remoto validada com um novo psicólogo e paciente
 sintéticos em clínica isolada: criação, cinco atualizações/releituras, bloqueio
@@ -23,8 +23,11 @@ YAMI sem bloco duplicado e barras do consolidado lilás/cinza aprovados. A
 orientação de ativação e os símbolos ainda vermelhos foram alinhados ao lilás.
 Veja [homologação do Panorama](qa/panorama-ysq-yami-smoke.md).
 NEO no Infográfico aprovado no Android com os cinco domínios e cores esperadas.
-No Mapa Mental, o nó Personalidade recebe dados, mas não é exibido pelos layouts
-de posições fixas; sua apresentação e cores na tela continuam pendentes.
+No Mapa Mental, o nó Personalidade agora fica acessível em cartão abaixo do
+diagrama, com o resumo e detalhe existentes. Abertura, três cores e atalho para
+a lista de avaliações aprovados no Android; layouts de 360/900 e cartão vazio
+cobertos por testes. Quinze testes direcionados aprovados. A órbita antiga
+tem overflow com texto ampliado em 1,6, documentado em `TECH_DEBT.md`.
 O Panorama atual não exibe NEO. Veja [evidências e limites](qa/neo-domain-colors-smoke.md).
 
 > Baseline pré-auditoria. Diagnóstico executado em **2026-09-11**, branch `staging`.

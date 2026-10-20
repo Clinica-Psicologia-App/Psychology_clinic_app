@@ -340,6 +340,19 @@ class MentalMapVisualHub extends StatelessWidget {
               center: caseMap.center,
               nodes: hubNodes,
             ),
+            // Personalidade já tem resumo e detalhe, mas não ocupa uma
+            // posição na órbita. Reutiliza o cartão sem mover os demais nós.
+            for (final node in nodes.where((node) => node.id == 'personality'))
+              Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: SizedBox(
+                  height: MediaQuery.textScalerOf(context).scale(180),
+                  child: MentalMapHubNode(
+                    key: const ValueKey('mental-map-personality'),
+                    data: node,
+                  ),
+                ),
+              ),
           ],
         ),
       ),

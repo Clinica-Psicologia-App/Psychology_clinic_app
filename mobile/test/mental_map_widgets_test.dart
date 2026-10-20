@@ -1,5 +1,6 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:terapia_esquema/core/theme/app_colors.dart';
 import 'package:terapia_esquema/features/mental_map/domain/mental_case_map.dart';
 import 'package:terapia_esquema/features/mental_map/domain/mental_map_node_detail.dart';
 import 'package:terapia_esquema/features/mental_map/presentation/mental_map_node_state.dart';
@@ -121,6 +122,132 @@ void main() {
         findsOneWidget);
     expect(
         find.byKey(const ValueKey('mental-map-radial-layout')), findsNothing);
+  });
+
+  for (final viewport in [(360.0, 1.0), (900.0, 1.0), (360.0, 1.6)]) {
+    final (width, textScale) = viewport;
+    testWidgets(
+        'Personalidade abre detalhe em largura $width e texto $textScale',
+        (tester) async {
+      tester.view.physicalSize = Size(width, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      const items = [
+        'Neuroticismo: Muito Baixo',
+        'Extroversão: Baixo',
+        'Abertura à experiência: Médio',
+      ];
+      var opened = 0;
+      await tester.pumpWidget(MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: TextScaler.linear(textScale)),
+          child: child!,
+        ),
+        home: Scaffold(body: Builder(builder: (context) {
+          return SingleChildScrollView(
+            child: MentalMapVisualHub(
+              caseMap: MentalCaseMap(
+                  center: center,
+                  primaryNodes: const [],
+                  contextNodes: const []),
+              nodes: [
+                // Texto ampliado valida o novo cartão/detalhe isoladamente:
+                // os seis nós antigos da órbita têm altura fixa de 72 px.
+                if (textScale == 1) ...nodes,
+                MentalMapHubNodeData(
+                  id: 'personality',
+                  title: 'Personalidade',
+                  subtitle: 'Preenchido',
+                  items: items,
+                  emptyLabel: 'Pendente',
+                  icon: Icons.psychology_alt_outlined,
+                  accentColor: AppColors.purple,
+                  isFilled: true,
+                  visualState: MentalMapNodeVisualState.filled,
+                  onTap: () {
+                    opened++;
+                    showMentalMapNodeDetailSheet(
+                      context: context,
+                      detail: const MentalMapNodeDetail(
+                          id: 'personality',
+                          title: 'Personalidade',
+                          items: items,
+                          dataSource: 'NEO PI-R - avaliação de personalidade',
+                          ctaLabel: 'Abrir personalidade',
+                          lastUpdatedAt: null),
+                      onPrimaryTap: () {},
+                    );
+                  },
+                ),
+              ],
+            ),
+          );
+        })),
+      ));
+      expect(find.text('Personalidade'), findsOneWidget);
+      final card = find.byKey(const ValueKey('mental-map-personality'));
+      await tester.ensureVisible(card);
+      await tester.pump(const Duration(milliseconds: 300));
+      for (final entry in {
+        items[0]: AppColors.error,
+        items[1]: AppColors.warning,
+        items[2]: AppColors.success,
+      }.entries) {
+        expect(tester.widget<Text>(find.text(entry.key)).style?.color,
+            entry.value);
+      }
+      await tester.tap(card);
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(opened, 1);
+      final sheet = find.byType(MentalMapNodeDetailSheet);
+      expect(sheet, findsOneWidget);
+      for (final item in items) {
+        expect(find.descendant(of: sheet, matching: find.text(item)),
+            findsOneWidget);
+      }
+      final dots = tester
+          .widgetList<Icon>(
+              find.descendant(of: sheet, matching: find.byIcon(Icons.circle)))
+          .map((icon) => icon.color);
+      expect(dots, [AppColors.error, AppColors.warning, AppColors.success]);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('Personalidade sem avaliação permite abrir o módulo existente',
+      (tester) async {
+    var opened = 0;
+    await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+      body: SingleChildScrollView(
+          child: MentalMapVisualHub(
+        caseMap: MentalCaseMap.empty,
+        nodes: [
+          MentalMapHubNodeData(
+            id: 'personality',
+            title: 'Personalidade',
+            subtitle: 'Pendente',
+            items: const [],
+            emptyLabel: 'Pendente',
+            icon: Icons.psychology_alt_outlined,
+            accentColor: AppColors.purple,
+            isFilled: false,
+            visualState: MentalMapNodeVisualState.pending,
+            onTap: () => opened++,
+          )
+        ],
+      )),
+    )));
+    final card = find.byKey(const ValueKey('mental-map-personality'));
+    await tester.ensureVisible(card);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.text('Personalidade'), findsOneWidget);
+    expect(find.text('Versão futura'), findsNothing);
+    await tester.tap(card);
+    expect(opened, 1);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('MentalMapRadialHub keeps radial layout on wider screens',

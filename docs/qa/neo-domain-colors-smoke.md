@@ -2,6 +2,9 @@
 
 Data: 2026-10-20. Branch: `audit/astra`.
 
+Este documento registra a conferência inicial e, na seção final, a correção
+posterior autorizada para tornar o nó Personalidade acessível.
+
 ## Escopo e estado inicial
 
 Antes de editar arquivos, foram conferidos o Git, a paleta compartilhada,
@@ -92,3 +95,63 @@ o perfil completo e o Infográfico apresentam os cinco domínios.
 
 Não foram validados nesta passagem: exportação PNG/PDF, login do paciente,
 isolamento entre clínicas, release, iOS ou aparelho físico.
+
+## Correção posterior — acesso ao nó Personalidade
+
+Após autorização para prosseguir com esse ajuste, foi acrescentado ao
+`MentalMapVisualHub` um cartão de Personalidade abaixo do diagrama, reutilizando
+`MentalMapHubNode` e o callback da página. Essa posição é comum aos layouts móvel
+e largo, evitando redistribuir a órbita existente. O cartão mostra os três
+resumos já preparados pelo builder e abre `MentalMapNodeDetailSheet`; a ação
+principal do detalhe continua apontando para o módulo de personalidade da
+sessão. Nenhum dado de paciente é buscado por um novo caminho.
+
+O cartão usa apenas o nó real recebido da página, inclusive quando está
+pendente/sem avaliação; o placeholder interno de “Versão futura” não é exibido
+nesse cartão. Sua altura acompanha a escala de texto. Nenhum schema, permissão,
+papel, provider ou cálculo clínico foi alterado.
+
+Testes de regressão reproduziram a ausência do título Personalidade em larguras
+360 e 900 antes do ajuste. Depois, quatro cenários novos validaram:
+
+- Presença, toque e abertura do detalhe em ambas as larguras.
+- Cores vermelho/âmbar/verde dos três resumos e dos pontos do detalhe.
+- Novo cartão/detalhe com texto ampliado em 1,6, isolado da órbita antiga.
+- Cartão pendente acessível, sem rótulo “Versão futura”.
+
+Os testes de widgets e fluxo do mapa somaram **15 aprovados**. A suíte completa
+final somou **485 aprovados e as mesmas 7 falhas anteriores**.
+
+A primeira execução com texto 1,6 e toda a órbita encontrou overflow de 4 px nos
+seis nós móveis antigos, cujas caixas continuam em 84 × 72. Essa limitação foi
+registrada em `TECH_DEBT.md`. O teste ampliado foi delimitado ao novo cartão e
+detalhe; não houve supressão de exceções nem alegação de acessibilidade completa
+do mapa. A suíte completa foi reexecutada após essa delimitação.
+
+Homologação final Android em 360 × 640, com novo APK debug e uma avaliação
+sintética não compartilhada:
+
+1. Abrir Mapa Mental do paciente de teste e rolar até abaixo do diagrama.
+2. Conferir cartão Personalidade preenchido com Neuroticismo: Muito Baixo
+   em vermelho, Extroversão: Baixo em âmbar e Abertura: Médio em verde.
+3. Tocar no cartão: detalhe existente aberto com origem NEO PI-R e os três
+   resumos com pontos nas mesmas cores.
+4. Tocar em Abrir avaliação de personalidade: lista carregada para o mesmo
+   paciente, com a única avaliação sintética esperada.
+
+Capturas `neo-node-card-android.png` e `neo-node-detail-android.png` preservam
+o resultado no diretório local de evidências. A consulta independente confirmou
+os cinco escores originais sem alteração. A avaliação temporária foi removida
+por ID/paciente/marcador e a ausência confirmada (`cleanup: passed`). Apenas a
+instância descartável foi encerrada. O usuário, clínica e paciente de teste
+foram mantidos.
+
+`flutter analyze` manteve **144 ocorrências: 0 errors, 12 warnings, 132 infos**.
+Build APK debug aprovado, com os mesmos avisos existentes do Kotlin Gradle
+Plugin. Logs amostrados após a navegação não mostraram erro Flutter de layout;
+apenas o aviso do renderizador Android. Tela larga e cartão sem avaliação foram
+validados por widgets; não houve execução Android em tablet nem login de paciente.
+
+A pendência de acesso ao nó está resolvida. O limite de três resumos e a
+ausência de NEO no Panorama permanecem como comportamento atual. Exportação,
+RLS entre contas e build de release continuam fora desta evidência.

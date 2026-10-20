@@ -168,3 +168,23 @@ Passaram 17 testes existentes dos módulos envolvidos; analyzer manteve
 144 ocorrências (0 errors, 12 warnings, 132 infos). A suíte completa não foi
 repetida nesta etapa sem mudanças de código.
 Veja [evidências e próximo ajuste](qa/neo-domain-colors-smoke.md).
+
+## Continuação — nó Personalidade acessível no Mapa Mental
+
+O hub agora exibe o nó real de Personalidade em cartão abaixo do diagrama,
+reutilizando `MentalMapHubNode` e a abertura de detalhe já ligada à sessão e ao
+paciente. As posições e animações da órbita foram preservadas. O cartão também
+fica disponível sem avaliação, mantendo o encaminhamento existente ao módulo.
+
+Quatro cenários de regressão cobrem larguras 360/900, três cores do resumo e
+detalhe, toque e cartão pendente. Texto ampliado foi conferido no novo cartão e
+detalhe isolados. O hub completo em texto 1,6 revelou overflow nos nós antigos
+de altura fixa, registrado na dívida técnica e mantido fora desta correção.
+
+Quinze testes direcionados passaram; suíte final com **485 aprovados e as mesmas
+7 falhas**; analyzer com **0 errors, 12 warnings e 132 infos**. APK debug gerado
+e homologado no Android: cartão, detalhe colorido e atalho para a lista correta
+de avaliações. Registro sintético removido, ausência confirmada; conta mantida.
+Nenhum schema, permissão, cálculo clínico ou rota foi alterado.
+
+Veja [procedimento e limites](qa/neo-domain-colors-smoke.md).

@@ -8,16 +8,28 @@ e quatro timeouts na home do paciente. Permanecem 12 warnings do analyzer em
 trechos fora do patch. Não foram feitos ajustes nesses trabalhos locais anteriores.
 Detalhes e limites em [relatório pós-teste](post-test-guacira-luciana-2026-10-20.md).
 
-### Mapa Mental — nó Personalidade não exibido
+### Mapa Mental — nó Personalidade não exibido (corrigido)
 
 O builder prepara `personality` e a página entrega `caseMap.allNodes` ao hub,
 mas os slots de `_MentalMapMobileOrbit` e `MentalMapRadialHub`, em
 `mental_map_widgets.dart`, não incluem esse ID. A conferência Android com uma
 avaliação NEO sintética confirmou ausência do nó no diagrama móvel. A paleta
 está integrada aos resumos/detalhes, porém não há acesso visual ao nó pelo hub.
-Não foi alterado o layout nesta conferência. Próximo ajuste: expor esse nó
-reutilizando o detalhe existente e validar as cores na tela.
+Na continuação autorizada, o acesso foi acrescentado em cartão abaixo do
+diagrama, reutilizando o nó/detalhe existentes e sem redistribuir a órbita.
+Resumo, detalhe colorido e atalho para a lista de avaliações foram aprovados
+no Android. Cobertura nova para 360/900, cartão pendente e texto ampliado no
+cartão/detalhe isolados. A pendência de acesso está resolvida.
 Veja [homologação das cores NEO](qa/neo-domain-colors-smoke.md).
+
+### Mapa Mental — texto ampliado na órbita móvel
+
+Na validação do acesso à Personalidade, o hub completo em largura 360 e escala
+de texto 1,6 apresentou overflow vertical de 4 px nos nós antigos da órbita:
+`_MentalMapOrbitNode` recebe caixas fixas de 84 × 72. O novo cartão de
+Personalidade e seu detalhe passaram nessa escala quando isolados desses nós.
+Não houve supressão de exceções nem alteração da órbita nesta correção pontual.
+Validar dimensionamento dos nós existentes em uma tarefa de acessibilidade.
 
 > Observações do diagnóstico **2026-09-11**, com evidência no código. **Nada foi
 > corrigido** (ver `AGENTS.md`). Severidade aproximada: CRITICAL / HIGH / MEDIUM / LOW.

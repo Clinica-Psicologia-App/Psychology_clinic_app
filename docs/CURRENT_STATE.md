@@ -17,6 +17,11 @@ Veja [procedimento e evidências](qa/personality-remote-smoke.md).
 Na continuação, o Top 5 passou a excluir resultados sem média, evitando comparar
 pontos brutos com médias em snapshots legados. Os detalhes permanecem disponíveis.
 Veja [escopo, evidências e limitações](post-test-guacira-luciana-2026-10-20.md).
+Panorama YSQ/YAMI conferido no Android com duas aplicações sintéticas processadas
+pelas Edge Functions: Top 5 por média, nomes sem códigos, pontos secundários,
+YAMI sem bloco duplicado e barras do consolidado lilás/cinza aprovados. A
+orientação de ativação e os símbolos ainda vermelhos foram alinhados ao lilás.
+Veja [homologação do Panorama](qa/panorama-ysq-yami-smoke.md).
 
 > Baseline pré-auditoria. Diagnóstico executado em **2026-09-11**, branch `staging`.
 > Nada foi corrigido — apenas medido a partir do código real (ver `AGENTS.md`).

@@ -2361,10 +2361,10 @@ class _ActivationTutorial extends StatelessWidget {
           ),
           line(
             marker: const Text('●',
-                style: TextStyle(color: AppColors.error, fontSize: 13)),
+                style: TextStyle(color: AppColors.purple, fontSize: 13)),
             lead: 'Automático:',
             rest: 'esquemas com pontuação 4,0 ou mais já entram ativados pelo '
-                'sistema (em vermelho). Essa ativação é fixa e não pode ser '
+                'sistema (em lilás). Essa ativação é fixa e não pode ser '
                 'removida.',
           ),
           line(
@@ -2422,7 +2422,7 @@ class _LegendItem extends StatelessWidget {
   const _LegendItem({
     required this.symbol,
     required this.label,
-    this.color = AppColors.error,
+    this.color = AppColors.purple,
   });
 
   final String symbol;

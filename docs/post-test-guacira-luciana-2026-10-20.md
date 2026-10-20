@@ -114,8 +114,10 @@ completa dos demais módulos.
 Nenhum schema, migration ou Edge Function foi alterado; nenhum deploy ou push foi
 realizado.
 
-Antes de liberar: conferir YAMI/YSQ com snapshots reais e as cores nas demais
-telas; validar isolamento autenticado e build de release. O fluxo de formulário,
+Antes de liberar: conferir as cores NEO nas demais telas; validar isolamento
+autenticado e build de release. YAMI/YSQ no Panorama foram posteriormente
+conferidos com snapshots remotos sintéticos, conforme a seção seguinte.
+O fluxo de formulário,
 reabertura e falha de rede foi aprovado no emulador Android; aparelho físico e
 outras plataformas continuam fora desta evidência.
 Salvar por etapa aumenta as escritas (um INSERT seguido de UPDATEs), mantendo
@@ -126,3 +128,24 @@ repetir uma criação para evitar possível duplicata.
 Perfis antigos compartilhados com pacientes expõem só classificação pela view.
 Para alinhar uma classificação antiga divergente com o Escore T, o profissional
 precisa salvar novamente a avaliação; não houve regravação em massa.
+
+## Continuação — homologação YSQ/YAMI no Panorama
+
+Foram executadas duas aplicações no paciente sintético pelos endpoints normais:
+YSQ com 90 respostas/18 esquemas e YAMI com 186 respostas/10 modos. As médias
+calculadas remotamente corresponderam às esperadas. No Android, os rankings
+exibiram cinco nomes, médias principais e pontos secundários. A amostra YAMI
+comprovou ordem diferente da soma bruta. Não houve bloco de modos repetido no
+consolidado nem nos detalhes expandidos; o histórico foi preservado.
+
+As barras do consolidado estavam corretamente lilás/cinza. A orientação ainda
+dizia “em vermelho” e os símbolos auxiliares permaneciam vermelhos. Foram
+ajustados somente esses três trechos no widget existente. A suíte completa foi
+reexecutada: 481 aprovados e as mesmas 7 falhas, sem nova falha. Antes da correção,
+31 testes direcionados de dashboard, consolidado e legendas passaram.
+O APK atualizado foi conferido no Android; analyzer manteve 144 ocorrências,
+sem errors, com 12 warnings e 132 infos. As duas aplicações de teste foram
+removidas e a ausência foi confirmada pelas RPCs normais do psicólogo.
+
+Procedimento, resultados e limites em
+[homologação do Panorama](qa/panorama-ysq-yami-smoke.md).

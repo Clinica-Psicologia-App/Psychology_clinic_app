@@ -42,7 +42,9 @@ void main() {
     // familiar em seguida.
     expect(byId[JourneyStepId.timeline]!.order, 2);
     expect(byId[JourneyStepId.genogram]!.order, 3);
-    expect(byId[JourneyStepId.problems]!.order, 5);
+    // Problemas e demandas encerra o contexto inicial, antes dos instrumentos.
+    expect(byId[JourneyStepId.problems]!.order, 4);
+    expect(byId[JourneyStepId.questionnaires]!.order, 5);
     // O check-in virou nó de apoio pendurado no monitor diário, então o
     // monitor passou a vir antes dele na ordenação do fio principal.
     expect(byId[JourneyStepId.dailyMonitor]!.order, 9);

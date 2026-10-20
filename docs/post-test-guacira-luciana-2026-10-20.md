@@ -232,3 +232,19 @@ o título da biblioteca e os quatro timeouts da home do paciente. Essas falhas
 ficaram fora desta correção, conforme a sequência de uma tarefa por vez.
 `flutter analyze` foi reexecutado antes do commit: **exit 1, 144 ocorrências —
 0 errors, 12 warnings e 132 infos**, sem novas ocorrências ou supressões.
+
+## Continuação — expectativa de ordenação da jornada
+
+A falha do primeiro teste de `patient_journey_domain_test.dart` foi reproduzida:
+esperava ordem 5 para Problemas e demandas, mas recebeu 4. Apesar do nome do
+teste mencionar disponibilidade, a falha era de ordenação. A alteração local
+existente em `journey_step.dart` já coloca esse módulo no final da fase Conhecer,
+antes dos questionários na posição 5.
+
+Somente a expectativa do teste foi corrigida para 4 e foi acrescentada a
+verificação da posição 5 dos questionários. A implementação, a UI e as mudanças
+locais anteriores foram preservadas. Os **19 testes de domínio e popup da
+jornada passaram**. A suíte completa teve **487 aprovados e 5 falhas**, sem
+falhas novas: permanecem o título da biblioteca e os quatro timeouts da home.
+`flutter analyze` executado antes do commit: **exit 1, 144 ocorrências —
+0 errors, 12 warnings e 132 infos**, sem novas ocorrências ou supressões.

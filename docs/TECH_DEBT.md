@@ -11,8 +11,12 @@ Detalhes e limites em [relatório pós-teste](post-test-guacira-luciana-2026-10-
 Na continuação, a primeira falha foi corrigida: `mental_map_domain_test.dart`
 esperava quatro nós de contexto antes da integração de Personalidade. O teste
 agora verifica os cinco IDs e seu estado vazio, sem alterar o builder existente.
-A suíte mais recente tem **486 aprovados e 6 falhas**: jornada, título da
-biblioteca e os quatro timeouts da home. Os 47 testes direcionados do mapa passaram.
+Os 47 testes direcionados do mapa passaram. Na sequência, a falha da jornada
+foi identificada como uma expectativa antiga de ordenação, sem falha nas regras
+de disponibilidade: Problemas e demandas já está antes dos questionários.
+Somente o teste foi alinhado, com 19 testes de jornada aprovados.
+A suíte mais recente tem **487 aprovados e 5 falhas**: título da biblioteca e
+os quatro timeouts da home.
 
 ### Mapa Mental — nó Personalidade não exibido (corrigido)
 

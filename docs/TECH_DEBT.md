@@ -2,11 +2,17 @@
 
 ## Registro de 2026-10-20
 
-A validação dos ajustes pós-teste encontrou sete falhas na suíte completa:
+A validação inicial dos ajustes pós-teste encontrou sete falhas na suíte completa:
 contagem de nós do mapa mental, disponibilidade na jornada, título da biblioteca
 e quatro timeouts na home do paciente. Permanecem 12 warnings do analyzer em
 trechos fora do patch. Não foram feitos ajustes nesses trabalhos locais anteriores.
 Detalhes e limites em [relatório pós-teste](post-test-guacira-luciana-2026-10-20.md).
+
+Na continuação, a primeira falha foi corrigida: `mental_map_domain_test.dart`
+esperava quatro nós de contexto antes da integração de Personalidade. O teste
+agora verifica os cinco IDs e seu estado vazio, sem alterar o builder existente.
+A suíte mais recente tem **486 aprovados e 6 falhas**: jornada, título da
+biblioteca e os quatro timeouts da home. Os 47 testes direcionados do mapa passaram.
 
 ### Mapa Mental — nó Personalidade não exibido (corrigido)
 

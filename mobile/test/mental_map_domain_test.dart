@@ -517,9 +517,17 @@ void main() {
 
     expect(caseMap.center.patientName, 'Paciente vazio');
     expect(caseMap.primaryNodes.length, 4);
-    expect(caseMap.contextNodes.length, 4);
+    expect(
+      caseMap.contextNodes.map((node) => node.id),
+      unorderedEquals(['attachment', 'coping', 'parental', 'history', 'personality']),
+    );
     expect(caseMap.primaryNodes.every((node) => node.isEmpty), isTrue);
     expect(caseMap.contextNodes.every((node) => node.isEmpty), isTrue);
+    final personality = caseMap.contextNodes.singleWhere(
+      (node) => node.id == 'personality',
+    );
+    expect(personality.emptyLabel, 'Pendente');
+    expect(personality.lastUpdatedAt, isNull);
   });
 
   test('buildMentalCaseMap orders top schemas and modes from YSQ/YAMI', () {

@@ -211,3 +211,24 @@ confirmadas após o commit da limpeza; a conta demo anterior foi mantida.
 Não houve alteração de schema, policies, grants ou aplicação. O resultado não
 se estende a módulos/atores não testados nem substitui a navegação por papel.
 Veja [procedimento, matriz e limites](qa/clinical-access-remote-smoke.md).
+
+## Continuação — primeira falha conhecida da suíte
+
+A falha `buildMentalCaseMap returns empty nodes for patient without data` foi
+reproduzida isoladamente: o teste esperava quatro nós de contexto, mas o builder
+atual retorna cinco, incluindo Personalidade. Esse quinto nó já faz parte do
+comportamento autorizado e homologado; removê-lo para satisfazer a expectativa
+antiga seria uma regressão.
+
+Foi alterado somente o teste: agora exige os cinco IDs de contexto, sem depender
+da ordem, e preserva a verificação de que todos ficam vazios quando não há dados.
+O nó Personalidade também deve continuar pendente e sem data de atualização
+fictícia. Não houve mudança no builder, na UI, no banco ou nos trabalhos locais
+anteriores. Os 47 testes direcionados de domínio, widgets e fluxo do mapa passaram.
+
+A suíte completa final teve **486 aprovados e 6 falhas**, uma falha a menos e
+nenhuma falha nova. Permanecem a expectativa de disponibilidade na jornada,
+o título da biblioteca e os quatro timeouts da home do paciente. Essas falhas
+ficaram fora desta correção, conforme a sequência de uma tarefa por vez.
+`flutter analyze` foi reexecutado antes do commit: **exit 1, 144 ocorrências —
+0 errors, 12 warnings e 132 infos**, sem novas ocorrências ou supressões.

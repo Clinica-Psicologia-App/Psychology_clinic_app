@@ -1,0 +1,107 @@
+# Ajustes pós-teste — Guacira e Luciana
+
+Data: 2026-10-20. Branch: `audit/astra`.
+
+O pedido anuncia dez pontos, mas detalha sete. Foram implementados os sete
+descritos. Alterações locais anteriores foram preservadas e excluídas do commit
+deste trabalho, inclusive nos dois arquivos com mudanças sobrepostas.
+
+## Diagnóstico e implementação
+
+1. **NEO PI-R / persistência:** o botão intermediário só incrementava `_step`.
+   Agora cada etapa aguarda a gravação; o ID retornado no primeiro INSERT é
+   reutilizado nos UPDATEs. A tela só avança após sucesso. Falhas mantêm os
+   campos e exibem o banner de erro. Campos ficam bloqueados durante a gravação.
+   O UPDATE exige uma linha retornada, evitando sucesso aparente quando nenhuma
+   linha foi atualizada. O fluxo usa PostgREST/RLS diretamente, sem Edge Function.
+2. **YAMI / Panorama:** cinco maiores médias, selecionadas a partir de todos os
+   modos; nomes sem código interno. Os modos foram retirados do consolidado e
+   dos detalhes técnicos somente no Panorama, permanecendo nas outras telas.
+   A contagem de esquemas desse consolidado também exclui os modos ocultados.
+3. **YSQ / Panorama:** cinco maiores médias, com soma bruta secundária quando
+   disponível. A média pode ser reconstruída por soma/itens respondidos em
+   snapshots antigos. Resultados sem dados suficientes para calcular média
+   ficam fora do ranking, preservados nos detalhes. Na ausência de médias,
+   o card informa que não há médias disponíveis.
+4. **Escalas:** extremos descritivos de YSQ e YAMI na escala 1–6, no componente
+   compartilhado entre paciente e profissional, com quebra de linha.
+5. **Esquemas:** barras individuais ativadas em lilás e não ativadas em cinza.
+   Cores dos cabeçalhos ainda identificam os domínios.
+6. **Escore T:** classificação automática pelas faixas fornecidas no pedido:
+   até 29 / 30–44 / 45–55 / 56–65 / a partir de 66. O formulário aceita valores
+   inteiros não negativos; rejeita texto inválido, frações, NaN e infinito.
+   Campos vazios continuam opcionais. A classificação é calculada em leitura
+   para registros com score e serializada ao salvar. Registros da view do
+   paciente, sem score, preservam a classificação recebida.
+7. **Cores NEO PI-R:** mapa de tons no domínio, sem dependência de Flutter, com
+   resolução para tokens existentes: vermelho, âmbar, verde, lilás, azul.
+   Aplicado no registro, perfil compartilhado, mapa mental e infográfico.
+
+## Evidência e validação
+
+Lidos: `AGENTS.md`, `CLAUDE.md`, arquitetura/estado/dívida técnica; formulário,
+repositório e providers de personalidade; migration e políticas existentes;
+builders/widgets do Panorama, questionários, mapa mental e infográfico.
+
+- Bugs prioritários: **21 testes direcionados passaram**, antes das melhorias.
+- Validação final direcionada: **43 testes passaram** nos arquivos
+  `personality_assessment_form_test.dart`, `personality_assessment_domain_test.dart`,
+  `clinical_dashboard_domain_test.dart`, `consolidated_schema_card_test.dart`,
+  `question_scale_labels_test.dart` e `patient_infographic_builder_test.dart`.
+- Cobertura adicionada: gravação por etapa no mesmo ID, tentativa após erro,
+  entrada inválida sem envio, classificação exibida/persistida, limites do T,
+  ranking por média com ordem bruta inversa, ocultação do bloco duplicado e
+  legendas em viewport de 360 px.
+- `flutter analyze`: **exit 1, 144 ocorrências: 0 errors, 12 warnings, 132 infos**.
+  Os warnings estão em trechos preexistentes, fora das alterações deste patch.
+  Não houve supressão de regras ou uso de flags para torná-los não fatais.
+- `flutter test`: **478 passaram, 7 falharam**, reproduzido em segunda execução.
+  Falhas:
+  - `mental_map_domain_test.dart`: espera 4 nós de contexto; código retorna 5.
+  - `patient_journey_domain_test.dart`: expectativa de disponibilidade 5; retorna 4.
+  - `patient_library/staff_library_catalog_indicate_test.dart`: espera duas
+    ocorrências de “Biblioteca clínica”; encontra zero.
+  - Quatro testes em `patient_home_test.dart`: `pumpAndSettle timed out`.
+  Esses módulos já tinham mudanças locais antes deste trabalho. As falhas
+  não foram corrigidas nem foi executada uma suíte em checkout isolado da baseline.
+- Uma execução de análise com saída redirecionada e uma tentativa de coletar
+  testes via subprocesso ficaram sem progresso observável e foram interrompidas.
+  Os resultados acima vêm das execuções diretas concluídas.
+
+## Continuação — ranking com dados legados
+
+Antes de editar, foram conferidos o status do Git, os 24 arquivos preparados,
+os sete ajustes no código e as validações registradas. Não havia commit desses
+ajustes. A próxima pendência identificada foi uma lacuna do Top 5: o fallback
+`averageScore ?? score` ainda misturava pontos brutos e médias.
+
+O teste de regressão reproduziu o problema: 95 pontos sem média eram ordenados
+antes de uma média 5,4. O ranking agora considera apenas médias disponíveis ou
+reconstruídas pela soma/itens respondidos. Os detalhes técnicos não são filtrados.
+Nenhuma outra funcionalidade foi refeita nesta continuação.
+
+- Testes direcionados: **46 aprovados**, incluindo três novos cenários de
+  dados legados, preservação da média explícita e ausência de médias.
+- Suíte completa após a correção: **481 aprovados e as mesmas 7 falhas**
+  relacionadas acima. Não houve nova falha na suíte.
+- Persistência remota, RLS e homologação visual continuam pendentes.
+
+## Limites e próxima homologação
+
+O teste de persistência usa repositório simulado: confirma a chamada e o ciclo
+do formulário, não confirma escrita real na instância remota. Não foram
+executados login real, smoke RLS, E2E remoto, build de release ou validação
+visual em dispositivo. Nenhum schema, migration ou Edge Function foi alterado;
+nenhum deploy ou push foi realizado.
+
+Antes de liberar: registrar uma avaliação de teste com conta autorizada,
+avançar um domínio, sair/reabrir e confirmar persistência; repetir após falha
+de rede; conferir YAMI/YSQ com snapshots reais e as cores nas telas.
+Salvar por etapa aumenta as escritas (um INSERT seguido de UPDATEs), mantendo
+um único registro por preenchimento. Não foi adicionada recuperação automática
+de INSERT cujo resultado se perca na rede; esse caso exige consulta antes de
+repetir uma criação para evitar possível duplicata.
+
+Perfis antigos compartilhados com pacientes expõem só classificação pela view.
+Para alinhar uma classificação antiga divergente com o Escore T, o profissional
+precisa salvar novamente a avaliação; não houve regravação em massa.

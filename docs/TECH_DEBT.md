@@ -1,5 +1,13 @@
 # Dívida técnica — EsquemaCore
 
+## Registro de 2026-10-20
+
+A validação dos ajustes pós-teste encontrou sete falhas na suíte completa:
+contagem de nós do mapa mental, disponibilidade na jornada, título da biblioteca
+e quatro timeouts na home do paciente. Permanecem 12 warnings do analyzer em
+trechos fora do patch. Não foram feitos ajustes nesses trabalhos locais anteriores.
+Detalhes e limites em [relatório pós-teste](post-test-guacira-luciana-2026-10-20.md).
+
 > Observações do diagnóstico **2026-09-11**, com evidência no código. **Nada foi
 > corrigido** (ver `AGENTS.md`). Severidade aproximada: CRITICAL / HIGH / MEDIUM / LOW.
 > Não há problemas CRITICAL confirmados nesta baseline.

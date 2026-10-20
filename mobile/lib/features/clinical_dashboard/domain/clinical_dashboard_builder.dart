@@ -113,11 +113,16 @@ List<ClinicalDashboardScoreRow> extractTopSchemaRows(
 
 ClinicalDashboardScoreRow _rowFromSchema(ScoringSchemaResult schema) {
   final score = schema.weightedScore ?? schema.averageScore ?? schema.rawScore;
+  final average = schema.averageScore ??
+      (schema.rawScore != null && (schema.answeredItems ?? 0) > 0
+          ? schema.rawScore! / schema.answeredItems!
+          : null);
   return ClinicalDashboardScoreRow(
     name: schema.name,
     code: schema.code,
     score: score ?? 0,
-    averageScore: schema.averageScore,
+    averageScore: average,
+    rawScore: schema.rawScore,
     severityLabel:
         schema.severity?.hasLabel == true ? schema.severity!.label : null,
     severityColorKey: schema.severity?.colorKey,

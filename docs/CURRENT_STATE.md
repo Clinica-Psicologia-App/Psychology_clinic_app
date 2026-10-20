@@ -1,5 +1,15 @@
 # Estado atual — EsquemaCore
 
+## Atualização de 2026-10-20 — ajustes pós-teste
+
+Na branch `audit/astra`, os sete ajustes de Guacira/Luciana foram implementados.
+Validação: 46 testes direcionados aprovados; suíte completa com 481 aprovados e
+7 falhas; analyzer sem errors, com 12 warnings e 132 infos em trechos preexistentes.
+Persistência remota e homologação em dispositivo continuam pendentes.
+Na continuação, o Top 5 passou a excluir resultados sem média, evitando comparar
+pontos brutos com médias em snapshots legados. Os detalhes permanecem disponíveis.
+Veja [escopo, evidências e limitações](post-test-guacira-luciana-2026-10-20.md).
+
 > Baseline pré-auditoria. Diagnóstico executado em **2026-09-11**, branch `staging`.
 > Nada foi corrigido — apenas medido a partir do código real (ver `AGENTS.md`).
 > Legenda: ✅ funcionando · ⚠️ parcial · ❌ com problema · 🧪 não validado · 📌 pendente/externo.

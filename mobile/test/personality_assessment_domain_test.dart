@@ -3,6 +3,35 @@ import 'package:terapia_esquema/features/personality_assessment/domain/personali
 import 'package:terapia_esquema/features/personality_assessment/domain/personality_instrument.dart';
 
 void main() {
+  test('classifica os limites do Escore T e rejeita valores inválidos', () {
+    final cases = {
+      0: PersonalityLevel.veryLow,
+      29: PersonalityLevel.veryLow,
+      30: PersonalityLevel.low,
+      44: PersonalityLevel.low,
+      45: PersonalityLevel.medium,
+      55: PersonalityLevel.medium,
+      56: PersonalityLevel.high,
+      65: PersonalityLevel.high,
+      66: PersonalityLevel.veryHigh,
+      90: PersonalityLevel.veryHigh,
+    };
+    for (final entry in cases.entries) {
+      expect(PersonalityLevel.fromTScore(entry.key), entry.value);
+    }
+    for (final value in [null, -1, 29.5, double.nan, double.infinity]) {
+      expect(PersonalityLevel.fromTScore(value), isNull);
+    }
+    final legacy = ScoreEntry.fromJson({
+      'score': 66,
+      'classification': 'very_low',
+    });
+    expect(legacy.level, PersonalityLevel.veryHigh);
+    expect(legacy.toJson()['classification'], 'very_high');
+    expect(const ScoreEntry(level: PersonalityLevel.low).level,
+        PersonalityLevel.low);
+  });
+
   group('PersonalityResults', () {
     test('round-trip preserva domínios e facetas (score + classification)', () {
       const results = PersonalityResults(domains: {

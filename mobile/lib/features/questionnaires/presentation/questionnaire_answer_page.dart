@@ -266,6 +266,7 @@ class _QuestionnaireAnswerPageState
                           const SizedBox(height: AppSpacing.xl),
                           QuestionInputWidget(
                             question: question,
+                            questionnaireCode: session.questionnaire.code,
                             value: _answers[_currentAnswerKey],
                             errorText: _fieldError,
                             onChanged: (v) {

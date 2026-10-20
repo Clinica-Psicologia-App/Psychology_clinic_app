@@ -180,12 +180,14 @@ class DashboardHomePage extends StatelessWidget {
                 if (data.hasConsolidatedSchemas)
                   ConsolidatedSchemaProfileCard(
                     data: data,
+                    showModes: false,
                     isStaff: isStaff,
                     onActivationChanged: onRefresh,
                   ),
                 // ── Detalhe por instrumento (visão técnica ampliada) ─────
                 ClinicalInstrumentDetailsSection(
                   data: data,
+                  showModes: false,
                   isStaff: isStaff,
                   patientId: patientId,
                   role: role,

@@ -94,7 +94,7 @@ class PersonalityAssessmentRepository {
         'application_form': _nullableTrim(applicationForm),
         'protocol_validity': protocolValidity?.code,
         'results': results.toJson(),
-      }).eq('id', id);
+      }).eq('id', id).select('id').single();
     } catch (e) {
       throw mapToAppException(e);
     }

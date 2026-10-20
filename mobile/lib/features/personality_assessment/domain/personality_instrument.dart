@@ -4,14 +4,13 @@
 /// instrumentos entram aqui sem tocar no schema.
 library;
 
-/// Classificação qualitativa de um resultado (5 níveis). O terapeuta escolhe;
-/// o app NUNCA converte número → classificação automaticamente.
+/// Classificação do Escore T já corrigido pelo profissional.
 enum PersonalityLevel {
-  veryLow('very_low', 'Muito baixo'),
+  veryLow('very_low', 'Muito Baixo'),
   low('low', 'Baixo'),
   medium('medium', 'Médio'),
   high('high', 'Alto'),
-  veryHigh('very_high', 'Muito alto');
+  veryHigh('very_high', 'Muito Alto');
 
   const PersonalityLevel(this.code, this.label);
 
@@ -20,6 +19,18 @@ enum PersonalityLevel {
 
   /// Posição 0–4 (para o gráfico de faixas).
   int get position => index;
+
+  static PersonalityLevel? fromTScore(num? score) {
+    if (score == null || !score.isFinite || score < 0 ||
+        score != score.roundToDouble()) {
+      return null;
+    }
+    if (score <= 29) return veryLow;
+    if (score <= 44) return low;
+    if (score <= 55) return medium;
+    if (score <= 65) return high;
+    return veryHigh;
+  }
 
   static PersonalityLevel? fromCode(String? code) {
     if (code == null) return null;

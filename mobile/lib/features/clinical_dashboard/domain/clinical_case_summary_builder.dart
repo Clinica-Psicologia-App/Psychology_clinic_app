@@ -73,8 +73,8 @@ ClinicalCaseSummary buildClinicalCaseSummary({
     openProblemsCount: openProblems.length,
     activeGoalsCount: activeGoals.length,
     relevantEventsCount: rankedEvents.length,
-    topSchemas: ysq?.topScores.take(_defaultCaseListLimit).toList() ?? const [],
-    topModes: yami?.topScores.take(_defaultCaseListLimit).toList() ?? const [],
+    topSchemas: topMeanScores(ysq),
+    topModes: topMeanScores(yami),
     topAttachment:
         attachment?.topScores.take(_defaultCaseListLimit).toList() ?? const [],
     topCoping:
@@ -86,6 +86,30 @@ ClinicalCaseSummary buildClinicalCaseSummary({
     relevantEvents:
         rankedEvents.take(_defaultEventLimit).toList(growable: false),
   );
+}
+
+/// Ordena resultados com média disponível antes de selecionar os destaques.
+/// Pontos brutos permanecem nos detalhes e não são comparáveis com médias.
+List<ClinicalDashboardScoreRow> topMeanScores(
+    ClinicalInstrumentDashboard? dashboard) {
+  if (dashboard == null) return const [];
+  final source = dashboard.allScores.isEmpty
+      ? dashboard.topScores
+      : dashboard.allScores;
+  final rows = [
+    for (final row in source)
+      if (row.averageScore != null)
+        ClinicalDashboardScoreRow(
+          name: row.name,
+          code: row.code,
+          score: row.averageScore!,
+          averageScore: row.averageScore,
+          rawScore: row.rawScore,
+          severityLabel: row.severityLabel,
+          severityColorKey: row.severityColorKey,
+        ),
+  ]..sort((a, b) => b.score.compareTo(a.score));
+  return rows.take(5).toList();
 }
 
 List<ClinicalDashboardScoreRow> _topCopingScores({

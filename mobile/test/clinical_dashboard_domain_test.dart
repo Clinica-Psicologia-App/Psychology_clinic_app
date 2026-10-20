@@ -27,6 +27,83 @@ import 'package:terapia_esquema/features/therapy_goals/domain/therapy_goal.dart'
 import 'package:terapia_esquema/features/therapy_goals/domain/therapy_goal_status.dart';
 
 void main() {
+  test('snapshot legado usa soma por itens sem substituir média explícita', () {
+    const detail = PatientResultDetail(
+      id: 'r', patientId: 'p', questionnaireId: 'q',
+      questionnaireCode: 'YSQ', questionnaireName: 'YSQ',
+      status: QuestionnaireResponseStatus.completed, answers: [],
+      categoryResults: [CategoryResult(id: 'c', snapshot: ResultSnapshot(
+        version: ScoringSnapshot.demoVersion,
+        scoring: ScoringSnapshot(schemas: [
+          ScoringSchemaResult(id: 'a', code: 'DERIVED', name: 'Média calculável',
+              rawScore: 27, answeredItems: 5),
+          ScoringSchemaResult(id: 'b', code: 'UNKNOWN', name: 'Sem itens',
+              rawScore: 95, answeredItems: 0),
+          ScoringSchemaResult(id: 'c', code: 'EXPLICIT', name: 'Média explícita',
+              rawScore: 10, answeredItems: 2, averageScore: 4),
+        ]),
+      ))],
+    );
+    final rows = extractTopSchemaRows(detail);
+    final top = topMeanScores(ClinicalInstrumentDashboard(
+      responseId: 'r', questionnaireCode: 'YSQ', questionnaireName: 'YSQ',
+      topScores: rows, allScores: rows,
+    ));
+    expect(top.map((row) => row.code), ['DERIVED', 'EXPLICIT']);
+    expect(top.map((row) => row.score), [5.4, 4]);
+    expect(rows.first.code, 'UNKNOWN');
+    expect(rows.first.rawScore, 95);
+  });
+
+  test('pontos brutos sem média não entram no ranking de médias', () {
+    const rows = [
+      ClinicalDashboardScoreRow(
+        name: 'Modo legado', code: 'LEGACY', score: 95, rawScore: 95),
+      ClinicalDashboardScoreRow(
+        name: 'Modo com média', code: 'MEAN', score: 27,
+        rawScore: 27, averageScore: 5.4),
+    ];
+    const panel = ClinicalInstrumentDashboard(
+      responseId: 'r', questionnaireCode: 'YAMI', questionnaireName: 'YAMI',
+      topScores: rows, allScores: rows,
+    );
+
+    final top = topMeanScores(panel);
+    expect(top.map((row) => row.code), ['MEAN']);
+    expect(top.single.score, 5.4);
+    expect(top.single.rawScore, 27);
+    // Os detalhes técnicos continuam disponíveis; só o ranking é filtrado.
+    expect(panel.allScores.length, 2);
+  });
+
+  test('ranking sem médias disponíveis permanece vazio', () {
+    const panel = ClinicalInstrumentDashboard(
+      responseId: 'r', questionnaireCode: 'YSQ', questionnaireName: 'YSQ',
+      topScores: [ClinicalDashboardScoreRow(
+        name: 'Esquema legado', code: 'LEGACY', score: 95)],
+    );
+    expect(topMeanScores(panel), isEmpty);
+    expect(topMeanScores(null), isEmpty);
+  });
+
+  test('prioridades selecionam cinco maiores médias de todos os modos', () {
+    final rows = List.generate(8, (i) => ClinicalDashboardScoreRow(
+      name: 'Modo $i',
+      code: 'YAMI_$i',
+      score: (100 - i).toDouble(),
+      averageScore: (i + 1) / 2,
+    ));
+    final top = topMeanScores(ClinicalInstrumentDashboard(
+      responseId: 'r',
+      questionnaireCode: 'YAMI',
+      questionnaireName: 'YAMI',
+      topScores: rows.take(3).toList(),
+      allScores: rows,
+    ));
+    expect(top.map((e) => e.name), ['Modo 7', 'Modo 6', 'Modo 5', 'Modo 4', 'Modo 3']);
+    expect(top.first.score, 4);
+  });
+
   test('latestStructuredResponse picks newest YSQ', () {
     final responses = [
       PatientResponseSummary(
@@ -498,7 +575,8 @@ void main() {
         questionnaireCode: 'YSQ_FOUNDATION_V1',
         questionnaireName: 'YSQ',
         topScores: [
-          ClinicalDashboardScoreRow(name: 'Abandono', code: 'ABN', score: 5.4),
+          ClinicalDashboardScoreRow(name: 'Abandono', code: 'ABN', score: 27,
+              averageScore: 5.4),
         ],
       ),
       yami: const ClinicalInstrumentDashboard(
@@ -507,10 +585,14 @@ void main() {
         questionnaireName: 'YAMI',
         topScores: [
           ClinicalDashboardScoreRow(
-              name: 'Criança vulnerável', code: 'CV', score: 4.8),
-          ClinicalDashboardScoreRow(name: 'Punitivo', code: 'PUN', score: 3.2),
-          ClinicalDashboardScoreRow(name: 'Protetor', code: 'PRO', score: 2.1),
-          ClinicalDashboardScoreRow(name: 'Extra', code: 'X', score: 1.0),
+              name: 'Criança vulnerável', code: 'CV', score: 48,
+              averageScore: 4.8),
+          ClinicalDashboardScoreRow(name: 'Punitivo', code: 'PUN', score: 32,
+              averageScore: 3.2),
+          ClinicalDashboardScoreRow(name: 'Protetor', code: 'PRO', score: 21,
+              averageScore: 2.1),
+          ClinicalDashboardScoreRow(name: 'Extra', code: 'X', score: 10,
+              averageScore: 1.0),
         ],
       ),
       attachment: const ClinicalInstrumentDashboard(
@@ -584,7 +666,7 @@ void main() {
     expect(summary.openProblemsCount, 1);
     expect(summary.activeGoalsCount, 1);
     expect(summary.topSchemas.single.name, 'Abandono');
-    expect(summary.topModes.length, 3);
+    expect(summary.topModes.length, 4);
     expect(summary.topModes.first.name, 'Criança vulnerável');
     expect(summary.topAttachment.single.name, 'Ansioso');
     expect(summary.topCoping.single.name, 'YCI Geral');

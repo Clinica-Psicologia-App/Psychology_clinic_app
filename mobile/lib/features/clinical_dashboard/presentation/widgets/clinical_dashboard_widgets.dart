@@ -903,7 +903,9 @@ class ClinicalPriorityGrid extends StatelessWidget {
                 icon: Icons.center_focus_strong,
                 accentColor: AppColors.blue,
                 rows: summary.topSchemas,
-                emptyMessage: 'Sem YSQ concluído',
+                limit: 5,
+                showCode: false,
+                emptyMessage: 'Sem médias YSQ disponíveis',
               ),
               _PriorityMiniCard(
                 title: 'Top modos YAMI',
@@ -911,7 +913,9 @@ class ClinicalPriorityGrid extends StatelessWidget {
                 icon: Icons.psychology_outlined,
                 accentColor: AppColors.purple,
                 rows: summary.topModes,
-                emptyMessage: 'Sem YAMI concluído',
+                limit: 5,
+                showCode: false,
+                emptyMessage: 'Sem médias YAMI disponíveis',
               ),
               _PriorityMiniCard(
                 title: 'Estilos de apego',
@@ -974,6 +978,8 @@ class _PriorityMiniCard extends StatelessWidget {
     required this.emptyMessage,
     required this.accentColor,
     this.subtitle,
+    this.limit = 3,
+    this.showCode = true,
   });
 
   final String title;
@@ -982,6 +988,8 @@ class _PriorityMiniCard extends StatelessWidget {
   final String emptyMessage;
   final Color accentColor;
   final String? subtitle;
+  final int limit;
+  final bool showCode;
 
   @override
   Widget build(BuildContext context) {
@@ -1048,13 +1056,14 @@ class _PriorityMiniCard extends StatelessWidget {
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  for (final entry in rows.take(3).toList().asMap().entries)
+                  for (final entry in rows.take(limit).toList().asMap().entries)
                     _PriorityScoreRow(
                       row: entry.value,
                       rank: entry.key + 1,
                       maxScore: maxScore,
                       accentColor: accentColor,
-                      isLast: entry.key == rows.take(3).length - 1,
+                      showCode: showCode,
+                      isLast: entry.key == rows.take(limit).length - 1,
                     ),
                 ],
               ),
@@ -1074,6 +1083,7 @@ class _PriorityScoreRow extends StatelessWidget {
     required this.maxScore,
     required this.accentColor,
     required this.isLast,
+    this.showCode = true,
   });
 
   final ClinicalDashboardScoreRow row;
@@ -1081,6 +1091,7 @@ class _PriorityScoreRow extends StatelessWidget {
   final double maxScore;
   final Color accentColor;
   final bool isLast;
+  final bool showCode;
 
   @override
   Widget build(BuildContext context) {
@@ -1123,7 +1134,11 @@ class _PriorityScoreRow extends StatelessWidget {
                         height: 1.2,
                       ),
                     ),
-                    if (row.code.isNotEmpty)
+                    if (!showCode && row.rawScore != null &&
+                        row.averageScore != null)
+                      Text('${row.rawScore!.toStringAsFixed(0)} pts',
+                          style: theme.textTheme.labelSmall),
+                    if (showCode && row.code.isNotEmpty)
                       Text(
                         row.code,
                         maxLines: 1,
@@ -1138,7 +1153,10 @@ class _PriorityScoreRow extends StatelessWidget {
               ),
               const SizedBox(width: 8),
               Text(
-                row.score.toStringAsFixed(2),
+                showCode ? row.score.toStringAsFixed(2)
+                    : row.averageScore == null
+                        ? '${row.score.toStringAsFixed(1)} pts'
+                        : row.score.toStringAsFixed(1),
                 style: theme.textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.w800,
                   fontFeatures: const [FontFeature.tabularFigures()],
@@ -1499,18 +1517,21 @@ class ClinicalInstrumentDetailsSection extends StatelessWidget {
     this.isStaff = false,
     this.patientId,
     this.role,
+    this.showModes = true,
   });
 
   final ClinicalDashboardData data;
   final bool isStaff;
   final String? patientId;
   final ProfileRole? role;
+  final bool showModes;
 
   @override
   Widget build(BuildContext context) {
     return ExpandableDashboardSection(
       title: 'Detalhes por instrumento',
-      subtitle: 'YSQ, YAMI, apego, parentais, YCI e YRAI',
+      subtitle: showModes ? 'YSQ, YAMI, apego, parentais, YCI e YRAI'
+          : 'YSQ, apego, parentais, YCI e YRAI',
       icon: Icons.bar_chart_outlined,
       initiallyExpanded: false,
       child: Column(
@@ -1531,7 +1552,7 @@ class ClinicalInstrumentDetailsSection extends StatelessWidget {
                   'Nenhuma resposta YSQ concluída com snapshot estruturado.',
               icon: Icons.psychology_outlined,
             ),
-          if (data.yami != null)
+          if (showModes && data.yami != null)
             InstrumentDashboardCard(
               title: 'Modos - YAMI',
               panel: data.yami!,
@@ -1540,7 +1561,7 @@ class ClinicalInstrumentDetailsSection extends StatelessWidget {
               patientId: patientId,
               role: role,
             )
-          else
+          else if (showModes)
             const ClinicalDashboardEmptyInstrumentCard(
               title: 'Modos - YAMI',
               message:
@@ -1623,10 +1644,12 @@ class ConsolidatedSchemaProfileCard extends ConsumerWidget {
     required this.data,
     required this.isStaff,
     this.onActivationChanged,
+    this.showModes = true,
   });
 
   final ClinicalDashboardData data;
   final bool isStaff;
+  final bool showModes;
 
   /// Chamado após qualquer ativação/desativação para que a página
   /// invalide o provider e recarregue a lista consolidada.
@@ -1636,8 +1659,10 @@ class ConsolidatedSchemaProfileCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     if (!data.hasConsolidatedSchemas) return const SizedBox.shrink();
 
-    final activated = data.activatedSchemas;
+    final activated = data.activatedSchemas
+        .where((schema) => showModes || schema.hasDomain).toList();
     final domains = data.consolidatedDomains;
+    if (!showModes && domains.isEmpty) return const SizedBox.shrink();
     final modes = data.consolidatedModes;
     final theme = Theme.of(context);
 
@@ -1725,7 +1750,7 @@ class ConsolidatedSchemaProfileCard extends ConsumerWidget {
                   ),
                 // Modos do YAMI não pertencem aos domínios de Young — bloco
                 // próprio no fim.
-                if (!modes.isEmpty)
+                if (showModes && !modes.isEmpty)
                   _ModeSection(
                     modes: modes,
                     isStaff: isStaff,
@@ -1760,9 +1785,8 @@ class ConsolidatedSchemaProfileCard extends ConsumerWidget {
 
 // ── Bloco de domínio ────────────────────────────────────────────────────────
 
-/// Uma cor por domínio. O esquema ativado aparece na cor do seu domínio; o não
-/// ativado fica cinza. A cor identifica o domínio — não a severidade —, então
-/// o contraste colorido × cinza é o que comunica ativação.
+/// Cores dos cabeçalhos de domínio. Nas barras individuais, a ativação é
+/// sempre lilás e a ausência de ativação é cinza.
 const List<Color> _kDomainColors = [
   Color(0xFF7C6A9C), // I  — Desconexão e rejeição
   Color(0xFF2E7D6B), // II — Autonomia e desempenho prejudicados
@@ -1855,7 +1879,6 @@ class _DomainSection extends StatelessWidget {
                   ...domain.schemas.map(
                     (schema) => _SchemaBarRow(
                       schema: schema,
-                      domainColor: color,
                       isStaff: isStaff,
                       onActivationChanged: onActivationChanged,
                     ),
@@ -1923,7 +1946,6 @@ class _ModeSection extends StatelessWidget {
           ...modes.rows.map(
             (mode) => _SchemaBarRow(
               schema: mode,
-              domainColor: AppColors.turquoise,
               isStaff: isStaff,
               onActivationChanged: onActivationChanged,
             ),
@@ -1940,13 +1962,11 @@ class _ModeSection extends StatelessWidget {
 class _SchemaBarRow extends ConsumerWidget {
   const _SchemaBarRow({
     required this.schema,
-    required this.domainColor,
     required this.isStaff,
     this.onActivationChanged,
   });
 
   final ConsolidatedSchemaRow schema;
-  final Color domainColor;
   final bool isStaff;
   final VoidCallback? onActivationChanged;
 
@@ -1954,7 +1974,7 @@ class _SchemaBarRow extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final activated = schema.isActivated;
-    final color = activated ? domainColor : AppColors.disabled;
+    final color = activated ? AppColors.purple : AppColors.disabled;
     final cutFraction =
         (kSchemaActivationThreshold / schema.barMax).clamp(0.0, 1.0);
 

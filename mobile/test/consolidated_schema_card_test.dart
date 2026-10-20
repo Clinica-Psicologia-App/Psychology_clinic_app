@@ -46,6 +46,7 @@ Future<void> _pump(
   WidgetTester tester, {
   required ClinicalDashboardData data,
   required bool isStaff,
+  bool showModes = true,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
@@ -57,6 +58,7 @@ Future<void> _pump(
               child: ConsolidatedSchemaProfileCard(
                 data: data,
                 isStaff: isStaff,
+                showModes: showModes,
               ),
             ),
           ),
@@ -174,5 +176,16 @@ void main() {
     expect(find.text('Modos esquemáticos'), findsOneWidget);
     expect(find.text('Protetor Desligado'), findsOneWidget);
     expect(find.text('1 de 1 ativados'), findsWidgets);
+
+    // No Panorama, os modos ficam somente no card de prioridades.
+    await _pump(
+      tester,
+      data: _dataWith([mistrust, mode]),
+      isStaff: true,
+      showModes: false,
+    );
+    expect(find.text('Modos esquemáticos'), findsNothing);
+    expect(find.text('Protetor Desligado'), findsNothing);
+    expect(find.text('Perfil Esquemático Consolidado'), findsOneWidget);
   });
 }

@@ -11,6 +11,7 @@ import '../../../../shared/widgets/icon_optics.dart';
 import '../../../profile/domain/avatar_config.dart';
 import '../../../profile/domain/avatar_type.dart';
 import '../../../profile/domain/profile_role.dart';
+import '../../../personality_assessment/presentation/personality_domain_colors.dart';
 import '../../../profile/presentation/widgets/user_avatar.dart';
 import '../../domain/mental_case_map.dart';
 import '../mental_map_node_state.dart';
@@ -1171,7 +1172,11 @@ class MentalMapHubNode extends StatelessWidget {
                                         item,
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
-                                        style: theme.textTheme.bodySmall,
+                                        style: theme.textTheme.bodySmall?.copyWith(
+                                          color: data.id == 'personality'
+                                              ? personalitySummaryColor(item)
+                                              : null,
+                                        ),
                                       ),
                                     ),
                                 ],
@@ -1459,7 +1464,8 @@ class MentalMapNodeDetailSheet extends StatelessWidget {
                       Icon(
                         Icons.circle,
                         size: 8,
-                        color: _resolveSeverityDotColor(
+                        color: (detail.id == 'personality'
+                            ? personalitySummaryColor(item) : null) ?? _resolveSeverityDotColor(
                           detail.severityColorKey,
                           theme.colorScheme.primary,
                         ),

@@ -14,12 +14,14 @@ class QuestionInputWidget extends StatelessWidget {
     required this.value,
     required this.onChanged,
     this.errorText,
+    this.questionnaireCode,
   });
 
   final QuestionnaireQuestion question;
   final int? value;
   final ValueChanged<int> onChanged;
   final String? errorText;
+  final String? questionnaireCode;
 
   @override
   Widget build(BuildContext context) {
@@ -56,6 +58,7 @@ class QuestionInputWidget extends StatelessWidget {
             values: values,
             value: value,
             onChanged: onChanged,
+            questionnaireCode: questionnaireCode,
           )
         else
           _SliderScale(
@@ -102,11 +105,13 @@ class _SegmentedScale extends StatelessWidget {
     required this.values,
     required this.value,
     required this.onChanged,
+    this.questionnaireCode,
   });
 
   final List<int> values;
   final int? value;
   final ValueChanged<int> onChanged;
+  final String? questionnaireCode;
 
   // Largura fixa de cada parada — mantém os centros estáveis (a pílula cresce
   // dentro do slot), o que alinha o trilho com as pontas.
@@ -116,6 +121,18 @@ class _SegmentedScale extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final code = questionnaireCode?.toUpperCase() ?? '';
+    final isSixPoint = values.first == 1 && values.last == 6;
+    final lower = isSixPoint && code.contains('YSQ')
+        ? '1 = Completamente falso'
+        : isSixPoint && code.contains('YAMI')
+            ? '1 = Nunca ou quase nunca'
+            : 'Menos';
+    final upper = isSixPoint && code.contains('YSQ')
+        ? '6 = Descreve-me perfeitamente'
+        : isSixPoint && code.contains('YAMI')
+            ? '6 = Quase o tempo todo'
+            : 'Mais';
 
     return Column(
       children: [
@@ -158,8 +175,14 @@ class _SegmentedScale extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _anchor(theme, 'Menos'),
-            _anchor(theme, 'Mais'),
+            Expanded(child: _anchor(theme, lower)),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: _anchor(theme, upper),
+              ),
+            ),
           ],
         ),
       ],

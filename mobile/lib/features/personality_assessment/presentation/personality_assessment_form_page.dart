@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/errors/app_exception.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/brand_loading.dart';
 import '../../../shared/widgets/error_banner.dart';
@@ -10,6 +11,7 @@ import '../../profile/domain/profile_role.dart';
 import '../domain/personality_assessment.dart';
 import '../domain/personality_instrument.dart';
 import '../providers/personality_assessment_providers.dart';
+import 'personality_domain_colors.dart';
 
 /// Registro/edição de uma avaliação, em passos: metadados + 5 domínios.
 class PersonalityAssessmentFormPage extends ConsumerStatefulWidget {
@@ -38,6 +40,7 @@ class _FormState extends ConsumerState<PersonalityAssessmentFormPage> {
   int _step = 0;
   bool _loaded = false;
   bool _saving = false;
+  String? _savedId;
 
   DateTime? _appliedOn;
   final _applicationForm = TextEditingController();
@@ -45,17 +48,15 @@ class _FormState extends ConsumerState<PersonalityAssessmentFormPage> {
 
   // Chaves: '<domain>' (geral) e '<domain>.<facet>'.
   final Map<String, TextEditingController> _score = {};
-  final Map<String, PersonalityLevel?> _level = {};
 
   @override
   void initState() {
     super.initState();
+    _savedId = widget.assessmentId;
     for (final d in _instrument.domains) {
       _score[d.code] = TextEditingController();
-      _level[d.code] = null;
       for (final f in d.facets) {
         _score['${d.code}.${f.code}'] = TextEditingController();
-        _level['${d.code}.${f.code}'] = null;
       }
     }
   }
@@ -78,11 +79,9 @@ class _FormState extends ConsumerState<PersonalityAssessmentFormPage> {
     for (final d in _instrument.domains) {
       final dr = a.results.forDomain(d.code);
       _score[d.code]!.text = _numText(dr.overall.score);
-      _level[d.code] = dr.overall.level;
       for (final f in d.facets) {
         final e = dr.facet(f.code);
         _score['${d.code}.${f.code}']!.text = _numText(e.score);
-        _level['${d.code}.${f.code}'] = e.level;
       }
     }
   }
@@ -91,10 +90,14 @@ class _FormState extends ConsumerState<PersonalityAssessmentFormPage> {
 
   ScoreEntry _entry(String key) {
     final raw = _score[key]!.text.trim().replaceAll(',', '.');
-    return ScoreEntry(
-      score: raw.isEmpty ? null : num.tryParse(raw),
-      level: _level[key],
-    );
+    final score = raw.isEmpty ? null : num.tryParse(raw);
+    if (raw.isNotEmpty && PersonalityLevel.fromTScore(score) == null) {
+      throw AppException(
+        code: AppExceptionCodes.validation,
+        message: 'Informe um Escore T inteiro e não negativo em todos os campos preenchidos.',
+      );
+    }
+    return ScoreEntry(score: score);
   }
 
   PersonalityResults _buildResults() {
@@ -109,22 +112,22 @@ class _FormState extends ConsumerState<PersonalityAssessmentFormPage> {
     return PersonalityResults(domains: domains);
   }
 
-  Future<void> _save() async {
+  Future<void> _save({bool continueToNext = false}) async {
     if (_saving) return;
     setState(() => _saving = true);
     try {
       final repo = ref.read(personalityAssessmentRepositoryProvider);
       final results = _buildResults();
-      if (widget.isEdit) {
+      if (_savedId != null) {
         await repo.update(
-          id: widget.assessmentId!,
+          id: _savedId!,
           results: results,
           appliedOn: _appliedOn,
           applicationForm: _applicationForm.text,
           protocolValidity: _validity,
         );
       } else {
-        await repo.create(
+        _savedId = await repo.create(
           patientId: widget.patientId,
           instrument: _instrument.code,
           results: results,
@@ -133,11 +136,13 @@ class _FormState extends ConsumerState<PersonalityAssessmentFormPage> {
           protocolValidity: _validity,
         );
       }
-      ref.invalidate(personalityAssessmentsProvider(widget.patientId));
-      if (widget.assessmentId != null) {
-        ref.invalidate(personalityAssessmentByIdProvider(widget.assessmentId!));
-      }
       if (!mounted) return;
+      ref.invalidate(personalityAssessmentsProvider(widget.patientId));
+      ref.invalidate(personalityAssessmentByIdProvider(_savedId!));
+      if (continueToNext) {
+        setState(() => _step += 1);
+        return;
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Avaliação salva.')),
       );
@@ -231,6 +236,9 @@ class _FormState extends ConsumerState<PersonalityAssessmentFormPage> {
   Widget _stepHeader(
       BuildContext context, bool isMeta, PersonalityDomain? domain) {
     final theme = Theme.of(context);
+    final accent = domain == null
+        ? AppColors.purple
+        : personalityDomainColor(domain.code);
     final total = _instrument.domains.length;
     final label = isMeta
         ? 'Dados da aplicação'
@@ -238,7 +246,7 @@ class _FormState extends ConsumerState<PersonalityAssessmentFormPage> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-      color: AppColors.purple.withValues(alpha: 0.08),
+      color: accent.withValues(alpha: 0.08),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -246,7 +254,7 @@ class _FormState extends ConsumerState<PersonalityAssessmentFormPage> {
             _instrument.name,
             style: theme.textTheme.labelSmall?.copyWith(
               fontWeight: FontWeight.w800,
-              color: AppColors.purple,
+              color: accent,
               letterSpacing: 0.4,
             ),
           ),
@@ -260,8 +268,8 @@ class _FormState extends ConsumerState<PersonalityAssessmentFormPage> {
             child: LinearProgressIndicator(
               value: (_step + 1) / (total + 1),
               minHeight: 5,
-              backgroundColor: AppColors.purple.withValues(alpha: 0.15),
-              color: AppColors.purple,
+              backgroundColor: accent.withValues(alpha: 0.15),
+              color: accent,
             ),
           ),
         ],
@@ -282,12 +290,13 @@ class _FormState extends ConsumerState<PersonalityAssessmentFormPage> {
         ),
         trailing: IconButton(
           icon: const Icon(Icons.calendar_today_outlined),
-          onPressed: _pickDate,
+          onPressed: _saving ? null : _pickDate,
         ),
       ),
       const SizedBox(height: 8),
       TextField(
         controller: _applicationForm,
+        enabled: !_saving,
         textCapitalization: TextCapitalization.sentences,
         decoration: const InputDecoration(
           labelText: 'Forma de aplicação/correção (opcional)',
@@ -304,8 +313,8 @@ class _FormState extends ConsumerState<PersonalityAssessmentFormPage> {
         ),
         child: Text(
           'Nos próximos passos, registre o resultado de cada domínio e suas '
-          'facetas: o número obtido e a classificação, conforme o relatório. '
-          'O app não converte número em classificação.',
+          'facetas: informe o Escore T inteiro já corrigido no relatório. '
+          'A classificação será calculada automaticamente.',
           style: theme.textTheme.bodySmall?.copyWith(
             color: AppColors.textSecondary,
             height: 1.4,
@@ -396,6 +405,8 @@ class _FormState extends ConsumerState<PersonalityAssessmentFormPage> {
             width: 64,
             child: TextField(
               controller: _score[key],
+              enabled: !_saving,
+              onChanged: (_) => setState(() {}),
               keyboardType:
                   const TextInputType.numberWithOptions(decimal: true),
               textAlign: TextAlign.center,
@@ -408,18 +419,12 @@ class _FormState extends ConsumerState<PersonalityAssessmentFormPage> {
           const SizedBox(width: 8),
           SizedBox(
             width: 128,
-            child: DropdownButtonFormField<PersonalityLevel?>(
-              initialValue: _level[key],
-              isExpanded: true,
-              decoration: const InputDecoration(
-                isDense: true,
-              ),
-              items: [
-                const DropdownMenuItem(value: null, child: Text('—')),
-                for (final l in PersonalityLevel.values)
-                  DropdownMenuItem(value: l, child: Text(l.label)),
-              ],
-              onChanged: (v) => setState(() => _level[key] = v),
+            child: Text(
+              PersonalityLevel.fromTScore(num.tryParse(
+                    _score[key]!.text.trim().replaceAll(',', '.'),
+                  ))?.label ??
+                  (_score[key]!.text.trim().isEmpty ? '—' : 'Escore T inválido'),
+              textAlign: TextAlign.center,
             ),
           ),
         ],
@@ -445,13 +450,7 @@ class _FormState extends ConsumerState<PersonalityAssessmentFormPage> {
                 style: FilledButton.styleFrom(backgroundColor: AppColors.purple),
                 onPressed: _saving
                     ? null
-                    : () {
-                        if (isLast) {
-                          _save();
-                        } else {
-                          setState(() => _step += 1);
-                        }
-                      },
+                    : () => _save(continueToNext: !isLast),
                 child: _saving
                     ? const SizedBox(
                         height: 20,

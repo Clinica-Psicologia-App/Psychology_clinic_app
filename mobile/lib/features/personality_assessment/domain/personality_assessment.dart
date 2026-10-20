@@ -148,12 +148,17 @@ class ConceptualizationIntegration {
   }
 }
 
-/// Resultado de um domínio ou faceta: número (livre) + classificação.
+/// Resultado de um domínio ou faceta: Escore T + classificação.
 class ScoreEntry {
-  const ScoreEntry({this.score, this.level});
+  const ScoreEntry({this.score, PersonalityLevel? level}) : _level = level;
 
   final num? score;
-  final PersonalityLevel? level;
+  final PersonalityLevel? _level;
+
+  // Registros antigos com score usam a mesma regra do formulário.
+  // A view do paciente omite scores: preserva a classificação enviada.
+  PersonalityLevel? get level =>
+      score == null ? _level : PersonalityLevel.fromTScore(score);
 
   bool get isEmpty => score == null && level == null;
 

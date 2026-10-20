@@ -11,6 +11,7 @@ import '../../patient_timeline/domain/patient_timeline_event.dart';
 import '../../patients/domain/patient.dart';
 import '../../personality_assessment/domain/personality_assessment.dart';
 import '../../personality_assessment/domain/personality_instrument.dart';
+import '../../personality_assessment/presentation/personality_domain_colors.dart';
 import 'patient_infographic_data.dart';
 import 'schema_descriptions.dart';
 
@@ -487,13 +488,6 @@ List<InfographicPersonalityDomain> _buildPersonalityDomains(
     'agreeableness': Icons.handshake_outlined,
     'conscientiousness': Icons.assignment_turned_in_outlined,
   };
-  const _domainAccents = <String, Color>{
-    'neuroticism': AppColors.error,
-    'extraversion': AppColors.cyan,
-    'openness': AppColors.purple,
-    'agreeableness': AppColors.turquoise,
-    'conscientiousness': AppColors.warning,
-  };
 
   final domains = <InfographicPersonalityDomain>[];
   for (final domainDef in instrument.domains) {
@@ -505,7 +499,7 @@ List<InfographicPersonalityDomain> _buildPersonalityDomains(
       score: score,
       classification: entry.overall.level?.label,
       icon: _domainIcons[domainDef.code] ?? Icons.psychology_outlined,
-      accent: _domainAccents[domainDef.code],
+      accent: personalityDomainColor(domainDef.code),
     ));
   }
   return domains;

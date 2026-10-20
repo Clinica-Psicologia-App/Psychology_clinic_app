@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import 'personality_domain_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../../shared/widgets/error_banner.dart';
@@ -554,6 +555,7 @@ class ProfilePanel extends StatelessWidget {
                     flex: 8,
                     child: _ProfileTrack(
                       level: assessment.results.forDomain(d.code).overall.level,
+                      color: personalityDomainColor(d.code),
                     ),
                   ),
                 ],
@@ -567,9 +569,10 @@ class ProfilePanel extends StatelessWidget {
 
 /// Trilha de 5 faixas com um marcador (ponto) na faixa da classificação.
 class _ProfileTrack extends StatelessWidget {
-  const _ProfileTrack({required this.level});
+  const _ProfileTrack({required this.level, required this.color});
 
   final PersonalityLevel? level;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -587,7 +590,7 @@ class _ProfileTrack extends StatelessWidget {
                     height: 6,
                     margin: EdgeInsets.only(right: i == n - 1 ? 0 : 2),
                     decoration: BoxDecoration(
-                      color: AppColors.purple.withValues(alpha: 0.10),
+                      color: color.withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(2),
                     ),
                   ),
@@ -604,8 +607,8 @@ class _ProfileTrack extends StatelessWidget {
                           ? Container(
                               width: 14,
                               height: 14,
-                              decoration: const BoxDecoration(
-                                color: AppColors.purple,
+                              decoration: BoxDecoration(
+                                color: color,
                                 shape: BoxShape.circle,
                               ),
                             )
@@ -622,9 +625,10 @@ class _ProfileTrack extends StatelessWidget {
 
 /// Faixa de 5 níveis (Muito baixo → Muito alto), marcando a classificação.
 class LevelFaixa extends StatelessWidget {
-  const LevelFaixa({super.key, required this.level});
+  const LevelFaixa({super.key, required this.level, this.color = AppColors.purple});
 
   final PersonalityLevel? level;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -638,8 +642,8 @@ class LevelFaixa extends StatelessWidget {
                   right: i == PersonalityLevel.values.length - 1 ? 0 : 3),
               decoration: BoxDecoration(
                 color: (level != null && i == level!.position)
-                    ? AppColors.purple
-                    : AppColors.purple.withValues(alpha: 0.12),
+                    ? color
+                    : color.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(2),
               ),
             ),
@@ -702,7 +706,7 @@ class DomainCardState extends State<DomainCard> {
                           fontWeight: FontWeight.w800,
                           color: overall.level == null
                               ? AppColors.textMuted
-                              : AppColors.purple,
+                              : personalityDomainColor(widget.domain.code),
                         ),
                       ),
                       Icon(_open ? Icons.expand_less : Icons.expand_more,
@@ -710,7 +714,8 @@ class DomainCardState extends State<DomainCard> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  LevelFaixa(level: overall.level),
+                  LevelFaixa(level: overall.level,
+                      color: personalityDomainColor(widget.domain.code)),
                 ],
               ),
             ),
@@ -753,13 +758,15 @@ class DomainCardState extends State<DomainCard> {
                 style: theme.textTheme.labelSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                   color:
-                      e.level == null ? AppColors.textMuted : AppColors.purple,
+                      e.level == null ? AppColors.textMuted
+                          : personalityDomainColor(widget.domain.code),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 4),
-          LevelFaixa(level: e.level),
+          LevelFaixa(level: e.level,
+              color: personalityDomainColor(widget.domain.code)),
         ],
       ),
     );

@@ -5,6 +5,7 @@ class ClinicalDashboardScoreRow {
     required this.code,
     required this.score,
     this.averageScore,
+    this.rawScore,
     this.severityLabel,
     this.severityColorKey,
   });
@@ -20,6 +21,7 @@ class ClinicalDashboardScoreRow {
   /// exibição usa o weighted, mas a ativação precisa da média (mesma regra da
   /// tela de detalhe do questionário).
   final double? averageScore;
+  final double? rawScore;
 
   final String? severityLabel;
   final String? severityColorKey;

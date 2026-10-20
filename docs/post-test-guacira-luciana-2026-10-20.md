@@ -84,18 +84,29 @@ Nenhuma outra funcionalidade foi refeita nesta continuação.
   dados legados, preservação da média explícita e ausência de médias.
 - Suíte completa após a correção: **481 aprovados e as mesmas 7 falhas**
   relacionadas acima. Não houve nova falha na suíte.
-- Persistência remota, RLS e homologação visual continuam pendentes.
+- A homologação REST remota foi posteriormente concluída, conforme a seção
+  seguinte. RLS entre contas autenticadas e homologação visual continuam pendentes.
 
 ## Limites e próxima homologação
 
-O teste de persistência usa repositório simulado: confirma a chamada e o ciclo
-do formulário, não confirma escrita real na instância remota. Não foram
-executados login real, smoke RLS, E2E remoto, build de release ou validação
-visual em dispositivo. Nenhum schema, migration ou Edge Function foi alterado;
-nenhum deploy ou push foi realizado.
+Homologação remota em 2026-10-20: saúde de autenticação HTTP 200. Após a recusa
+do login demo antigo, o responsável autorizou criar novo usuário de teste.
+Foram provisionados um psicólogo, uma clínica isolada e um paciente sintético.
+O smoke REST específico passou por criação, cinco atualizações e releituras,
+bloqueio de leitura anônima, limpeza da avaliação e logout da sessão criada.
+Os 8 testes locais do script também passaram. A conta e o paciente sintéticos
+foram mantidos; credenciais somente no arquivo local ignorado pelo Git.
+Veja [procedimento e evidência remota](qa/personality-remote-smoke.md).
 
-Antes de liberar: registrar uma avaliação de teste com conta autorizada,
-avançar um domínio, sair/reabrir e confirmar persistência; repetir após falha
+O teste de persistência usa repositório simulado: confirma a chamada e o ciclo
+do formulário; separadamente, o smoke REST confirmou a escrita na instância remota
+com a nova conta de teste. Não foram executados o formulário real em dispositivo,
+isolamento RLS entre contas autenticadas, build de release ou validação visual.
+Nenhum schema, migration ou Edge Function foi alterado; nenhum deploy ou push foi
+realizado.
+
+Antes de liberar: no formulário Flutter em dispositivo, registrar uma avaliação
+de teste, avançar um domínio, sair/reabrir e confirmar persistência; repetir após falha
 de rede; conferir YAMI/YSQ com snapshots reais e as cores nas telas.
 Salvar por etapa aumenta as escritas (um INSERT seguido de UPDATEs), mantendo
 um único registro por preenchimento. Não foi adicionada recuperação automática

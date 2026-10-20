@@ -5,7 +5,12 @@
 Na branch `audit/astra`, os sete ajustes de Guacira/Luciana foram implementados.
 Validação: 46 testes direcionados aprovados; suíte completa com 481 aprovados e
 7 falhas; analyzer sem errors, com 12 warnings e 132 infos em trechos preexistentes.
-Persistência remota e homologação em dispositivo continuam pendentes.
+Persistência pelo contrato REST remoto validada com um novo psicólogo e paciente
+sintéticos em clínica isolada: criação, cinco atualizações/releituras, bloqueio
+de leitura anônima e limpeza aprovados. Script com 8 testes locais aprovados.
+Homologação do formulário em dispositivo e isolamento autenticado entre clínicas
+continuam pendentes. A conta demo antiga retornou `invalid_credentials`.
+Veja [procedimento e evidências](qa/personality-remote-smoke.md).
 Na continuação, o Top 5 passou a excluir resultados sem média, evitando comparar
 pontos brutos com médias em snapshots legados. Os detalhes permanecem disponíveis.
 Veja [escopo, evidências e limitações](post-test-guacira-luciana-2026-10-20.md).

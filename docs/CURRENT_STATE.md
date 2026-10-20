@@ -22,6 +22,10 @@ pelas Edge Functions: Top 5 por média, nomes sem códigos, pontos secundários,
 YAMI sem bloco duplicado e barras do consolidado lilás/cinza aprovados. A
 orientação de ativação e os símbolos ainda vermelhos foram alinhados ao lilás.
 Veja [homologação do Panorama](qa/panorama-ysq-yami-smoke.md).
+NEO no Infográfico aprovado no Android com os cinco domínios e cores esperadas.
+No Mapa Mental, o nó Personalidade recebe dados, mas não é exibido pelos layouts
+de posições fixas; sua apresentação e cores na tela continuam pendentes.
+O Panorama atual não exibe NEO. Veja [evidências e limites](qa/neo-domain-colors-smoke.md).
 
 > Baseline pré-auditoria. Diagnóstico executado em **2026-09-11**, branch `staging`.
 > Nada foi corrigido — apenas medido a partir do código real (ver `AGENTS.md`).

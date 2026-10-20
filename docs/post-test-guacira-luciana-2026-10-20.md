@@ -149,3 +149,22 @@ removidas e a ausência foi confirmada pelas RPCs normais do psicólogo.
 
 Procedimento, resultados e limites em
 [homologação do Panorama](qa/panorama-ysq-yami-smoke.md).
+
+## Continuação — cores NEO nas telas integradas
+
+O Infográfico foi aprovado no Android com uma avaliação remota sintética:
+cinco domínios, escores/classificações esperados e cores vermelho, âmbar, verde,
+lilás e azul. A avaliação temporária foi removida e a ausência confirmada.
+O Panorama atual não carrega nem exibe NEO, portanto essa integração não foi
+considerada homologada nem adicionada nesta conferência.
+
+No Mapa Mental foi encontrado um limite de exibição: o nó `personality` é
+preparado pelos dados, mas os slots fixos do diagrama móvel e largo não o
+renderizam. A tela Android confirmou sua ausência. A paleta e o resolver de
+rótulos estão implementados, mas suas cores no mapa permanecem pendentes até
+o nó ficar acessível. Nenhum layout foi alterado nesta etapa.
+
+Passaram 17 testes existentes dos módulos envolvidos; analyzer manteve
+144 ocorrências (0 errors, 12 warnings, 132 infos). A suíte completa não foi
+repetida nesta etapa sem mudanças de código.
+Veja [evidências e próximo ajuste](qa/neo-domain-colors-smoke.md).

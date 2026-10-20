@@ -8,6 +8,17 @@ e quatro timeouts na home do paciente. Permanecem 12 warnings do analyzer em
 trechos fora do patch. Não foram feitos ajustes nesses trabalhos locais anteriores.
 Detalhes e limites em [relatório pós-teste](post-test-guacira-luciana-2026-10-20.md).
 
+### Mapa Mental — nó Personalidade não exibido
+
+O builder prepara `personality` e a página entrega `caseMap.allNodes` ao hub,
+mas os slots de `_MentalMapMobileOrbit` e `MentalMapRadialHub`, em
+`mental_map_widgets.dart`, não incluem esse ID. A conferência Android com uma
+avaliação NEO sintética confirmou ausência do nó no diagrama móvel. A paleta
+está integrada aos resumos/detalhes, porém não há acesso visual ao nó pelo hub.
+Não foi alterado o layout nesta conferência. Próximo ajuste: expor esse nó
+reutilizando o detalhe existente e validar as cores na tela.
+Veja [homologação das cores NEO](qa/neo-domain-colors-smoke.md).
+
 > Observações do diagnóstico **2026-09-11**, com evidência no código. **Nada foi
 > corrigido** (ver `AGENTS.md`). Severidade aproximada: CRITICAL / HIGH / MEDIUM / LOW.
 > Não há problemas CRITICAL confirmados nesta baseline.

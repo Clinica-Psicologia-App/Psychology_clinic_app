@@ -265,3 +265,23 @@ Não houve mudança na aplicação, navegação, persistência ou permissões. A
 verificação usa um notifier de teste; não representa indicação no backend real.
 `flutter analyze` executado antes do commit: **exit 1, 144 ocorrências —
 0 errors, 12 warnings e 132 infos**, sem novas ocorrências ou supressões.
+
+## Continuação — timeouts dos testes da home do paciente
+
+Os quatro testes de `patient_home_test.dart` foram reproduzidos isoladamente,
+todos falhando na preparação com `pumpAndSettle timed out`. O card existente
+Meu plano terapêutico usa `AnimationController.repeat(reverse: true)` no
+gradiente, que agenda frames continuamente e impede essa espera de terminar.
+
+Foi alterada somente a preparação do teste: 20 chamadas de `pump` de 100 ms
+renderizam dois segundos, permitindo resolver os providers simulados e as
+entradas em cascata sem esperar que a animação contínua pare. Não foram
+removidas verificações, suprimidas exceções ou desativadas animações; nenhuma
+mudança foi feita na home ou nas alterações locais anteriores.
+
+Os **oito testes das homes do paciente e psicólogo passaram**. A suíte completa
+teve **492 aprovados e nenhuma falha**. As sete falhas conhecidas da validação
+inicial estão resolvidas. Esta etapa valida widgets com dados simulados; não
+substitui navegação real pelos atalhos, backend ou homologação em dispositivo.
+`flutter analyze` executado antes do commit: **exit 1, 144 ocorrências —
+0 errors, 12 warnings e 132 infos**, sem novas ocorrências ou supressões.

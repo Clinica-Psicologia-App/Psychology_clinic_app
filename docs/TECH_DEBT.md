@@ -18,8 +18,12 @@ Somente o teste foi alinhado, com 19 testes de jornada aprovados.
 A expectativa do título da biblioteca também foi corrigida somente no teste:
 o cabeçalho atual tem um título em maiúsculas, em vez dos dois títulos antigos.
 Os três testes de indicação passaram, verificando também que o formulário fecha
-e o mesmo catálogo permanece aberto. A suíte mais recente tem **488 aprovados e
-4 falhas**, todas timeouts da home.
+e o mesmo catálogo permanece aberto. Por fim, os quatro timeouts da home foram
+reproduzidos e corrigidos somente na preparação dos testes: `pumpAndSettle`
+aguardava uma animação contínua do card do plano. A espera agora é limitada a
+dois segundos em passos de 100 ms, sem desativar animações ou remover asserts.
+Os oito testes das homes passaram. A suíte mais recente tem **492 aprovados,
+sem falhas**. As sete falhas da validação inicial estão resolvidas.
 
 ### Mapa Mental — nó Personalidade não exibido (corrigido)
 

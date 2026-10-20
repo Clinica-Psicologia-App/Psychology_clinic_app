@@ -134,7 +134,11 @@ Future<void> _pumpHome(
       ),
     ),
   );
-  await tester.pumpAndSettle();
+  // O gradiente de "Meu plano terapêutico" anima continuamente. Aguarda os
+  // providers e as entradas em cascata sem exigir que toda animação termine.
+  for (var frame = 0; frame < 20; frame++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
 }
 
 class _FakeTherapyGoalsNotifier extends MyTherapyGoalsNotifier {

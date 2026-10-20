@@ -114,8 +114,9 @@ completa dos demais módulos.
 Nenhum schema, migration ou Edge Function foi alterado; nenhum deploy ou push foi
 realizado.
 
-Antes de liberar: conferir as cores NEO nas demais telas; validar isolamento
-autenticado e build de release. YAMI/YSQ no Panorama foram posteriormente
+Antes de liberar: validar build de release e ampliar a cobertura dos demais
+módulos. As cores NEO e o isolamento autenticado do escopo clínico foram
+posteriormente conferidos, conforme as continuações abaixo. YAMI/YSQ no Panorama foram posteriormente
 conferidos com snapshots remotos sintéticos, conforme a seção seguinte.
 O fluxo de formulário,
 reabertura e falha de rede foi aprovado no emulador Android; aparelho físico e
@@ -188,3 +189,25 @@ de avaliações. Registro sintético removido, ausência confirmada; conta manti
 Nenhum schema, permissão, cálculo clínico ou rota foi alterado.
 
 Veja [procedimento e limites](qa/neo-domain-colors-smoke.md).
+
+## Continuação — isolamento remoto entre contas autenticadas
+
+Homologação com duas clínicas, três psicólogos, dois logins de paciente e três
+pacientes, todos novos e descartáveis. Três NEO e dois YSQ completos foram
+preparados somente nesses pacientes. **101 verificações aprovadas** usando a
+chave pública e JWTs reais; dados do ambiente fora desse conjunto não foram
+consultados nem alterados.
+
+Passaram o isolamento entre clínicas e entre responsáveis da mesma clínica,
+as tentativas de leitura/alteração sem vínculo, a proibição de autoliberação
+pelo paciente e os ciclos de liberação/revogação YSQ e compartilhamento NEO.
+Classificações compartilhadas não expuseram escores ou síntese/integração;
+marcadores privados de questionário não chegaram à projeção do paciente.
+Dois INSERTs negados retornaram 400/P0001 pelo trigger de vínculo, confirmados
+por repetição e controles positivos 201, sem aceitar erro genérico como prova.
+
+Todas as contas e clínicas desta matriz foram removidas, com contagens zero
+confirmadas após o commit da limpeza; a conta demo anterior foi mantida.
+Não houve alteração de schema, policies, grants ou aplicação. O resultado não
+se estende a módulos/atores não testados nem substitui a navegação por papel.
+Veja [procedimento, matriz e limites](qa/clinical-access-remote-smoke.md).

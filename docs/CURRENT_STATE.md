@@ -11,7 +11,9 @@ de leitura anônima e limpeza aprovados. Script com 8 testes locais aprovados.
 Homologação do formulário Android aprovada em emulador de 360 × 640: gravação
 por etapa no mesmo registro, reabertura após encerrar o processo, erro com a rede
 desligada e nova tentativa sem redigitar. Avaliação sintética removida após a
-conferência. Isolamento autenticado entre clínicas continua pendente.
+conferência. Isolamento autenticado homologado em 101 casos de pacientes,
+questionários e personalidade, com duas clínicas e cinco contas descartáveis.
+Não é cobertura completa dos demais módulos.
 A conta demo antiga retornou `invalid_credentials`.
 Veja [procedimento e evidências](qa/personality-remote-smoke.md).
 Na continuação, o Top 5 passou a excluir resultados sem média, evitando comparar
@@ -29,6 +31,10 @@ a lista de avaliações aprovados no Android; layouts de 360/900 e cartão vazio
 cobertos por testes. Quinze testes direcionados aprovados. A órbita antiga
 tem overflow com texto ampliado em 1,6, documentado em `TECH_DEBT.md`.
 O Panorama atual não exibe NEO. Veja [evidências e limites](qa/neo-domain-colors-smoke.md).
+Permissões remotas: acesso entre clínicas e responsáveis bloqueado; gates de
+liberação/revogação YSQ e compartilhamento NEO aprovados, incluindo proteção
+dos campos privados. Conjunto descartável integralmente removido, sem alterar
+policies. Veja [matriz e limites](qa/clinical-access-remote-smoke.md).
 
 > Baseline pré-auditoria. Diagnóstico executado em **2026-09-11**, branch `staging`.
 > Nada foi corrigido — apenas medido a partir do código real (ver `AGENTS.md`).

@@ -352,3 +352,25 @@ emulador descartável encerrado. A suíte anterior de 495 aprovados não foi
 repetida. Veja [procedimento, evidências e limites](qa/daily-monitor-android-smoke.md).
 Análise executada antes do commit: **exit 1, 144 ocorrências — 0 errors,
 12 warnings e 132 infos**, sem novas ocorrências ou supressões.
+
+## Continuação de 2026-10-21 — recurso liberado na biblioteca
+
+Com paciente/login novos na clínica de teste, um exercício textual foi criado
+e liberado pelo REST autenticado do psicólogo. A leitura do paciente passou de
+zero acessos a um acesso ativo sem datas de visualização/conclusão. No Android,
+home → Biblioteca exibiu o recurso como Liberado; abrir o detalhe mostrou a
+orientação e gravou Visualizado automaticamente. A conclusão pelo botão do app
+atualizou o detalhe e a lista para Concluído.
+
+Após encerrar e reabrir o processo, a sessão foi restaurada e lista/detalhe
+mantiveram o status. Leituras independentes com JWT do paciente confirmaram um
+único acesso, o mesmo ID/recurso e a mesma data de conclusão. Os seis testes
+existentes de domínio passaram; sem alteração de código ou repetição da suíte
+completa de 495 aprovados. Foi reutilizado o APK debug já validado do monitor.
+
+Recurso, liberação, paciente, perfil e Auth temporários removidos; consulta após
+o commit confirmou ausência de todos, incluindo identidades e sessões. Clínica
+e demo anteriores preservadas, credenciais removidas e emulador encerrado.
+Veja [procedimento, evidências e limites](qa/released-resource-android-smoke.md).
+Análise executada antes do commit: **exit 1, 144 ocorrências — 0 errors,
+12 warnings e 132 infos**, sem novas ocorrências ou supressões.

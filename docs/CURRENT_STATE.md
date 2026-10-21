@@ -65,6 +65,12 @@ um paciente/login novos: os cinco valores foram confirmados por REST, em um
 os valores; nova leitura confirmou o mesmo ID, sem duplicação. Monitor e conta
 temporários removidos, ausência confirmada. Build debug novo aprovado, sem
 alteração de código. Veja [procedimento e limites](qa/daily-monitor-android-smoke.md).
+Biblioteca/recursos também homologada com um exercício textual sintético:
+liberação pelo psicólogo via REST autenticado, abertura e conclusão pelo app,
+status na lista/detalhe e reabertura após encerrar o processo. Leituras do paciente
+confirmaram o mesmo acesso e data de conclusão, sem duplicação. Recurso, liberação
+e conta temporários removidos; seis testes de domínio passaram. Veja
+[procedimento e limites](qa/released-resource-android-smoke.md).
 
 > Baseline pré-auditoria. Diagnóstico executado em **2026-09-11**, branch `staging`.
 > Nada foi corrigido — apenas medido a partir do código real (ver `AGENTS.md`).

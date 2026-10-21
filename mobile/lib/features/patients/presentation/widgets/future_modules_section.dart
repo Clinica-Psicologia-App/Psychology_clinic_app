@@ -358,12 +358,14 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
               DailyMonitorRoutes.staffHistory(role: role, patientId: patientId),
             ),
           ),
-          const _ModuleSpec(
+          _ModuleSpec(
             icon: Icons.task_outlined,
             title: 'Exercícios e Tarefas',
-            subtitle: 'Em breve',
+            subtitle: 'Respostas da Biblioteca Praticar.',
             accentColor: AppColors.moduleCheckIn,
-            onTap: null,
+            onTap: gatedTap('resources', () => _push(
+              PsychoeducationRoutes.patientExercises(patientId),
+            )),
           ),
           const _ModuleSpec(
             icon: Icons.summarize_outlined,

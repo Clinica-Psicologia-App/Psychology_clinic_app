@@ -4,6 +4,7 @@ import 'admin_psychoeducation_catalog_page.dart';
 import 'admin_psychoeducation_editor_page.dart';
 import 'psychoeducation_journey_page.dart';
 import 'psychoeducation_module_page.dart';
+import 'psychoeducation_patient_exercises_page.dart';
 
 /// Rotas da Biblioteca de Psicoeducação (paciente + psicólogo + curadoria admin).
 abstract final class PsychoeducationRoutes {
@@ -13,6 +14,8 @@ abstract final class PsychoeducationRoutes {
 
   // Psicólogo (leitura da referência).
   static const psychologist = '/psychologist/psychoeducation';
+  static String patientExercises(String patientId) =>
+      '/psychologist/patients/$patientId/psychoeducation-exercises';
   static String psychologistModule(String id) =>
       '/psychologist/psychoeducation/$id';
 
@@ -21,6 +24,15 @@ abstract final class PsychoeducationRoutes {
   static const adminNew = '/platform/psychoeducation/new';
   static String adminModule(String id) => '/platform/psychoeducation/$id';
 }
+
+List<RouteBase> psychoeducationStaffPatientRoutes() => [
+      GoRoute(
+        path: 'psychoeducation-exercises',
+        builder: (_, state) => PsychoeducationPatientExercisesPage(
+          patientId: state.pathParameters['patientId']!,
+        ),
+      ),
+    ];
 
 /// Sub-rotas do paciente (montadas sob /patient).
 List<RouteBase> psychoeducationPatientRoutes() {

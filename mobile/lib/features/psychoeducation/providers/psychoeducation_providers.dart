@@ -26,6 +26,11 @@ final exerciseRepositoryProvider = Provider<ExerciseRepository>((ref) {
   return ExerciseRepository();
 });
 
+final patientExerciseResponsesProvider =
+    FutureProvider.family<List<ExerciseResponse>, String>((ref, patientId) {
+  return ref.watch(exerciseRepositoryProvider).listPatientResponses(patientId);
+});
+
 /// Carrega a resposta salva para um módulo específico.
 final exerciseResponseProvider =
     FutureProvider.family<ExerciseResponse?, String>((ref, moduleId) {

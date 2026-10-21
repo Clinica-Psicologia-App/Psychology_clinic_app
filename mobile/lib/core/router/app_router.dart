@@ -604,6 +604,7 @@ List<RouteBase> _staffPatientRoutes(ProfileRole role) {
             ...staffPatientInitialAssessmentRoutes(role: role),
             ...staffTherapyResourceRoutes(role: role),
             ...staffDailyMonitorRoutes(role: role),
+            ...psychoeducationStaffPatientRoutes(),
             ...staffTherapyGoalRoutes(role: role),
             ...staffPatientProblemRoutes(role: role),
             ...staffPatientCheckInRoutes(role: role),

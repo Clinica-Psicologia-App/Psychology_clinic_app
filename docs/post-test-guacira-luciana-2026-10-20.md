@@ -332,3 +332,23 @@ diretório local de evidências, fora do patch. Não houve nova execução Andro
 alteração de banco, rota ou validação de tablet/leitor de tela nesta etapa.
 `flutter analyze` executado antes do commit: **exit 1, 144 ocorrências —
 0 errors, 12 warnings e 132 infos**, sem novas ocorrências ou supressões.
+
+## Continuação de 2026-10-21 — monitor diário preenchido no Android
+
+APK debug atualizado gerado e instalado no Small_Phone. Com paciente e login
+descartáveis novos na clínica de teste, foi criado um monitor pelo formulário
+real, com humor, intensidade 7/10, gatilhos, comportamentos e observações.
+A leitura independente com JWT do paciente confirmou zero registros antes,
+depois uma única linha e os cinco valores exatos na clínica/paciente esperados.
+
+Após encerrar e reabrir o processo do app, a sessão foi restaurada e o registro
+foi aberto pela home/lista. Os cinco valores apareceram no detalhe. Nova leitura
+confirmou o mesmo ID, sem duplicação. Não houve alteração de código nesta etapa.
+
+Monitor, paciente, perfil e usuário temporários removidos em transação restrita
+a IDs/marcadores; consulta posterior confirmou ausência de registros, identidades
+e sessões. Clínica e demo anterior preservadas; credenciais locais removidas e
+emulador descartável encerrado. A suíte anterior de 495 aprovados não foi
+repetida. Veja [procedimento, evidências e limites](qa/daily-monitor-android-smoke.md).
+Análise executada antes do commit: **exit 1, 144 ocorrências — 0 errors,
+12 warnings e 132 infos**, sem novas ocorrências ou supressões.

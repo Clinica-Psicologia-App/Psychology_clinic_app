@@ -59,6 +59,12 @@ da correção; 50 testes direcionados passaram. Novos casos cobrem larguras 320/
 escalas 1,6/2,0, toque nos seis nós e posições ao longo da animação. O teste de
 Personalidade em 1,6 agora inclui toda a órbita. Renderizações com tema e fonte
 Poppins conferidas; não houve nova homologação Android nesta correção.
+Na etapa seguinte, o monitor diário foi preenchido pela interface Android com
+um paciente/login novos: os cinco valores foram confirmados por REST, em um
+único registro. Após encerrar e reabrir o processo, lista e detalhe recarregaram
+os valores; nova leitura confirmou o mesmo ID, sem duplicação. Monitor e conta
+temporários removidos, ausência confirmada. Build debug novo aprovado, sem
+alteração de código. Veja [procedimento e limites](qa/daily-monitor-android-smoke.md).
 
 > Baseline pré-auditoria. Diagnóstico executado em **2026-09-11**, branch `staging`.
 > Nada foi corrigido — apenas medido a partir do código real (ver `AGENTS.md`).

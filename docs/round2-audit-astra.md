@@ -43,7 +43,19 @@ escritas staff negadas e confirmação da linha de outra clínica invisível.
 O mesmo teste falhou com a policy antiga: responsável esperava 1 linha, recebeu 0.
 Não foi realizado teste de navegação em dispositivo para esta funcionalidade.
 
-## Próximas tarefas
+## FEATURE 3 — Modos → Transformar (concluído)
 
-- Link Modos → Biblioteca 9 (Transformar).
+O cabeçalho de Modos (YAMI) no núcleo clínico do mapa oferece o link
+“Ver Biblioteca Transformar” para o psicólogo. O catálogo publicado resolve
+o número 9 para o UUID do ambiente; a navegação usa a rota existente.
+Não aparece para o paciente nem quando o módulo 9 não está disponível.
+O cabeçalho permite quebra de linha em telas estreitas.
+
+Três testes novos verificam o destino correto mesmo com outro módulo na mesma
+etapa, a ausência para paciente e o módulo ausente. Suíte completa com
+**507 aprovados, zero falhas**; análise com 0 errors, 12 warnings e 132 infos.
+Sem alteração de banco. Sem nova homologação em dispositivo.
+
+## Próxima tarefa
+
 - Acesso ao Diário e cartões de enfrentamento na Biblioteca Praticar.

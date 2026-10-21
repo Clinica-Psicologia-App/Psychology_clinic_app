@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/homologation_ui.dart';
 import '../../../profile/domain/profile_role.dart';
+import '../../../psychoeducation/presentation/transformar_library_link.dart';
 import '../../domain/mental_map_clinical_core.dart';
 import '../../domain/mental_map_history_links.dart';
 import '../../domain/mental_map_score_highlight.dart';
@@ -246,6 +247,9 @@ class MentalMapClinicalCoreSection extends StatelessWidget {
         );
         final modePanel = _InstrumentScorePanel(
           title: 'Modos (YAMI)',
+          titleAction: role == ProfileRole.psychologist
+              ? const TransformarLibraryLink()
+              : null,
           completedAt: core.yamiCompletedAt,
           highlights: core.topModes,
           emptyMessage: 'Nenhum resultado YAMI disponível.',
@@ -328,6 +332,7 @@ class _InstrumentScorePanel extends StatelessWidget {
     required this.emptyMessage,
     this.completedAt,
     this.compact = false,
+    this.titleAction,
   });
 
   final String title;
@@ -335,6 +340,7 @@ class _InstrumentScorePanel extends StatelessWidget {
   final String emptyMessage;
   final DateTime? completedAt;
   final bool compact;
+  final Widget? titleAction;
 
   @override
   Widget build(BuildContext context) {
@@ -370,11 +376,18 @@ class _InstrumentScorePanel extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+            Wrap(
+              crossAxisAlignment: WrapCrossAlignment.center,
+              spacing: 8,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+                if (titleAction != null) titleAction!,
+              ],
             ),
             if (completedAt != null)
               Padding(

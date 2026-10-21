@@ -31,8 +31,8 @@ preserva a checagem canônica do responsável/clínica. Não aplicada remotament
 **a leitura real pelo terapeuta depende da aplicação e revisão humana dessa policy**.
 Nenhuma credencial ou configuração de ambiente faz parte do commit.
 
-Validação: suíte Flutter com **504 aprovados, zero falhas**. Cinco testes novos
-e análise com 0 errors, 12 warnings e 132 infos, sem novas ocorrências. Os testes
+Validação: suíte Flutter com **504 aprovados, zero falhas** e análise com
+0 errors, 12 warnings e 132 infos, sem novas ocorrências. Cinco testes novos
 cobrem vínculo entre IDs, cadastro ausente/sem perfil, apresentação e lista vazia.
 `supabase db reset --local` passou no projeto descartável `esquemacore_round2`,
 com cópia das migrations atuais (incluindo a migration local preexistente de
@@ -56,6 +56,50 @@ etapa, a ausência para paciente e o módulo ausente. Suíte completa com
 **507 aprovados, zero falhas**; análise com 0 errors, 12 warnings e 132 infos.
 Sem alteração de banco. Sem nova homologação em dispositivo.
 
-## Próxima tarefa
+## FEATURE 4 — Diário e cartões em Praticar (MVP concluído)
 
-- Acesso ao Diário e cartões de enfrentamento na Biblioteca Praticar.
+A seção Praticar agora inclui Diários (atalho para lista/criação já existentes)
+e Cartões de enfrentamento. Os atalhos são exclusivos da visão do paciente e
+continuam acessíveis mesmo se o catálogo publicado estiver vazio.
+
+Não havia entidade de cartões de enfrentamento. Foi criado um modelo de domínio
+somente leitura com tema, origem (YCI/YRAI), resposta e data. A listagem monta
+cartões de reflexão usando os temas da última aplicação concluída com resultados
+de cada instrumento, pela extração existente. O texto convida a observar a
+situação e construir uma resposta com o terapeuta; não gera diagnóstico ou
+prescrição individual. As reflexões são registradas pelo Diário existente.
+Personalização/persistência independente do texto do cartão fica fora deste MVP.
+
+A leitura verifica `resultsReleased` e usa as RPCs existentes de resumo/detalhe,
+que mantêm as restrições de liberação, vínculo e projeção do paciente no servidor.
+São no máximo três chamadas de resultados (lista + dois detalhes), sem novas
+tabelas, migrations, permissões ou dependências. Nenhuma nota profissional é
+incluída no modelo/apresentação dos cartões. A nova tentativa atualiza também
+o cadastro do paciente para reconsultar a liberação, evitando um bloqueio antigo
+em cache. Revogação atualiza a lista quando o estado do paciente é recarregado;
+esta tela não introduz assinaturas realtime.
+
+Nove testes novos: tipos/status aceitos, última aplicação por instrumento,
+ausência de consulta sem liberação, revogação após atualização, vínculo do
+paciente, erro/nova tentativa/vazio, rotas e retorno de Diário/cartões e ausência
+dos atalhos no catálogo staff. Suíte completa: **516 aprovados, zero falhas**.
+Análise final: exit 1, **0 errors, 12 warnings e 132 infos** preexistentes,
+sem novas ocorrências.
+
+## Limites de entrega
+
+As quatro tarefas têm implementação local e commits separados. Sem push,
+publicação ou aplicação de migration remota. Os testes foram executados na
+árvore de trabalho atual, preservando as alterações preexistentes sem incluí-las
+nos commits desta rodada. Não se afirma validação de um checkout limpo.
+
+A tela staff de exercícios exige revisão humana e aplicação posterior da
+migration autorizada. A rodada não realizou homologação em Android/iOS/web nem
+fluxo remoto autenticado dos novos recursos. Os testes de cartões usam dados
+sintéticos locais e contratos existentes; não substituem homologação clínica.
+
+Ao encerrar o ambiente descartável, `supabase stop` não encontrou o pipe
+`dockerDesktopLinuxEngine`: o engine Docker estava indisponível. O reset e os
+testes RLS haviam concluído antes disso; não foi possível confirmar a parada
+do container `supabase_db_esquemacore_round2`. Não se reiniciou o Docker nem
+se interferiu nos ambientes existentes para tentar a limpeza.

@@ -5,11 +5,13 @@ import 'admin_psychoeducation_editor_page.dart';
 import 'psychoeducation_journey_page.dart';
 import 'psychoeducation_module_page.dart';
 import 'psychoeducation_patient_exercises_page.dart';
+import 'coping_cards_page.dart';
 
 /// Rotas da Biblioteca de Psicoeducação (paciente + psicólogo + curadoria admin).
 abstract final class PsychoeducationRoutes {
   // Paciente.
   static const patient = '/patient/psychoeducation';
+  static const patientCopingCards = '/patient/psychoeducation/coping-cards';
   static String patientModule(String id) => '/patient/psychoeducation/$id';
 
   // Psicólogo (leitura da referência).
@@ -43,6 +45,10 @@ List<RouteBase> psychoeducationPatientRoutes() {
         moduleRouteBuilder: PsychoeducationRoutes.patientModule,
       ),
       routes: [
+        GoRoute(
+          path: 'coping-cards',
+          builder: (_, __) => const CopingCardsPage(),
+        ),
         GoRoute(
           path: ':moduleId',
           builder: (_, state) => PsychoeducationModulePage(

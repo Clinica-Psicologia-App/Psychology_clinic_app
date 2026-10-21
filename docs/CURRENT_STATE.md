@@ -1,5 +1,23 @@
 # Estado atual — EsquemaCore
 
+## Atualização de 2026-10-21 — Rodada 2 (`audit/astra`)
+
+Metas agora conta apenas ativas no cabeçalho. O cadastro do paciente oferece
+a leitura dos exercícios da Biblioteca Praticar pelo terapeuta. A seção de
+Modos do mapa oferece o link para a Biblioteca 9, resolvida pelo catálogo.
+Praticar inclui acesso ao Diário existente e cartões de reflexão derivados
+dos resultados liberados de YCI/YRAI, sem novo armazenamento.
+
+Suíte da árvore de trabalho: **516 testes aprovados, zero falhas**; análise sem
+errors, com os 12 warnings e 132 infos anteriores. A migration
+`20261021100000` corrige a associação entre perfil e cadastro na policy de
+exercícios; reset e testes RLS aprovados em banco local isolado, com teste
+negativo comprovando a falha da policy antiga. **Não aplicada remotamente**:
+a leitura staff real depende de revisão humana e aplicação posterior.
+Sem nova homologação em dispositivo ou dos fluxos remotos desta rodada.
+As alterações locais anteriores foram preservadas. Veja
+[escopo e evidências da Rodada 2](round2-audit-astra.md).
+
 ## Atualização de 2026-10-20 — ajustes pós-teste
 
 Na branch `audit/astra`, os sete ajustes de Guacira/Luciana foram implementados.

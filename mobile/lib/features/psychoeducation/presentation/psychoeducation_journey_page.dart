@@ -8,6 +8,7 @@ import '../../../shared/widgets/responsive_content.dart';
 import '../domain/psychoeducation_module.dart';
 import '../providers/psychoeducation_providers.dart';
 import '../../../shared/widgets/brand_loading.dart';
+import 'practice_library_links.dart';
 
 class PsychoeducationJourneyPage extends ConsumerWidget {
   const PsychoeducationJourneyPage({
@@ -36,7 +37,7 @@ class PsychoeducationJourneyPage extends ConsumerWidget {
                 message: _message(e),
                 onRetry: () => ref.invalidate(psychoeducationJourneyProvider),
               ),
-              data: (modules) => modules.isEmpty
+              data: (modules) => modules.isEmpty && staffView
                   ? _Empty(staffView: staffView)
                   : _Journey(
                       modules: modules,
@@ -258,6 +259,8 @@ class _Journey extends StatelessWidget {
           for (final stage in PsychoeducationStage.values)
             _StageSection(
               stage: stage,
+              showPracticeLinks:
+                  !staffView && stage == PsychoeducationStage.praticar,
               moduleRouteBuilder: moduleRouteBuilder,
               modules: modules.where((m) => m.stage == stage.label).toList()
                 ..sort((a, b) => a.number.compareTo(b.number)),
@@ -314,8 +317,10 @@ class _StageSection extends StatelessWidget {
     required this.stage,
     required this.modules,
     required this.moduleRouteBuilder,
+    this.showPracticeLinks = false,
   });
   final PsychoeducationStage stage;
+  final bool showPracticeLinks;
   final List<PsychoeducationModule> modules;
   final String Function(String moduleId) moduleRouteBuilder;
 
@@ -335,7 +340,7 @@ class _StageSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (modules.isEmpty) return const SizedBox.shrink();
+    if (modules.isEmpty && !showPracticeLinks) return const SizedBox.shrink();
     final theme = Theme.of(context);
     final color = _stageColors[stage.label] ?? AppColors.purple;
     final icon = _stageIcons[stage.label] ?? Icons.book_outlined;
@@ -396,6 +401,10 @@ class _StageSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: AppSpacing.md),
+        if (showPracticeLinks) ...[
+          const PracticeLibraryLinks(),
+          const SizedBox(height: AppSpacing.md),
+        ],
         // Grade de livros
         GridView.count(
           crossAxisCount: 2,

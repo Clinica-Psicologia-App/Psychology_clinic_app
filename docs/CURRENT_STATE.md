@@ -71,6 +71,13 @@ status na lista/detalhe e reabertura após encerrar o processo. Leituras do paci
 confirmaram o mesmo acesso e data de conclusão, sem duplicação. Recurso, liberação
 e conta temporários removidos; seis testes de domínio passaram. Veja
 [procedimento e limites](qa/released-resource-android-smoke.md).
+Mapa mental preenchido homologado no Android com sete registros sintéticos:
+dois problemas em acompanhamento, uma meta ativa, check-in e monitor nos resumos;
+resolvido/concluída excluídos dos nós ativos. Detalhes, atalhos e reabertura
+conferidos; registros/conta removidos. Cinquenta testes direcionados passaram.
+O destino Metas mostrou uma pendência: conta metas concluídas no chip
+“em andamento”, embora mapa/home contem corretamente as ativas. Achado em
+`TECH_DEBT.md`; veja [evidências e limites](qa/filled-mental-map-android-smoke.md).
 
 > Baseline pré-auditoria. Diagnóstico executado em **2026-09-11**, branch `staging`.
 > Nada foi corrigido — apenas medido a partir do código real (ver `AGENTS.md`).

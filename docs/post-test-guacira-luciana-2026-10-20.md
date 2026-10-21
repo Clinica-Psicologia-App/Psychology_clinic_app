@@ -374,3 +374,25 @@ e demo anteriores preservadas, credenciais removidas e emulador encerrado.
 Veja [procedimento, evidências e limites](qa/released-resource-android-smoke.md).
 Análise executada antes do commit: **exit 1, 144 ocorrências — 0 errors,
 12 warnings e 132 infos**, sem novas ocorrências ou supressões.
+
+## Continuação de 2026-10-21 — mapa preenchido no Android
+
+Com paciente/login novos, sete registros sintéticos foram preparados pelo REST
+autenticado: três problemas (ativo, melhorado e resolvido), duas metas (ativa
+e concluída), check-in 6/4/8 e um monitor. O mapa do paciente mostrou os dois
+problemas em acompanhamento, a única meta ativa, os sinais e o monitor esperados.
+Detalhes excluíram resolvido/concluída; atalhos chegaram aos módulos do mesmo
+paciente e retornaram ao mapa. Após reiniciar o processo, a sessão e o mapa
+recarregaram. Releituras independentes confirmaram os sete IDs e dados intactos.
+
+No destino Metas, foi encontrada contagem incorreta no chip `em andamento`:
+ele inclui concluídas, pois usa a lista de não arquivadas. O mapa e a home
+mantiveram a contagem correta de uma ativa. Achado registrado em `TECH_DEBT.md`,
+sem alteração do módulo nesta homologação. Não houve mudança de aplicação.
+
+Os 50 testes direcionados do mapa passaram; suíte completa de 495 aprovados não
+repetida. Os sete registros e a conta temporária foram removidos, ausência
+confirmada; clínica e demo preservadas, credenciais/snapshot apagados e emulador
+descartável encerrado. Veja [procedimento e limites](qa/filled-mental-map-android-smoke.md).
+Análise executada antes do commit: **exit 1, 144 ocorrências — 0 errors,
+12 warnings e 132 infos**, sem novas ocorrências ou supressões.

@@ -57,6 +57,19 @@ passaram; a suíte completa teve 495 aprovados. Renderizações com Poppins e te
 do app conferidas. Não houve validação Android, tablet ou leitor de tela nesta
 correção, nem alegação de acessibilidade completa.
 
+### Metas — concluídas contadas como em andamento (2026-10-21)
+
+Na homologação do mapa preenchido, o atalho Objetivos abriu METAS com uma meta
+ativa e uma concluída. O cabeçalho mostrou `2 em andamento`. Em `_GoalsList`,
+`patient_therapy_goals_page.dart`, `visible` exclui apenas `archived`, mas o chip
+usa `${visible.length} em andamento`. Assim, a contagem inclui concluídas sob
+um rótulo de atividade. Mapa e home contaram corretamente uma meta ativa.
+O status dos registros não foi alterado; a pendência é de apresentação.
+Corrigir a métrica/rótulo preservando o acesso às metas concluídas e adicionar
+regressão com ativas, concluídas e arquivadas. Arquivo já contém mudanças locais
+anteriores, que devem ser preservadas. Não corrigido nesta etapa de homologação.
+Veja [evidência Android e limites](qa/filled-mental-map-android-smoke.md).
+
 > Observações do diagnóstico **2026-09-11**, com evidência no código. **Nada foi
 > corrigido** (ver `AGENTS.md`). Severidade aproximada: CRITICAL / HIGH / MEDIUM / LOW.
 > Não há problemas CRITICAL confirmados nesta baseline.

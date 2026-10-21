@@ -22,7 +22,7 @@ e o mesmo catálogo permanece aberto. Por fim, os quatro timeouts da home foram
 reproduzidos e corrigidos somente na preparação dos testes: `pumpAndSettle`
 aguardava uma animação contínua do card do plano. A espera agora é limitada a
 dois segundos em passos de 100 ms, sem desativar animações ou remover asserts.
-Os oito testes das homes passaram. A suíte mais recente tem **492 aprovados,
+Os oito testes das homes passaram. A suíte mais recente tem **495 aprovados,
 sem falhas**. As sete falhas da validação inicial estão resolvidas.
 
 ### Mapa Mental — nó Personalidade não exibido (corrigido)
@@ -39,14 +39,23 @@ no Android. Cobertura nova para 360/900, cartão pendente e texto ampliado no
 cartão/detalhe isolados. A pendência de acesso está resolvida.
 Veja [homologação das cores NEO](qa/neo-domain-colors-smoke.md).
 
-### Mapa Mental — texto ampliado na órbita móvel
+### Mapa Mental — texto ampliado na órbita móvel (corrigido em 2026-10-21)
 
 Na validação do acesso à Personalidade, o hub completo em largura 360 e escala
 de texto 1,6 apresentou overflow vertical de 4 px nos nós antigos da órbita:
 `_MentalMapOrbitNode` recebe caixas fixas de 84 × 72. O novo cartão de
 Personalidade e seu detalhe passaram nessa escala quando isolados desses nós.
 Não houve supressão de exceções nem alteração da órbita nesta correção pontual.
-Validar dimensionamento dos nós existentes em uma tarefa de acessibilidade.
+Na continuação autorizada, o erro foi reproduzido com os seis nós e corrigido:
+a altura agora considera a linha de texto medida com o escalonador atual, e a
+órbita reserva espaço para os 4 px da flutuação. A fonte não é reduzida; os
+ícones e a ordem dos nós permanecem iguais. Rótulos longos mantêm as reticências
+preexistentes. O teste de Personalidade em 1,6 passou a incluir a órbita inteira.
+Três casos novos cobrem larguras 320/360, texto 1,6/2,0, limites do diagrama ao
+longo do ciclo e os seis callbacks de toque. Cinquenta testes direcionados
+passaram; a suíte completa teve 495 aprovados. Renderizações com Poppins e tema
+do app conferidas. Não houve validação Android, tablet ou leitor de tela nesta
+correção, nem alegação de acessibilidade completa.
 
 > Observações do diagnóstico **2026-09-11**, com evidência no código. **Nada foi
 > corrigido** (ver `AGENTS.md`). Severidade aproximada: CRITICAL / HIGH / MEDIUM / LOW.

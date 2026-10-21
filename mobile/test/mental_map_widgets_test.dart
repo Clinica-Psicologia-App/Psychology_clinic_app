@@ -124,6 +124,74 @@ void main() {
         find.byKey(const ValueKey('mental-map-radial-layout')), findsNothing);
   });
 
+  for (final viewport in [(320.0, 1.6), (360.0, 1.6), (360.0, 2.0)]) {
+    final (width, textScale) = viewport;
+    testWidgets('órbita preserva layout e toques em $width e texto $textScale',
+        (tester) async {
+      tester.view.physicalSize = Size(width, 900);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.reset);
+      final opened = <String>[];
+      await tester.pumpWidget(MaterialApp(
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context)
+              .copyWith(textScaler: TextScaler.linear(textScale)),
+          child: child!,
+        ),
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: MentalMapRadialHub(
+              center: center,
+              nodes: [
+                for (final node in nodes)
+                  MentalMapHubNodeData(
+                    id: node.id,
+                    title: node.title,
+                    subtitle: node.subtitle,
+                    items: node.items,
+                    emptyLabel: node.emptyLabel,
+                    icon: node.icon,
+                    accentColor: node.accentColor,
+                    isFilled: node.isFilled,
+                    visualState: node.visualState,
+                    onTap: () => opened.add(node.id),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ));
+      final orbit = tester.getRect(
+          find.byKey(const ValueKey('mental-map-connected-list')));
+      for (final node in nodes.where(
+          (node) => !['parental', 'history'].contains(node.id))) {
+        final label = find.text(node.title);
+        expect(label, findsOneWidget);
+        final rect = tester.getRect(label);
+        expect(orbit.inflate(0.01).contains(rect.topLeft), isTrue,
+            reason: '${node.id}: $rect fora de $orbit');
+        expect(orbit.inflate(0.01).contains(rect.bottomRight), isTrue,
+            reason: '${node.id}: $rect fora de $orbit');
+        await tester.tap(label);
+      }
+      expect(opened,
+          ['schemas', 'modes', 'problems', 'goals', 'attachment', 'coping']);
+      // Confere também posições posteriores da flutuação, não só o frame inicial.
+      for (var frame = 0; frame < 4; frame++) {
+        await tester.pump(const Duration(milliseconds: 900));
+        for (final node in nodes.where(
+            (node) => !['parental', 'history'].contains(node.id))) {
+          final rect = tester.getRect(find.text(node.title));
+          expect(orbit.inflate(0.01).contains(rect.topLeft), isTrue,
+              reason: '${node.id}: $rect fora de $orbit');
+          expect(orbit.inflate(0.01).contains(rect.bottomRight), isTrue,
+              reason: '${node.id}: $rect fora de $orbit');
+        }
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
+
   for (final viewport in [(360.0, 1.0), (900.0, 1.0), (360.0, 1.6)]) {
     final (width, textScale) = viewport;
     testWidgets(
@@ -153,9 +221,7 @@ void main() {
                   primaryNodes: const [],
                   contextNodes: const []),
               nodes: [
-                // Texto ampliado valida o novo cartão/detalhe isoladamente:
-                // os seis nós antigos da órbita têm altura fixa de 72 px.
-                if (textScale == 1) ...nodes,
+                ...nodes,
                 MentalMapHubNodeData(
                   id: 'personality',
                   title: 'Personalidade',

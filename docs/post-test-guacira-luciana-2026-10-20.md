@@ -306,3 +306,29 @@ Veja [procedimento, evidências e limites](qa/patient-home-android-smoke.md).
 Análise reexecutada antes do commit documental: **exit 1, 0 errors, 12 warnings
 e 132 infos**, sem mudança da baseline. A suíte de 492 aprovados da etapa
 anterior não foi repetida, pois não houve alteração de código nesta etapa.
+
+## Continuação de 2026-10-21 — texto ampliado na órbita móvel
+
+Reproduzido o overflow de 4 px nos seis nós ao reincluir a órbita completa no
+teste de Personalidade com texto 1,6. A altura fixa de 72 px não comportava o
+círculo, espaço e rótulo escalonado. A altura agora é calculada com a linha de
+texto medida por `TextPainter`, usando estilo, direção e `TextScaler` atuais.
+O espaço vertical da órbita acompanha esse crescimento e reserva a amplitude
+de 4 px da animação, mantendo os rótulos dentro do diagrama durante a flutuação.
+
+Não foram reduzidas fontes nem alterados ícones, ordem dos nós ou callbacks.
+Os rótulos continuam limitados a uma linha com reticências, como antes.
+Três novos testes cobrem 320/360 px, texto 1,6/2,0, toque nos seis nós e limites
+em amostras de 900 ms ao longo do ciclo. A abertura do detalhe de Personalidade
+com texto 1,6 agora é verificada com a órbita inteira, sem a exclusão anterior.
+
+Os 50 testes direcionados de domínio, widgets e fluxo passaram. A suíte completa
+teve **495 aprovados e nenhuma falha**. Renderizações em 1,0/1,6/2,0 com Poppins
+e o tema do app passaram e foram inspecionadas; capturas locais
+`map-text-1.0.png`, `map-text-1.6.png` e `map-text-2.0.png`. A primeira tentativa
+do auxiliar de captura foi interrompida porque a conversão de imagem aguardava
+no relógio simulado; a execução concluída usou `runAsync`. O auxiliar ficou no
+diretório local de evidências, fora do patch. Não houve nova execução Android,
+alteração de banco, rota ou validação de tablet/leitor de tela nesta etapa.
+`flutter analyze` executado antes do commit: **exit 1, 144 ocorrências —
+0 errors, 12 warnings e 132 infos**, sem novas ocorrências ou supressões.

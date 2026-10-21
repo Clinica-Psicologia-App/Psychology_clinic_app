@@ -3,7 +3,7 @@
 ## Atualização de 2026-10-20 — ajustes pós-teste
 
 Na branch `audit/astra`, os sete ajustes de Guacira/Luciana foram implementados.
-Validação inicial: 46 testes direcionados aprovados; suíte mais recente com **492 aprovados,
+Validação inicial: 46 testes direcionados aprovados; suíte mais recente com **495 aprovados,
 sem falhas**; analyzer sem errors, com 12 warnings e 132 infos em trechos preexistentes.
 Persistência pelo contrato REST remoto validada com um novo psicólogo e paciente
 sintéticos em clínica isolada: criação, cinco atualizações/releituras, bloqueio
@@ -29,7 +29,7 @@ No Mapa Mental, o nó Personalidade agora fica acessível em cartão abaixo do
 diagrama, com o resumo e detalhe existentes. Abertura, três cores e atalho para
 a lista de avaliações aprovados no Android; layouts de 360/900 e cartão vazio
 cobertos por testes. Quinze testes direcionados aprovados. A órbita antiga
-tem overflow com texto ampliado em 1,6, documentado em `TECH_DEBT.md`.
+teve overflow com texto ampliado em 1,6, corrigido na continuação de 2026-10-21.
 O Panorama atual não exibe NEO. Veja [evidências e limites](qa/neo-domain-colors-smoke.md).
 Permissões remotas: acesso entre clínicas e responsáveis bloqueado; gates de
 liberação/revogação YSQ e compartilhamento NEO aprovados, incluindo proteção
@@ -53,6 +53,12 @@ homologados no Android: plano, mapa mental, biblioteca/recursos e monitor diári
 todos com retorno à home. Estados vazios e contexto do paciente conferidos;
 conta/cadastro temporários removidos, sem tocar na conta demo anterior.
 Veja [escopo e limites da homologação](qa/patient-home-android-smoke.md).
+Em 2026-10-21, a altura dos nós móveis e o espaço vertical da órbita passaram a
+considerar o texto ampliado e a flutuação. O erro de 4 px foi reproduzido antes
+da correção; 50 testes direcionados passaram. Novos casos cobrem larguras 320/360,
+escalas 1,6/2,0, toque nos seis nós e posições ao longo da animação. O teste de
+Personalidade em 1,6 agora inclui toda a órbita. Renderizações com tema e fonte
+Poppins conferidas; não houve nova homologação Android nesta correção.
 
 > Baseline pré-auditoria. Diagnóstico executado em **2026-09-11**, branch `staging`.
 > Nada foi corrigido — apenas medido a partir do código real (ver `AGENTS.md`).

@@ -780,15 +780,29 @@ class _MentalMapMobileOrbitState extends State<_MentalMapMobileOrbit>
       (id: 'coping', angleDeg: 210),
     ];
 
-    const boxHeight = 300.0;
     const nodeWidth = 84.0;
-    const nodeHeight = 72.0;
     const nodeDiameter = 44.0;
     const hubDiameter = 88.0;
+    const floatAmplitude = 4.0;
+    // Reserva a altura real do rótulo, inclusive com texto ampliado, sem
+    // reduzir a fonte nem comprimir o círculo para caber na caixa antiga.
+    final labelPainter = TextPainter(
+      text: TextSpan(
+        text: 'Ág',
+        style: theme.textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w700),
+      ),
+      textScaler: MediaQuery.textScalerOf(context),
+      textDirection: Directionality.of(context),
+      maxLines: 1,
+    )..layout();
+    final labelHeight = labelPainter.height;
+    labelPainter.dispose();
+    final nodeHeight = math.max(72.0, nodeDiameter + 6 + labelHeight);
+    final boxHeight = 300.0 + 2 * (nodeHeight - 72.0 + floatAmplitude);
     // Onde o círculo cai dentro da caixa do nodo: a Column centraliza
     // [círculo, espaço, rótulo], então o círculo fica acima do meio.
-    const circleAnchor =
-        (nodeHeight - (nodeDiameter + 6 + 15)) / 2 + nodeDiameter / 2;
+    final circleAnchor =
+        (nodeHeight - (nodeDiameter + 6 + labelHeight)) / 2 + nodeDiameter / 2;
 
     final activeCount = widget.nodes.where((node) => node.isFilled).length;
 
@@ -801,7 +815,7 @@ class _MentalMapMobileOrbitState extends State<_MentalMapMobileOrbit>
         final radius = math.min(
           103.0,
           math.min(
-            boxHeight / 2 - (nodeHeight - circleAnchor),
+            boxHeight / 2 - (nodeHeight - circleAnchor) - floatAmplitude,
             (width / 2 - nodeWidth / 2) / math.cos(30 * math.pi / 180),
           ),
         );
@@ -886,7 +900,8 @@ class _MentalMapMobileOrbitState extends State<_MentalMapMobileOrbit>
                             builder: (context, child) => Transform.translate(
                               offset: Offset(
                                 0,
-                                math.sin((_controller.value * math.pi) + i) * 4,
+                                math.sin((_controller.value * math.pi) + i) *
+                                    floatAmplitude,
                               ),
                               child: child,
                             ),

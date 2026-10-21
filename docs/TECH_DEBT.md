@@ -57,7 +57,7 @@ passaram; a suíte completa teve 495 aprovados. Renderizações com Poppins e te
 do app conferidas. Não houve validação Android, tablet ou leitor de tela nesta
 correção, nem alegação de acessibilidade completa.
 
-### Metas — concluídas contadas como em andamento (2026-10-21)
+### Metas — concluídas contadas como em andamento (corrigido na rodada 2)
 
 Na homologação do mapa preenchido, o atalho Objetivos abriu METAS com uma meta
 ativa e uma concluída. O cabeçalho mostrou `2 em andamento`. Em `_GoalsList`,
@@ -69,6 +69,9 @@ Corrigir a métrica/rótulo preservando o acesso às metas concluídas e adicion
 regressão com ativas, concluídas e arquivadas. Arquivo já contém mudanças locais
 anteriores, que devem ser preservadas. Não corrigido nesta etapa de homologação.
 Veja [evidência Android e limites](qa/filled-mental-map-android-smoke.md).
+Na rodada 2, o chip passou a contar somente `isActive`, preservando a lista
+de concluídas/arquivadas. Quatro regressões paciente/terapeuta passaram;
+suíte com 499 aprovados. Veja [registro da rodada](round2-audit-astra.md).
 
 > Observações do diagnóstico **2026-09-11**, com evidência no código. **Nada foi
 > corrigido** (ver `AGENTS.md`). Severidade aproximada: CRITICAL / HIGH / MEDIUM / LOW.

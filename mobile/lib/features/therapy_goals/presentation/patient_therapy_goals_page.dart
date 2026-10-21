@@ -148,6 +148,7 @@ class _GoalsList extends StatelessWidget {
         goals.where((g) => g.status != TherapyGoalStatus.archived).toList();
     final archived =
         goals.where((g) => g.status == TherapyGoalStatus.archived).toList();
+    final activeCount = goals.where((g) => g.isActive).length;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(
@@ -163,7 +164,7 @@ class _GoalsList extends StatelessWidget {
               'Metas acordadas para acompanhar progresso, próximos passos e mudanças importantes ao longo do processo terapêutico.',
           icon: Icons.flag_outlined,
           metadata: [
-            Chip(label: Text('${visible.length} em andamento')),
+            Chip(label: Text('$activeCount em andamento')),
             if (archived.isNotEmpty)
               Chip(label: Text('${archived.length} arquivados')),
           ],

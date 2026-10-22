@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/errors/app_exception.dart';
@@ -5,6 +6,28 @@ import '../../../core/errors/error_mapper.dart';
 import '../../../core/supabase/supabase_bootstrap.dart';
 import '../domain/case_conceptualization.dart';
 import '../domain/demands_text_history.dart';
+
+/// Colunas da Síntese gravadas por [CaseConceptualizationRepository.save].
+///
+/// As colunas JSONB são `NOT NULL DEFAULT '{}'`/`'[]'`: seção vazia vai como
+/// `{}`/`[]`, nunca `null` (null viola a constraint e o salvar falha).
+@visibleForTesting
+Map<String, dynamic> synthesisColumns(CaseConceptualization data) {
+  String? textOrNull(String? v) => (v ?? '').trim().isEmpty ? null : v!.trim();
+  return {
+    'unmet_needs': data.unmetNeedsJson(),
+    'mode_sequences': data.modeSequencesJson(),
+    'therapeutic_relationship': data.relationship.toJson(),
+    'origins': data.origins.toJson(),
+    'all_schemas': textOrNull(data.allSchemas),
+    'additional_comments': textOrNull(data.additionalComments),
+    'functioning': data.functioning.toJson(),
+    'life_problems': data.lifeProblems.toJson(),
+    'central_schemas': data.centralSchemasJson(),
+    'mode_assessment': data.modeAssessment.toJson(),
+    'therapy_objectives': data.therapyObjectivesJson(),
+  };
+}
 
 /// Lê/grava os campos do terapeuta da Conceitualização de caso
 /// (`case_conceptualizations`). RLS restringe ao staff com acesso ao paciente.
@@ -49,22 +72,7 @@ class CaseConceptualizationRepository {
           'patient_id': patientId,
           'clinic_id': clinicId,
           'updated_by': _client.auth.currentUser?.id,
-          'unmet_needs': data.unmetNeedsJson(),
-          'mode_sequences': data.modeSequencesJson(),
-          'therapeutic_relationship': data.relationship.toJson(),
-          'origins': data.origins.toJson(),
-          'all_schemas': (data.allSchemas ?? '').trim().isEmpty
-              ? null
-              : data.allSchemas!.trim(),
-          'additional_comments':
-              (data.additionalComments ?? '').trim().isEmpty
-                  ? null
-                  : data.additionalComments!.trim(),
-          'functioning': data.functioning.isEmpty ? null : data.functioning.toJson(),
-          'life_problems': data.lifeProblems.isEmpty ? null : data.lifeProblems.toJson(),
-          'central_schemas': data.centralSchemasJson(),
-          'mode_assessment': data.modeAssessment.isEmpty ? null : data.modeAssessment.toJson(),
-          'therapy_objectives': data.therapyObjectivesJson(),
+          ...synthesisColumns(data),
         },
         onConflict: 'patient_id',
       );

@@ -292,7 +292,7 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
             icon: Icons.flag_outlined,
             title: 'Plano Terapêutico',
             subtitle: 'Metas e objetivos da terapia.',
-            accentColor: AppColors.purple,
+            accentColor: AppColors.moduleGoals,
             onTap: () => _push(
               TherapyGoalRoutes.staffList(role: role, patientId: patientId),
             ),

@@ -110,7 +110,6 @@ class _InitialAssessmentContextPageState
                       children: [
                         _sectionHeader(
                           context,
-                          step: 'Bloco 3',
                           title: 'Contexto de Vida',
                           icon: Icons.tune_outlined,
                           accent: AppColors.turquoise,
@@ -195,7 +194,6 @@ class _InitialAssessmentContextPageState
 
   Widget _sectionHeader(
     BuildContext context, {
-    required String step,
     required String title,
     required IconData icon,
     required Color accent,
@@ -221,15 +219,6 @@ class _InitialAssessmentContextPageState
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  step.toUpperCase(),
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.8,
-                    color: accent,
-                  ),
-                ),
                 Text(
                   title,
                   style: theme.textTheme.titleMedium?.copyWith(

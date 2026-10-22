@@ -49,4 +49,44 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Ver Biblioteca Transformar'), findsNothing);
   });
+
+  for (final role in [ProfileRole.psychologist, ProfileRole.patient]) {
+    testWidgets('Esquemas link uses published module 8; role=${role.name}', (tester) async {
+      final router = GoRouter(routes: [
+        GoRoute(path: '/', builder: (_, __) => Scaffold(body: SingleChildScrollView(
+          child: MentalMapClinicalCoreSection(core: core, role: role, patientId: 'test')))),
+        GoRoute(path: '/psychologist/psychoeducation/:moduleId',
+          builder: (_, state) => Text('Destino ${state.pathParameters['moduleId']}')),
+      ]);
+      addTearDown(router.dispose);
+      await tester.pumpWidget(ProviderScope(overrides: [
+        psychoeducationJourneyProvider.overrideWith((ref) async => [
+          const PsychoeducationModule(id: 'compreender-module', number: 8, stage: 'Compreender', title: 'Biblioteca 8'),
+          const PsychoeducationModule(id: 'transformar-module', number: 9, stage: 'Transformar', title: 'Biblioteca 9'),
+        ]),
+      ], child: MaterialApp.router(routerConfig: router)));
+      await tester.pumpAndSettle();
+      final link = find.text('Ver Biblioteca Compreender');
+      if (role == ProfileRole.patient) {
+        expect(link, findsNothing);
+      } else {
+        expect(link, findsOneWidget);
+        await tester.tap(link);
+        await tester.pumpAndSettle();
+        expect(find.text('Destino compreender-module'), findsOneWidget);
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
+  testWidgets('unpublished module 8 does not create broken Esquemas link', (tester) async {
+    await tester.pumpWidget(ProviderScope(overrides: [
+      psychoeducationJourneyProvider.overrideWith((ref) async => [
+        const PsychoeducationModule(id: 'm9', number: 9, stage: 'Transformar', title: 'Biblioteca 9'),
+      ]),
+    ], child: const MaterialApp(home: Scaffold(body: SingleChildScrollView(
+      child: MentalMapClinicalCoreSection(core: core, role: ProfileRole.psychologist, patientId: 'test'))))));
+    await tester.pumpAndSettle();
+    expect(find.text('Ver Biblioteca Compreender'), findsNothing);
+    expect(find.text('Ver Biblioteca Transformar'), findsOneWidget);
+  });
 }

@@ -241,6 +241,9 @@ class MentalMapClinicalCoreSection extends StatelessWidget {
         final useTwoColumns = constraints.maxWidth >= 640;
         final schemaPanel = _InstrumentScorePanel(
           title: 'Esquemas (YSQ)',
+          titleAction: role == ProfileRole.psychologist
+              ? const CompreenderLibraryLink()
+              : null,
           completedAt: core.ysqCompletedAt,
           highlights: core.topSchemas,
           emptyMessage: 'Nenhum resultado YSQ disponível.',

@@ -16,6 +16,7 @@ import '../../../patient_infographic/presentation/patient_infographic_route_help
 import '../../../patient_library/presentation/patient_library_routes.dart';
 import '../../../psychoeducation/presentation/psychoeducation_routes.dart';
 import '../../../patient_check_ins/presentation/patient_check_in_routes.dart';
+import '../../../patient_problems/presentation/patient_problem_routes.dart';
 import '../../../personality_assessment/presentation/personality_assessment_routes.dart';
 import '../../../profile/domain/profile_role.dart';
 import '../../../questionnaires/presentation/questionnaire_routes.dart';
@@ -137,6 +138,15 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
             ),
           ),
           _ModuleSpec(
+            icon: Icons.record_voice_over_outlined,
+            title: 'Demandas Terapêuticas',
+            subtitle: 'Motivos da procura e focos registrados.',
+            accentColor: AppColors.cyan,
+            onTap: () => _push(
+              PatientProblemRoutes.staffList(role: role, patientId: patientId),
+            ),
+          ),
+          _ModuleSpec(
             icon: Icons.timeline_outlined,
             title: 'Linha do Tempo',
             subtitle: 'Eventos da história terapêutica.',
@@ -155,15 +165,6 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
             accentColor: AppColors.cyan,
             onTap: () => _push(
               LifeStoryRoutes.genogramPanelFor(patientId),
-            ),
-          ),
-          _ModuleSpec(
-            icon: Icons.flag_outlined,
-            title: 'Plano Terapêutico',
-            subtitle: 'Demandas, metas e objetivos da terapia.',
-            accentColor: AppColors.cyan,
-            onTap: () => _push(
-              TherapyGoalRoutes.staffList(role: role, patientId: patientId),
             ),
           ),
           _ModuleSpec(
@@ -287,6 +288,15 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
         subtitle: 'Planejamento e recursos de intervenção.',
         accentColor: AppColors.purple,
         modules: [
+          _ModuleSpec(
+            icon: Icons.flag_outlined,
+            title: 'Plano Terapêutico',
+            subtitle: 'Metas e objetivos da terapia.',
+            accentColor: AppColors.purple,
+            onTap: () => _push(
+              TherapyGoalRoutes.staffList(role: role, patientId: patientId),
+            ),
+          ),
           _ModuleSpec(
             icon: Icons.menu_book_outlined,
             title: 'Recursos Terapêuticos',

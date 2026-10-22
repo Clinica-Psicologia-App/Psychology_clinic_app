@@ -913,6 +913,7 @@ class ClinicalPriorityGrid extends StatelessWidget {
                 icon: Icons.favorite_border,
                 accentColor: AppColors.cyan,
                 rows: summary.topAttachment,
+                showCode: false,
                 emptyMessage: 'Sem apego concluído',
               ),
               _PriorityMiniCard(
@@ -921,6 +922,7 @@ class ClinicalPriorityGrid extends StatelessWidget {
                 icon: Icons.shield_outlined,
                 accentColor: AppColors.turquoise,
                 rows: summary.topCoping,
+                showCode: false,
                 emptyMessage: 'Sem YCI/YRAI concluído',
               ),
             ];

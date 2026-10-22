@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:printing/printing.dart';
 
+import '../../../core/theme/app_branding_assets.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
@@ -91,6 +92,12 @@ class _PatientInfographicPageState
   /// Garante que a foto de rede do avatar esteja no cache antes de capturar,
   /// para o PNG/PDF não sair com o avatar ainda carregando.
   Future<void> _ensureAvatarLoaded() async {
+    // A logo vai no topo do pôster: garante que está carregada antes de capturar.
+    try {
+      await precacheImage(
+          const AssetImage(AppBrandingAssets.logoPrincipal), context);
+    } catch (_) {}
+    if (!mounted) return;
     final h = _header;
     if (h == null ||
         h.avatarType != AvatarType.photo ||
@@ -161,8 +168,9 @@ class _PatientInfographicPageState
                   icon: Icons.auto_awesome_outlined,
                   title: 'Material de apoio',
                   message: data.isSparse
-                      ? 'Poucos dados até aqui — complete a Conceitualização '
-                          'para enriquecer. Revise antes de compartilhar.'
+                      ? 'Poucos dados até aqui — preencha os módulos do caso '
+                          '(Conhecer, Avaliar e Intervir) para enriquecer. '
+                          'Revise antes de compartilhar.'
                       : 'Gerado a partir dos dados já registrados. Revise antes '
                           'de compartilhar — é apoio à formulação, não diagnóstico.',
                 ),

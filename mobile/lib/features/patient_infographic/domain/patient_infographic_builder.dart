@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../clinical_dashboard/domain/clinical_dashboard_data.dart';
+import '../../clinical_dashboard/domain/consolidated_schema_row.dart';
 import '../../genogram/domain/genogram_data.dart';
-import '../../initial_assessment/domain/clinical_impressions.dart';
+import '../../healthy_resources/domain/healthy_resource_catalog.dart';
+import '../../healthy_resources/domain/healthy_resources.dart';
 import '../../initial_assessment/domain/initial_assessment.dart';
+import '../../initial_assessment/domain/life_area.dart';
 import '../../mental_map/domain/case_conceptualization.dart';
 import '../../patient_problems/domain/patient_problem.dart';
 import '../../patient_timeline/domain/patient_timeline_event.dart';
@@ -12,13 +15,16 @@ import '../../patients/domain/patient.dart';
 import '../../personality_assessment/domain/personality_assessment.dart';
 import '../../personality_assessment/domain/personality_instrument.dart';
 import '../../personality_assessment/presentation/personality_domain_colors.dart';
+import '../../therapy_goals/domain/therapy_goal.dart';
+import 'attachment_descriptions.dart';
 import 'patient_infographic_data.dart';
 import 'schema_descriptions.dart';
 
 /// Monta o [PatientInfographicData] a partir dos dados reais do paciente —
-/// determinístico, sem IA. Usa o que o psicólogo já registrou (esquemas
-/// ativados no dashboard, textos da conceitualização, linha do tempo, cadastro)
-/// e completa esquemas com descrições psicoeducativas do catálogo.
+/// determinístico, sem IA. Cada seção vem do módulo onde o terapeuta a
+/// preenche: Demandas, Contexto de Vida, Linha do Tempo, Genograma, Recursos
+/// Saudáveis e Plano Terapêutico (Conhecer/Intervir), questionários
+/// (esquemas, modos, enfrentamento, apego) e Personalidade (Avaliar).
 PatientInfographicData buildPatientInfographic({
   required Patient patient,
   required ClinicalDashboardData dashboard,
@@ -29,6 +35,7 @@ PatientInfographicData buildPatientInfographic({
   List<PatientProblem> problems = const [],
   String? attachmentStyle,
   GenogramData? genogramData,
+  HealthyResources? healthyResources,
 }) {
   final impressions = assessment?.clinicalImpressions;
 
@@ -36,40 +43,26 @@ PatientInfographicData buildPatientInfographic({
   const maxTimeline = 8;
   const maxSection = 6;
 
-  // Quote: prefere motivo atual da Conceitualização, fallback para temperamento.
-  final quote = _notEmptyOrNull(concept?.motivoCurrent) ??
-      _notEmptyOrNull(concept?.motivoInitial) ??
-      _firstSentence(impressions?.observedTemperament);
-
   return PatientInfographicData(
     header: _buildHeader(patient),
-    quote: quote,
-    timeline: _cap(_buildTimeline(timelineEvents), maxTimeline),
+    reasonsInitial: _notEmptyOrNull(concept?.motivoInitial),
+    reasonsCurrent: _notEmptyOrNull(concept?.motivoCurrent),
+    demands: _cap(_buildDemands(problems), maxSection),
+    lifeWheel: _buildLifeWheel(assessment),
     personality: _buildPersonalityDomains(personalityAssessments),
+    timeline:
+        _cap(_buildTimeline(timelineEvents, patient.birthDate), maxTimeline),
+    genogram: _withoutSensitive(genogramData),
+    genogramMembers: _cap(_buildGenogramMembers(genogramData), 10),
     schemas: _cap(_buildSchemas(dashboard, concept), maxSection),
-    needs: _cap(_buildNeeds(impressions, concept), maxSection),
-    modes: _cap(_buildModes(impressions?.modeHypothesesText, concept), maxSection),
-    strengths: _cap(
-      _itemsFrom(impressions?.resources,
-          icon: Icons.star_outline, accent: AppColors.turquoise),
+    modes: _cap(
+      _buildModes(dashboard, impressions?.modeHypothesesText, concept),
       maxSection,
     ),
-    challenges: _cap(_buildChallenges(impressions, concept), maxSection),
-    directions: _cap(_buildDirections(impressions, concept), maxSection),
-    resources: _cap(
-      _splitLines(impressions?.resources)
-          .map((r) => InfographicItem(
-                title: r,
-                icon: Icons.star_outline,
-                accent: AppColors.success,
-              ))
-          .toList(),
-      8,
-    ),
-    demands: _cap(_buildDemands(problems), maxSection),
-    lifeAreas: _buildLifeAreas(concept?.functioning),
-    attachmentStyle: attachmentStyle,
-    genogramMembers: _cap(_buildGenogramMembers(genogramData), 10),
+    coping: _cap(_buildCoping(dashboard), maxSection),
+    attachment: _buildAttachment(attachmentStyle),
+    resources: _cap(_buildResources(healthyResources), 12),
+    plan: _cap(_buildPlan(dashboard.caseSummary.highlightedGoals), maxSection),
     closingLine:
         'Um retrato de apoio à formulação do caso — sempre sob leitura clínica '
         'do profissional.',
@@ -79,16 +72,6 @@ PatientInfographicData buildPatientInfographic({
 
 List<T> _cap<T>(List<T> items, int max) =>
     items.length <= max ? items : items.sublist(0, max);
-
-List<InfographicItem> _itemsFrom(
-  String? text, {
-  required IconData icon,
-  required Color accent,
-}) {
-  return _splitLines(text)
-      .map((line) => _asTitleDescription(line, icon: icon, accent: accent))
-      .toList();
-}
 
 /// Converte "Título: descrição" ou "Título — descrição" num item com título
 /// em destaque + descrição; se não houver separador, vira só título.
@@ -107,14 +90,6 @@ InfographicItem _asTitleDescription(
     );
   }
   return InfographicItem(title: line, icon: icon, accent: accent);
-}
-
-String? _firstSentence(String? text) {
-  if (text == null || text.trim().isEmpty) return null;
-  final t = text.trim();
-  final end = t.indexOf(RegExp(r'[.!?]'));
-  final sentence = end == -1 ? t : t.substring(0, end + 1);
-  return sentence.length > 160 ? '${sentence.substring(0, 157)}…' : sentence;
 }
 
 InfographicHeader _buildHeader(Patient patient) {
@@ -147,23 +122,34 @@ InfographicHeader _buildHeader(Patient patient) {
   );
 }
 
+// ── Linha do tempo ─────────────────────────────────────────────────────────
+
+/// Idade aproximada do evento, só para ordenar: data → idade pela data de
+/// nascimento; idade informada; capítulo da vida (idade típica do capítulo).
+double _approxAge(PatientTimelineEvent e, DateTime? birth) {
+  final date = e.eventDate;
+  if (date != null && birth != null) {
+    return date.difference(birth).inDays / 365.25;
+  }
+  if (e.ageAtEvent != null) return e.ageAtEvent!.toDouble();
+  const chapterAge = [0.0, 6.0, 15.0, 30.0, 55.0, 99.0];
+  final order = e.lifeChapterOrder;
+  if (order != null) return chapterAge[order];
+  return double.infinity; // sem referência: vai para o fim
+}
+
 List<InfographicTimelineEntry> _buildTimeline(
-    List<PatientTimelineEvent> events) {
-  // Ordena por data quando disponível (mais antigo → mais recente).
-  final sorted = [...events]..sort((a, b) {
-      final da = a.eventDate;
-      final db = b.eventDate;
-      if (da == null && db == null) return 0;
-      if (da == null) return 1;
-      if (db == null) return -1;
-      return da.compareTo(db);
-    });
+  List<PatientTimelineEvent> events,
+  DateTime? birth,
+) {
+  final sorted = [...events]
+    ..sort((a, b) => _approxAge(a, birth).compareTo(_approxAge(b, birth)));
 
   const palette = [
     AppColors.cyan,
     AppColors.turquoise,
     AppColors.purple,
-    AppColors.warning,
+    AppColors.blue,
   ];
 
   return [
@@ -178,6 +164,8 @@ List<InfographicTimelineEntry> _buildTimeline(
       ),
   ];
 }
+
+// ── Esquemas ───────────────────────────────────────────────────────────────
 
 List<InfographicItem> _buildSchemas(
   ClinicalDashboardData dashboard,
@@ -203,9 +191,10 @@ List<InfographicItem> _buildSchemas(
     }
   }
 
-  // Complementa com esquemas do dashboard que ainda não apareceram.
+  // Complementa com esquemas do dashboard que ainda não apareceram. Os modos
+  // do YAMI também estão na lista consolidada, mas têm seção própria.
   for (final s in dashboard.activatedSchemas) {
-    if (!seen.add(s.name.toLowerCase())) continue;
+    if (_isMode(s) || !seen.add(s.name.toLowerCase())) continue;
     items.add(InfographicItem(
       title: s.name,
       description: schemaDescriptionFor(s.name) ?? s.severityLabel,
@@ -217,51 +206,47 @@ List<InfographicItem> _buildSchemas(
   return items;
 }
 
-List<InfographicNeed> _buildNeeds(
-  ClinicalImpressions? impressions,
+// ── Modos e enfrentamento (resultado dos questionários) ────────────────────
+
+String _avg(double v) => v.toStringAsFixed(1).replaceAll('.', ',');
+
+/// A lista consolidada mistura esquemas do YSQ e modos do YAMI.
+bool _isMode(ConsolidatedSchemaRow r) =>
+    '${r.instrumentCode ?? ''} ${r.code}'.toUpperCase().contains('YAMI');
+
+/// Modos ativados no YAMI (média ≥ 4,0 ou ativação do profissional), do mais
+/// alto para o mais baixo. Sem YAMI ativado, cai para a conceitualização e,
+/// por último, para o texto livre das impressões.
+List<InfographicItem> _buildModes(
+  ClinicalDashboardData dashboard,
+  String? modeText,
   CaseConceptualization? concept,
 ) {
-  final items = <InfographicNeed>[];
-  final seen = <String>{};
-
-  // Necessidades da Conceitualização (estruturadas por necessidade central).
-  if (concept != null && concept.hasAnyNeed) {
-    for (final need in kCoreNeeds) {
-      final u = concept.needFor(need.key);
-      if (u.isEmpty) continue;
-      if (!seen.add(need.key)) continue;
-      final detail = [
-        if ((u.rating ?? '').trim().isNotEmpty) u.rating!.trim(),
-        if ((u.origin ?? '').trim().isNotEmpty) u.origin!.trim(),
-      ].join(' — ');
-      items.add(InfographicNeed(
-        need: need.label,
-        relatedEvents: detail.isNotEmpty ? detail : null,
-        accent: AppColors.error,
-      ));
-    }
+  final fromQuestionnaire = [
+    for (final r in dashboard.consolidatedSchemas)
+      if (_isMode(r) && r.isActivated) r,
+  ]..sort((a, b) => b.score.compareTo(a.score));
+  if (fromQuestionnaire.isNotEmpty) {
+    return [
+      for (final r in fromQuestionnaire)
+        InfographicItem(
+          title: r.name,
+          description: 'Média ${_avg(r.score)} no YAMI',
+          icon: Icons.theater_comedy_outlined,
+          accent: AppColors.turquoise,
+        ),
+    ];
   }
-
-  // Fallback: texto livre das impressões clínicas.
-  if (items.isEmpty) {
-    for (final n in _splitLines(impressions?.emotionalNeedsText as String?)) {
-      if (seen.add(n.toLowerCase())) {
-        items.add(InfographicNeed(need: n, accent: AppColors.error));
-      }
-    }
-  }
-
-  return items;
+  return _conceptualizationModes(modeText, concept);
 }
 
-List<InfographicItem> _buildModes(
+List<InfographicItem> _conceptualizationModes(
   String? modeText,
   CaseConceptualization? concept,
 ) {
   final items = <InfographicItem>[];
   final seen = <String>{};
 
-  // Modos de enfrentamento da Conceitualização.
   if (concept != null && concept.hasModeAssessment) {
     final ma = concept.modeAssessment;
     for (final cm in ma.copingModes) {
@@ -275,7 +260,6 @@ List<InfographicItem> _buildModes(
         accent: AppColors.turquoise,
       ));
     }
-    // Modos parentais.
     for (final pm in ma.parentalModes) {
       if (pm.isEmpty) continue;
       final name = (pm.name ?? '').trim();
@@ -284,12 +268,11 @@ List<InfographicItem> _buildModes(
         title: name,
         description: pm.messages?.trim(),
         icon: Icons.theater_comedy_outlined,
-        accent: AppColors.warning,
+        accent: AppColors.turquoise,
       ));
     }
   }
 
-  // Fallback: texto livre.
   if (items.isEmpty) {
     return _splitLines(modeText)
         .map((m) => _asTitleDescription(
@@ -299,78 +282,24 @@ List<InfographicItem> _buildModes(
             ))
         .toList();
   }
-
   return items;
 }
 
-List<InfographicItem> _buildChallenges(
-  ClinicalImpressions? impressions,
-  CaseConceptualization? concept,
-) {
-  final items = <InfographicItem>[];
-  final seen = <String>{};
-
-  // Problemas de vida da Conceitualização.
-  if (concept != null) {
-    final probs = [
-      concept.lifeProblems.problem1,
-      concept.lifeProblems.problem2,
-      concept.lifeProblems.problem3,
-      concept.lifeProblems.problem4,
-    ].where((p) => (p ?? '').trim().isNotEmpty).cast<String>();
-    for (final p in probs) {
-      if (seen.add(p.toLowerCase())) {
-        items.add(InfographicItem(
-          title: p.trim(),
-          icon: Icons.report_problem_outlined,
-          accent: AppColors.warning,
-        ));
-      }
-    }
-  }
-
-  // Complementa com vulnerabilidades das impressões.
-  for (final v
-      in _itemsFrom(impressions?.vulnerabilities,
-          icon: Icons.report_problem_outlined, accent: AppColors.warning)) {
-    if (seen.add(v.title.toLowerCase())) items.add(v);
-  }
-
-  return items;
-}
-
-List<InfographicItem> _buildDirections(
-  ClinicalImpressions? impressions,
-  CaseConceptualization? concept,
-) {
-  final items = <InfographicItem>[];
-  final seen = <String>{};
-
-  // Objetivos de terapia da Conceitualização.
-  if (concept != null && concept.hasTherapyObjectives) {
-    for (final obj in concept.therapyObjectives) {
-      if (obj.isEmpty) continue;
-      final goal = (obj.goal ?? '').trim();
-      if (goal.isEmpty || !seen.add(goal.toLowerCase())) continue;
-      items.add(InfographicItem(
-        title: goal,
-        description: obj.healthyBehaviors?.trim(),
-        icon: Icons.check_circle_outline,
+/// Estilos de enfrentamento mais altos nos questionários YCI/YRAI.
+List<InfographicItem> _buildCoping(ClinicalDashboardData dashboard) {
+  return [
+    for (final r in dashboard.caseSummary.topCoping)
+      InfographicItem(
+        title: r.name,
+        description: r.severityLabel ??
+            'Média ${_avg(r.averageScore ?? r.score)}',
+        icon: Icons.shield_outlined,
         accent: AppColors.cyan,
-      ));
-    }
-  }
-
-  // Fallback: prioridades terapêuticas das impressões.
-  if (items.isEmpty) {
-    return _itemsFrom(impressions?.therapeuticPriorities as String?,
-        icon: Icons.check_circle_outline, accent: AppColors.cyan);
-  }
-
-  return items;
+      ),
+  ];
 }
 
-// ── Novas seções (Luciana) ─────────────────────────────────────────────────
+// ── Demandas, contexto de vida, apego, recursos e plano ────────────────────
 
 List<InfographicItem> _buildDemands(List<PatientProblem> problems) {
   return problems
@@ -381,31 +310,84 @@ List<InfographicItem> _buildDemands(List<PatientProblem> problems) {
                 ? p.description!.trim()
                 : null,
             icon: Icons.flag_outlined,
-            accent: AppColors.error,
+            accent: AppColors.blue,
           ))
       .toList();
 }
 
-/// Funcionamento atual — Seção 5 da Conceitualização, avaliada pelo terapeuta.
-/// Escala 1–6 (1 = Não Funcional … 6 = Excelente).
-List<InfographicLifeArea> _buildLifeAreas(FunctioningAssessment? functioning) {
-  if (functioning == null || functioning.isEmpty) return const [];
+/// Roda da Vida: a satisfação (1–10) que o paciente deu a cada área.
+Map<LifeArea, int> _buildLifeWheel(InitialAssessment? assessment) {
+  if (assessment == null) return const {};
+  return {
+    for (final area in kLifeAreasInOrder)
+      if (assessment.lifeAreaFor(area).score != null)
+        area: assessment.lifeAreaFor(area).score!,
+  };
+}
+
+InfographicItem? _buildAttachment(String? style) {
+  final s = style?.trim();
+  if (s == null || s.isEmpty) return null;
+  return InfographicItem(
+    title: attachmentTitleFor(s),
+    description: attachmentDescriptionFor(s),
+    icon: Icons.link_outlined,
+    accent: AppColors.purple,
+  );
+}
+
+List<InfographicItem> _buildResources(HealthyResources? resources) {
+  if (resources == null || resources.isEmpty) return const [];
+  final labels = {
+    for (final c in kHealthyResourceCatalog)
+      for (final i in c.items) i.id: i.label,
+  };
+  final names = <String>[
+    for (final id in resources.selectedPredefined)
+      if (labels[id] != null) labels[id]!,
+    for (final custom in resources.customResources)
+      if (custom.trim().isNotEmpty) custom.trim(),
+  ];
   return [
-    for (final area in kFunctioningAreas)
-      if (!(functioning.entryFor(area.key).isEmpty))
-        InfographicLifeArea(
-          label: area.label,
-          score: functioning.entryFor(area.key).rating ?? 0,
-          maxScore: 6,
-          accent: _functioningColor(functioning.entryFor(area.key).rating ?? 0),
+    for (final n in names)
+      InfographicItem(
+        title: n,
+        icon: Icons.spa_outlined,
+        accent: AppColors.success,
+      ),
+  ];
+}
+
+List<InfographicItem> _buildPlan(List<TherapyGoal> goals) {
+  return [
+    for (final g in goals)
+      if (g.isActive)
+        InfographicItem(
+          title: g.title,
+          description: (g.description ?? '').trim().isNotEmpty
+              ? g.description!.trim()
+              : null,
+          bullets: [if (g.progress > 0) 'Progresso: ${g.progress}%'],
+          icon: Icons.flag_outlined,
+          accent: AppColors.moduleGoals,
         ),
   ];
 }
 
-Color _functioningColor(int score) {
-  if (score <= 2) return AppColors.error;
-  if (score <= 4) return AppColors.warning;
-  return AppColors.success;
+// ── Genograma ──────────────────────────────────────────────────────────────
+
+/// Mesmo genograma, sem pessoas sensíveis e sem relações que as envolvam.
+GenogramData? _withoutSensitive(GenogramData? data) {
+  if (data == null || data.people.isEmpty) return null;
+  final people = [for (final p in data.people) if (!p.isSensitive) p];
+  final ids = {for (final p in people) p.id};
+  return GenogramData(
+    people: people,
+    relationships: [
+      for (final r in data.relationships)
+        if (ids.contains(r.personAId) && ids.contains(r.personBId)) r,
+    ],
+  );
 }
 
 List<InfographicGenogramMember> _buildGenogramMembers(GenogramData? data) {
@@ -473,15 +455,15 @@ List<InfographicPersonalityDomain> _buildPersonalityDomains(
   if (assessments.isEmpty) return const [];
   // Usa o registro mais recente que tenha resultados integrados.
   final candidate = assessments.firstWhere(
-    (a) => a.results != null && a.results!.domains.isNotEmpty,
+    (a) => a.results.domains.isNotEmpty,
     orElse: () => assessments.first,
   );
   final results = candidate.results;
-  if (results == null || results.domains.isEmpty) return const [];
+  if (results.domains.isEmpty) return const [];
 
   final instrument = instrumentForCode(candidate.instrument);
 
-  const _domainIcons = <String, IconData>{
+  const domainIcons = <String, IconData>{
     'neuroticism': Icons.mood_bad_outlined,
     'extraversion': Icons.people_outline,
     'openness': Icons.explore_outlined,
@@ -498,7 +480,7 @@ List<InfographicPersonalityDomain> _buildPersonalityDomains(
       name: domainDef.label,
       score: score,
       classification: entry.overall.level?.label,
-      icon: _domainIcons[domainDef.code] ?? Icons.psychology_outlined,
+      icon: domainIcons[domainDef.code] ?? Icons.psychology_outlined,
       accent: personalityDomainColor(domainDef.code),
     ));
   }

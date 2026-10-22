@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../clinical_dashboard/providers/clinical_dashboard_providers.dart';
 import '../../genogram/domain/genogram_data.dart';
 import '../../genogram/providers/genogram_providers.dart';
+import '../../healthy_resources/domain/healthy_resources.dart';
+import '../../healthy_resources/providers/healthy_resources_providers.dart';
 import '../../initial_assessment/providers/initial_assessment_providers.dart';
 import '../../mental_map/providers/case_conceptualization_providers.dart';
 import '../../mental_map/providers/mental_map_providers.dart';
@@ -99,6 +101,13 @@ final patientInfographicProvider =
     );
   } catch (_) {}
 
+  HealthyResources? healthyResources;
+  try {
+    healthyResources = await ref.watch(
+      healthyResourcesProvider(ctx.patientId).future,
+    );
+  } catch (_) {}
+
   return buildPatientInfographic(
     patient: patient,
     dashboard: dashboard,
@@ -109,5 +118,6 @@ final patientInfographicProvider =
     problems: problems,
     attachmentStyle: attachmentStyle,
     genogramData: genogramData,
+    healthyResources: healthyResources,
   );
 });

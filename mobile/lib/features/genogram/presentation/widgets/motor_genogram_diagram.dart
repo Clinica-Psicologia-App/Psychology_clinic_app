@@ -19,9 +19,14 @@ class MotorGenogramDiagram extends StatefulWidget {
     required this.data,
     this.showEmotional = true,
     this.onTapPerson,
+    this.interactive = true,
   });
 
   final GenogramData data;
+
+  /// `false` desenha o diagrama estático (sem zoom/arraste, sem animação e sem
+  /// fundo), ajustado à largura disponível — usado no pôster exportável.
+  final bool interactive;
 
   /// Liga/desliga o overlay das relações emocionais (conflito, próxima…).
   final bool showEmotional;
@@ -65,6 +70,10 @@ class _MotorGenogramDiagramState extends State<MotorGenogramDiagram>
     super.didChangeDependencies();
     if (_started) return;
     _started = true;
+    if (!widget.interactive) {
+      _entry.value = 1;
+      return;
+    }
     if (AppAnimations.shouldAnimate(context)) {
       _entry.forward();
       _pulse.repeat(reverse: true);
@@ -121,6 +130,20 @@ class _MotorGenogramDiagramState extends State<MotorGenogramDiagram>
         ),
       ),
     );
+
+    if (!widget.interactive) {
+      return AspectRatio(
+        aspectRatio: diagram.width / math.max(diagram.height, 1),
+        child: FittedBox(
+          fit: BoxFit.contain,
+          child: SizedBox(
+            width: diagram.width,
+            height: math.max(diagram.height, 1),
+            child: painter,
+          ),
+        ),
+      );
+    }
 
     final viewer = InteractiveViewer(
       constrained: false,

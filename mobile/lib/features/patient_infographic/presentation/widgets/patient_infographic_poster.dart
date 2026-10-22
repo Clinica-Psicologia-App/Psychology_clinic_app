@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/theme/app_branding_assets.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../genogram/presentation/widgets/motor_genogram_diagram.dart';
+import '../../../initial_assessment/domain/life_area.dart';
+import '../../../initial_assessment/presentation/widgets/life_area_wheel_chart.dart';
 import '../../../profile/domain/avatar_type.dart';
 import '../../../profile/domain/profile_role.dart';
 import '../../../profile/presentation/widgets/user_avatar.dart';
@@ -10,6 +14,9 @@ import '../../domain/patient_infographic_data.dart';
 /// para exportar em imagem e PDF (largura fixa, sem rolagem interna).
 ///
 /// Renderiza apenas o [PatientInfographicData]; todo o conteúdo vem do builder.
+/// A ordem das seções segue a do preenchimento do caso: demandas, contexto de
+/// vida, personalidade, história, genograma, esquemas, apego, modos, recursos
+/// saudáveis e plano terapêutico. Seção sem dados aparece como "a preencher".
 class PatientInfographicPoster extends StatelessWidget {
   const PatientInfographicPoster({
     super.key,
@@ -25,156 +32,6 @@ class PatientInfographicPoster extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Seções de fluxo (com peso ≈ altura), distribuídas para equilibrar as
-    // duas colunas em vez de uma divisão fixa.
-    // Cada seção padrão aparece sempre: com os dados (card real) ou como
-    // placeholder pontilhado ("a preencher") — assim o pôster mostra o que
-    // ainda falta em vez de deixar um vazio.
-    const challengesAccent = Color(0xFFE0519A);
-    final flow = <_WeightedSection>[
-      data.hasTimeline
-          ? _WeightedSection(
-              2 + data.timeline.length,
-              _TimelineBlock(entries: data.timeline),
-            )
-          : const _WeightedSection(
-              4,
-              _GhostCard(title: 'LINHA DO TEMPO', accent: AppColors.cyan),
-            ),
-      data.hasSchemas
-          ? _WeightedSection(
-              1 + data.schemas.length,
-              _SectionCard(
-                title: 'ESQUEMAS EM DESTAQUE',
-                subtitle: 'Domínios ativados no perfil',
-                accent: AppColors.purple,
-                child: _items(data.schemas, AppColors.purple),
-              ),
-            )
-          : const _WeightedSection(
-              4,
-              _GhostCard(
-                  title: 'ESQUEMAS EM DESTAQUE', accent: AppColors.purple),
-            ),
-      data.hasNeeds
-          ? _WeightedSection(
-              1 + data.needs.length,
-              _SectionCard(
-                title: 'NECESSIDADES EMOCIONAIS',
-                subtitle: 'e eventos de vida relacionados',
-                accent: AppColors.error,
-                child: _needs(data.needs),
-              ),
-            )
-          : const _WeightedSection(
-              4,
-              _GhostCard(
-                  title: 'NECESSIDADES EMOCIONAIS', accent: AppColors.error),
-            ),
-      data.hasModes
-          ? _WeightedSection(
-              1 + data.modes.fold<int>(0, (s, m) => s + 1 + m.bullets.length),
-              _SectionCard(
-                title: 'MODOS E ESTILOS DE ENFRENTAMENTO',
-                accent: AppColors.turquoise,
-                child: _items(data.modes, AppColors.turquoise),
-              ),
-            )
-          : const _WeightedSection(
-              4,
-              _GhostCard(
-                  title: 'MODOS E ESTILOS DE ENFRENTAMENTO',
-                  accent: AppColors.turquoise),
-            ),
-      data.hasStrengths
-          ? _WeightedSection(
-              1 + data.strengths.length,
-              _SectionCard(
-                title: 'PONTOS FORTES E POTENCIAIS',
-                accent: AppColors.turquoise,
-                child: _items(data.strengths, AppColors.turquoise),
-              ),
-            )
-          : const _WeightedSection(
-              4,
-              _GhostCard(
-                  title: 'PONTOS FORTES E POTENCIAIS',
-                  accent: AppColors.turquoise),
-            ),
-      data.hasChallenges
-          ? _WeightedSection(
-              1 + data.challenges.length,
-              _SectionCard(
-                title: 'DESAFIOS NA VIDA ADULTA',
-                accent: challengesAccent,
-                child: _items(data.challenges, challengesAccent),
-              ),
-            )
-          : const _WeightedSection(
-              4,
-              _GhostCard(
-                  title: 'DESAFIOS NA VIDA ADULTA', accent: challengesAccent),
-            ),
-      data.hasDirections
-          ? _WeightedSection(
-              1 + data.directions.length,
-              _SectionCard(
-                title: 'DIREÇÕES TERAPÊUTICAS',
-                accent: AppColors.cyan,
-                child: _items(data.directions, AppColors.cyan),
-              ),
-            )
-          : const _WeightedSection(
-              4,
-              _GhostCard(
-                  title: 'DIREÇÕES TERAPÊUTICAS', accent: AppColors.cyan),
-            ),
-      if (data.hasDemands)
-        _WeightedSection(
-          1 + data.demands.length,
-          _SectionCard(
-            title: 'DEMANDAS TERAPÊUTICAS',
-            subtitle: 'Problemas abertos',
-            accent: AppColors.error,
-            icon: Icons.flag_outlined,
-            child: _items(data.demands, AppColors.error),
-          ),
-        ),
-      if (data.hasLifeAreas)
-        _WeightedSection(
-          2 + (data.lifeAreas.length / 3).ceil(),
-          _SectionCard(
-            title: 'CONTEXTO DE VIDA ATUAL',
-            subtitle: 'Funcionamento atual — avaliação do terapeuta (1–6)',
-            accent: AppColors.turquoise,
-            icon: Icons.donut_large_outlined,
-            child: _lifeAreasGrid(data.lifeAreas),
-          ),
-        ),
-      if (data.hasAttachmentStyle)
-        _WeightedSection(
-          2,
-          _SectionCard(
-            title: 'ESTILO DE APEGO',
-            accent: AppColors.purple,
-            icon: Icons.link_outlined,
-            child: _attachmentChip(data.attachmentStyle!),
-          ),
-        ),
-      if (data.hasGenogramMembers)
-        _WeightedSection(
-          1 + (data.genogramMembers.length / 2).ceil(),
-          _SectionCard(
-            title: 'GENOGRAMA',
-            subtitle: 'Figuras do sistema familiar',
-            accent: AppColors.cyan,
-            icon: Icons.account_tree_outlined,
-            child: _genogramChips(data.genogramMembers),
-          ),
-        ),
-    ];
-    final (left, right) = _balanceColumns(flow);
-
     return Container(
       width: width,
       color: _bg,
@@ -185,41 +42,21 @@ class PatientInfographicPoster extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            _TopBar(generatedOn: data.generatedOn),
+            const SizedBox(height: 14),
             _Header(data: data),
             const SizedBox(height: _gap),
-            if (data.hasPersonality)
-              _SectionCard(
-                title: 'PERSONALIDADE (BIG FIVE)',
-                accent: AppColors.purple,
-                child: _personality(data.personality),
-              )
-            else
-              const _GhostCard(
-                title: 'PERSONALIDADE (BIG FIVE)',
-                accent: AppColors.purple,
-                subtitle: 'Registre em Avaliação → Personalidade',
-              ),
+            _row(_demandsCard(), _lifeWheelCard()),
             const SizedBox(height: _gap),
-            IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(child: _column(left)),
-                  const SizedBox(width: _gap),
-                  Expanded(child: _column(right)),
-                ],
-              ),
-            ),
+            _personalityCard(),
             const SizedBox(height: _gap),
-            if (data.hasResources)
-              _SectionCard(
-                title: 'RECURSOS E FORÇAS',
-                accent: AppColors.success,
-                child: _resourcesWrap(data.resources),
-              )
-            else
-              const _GhostCard(
-                  title: 'RECURSOS E FORÇAS', accent: AppColors.success),
+            _row(_timelineCard(), _genogramCard()),
+            const SizedBox(height: _gap),
+            _row(_schemasCard(), _attachmentCard()),
+            const SizedBox(height: _gap),
+            _row(_modesCard(), _resourcesCard()),
+            const SizedBox(height: _gap),
+            _planCard(),
             if (data.closingLine != null) ...[
               const SizedBox(height: _gap),
               _closing(data.closingLine!),
@@ -246,19 +83,270 @@ class PatientInfographicPoster extends StatelessWidget {
     return '$dd/$mm/${d.year}';
   }
 
-  Widget _column(List<Widget> cards) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (var i = 0; i < cards.length; i++) ...[
-          if (i > 0) const SizedBox(height: _gap),
-          cards[i],
+  /// Duas seções lado a lado, com a mesma altura.
+  Widget _row(Widget left, Widget right) {
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(child: left),
+          const SizedBox(width: _gap),
+          Expanded(child: right),
         ],
-      ],
+      ),
     );
   }
 
-  // ── Itens (esquemas, modos, pontos fortes, desafios, direções) ─────────
+  // ── Seções ───────────────────────────────────────────────────────────────
+
+  Widget _demandsCard() {
+    const accent = AppColors.blue;
+    if (!data.hasDemands) {
+      return const _GhostCard(
+        title: 'DEMANDAS TERAPÊUTICAS',
+        accent: accent,
+        hint: 'A preencher em Conhecer › Demandas Terapêuticas',
+      );
+    }
+    return _SectionCard(
+      title: 'DEMANDAS TERAPÊUTICAS',
+      accent: accent,
+      icon: Icons.record_voice_over_outlined,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if ((data.reasonsInitial ?? '').trim().isNotEmpty)
+            _quote('Inicialmente', data.reasonsInitial!.trim(), accent),
+          if ((data.reasonsCurrent ?? '').trim().isNotEmpty)
+            _quote('Atualmente', data.reasonsCurrent!.trim(), accent),
+          if (data.demands.isNotEmpty) ...[
+            if (data.hasReasons) const SizedBox(height: 4),
+            _items(data.demands, accent),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _quote(String label, String text, Color accent) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label.toUpperCase(),
+              style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.6,
+                  color: accent)),
+          const SizedBox(height: 2),
+          Text(
+            '“$text”',
+            maxLines: 7,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+                fontStyle: FontStyle.italic, color: AppColors.navy),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _lifeWheelCard() {
+    const accent = AppColors.cyan;
+    if (!data.hasLifeWheel) {
+      return const _GhostCard(
+        title: 'CONTEXTO DE VIDA ATUAL',
+        accent: accent,
+        hint: 'A preencher em Conhecer › Contexto de Vida',
+      );
+    }
+    final Map<LifeArea, int?> scores = {
+      for (final e in data.lifeWheel.entries) e.key: e.value,
+    };
+    return _SectionCard(
+      title: 'CONTEXTO DE VIDA ATUAL',
+      subtitle: 'Roda da Vida — satisfação de 1 a 10',
+      accent: accent,
+      icon: Icons.donut_large_outlined,
+      child: LifeAreaWheelChart(scores: scores),
+    );
+  }
+
+  Widget _personalityCard() {
+    const accent = AppColors.purple;
+    if (!data.hasPersonality) {
+      return const _GhostCard(
+        title: 'PERSONALIDADE · BIG FIVE',
+        accent: accent,
+        hint: 'A preencher em Avaliar › Personalidade',
+      );
+    }
+    return _SectionCard(
+      title: 'PERSONALIDADE · BIG FIVE',
+      accent: accent,
+      icon: Icons.psychology_alt_outlined,
+      child: _personality(data.personality),
+    );
+  }
+
+  Widget _timelineCard() {
+    if (!data.hasTimeline) {
+      return const _GhostCard(
+        title: 'HISTÓRIA DE VIDA · LINHA DO TEMPO',
+        accent: AppColors.cyan,
+        hint: 'A preencher em Conhecer › Linha do Tempo',
+      );
+    }
+    return _TimelineBlock(entries: data.timeline);
+  }
+
+  Widget _genogramCard() {
+    const accent = AppColors.turquoise;
+    if (!data.hasGenogram) {
+      return const _GhostCard(
+        title: 'GENOGRAMA · VÍNCULOS FAMILIARES',
+        accent: accent,
+        hint: 'A preencher em Conhecer › Genograma',
+      );
+    }
+    final genogram = data.genogram;
+    final canDraw =
+        genogram != null && MotorGenogramDiagram.hasStructure(genogram);
+    return _SectionCard(
+      title: 'GENOGRAMA · VÍNCULOS FAMILIARES',
+      accent: accent,
+      icon: Icons.account_tree_outlined,
+      child: canDraw
+          ? ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 360),
+              child: Center(
+                child: MotorGenogramDiagram(
+                  data: genogram,
+                  showEmotional: false,
+                  interactive: false,
+                ),
+              ),
+            )
+          : _genogramChips(data.genogramMembers),
+    );
+  }
+
+  Widget _schemasCard() {
+    const accent = AppColors.purple;
+    if (!data.hasSchemas) {
+      return const _GhostCard(
+        title: 'ESQUEMAS EM DESTAQUE',
+        accent: accent,
+        hint: 'A preencher em Avaliar › Esquemas',
+      );
+    }
+    return _SectionCard(
+      title: 'ESQUEMAS EM DESTAQUE',
+      subtitle: 'Domínios ativados no perfil',
+      accent: accent,
+      icon: Icons.psychology_outlined,
+      child: _items(data.schemas, accent),
+    );
+  }
+
+  Widget _attachmentCard() {
+    const accent = AppColors.blue;
+    if (!data.hasAttachment) {
+      return const _GhostCard(
+        title: 'ESTILO DE APEGO',
+        accent: accent,
+        hint: 'A preencher em Avaliar › Apego',
+      );
+    }
+    return _SectionCard(
+      title: 'ESTILO DE APEGO',
+      subtitle: 'Estilo principal',
+      accent: accent,
+      icon: Icons.link_outlined,
+      child: _items([data.attachment!], accent),
+    );
+  }
+
+  Widget _modesCard() {
+    const accent = AppColors.turquoise;
+    if (!data.hasModes && !data.hasCoping) {
+      return const _GhostCard(
+        title: 'MODOS E ENFRENTAMENTO',
+        accent: accent,
+        hint: 'A preencher em Avaliar › Esquemas (YAMI e YCI/YRAI)',
+      );
+    }
+    return _SectionCard(
+      title: 'MODOS E ENFRENTAMENTO',
+      accent: accent,
+      icon: Icons.theater_comedy_outlined,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (data.hasModes) ...[
+            _subLabel('Modos ativados', accent),
+            _items(data.modes, accent),
+          ],
+          if (data.hasModes && data.hasCoping) const SizedBox(height: 14),
+          if (data.hasCoping) ...[
+            _subLabel('Estilos de enfrentamento', AppColors.cyan),
+            _items(data.coping, AppColors.cyan),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _subLabel(String text, Color color) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Text(text.toUpperCase(),
+          style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.6,
+              color: color)),
+    );
+  }
+
+  Widget _resourcesCard() {
+    const accent = AppColors.success;
+    if (!data.hasResources) {
+      return const _GhostCard(
+        title: 'RECURSOS SAUDÁVEIS E POTENCIAIS',
+        accent: accent,
+        hint: 'A preencher em Conhecer › Recursos Saudáveis',
+      );
+    }
+    return _SectionCard(
+      title: 'RECURSOS SAUDÁVEIS E POTENCIAIS',
+      accent: accent,
+      icon: Icons.spa_outlined,
+      child: _resourcesWrap(data.resources),
+    );
+  }
+
+  Widget _planCard() {
+    const accent = AppColors.moduleGoals;
+    if (!data.hasPlan) {
+      return const _GhostCard(
+        title: 'PLANO TERAPÊUTICO',
+        accent: accent,
+        hint: 'A preencher em Intervir › Plano Terapêutico',
+      );
+    }
+    return _SectionCard(
+      title: 'PLANO TERAPÊUTICO',
+      subtitle: 'Metas e objetivos da terapia',
+      accent: accent,
+      icon: Icons.flag_outlined,
+      child: _items(data.plan, accent),
+    );
+  }
+
+  // ── Itens (esquemas, modos, apego, demandas, plano) ──────────────────────
   Widget _items(List<InfographicItem> items, Color fallbackAccent) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -322,127 +410,54 @@ class PatientInfographicPoster extends StatelessWidget {
     );
   }
 
-  // ── Necessidades × eventos ─────────────────────────────────────────────
-  Widget _needs(List<InfographicNeed> needs) {
-    return Column(
-      children: [
-        for (var i = 0; i < needs.length; i++) ...[
-          if (i > 0) const Divider(height: 18, color: Color(0xFFF0E9E0)),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _iconBadge(needs[i].icon, needs[i].accent ?? AppColors.error),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(needs[i].need,
-                        style: const TextStyle(fontWeight: FontWeight.w600)),
-                    if (needs[i].relatedEvents != null) ...[
-                      const SizedBox(height: 2),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(Icons.arrow_forward,
-                              size: 12, color: AppColors.textMuted),
-                          const SizedBox(width: 4),
-                          Expanded(
-                            child: Text(needs[i].relatedEvents!,
-                                style: const TextStyle(
-                                    color: AppColors.textSecondary,
-                                    fontSize: 12)),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ],
-    );
-  }
-
-  // ── Personalidade (barras) ─────────────────────────────────────────────
+  // ── Personalidade (compacta: 5 colunas numa faixa) ───────────────────────
   Widget _personality(List<InfographicPersonalityDomain> domains) {
-    return Column(
-      children: [
-        for (var i = 0; i < domains.length; i++) ...[
-          if (i > 0) const SizedBox(height: 12),
-          _personalityRow(domains[i]),
-        ],
-      ],
-    );
-  }
-
-  Widget _personalityRow(InfographicPersonalityDomain d) {
-    final accent = d.accent ?? AppColors.purple;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _iconBadge(d.icon, accent),
-        const SizedBox(width: 10),
-        SizedBox(
-          width: 150,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(d.name,
-                  style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: accent,
-                      fontSize: 13)),
-              if (d.classification != null)
-                Text(d.classification!,
-                    style: const TextStyle(
-                        color: AppColors.textMuted, fontSize: 11)),
-            ],
+        for (var i = 0; i < domains.length; i++) ...[
+          if (i > 0) const SizedBox(width: 14),
+          Expanded(child: _personalityColumn(domains[i])),
+        ],
+      ],
+    );
+  }
+
+  Widget _personalityColumn(InfographicPersonalityDomain d) {
+    final accent = d.accent ?? AppColors.purple;
+    final detail = [
+      if (d.classification != null) d.classification!,
+      if (d.score > 0) d.score.toStringAsFixed(0),
+    ].join(' · ');
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(d.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+                fontWeight: FontWeight.w700, color: accent, fontSize: 12)),
+        if (detail.isNotEmpty)
+          Text(detail,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style:
+                  const TextStyle(color: AppColors.textMuted, fontSize: 10.5)),
+        const SizedBox(height: 6),
+        Container(
+          height: 6,
+          decoration: BoxDecoration(
+            color: accent.withValues(alpha: 0.15),
+            borderRadius: BorderRadius.circular(3),
           ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.only(top: 4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: accent.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: FractionallySizedBox(
-                          alignment: Alignment.centerLeft,
-                          widthFactor: d.fraction,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: accent,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(d.score.toStringAsFixed(0),
-                        style: TextStyle(
-                            fontWeight: FontWeight.w800, color: accent)),
-                  ],
-                ),
-                if (d.meaning != null) ...[
-                  const SizedBox(height: 3),
-                  Text(d.meaning!,
-                      style: const TextStyle(
-                          color: AppColors.textSecondary, fontSize: 12)),
-                ],
-              ],
+          child: FractionallySizedBox(
+            alignment: Alignment.centerLeft,
+            widthFactor: d.fraction,
+            child: Container(
+              decoration: BoxDecoration(
+                color: accent,
+                borderRadius: BorderRadius.circular(3),
+              ),
             ),
           ),
         ),
@@ -450,7 +465,7 @@ class PatientInfographicPoster extends StatelessWidget {
     );
   }
 
-  // ── Recursos (chips) ───────────────────────────────────────────────────
+  // ── Recursos (chips) ─────────────────────────────────────────────────────
   Widget _resourcesWrap(List<InfographicItem> resources) {
     return Wrap(
       spacing: 10,
@@ -468,67 +483,11 @@ class PatientInfographicPoster extends StatelessWidget {
               children: [
                 Icon(r.icon, size: 15, color: AppColors.success),
                 const SizedBox(width: 6),
-                Text(r.title,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w600, color: AppColors.navy)),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-
-  // ── Roda da Vida (grid 3 colunas) ─────────────────────────────────────────
-  Widget _lifeAreasGrid(List<InfographicLifeArea> areas) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 10,
-      children: [
-        for (final a in areas)
-          SizedBox(
-            width: 130,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  a.label,
-                  style: const TextStyle(
-                      fontSize: 11, color: AppColors.textSecondary),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 3),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        height: 7,
-                        decoration: BoxDecoration(
-                          color: (a.accent ?? AppColors.turquoise)
-                              .withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: FractionallySizedBox(
-                          alignment: Alignment.centerLeft,
-                          widthFactor: a.fraction,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: a.accent ?? AppColors.turquoise,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      '${a.score}',
-                      style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 12,
-                          color: a.accent ?? AppColors.turquoise),
-                    ),
-                  ],
+                Flexible(
+                  child: Text(r.title,
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.navy)),
                 ),
               ],
             ),
@@ -537,32 +496,7 @@ class PatientInfographicPoster extends StatelessWidget {
     );
   }
 
-  // ── Estilo de Apego (chip único destacado) ─────────────────────────────────
-  Widget _attachmentChip(String style) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceTintPurple,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.link_outlined, color: AppColors.purple, size: 22),
-          const SizedBox(width: 10),
-          Text(
-            style,
-            style: const TextStyle(
-                fontWeight: FontWeight.w800,
-                color: AppColors.purple,
-                fontSize: 16),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ── Genograma (chips de membros) ───────────────────────────────────────────
+  // ── Genograma (alternativa em chips, sem estrutura para desenhar) ────────
   Widget _genogramChips(List<InfographicGenogramMember> members) {
     return Wrap(
       spacing: 8,
@@ -570,8 +504,7 @@ class PatientInfographicPoster extends StatelessWidget {
       children: [
         for (final m in members)
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               color: AppColors.surfaceTintTurquoise,
               borderRadius: BorderRadius.circular(10),
@@ -602,8 +535,7 @@ class PatientInfographicPoster extends StatelessWidget {
                       Text(
                         m.relationship!,
                         style: const TextStyle(
-                            fontSize: 10,
-                            color: AppColors.textMuted),
+                            fontSize: 10, color: AppColors.textMuted),
                       ),
                   ],
                 ),
@@ -654,13 +586,66 @@ class PatientInfographicPoster extends StatelessWidget {
   }
 }
 
+// ── Faixa superior com a logo ───────────────────────────────────────────────
+class _TopBar extends StatelessWidget {
+  const _TopBar({required this.generatedOn});
+
+  final DateTime? generatedOn;
+
+  @override
+  Widget build(BuildContext context) {
+    final date = generatedOn == null
+        ? null
+        : PatientInfographicPoster._formatDate(generatedOn!);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Image.asset(
+          AppBrandingAssets.logoPrincipal,
+          height: 84,
+          fit: BoxFit.contain,
+          errorBuilder: (_, __, ___) => const Text(
+            'EsquemaCore',
+            style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
+                color: AppColors.navy),
+          ),
+        ),
+        const Spacer(),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            const Text('INFOGRÁFICO · SÍNTESE CLÍNICA',
+                style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 0.8,
+                    color: AppColors.textMuted)),
+            if (date != null)
+              Text(date,
+                  style: const TextStyle(
+                      fontSize: 10,
+                      letterSpacing: 0.8,
+                      color: AppColors.textMuted)),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
 // ── Placeholder de seção ainda não preenchida ("bloco em branco") ───────────
 class _GhostCard extends StatelessWidget {
-  const _GhostCard({required this.title, required this.accent, this.subtitle});
+  const _GhostCard({
+    required this.title,
+    required this.accent,
+    this.hint = 'A preencher',
+  });
 
   final String title;
   final Color accent;
-  final String? subtitle;
+  final String hint;
 
   Widget _skeletonBar(double widthFactor) => FractionallySizedBox(
         alignment: Alignment.centerLeft,
@@ -686,6 +671,7 @@ class _GhostCard extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Row(
               children: [
@@ -702,23 +688,12 @@ class _GhostCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title,
-                          style: TextStyle(
-                              color: accent.withValues(alpha: 0.85),
-                              fontWeight: FontWeight.w800,
-                              fontSize: 13,
-                              letterSpacing: 0.4)),
-                      if (subtitle != null)
-                        Text(subtitle!,
-                            style: const TextStyle(
-                                color: AppColors.textMuted,
-                                fontSize: 11,
-                                fontStyle: FontStyle.italic)),
-                    ],
-                  ),
+                  child: Text(title,
+                      style: TextStyle(
+                          color: accent.withValues(alpha: 0.85),
+                          fontWeight: FontWeight.w800,
+                          fontSize: 13,
+                          letterSpacing: 0.4)),
                 ),
               ],
             ),
@@ -727,15 +702,15 @@ class _GhostCard extends StatelessWidget {
             _skeletonBar(0.75),
             _skeletonBar(0.55),
             const SizedBox(height: 6),
-            const Row(
+            Row(
               children: [
-                Icon(Icons.hourglass_empty,
+                const Icon(Icons.hourglass_empty,
                     size: 13, color: AppColors.textMuted),
-                SizedBox(width: 6),
+                const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    'A preencher na Conceitualização',
-                    style: TextStyle(
+                    hint,
+                    style: const TextStyle(
                         color: AppColors.textMuted,
                         fontSize: 11,
                         fontStyle: FontStyle.italic),
@@ -774,7 +749,8 @@ class _DashedRRectPainter extends CustomPainter {
     for (final metric in path.computeMetrics()) {
       var distance = 0.0;
       while (distance < metric.length) {
-        final len = distance + dash < metric.length ? dash : metric.length - distance;
+        final len =
+            distance + dash < metric.length ? dash : metric.length - distance;
         canvas.drawPath(metric.extractPath(distance, distance + len), paint);
         distance += dash + gap;
       }
@@ -814,24 +790,14 @@ class _Header extends StatelessWidget {
           _HeaderAvatar(header: h),
           const SizedBox(width: 20),
           Expanded(
-            flex: 3,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Flexible(
-                      child: Text(h.name,
-                          style: const TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.navy)),
-                    ),
-                    const SizedBox(width: 8),
-                    const Icon(Icons.favorite,
-                        size: 18, color: Color(0xFFE0519A)),
-                  ],
-                ),
+                Text(h.name,
+                    style: const TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.navy)),
                 const SizedBox(height: 10),
                 Wrap(
                   spacing: 18,
@@ -854,75 +820,10 @@ class _Header extends StatelessWidget {
               ],
             ),
           ),
-          if (data.quote != null) ...[
-            const SizedBox(width: 20),
-            Expanded(
-              flex: 2,
-              child: Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceTintTurquoise,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('“',
-                        style: TextStyle(
-                            fontSize: 30,
-                            height: 0.9,
-                            fontWeight: FontWeight.w800,
-                            color: AppColors.turquoise)),
-                    Text(data.quote!,
-                        style: const TextStyle(
-                            fontStyle: FontStyle.italic,
-                            color: AppColors.textSecondary,
-                            height: 1.4)),
-                  ],
-                ),
-              ),
-            ),
-          ],
         ],
       ),
     );
   }
-}
-
-/// Seção de fluxo com um peso ≈ à sua altura, para balancear as colunas.
-class _WeightedSection {
-  const _WeightedSection(this.weight, this.widget);
-  final int weight;
-  final Widget widget;
-}
-
-/// Distribui as seções em duas colunas equilibrando a altura total: percorre
-/// da mais "pesada" para a mais "leve", pondo cada uma na coluna mais curta.
-/// Mantém a ordem relativa dentro de cada coluna estável (pela ordem original).
-(List<Widget>, List<Widget>) _balanceColumns(List<_WeightedSection> sections) {
-  final indexed = [
-    for (var i = 0; i < sections.length; i++) (i, sections[i]),
-  ]..sort((a, b) => b.$2.weight.compareTo(a.$2.weight));
-
-  var leftWeight = 0;
-  var rightWeight = 0;
-  final leftIdx = <int>[];
-  final rightIdx = <int>[];
-  for (final (originalIndex, section) in indexed) {
-    if (leftWeight <= rightWeight) {
-      leftIdx.add(originalIndex);
-      leftWeight += section.weight;
-    } else {
-      rightIdx.add(originalIndex);
-      rightWeight += section.weight;
-    }
-  }
-  leftIdx.sort();
-  rightIdx.sort();
-  return (
-    [for (final i in leftIdx) sections[i].widget],
-    [for (final i in rightIdx) sections[i].widget],
-  );
 }
 
 // ── Avatar do cabeçalho ─────────────────────────────────────────────────────
@@ -982,7 +883,7 @@ class _TimelineBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _SectionCard(
-      title: 'LINHA DO TEMPO',
+      title: 'HISTÓRIA DE VIDA · LINHA DO TEMPO',
       accent: AppColors.cyan,
       icon: Icons.schedule,
       child: Column(

@@ -1,71 +1,83 @@
 import 'package:flutter/material.dart';
 
+import '../../genogram/domain/genogram_data.dart';
+import '../../initial_assessment/domain/life_area.dart';
 import '../../profile/domain/avatar_config.dart';
 import '../../profile/domain/avatar_type.dart';
 
 /// Conteúdo consolidado que alimenta o pôster/infográfico do paciente.
 ///
 /// É um modelo puramente de apresentação: o builder determinístico
-/// (Estágio 2) o preenche a partir dos dados reais do paciente
-/// (dashboard consolidado, conceitualização, linha do tempo, cadastro).
-/// O widget do pôster só sabe desenhar este modelo.
+/// preenche o modelo a partir dos dados reais do paciente (cadastro, Conhecer,
+/// Avaliar e Compreender). O widget do pôster só sabe desenhar este modelo.
+///
+/// As seções seguem a ordem em que o terapeuta preenche o caso: demandas,
+/// contexto de vida, personalidade, história, genograma, esquemas, modos,
+/// apego, recursos saudáveis e plano terapêutico.
 class PatientInfographicData {
   const PatientInfographicData({
     required this.header,
-    this.quote,
-    this.timeline = const [],
-    this.schemas = const [],
-    this.needs = const [],
-    this.modes = const [],
-    this.strengths = const [],
-    this.challenges = const [],
-    this.directions = const [],
-    this.personality = const [],
-    this.resources = const [],
+    this.reasonsInitial,
+    this.reasonsCurrent,
     this.demands = const [],
-    this.lifeAreas = const [],
-    this.attachmentStyle,
+    this.lifeWheel = const {},
+    this.personality = const [],
+    this.timeline = const [],
+    this.genogram,
     this.genogramMembers = const [],
+    this.schemas = const [],
+    this.modes = const [],
+    this.coping = const [],
+    this.attachment,
+    this.resources = const [],
+    this.plan = const [],
     this.closingLine,
     this.generatedOn,
   });
 
   final InfographicHeader header;
 
-  /// Frase de abertura/identidade (entre aspas no pôster).
-  final String? quote;
+  /// Demandas terapêuticas — motivos da procura (inicial e atual), de
+  /// Conhecer › Demandas Terapêuticas.
+  final String? reasonsInitial;
+  final String? reasonsCurrent;
 
-  final List<InfographicTimelineEntry> timeline;
-  final List<InfographicItem> schemas;
-  final List<InfographicNeed> needs;
-  final List<InfographicItem> modes;
+  /// Demandas/focos abertos já cadastrados (`patient_problems`).
+  final List<InfographicItem> demands;
 
-  /// Pontos fortes e potenciais.
-  final List<InfographicItem> strengths;
-
-  /// Desafios na vida adulta.
-  final List<InfographicItem> challenges;
-
-  /// Direções terapêuticas.
-  final List<InfographicItem> directions;
+  /// Roda da Vida: satisfação 1–10 por área (só áreas respondidas), de
+  /// Conhecer › Contexto de Vida.
+  final Map<LifeArea, int> lifeWheel;
 
   /// Personalidade (Big Five). Só aparece quando há dados de instrumento.
   final List<InfographicPersonalityDomain> personality;
 
-  /// Recursos e forças (chips curtos).
+  final List<InfographicTimelineEntry> timeline;
+
+  /// Genograma sem pessoas sensíveis, para o desenho. O pôster só desenha
+  /// quando há estrutura suficiente; senão usa [genogramMembers].
+  final GenogramData? genogram;
+
+  /// Membros do genograma (sem sensíveis) — alternativa quando não há estrutura
+  /// para desenhar.
+  final List<InfographicGenogramMember> genogramMembers;
+
+  final List<InfographicItem> schemas;
+
+  /// Modos esquemáticos ativados no YAMI.
+  final List<InfographicItem> modes;
+
+  /// Estilos de enfrentamento (YCI/YRAI).
+  final List<InfographicItem> coping;
+
+  /// Estilo de apego principal, com breve explicação.
+  final InfographicItem? attachment;
+
+  /// Recursos saudáveis (Conhecer › Recursos Saudáveis).
   final List<InfographicItem> resources;
 
-  /// Demandas terapêuticas abertas (patient_problems).
-  final List<InfographicItem> demands;
-
-  /// Contexto de vida atual — Roda da Vida (9 áreas, nota 1–10).
-  final List<InfographicLifeArea> lifeAreas;
-
-  /// Estilo de apego dominante (top do questionário ATTACHMENT_STYLES_V1).
-  final String? attachmentStyle;
-
-  /// Membros do genograma (sem sensíveis).
-  final List<InfographicGenogramMember> genogramMembers;
+  /// Plano terapêutico — metas ativas (Intervir › Plano Terapêutico).
+  final List<InfographicItem> plan;
 
   /// Mensagem final de acolhimento (rodapé).
   final String? closingLine;
@@ -73,41 +85,44 @@ class PatientInfographicData {
   /// Data de geração do material (rodapé de documento).
   final DateTime? generatedOn;
 
-  bool get hasTimeline => timeline.isNotEmpty;
-  bool get hasSchemas => schemas.isNotEmpty;
-  bool get hasNeeds => needs.isNotEmpty;
-  bool get hasModes => modes.isNotEmpty;
-  bool get hasStrengths => strengths.isNotEmpty;
-  bool get hasChallenges => challenges.isNotEmpty;
-  bool get hasDirections => directions.isNotEmpty;
+  bool get hasReasons =>
+      (reasonsInitial ?? '').trim().isNotEmpty ||
+      (reasonsCurrent ?? '').trim().isNotEmpty;
+  bool get hasDemands => hasReasons || demands.isNotEmpty;
+  bool get hasLifeWheel => lifeWheel.isNotEmpty;
   bool get hasPersonality => personality.isNotEmpty;
+  bool get hasTimeline => timeline.isNotEmpty;
+  bool get hasGenogram => genogramMembers.isNotEmpty;
+  bool get hasSchemas => schemas.isNotEmpty;
+  bool get hasModes => modes.isNotEmpty;
+  bool get hasCoping => coping.isNotEmpty;
+  bool get hasAttachment => attachment != null;
   bool get hasResources => resources.isNotEmpty;
-  bool get hasDemands => demands.isNotEmpty;
-  bool get hasLifeAreas => lifeAreas.isNotEmpty;
-  bool get hasAttachmentStyle => attachmentStyle != null;
-  bool get hasGenogramMembers => genogramMembers.isNotEmpty;
+  bool get hasPlan => plan.isNotEmpty;
+
+  /// Média de satisfação da Roda da Vida (0 se vazia).
+  double get lifeWheelAverage => lifeWheel.isEmpty
+      ? 0
+      : lifeWheel.values.reduce((a, b) => a + b) / lifeWheel.length;
 
   /// Quantas seções de conteúdo (fora o cabeçalho) têm dados.
   int get contentSectionCount => [
-        hasTimeline,
-        hasSchemas,
-        hasNeeds,
-        hasModes,
-        hasStrengths,
-        hasChallenges,
-        hasDirections,
-        hasPersonality,
-        hasResources,
         hasDemands,
-        hasLifeAreas,
-        hasAttachmentStyle,
-        hasGenogramMembers,
+        hasLifeWheel,
+        hasPersonality,
+        hasTimeline,
+        hasGenogram,
+        hasSchemas,
+        hasModes || hasCoping,
+        hasAttachment,
+        hasResources,
+        hasPlan,
       ].where((v) => v).length;
 
   /// Há ao menos uma seção de conteúdo preenchida.
-  bool get hasAnyContent => contentSectionCount > 0 || quote != null;
+  bool get hasAnyContent => contentSectionCount > 0;
 
-  /// Conteúdo mínimo — sugere ao profissional completar a conceitualização.
+  /// Conteúdo mínimo — sugere ao profissional completar o caso.
   bool get isSparse => contentSectionCount <= 2;
 }
 
@@ -198,27 +213,6 @@ class InfographicItem {
   final Color? accent;
 }
 
-/// Área de funcionamento com rótulo e nota (terapeuta, Seção 5 Conceitualização).
-class InfographicLifeArea {
-  const InfographicLifeArea({
-    required this.label,
-    required this.score,
-    this.maxScore = 6,
-    this.accent,
-  });
-
-  final String label;
-
-  /// Nota 1–[maxScore] avaliada pelo terapeuta.
-  final int score;
-
-  final int maxScore;
-
-  final Color? accent;
-
-  double get fraction => maxScore > 0 ? (score / maxScore).clamp(0.0, 1.0) : 0;
-}
-
 /// Membro do genograma resumido para o pôster.
 class InfographicGenogramMember {
   const InfographicGenogramMember({
@@ -230,19 +224,4 @@ class InfographicGenogramMember {
   final String name;
   final String? relationship;
   final bool isDeceased;
-}
-
-/// Necessidade emocional + evento(s) de vida relacionado(s).
-class InfographicNeed {
-  const InfographicNeed({
-    required this.need,
-    this.relatedEvents,
-    this.icon = Icons.favorite_border,
-    this.accent,
-  });
-
-  final String need;
-  final String? relatedEvents;
-  final IconData icon;
-  final Color? accent;
 }

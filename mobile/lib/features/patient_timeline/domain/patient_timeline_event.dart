@@ -8,6 +8,8 @@
     this.description,
     this.eventDate,
     this.periodLabel,
+    this.lifeChapter,
+    this.ageAtEvent,
     this.category,
     this.emotionalImpact,
     this.emotionalNeedKeys = const [],
@@ -35,6 +37,11 @@
   final String? description;
   final DateTime? eventDate;
   final String? periodLabel;
+
+  /// Capítulo da vida (`birth`, `childhood`, `adolescence`, `adulthood`,
+  /// `maturity`, `today`) e idade na época — preenchidos pela tela História.
+  final String? lifeChapter;
+  final int? ageAtEvent;
   final String? category;
   final int? emotionalImpact;
   final List<String> emotionalNeedKeys;
@@ -67,7 +74,29 @@
     if (periodLabel != null && periodLabel!.trim().isNotEmpty) {
       return periodLabel!.trim();
     }
+    if (ageAtEvent != null) {
+      return ageAtEvent == 1 ? '1 ano' : '$ageAtEvent anos';
+    }
+    final chapter = _chapterLabels[lifeChapter];
+    if (chapter != null) return chapter;
     return 'Data não informada';
+  }
+
+  static const _chapterLabels = <String, String>{
+    'birth': 'Nascimento',
+    'childhood': 'Infância',
+    'adolescence': 'Adolescência',
+    'adulthood': 'Vida adulta',
+    'maturity': 'Maturidade',
+    'today': 'Hoje',
+  };
+
+  /// Posição cronológica do capítulo (0 = nascimento), para ordenar eventos
+  /// sem data.
+  int? get lifeChapterOrder {
+    final keys = _chapterLabels.keys.toList();
+    final i = keys.indexOf(lifeChapter ?? '');
+    return i < 0 ? null : i;
   }
 
   String? get subtitleLine {
@@ -95,6 +124,8 @@
       description: json['description'] as String?,
       eventDate: _parseDate(json['event_date']),
       periodLabel: json['period_label'] as String?,
+      lifeChapter: json['life_chapter'] as String?,
+      ageAtEvent: (json['age_at_event'] as num?)?.toInt(),
       category: json['category'] as String?,
       emotionalImpact: json['emotional_impact'] as int?,
       emotionalNeedKeys: _parseStringList(json['emotional_need_keys']),

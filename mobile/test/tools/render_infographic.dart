@@ -11,6 +11,12 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:terapia_esquema/features/genogram/domain/genogram_data.dart';
+import 'package:terapia_esquema/features/genogram/domain/genogram_gender.dart';
+import 'package:terapia_esquema/features/genogram/domain/genogram_person.dart';
+import 'package:terapia_esquema/features/genogram/domain/genogram_relationship.dart';
+import 'package:terapia_esquema/features/genogram/domain/genogram_relationship_type.dart';
+import 'package:terapia_esquema/features/initial_assessment/domain/life_area.dart';
 import 'package:terapia_esquema/features/patient_infographic/domain/patient_infographic_data.dart';
 import 'package:terapia_esquema/features/patient_infographic/presentation/widgets/patient_infographic_poster.dart';
 import 'package:terapia_esquema/features/profile/domain/avatar_config.dart';
@@ -37,159 +43,225 @@ void main() {
 
   testWidgets('preview do infográfico', (tester) async {
     const purple = Color(0xFF7B5CF6);
+    final t0 = DateTime(2026, 1, 1);
+    GenogramPerson person(
+            String id, String name, String role, GenogramGender gender) =>
+        GenogramPerson(
+          id: id,
+          clinicId: 'c',
+          patientId: 'p',
+          fullName: name,
+          relationshipToPatient: role,
+          gender: gender,
+          isDeceased: false,
+          isSensitive: false,
+          createdAt: t0,
+          updatedAt: t0,
+        );
+    GenogramRelationship rel(
+            String id, String a, String b, GenogramRelationshipType type) =>
+        GenogramRelationship(
+          id: id,
+          clinicId: 'c',
+          patientId: 'p',
+          personAId: a,
+          personBId: b,
+          relationshipType: type,
+          isSensitive: false,
+          createdAt: t0,
+          updatedAt: t0,
+        );
+
+    final genogram = GenogramData(
+      people: [
+        person('pai', 'Pai', 'Pai', GenogramGender.male),
+        person('mae', 'Mãe', 'Mãe', GenogramGender.female),
+        person('eu', 'Marina', 'Paciente', GenogramGender.female),
+        person('irm', 'Irmão', 'Irmão', GenogramGender.male),
+        person('mar', 'Marido', 'Companheiro', GenogramGender.male),
+        person('fil', 'Filha', 'Filha', GenogramGender.female),
+      ],
+      relationships: [
+        rel('1', 'pai', 'mae', GenogramRelationshipType.separation),
+        rel('2', 'pai', 'eu', GenogramRelationshipType.parentChild),
+        rel('3', 'mae', 'eu', GenogramRelationshipType.parentChild),
+        rel('4', 'pai', 'irm', GenogramRelationshipType.parentChild),
+        rel('5', 'mae', 'irm', GenogramRelationshipType.parentChild),
+        rel('6', 'eu', 'mar', GenogramRelationshipType.spouse),
+        rel('7', 'eu', 'fil', GenogramRelationshipType.parentChild),
+        rel('8', 'mar', 'fil', GenogramRelationshipType.parentChild),
+      ],
+    );
+
     final data = PatientInfographicData(
       header: InfographicHeader(
-        name: 'Marina',
-        avatarInitials: 'M',
+        name: 'Marina Silveira',
+        avatarInitials: 'MS',
         avatarType: AvatarType.custom,
         avatarConfig: AvatarConfig.fromJson(const {}),
         facts: const [
-          InfographicFact(Icons.person_outline, '31 anos'),
+          InfographicFact(Icons.person_outline, '32 anos'),
           InfographicFact(Icons.school_outlined, 'Ensino superior'),
           InfographicFact(Icons.place_outlined, 'Natural de Pelotas, RS'),
-          InfographicFact(Icons.favorite_border, 'Noiva de Guilherme'),
+          InfographicFact(Icons.favorite_border, 'Casada'),
           InfographicFact(Icons.work_outline, 'Arquiteta'),
-          InfographicFact(Icons.psychology_alt_outlined, 'Início: ago/2025'),
+          InfographicFact(Icons.child_care_outlined, 'Tem filhos'),
         ],
       ),
-      quote:
-          'Sensível, dedicada e comprometida com tudo que faz. Tem um coração generoso e muita força para transformar desafios em crescimento.',
-      personality: [
+      reasonsInitial:
+          'Procurou terapia após uma separação, com ansiedade e dificuldade para dormir.',
+      reasonsCurrent:
+          'Cuido de todos e acabo ficando por último. Busca entender padrões nas relações.',
+      demands: const [
+        InfographicItem(
+            title: 'Dificuldade de pedir ajuda',
+            description: 'Sobrecarga no trabalho e em casa.',
+            icon: Icons.flag_outlined,
+            accent: Color(0xFF3B82F6)),
+      ],
+      lifeWheel: const {
+        LifeArea.workCareer: 7,
+        LifeArea.loveRomance: 3,
+        LifeArea.family: 5,
+        LifeArea.friends: 10,
+        LifeArea.aloneTime: 4,
+        LifeArea.physicalHealth: 8,
+        LifeArea.emotionalHealth: 4,
+        LifeArea.selfCare: 5,
+        LifeArea.routineOrganization: 5,
+      },
+      personality: const [
         InfographicPersonalityDomain(
             name: 'Neuroticismo',
-            score: 69,
-            classification: 'Muito alto',
-            meaning: 'Sente intensamente e se preocupa com detalhes.',
-            icon: Icons.psychology_outlined,
-            accent: purple),
+            score: 72,
+            classification: 'Muito Alto',
+            accent: Color(0xFFDC2626)),
         InfographicPersonalityDomain(
             name: 'Extroversão',
-            score: 74,
-            classification: 'Muito alto',
-            meaning: 'Sociável, comunicativa e carismática.',
-            icon: Icons.groups_outlined,
-            accent: purple),
+            score: 37,
+            classification: 'Baixo',
+            accent: Color(0xFFD97706)),
         InfographicPersonalityDomain(
             name: 'Abertura',
-            score: 56,
-            classification: 'Alta',
-            meaning: 'Curiosa, criativa e aberta a novas ideias.',
-            icon: Icons.lightbulb_outline,
-            accent: purple),
+            score: 58,
+            classification: 'Alto',
+            accent: Color(0xFF059669)),
         InfographicPersonalityDomain(
             name: 'Amabilidade',
-            score: 37,
-            classification: 'Baixa',
-            meaning: 'Direta, crítica e seletiva; valoriza autenticidade.',
-            icon: Icons.favorite_border,
+            score: 50,
+            classification: 'Médio',
             accent: purple),
         InfographicPersonalityDomain(
-            name: 'Consciensiosidade',
+            name: 'Conscienciosidade',
             score: 63,
-            classification: 'Alta',
-            meaning: 'Disciplinada, organizada e determinada.',
-            icon: Icons.check_circle_outline,
+            classification: 'Alto',
+            accent: Color(0xFF3B82F6)),
+      ],
+      timeline: const [
+        InfographicTimelineEntry(
+            periodLabel: '8 anos',
+            description: 'Os pais se separaram.',
+            icon: Icons.event_note_outlined),
+        InfographicTimelineEntry(
+            periodLabel: '15 anos',
+            description: 'Mudou de cidade e de escola.',
+            icon: Icons.event_note_outlined,
+            accent: Color(0xFF00B2A9)),
+        InfographicTimelineEntry(
+            periodLabel: 'Vida adulta',
+            description: 'Casou-se e tornou-se mãe.',
+            icon: Icons.event_note_outlined,
+            accent: purple),
+        InfographicTimelineEntry(
+            periodLabel: 'Hoje',
+            description: 'Iniciou a terapia.',
+            icon: Icons.event_note_outlined,
+            accent: Color(0xFF3B82F6)),
+      ],
+      genogram: genogram,
+      genogramMembers: const [
+        InfographicGenogramMember(name: 'Pai', relationship: 'Pai'),
+      ],
+      schemas: const [
+        InfographicItem(
+            title: 'Autossacrifício',
+            description: 'Cuida do outro e adia as próprias necessidades.',
+            icon: Icons.psychology_outlined,
+            accent: purple),
+        InfographicItem(
+            title: 'Abandono / Instabilidade',
+            description: 'Teme que discordar coloque o vínculo em risco.',
+            icon: Icons.psychology_outlined,
+            accent: purple),
+        InfographicItem(
+            title: 'Padrões Inflexíveis',
+            description:
+                'Exige desempenho elevado e se permite pouco descanso.',
+            icon: Icons.psychology_outlined,
             accent: purple),
       ],
-      timeline: [
-        InfographicTimelineEntry(
-            periodLabel: '0–11 anos',
-            description: 'Nasceu em Pelotas, RS, onde viveu até os 11 anos.',
-            icon: Icons.home_outlined),
-        InfographicTimelineEntry(
-            periodLabel: 'Adolescência',
-            description: 'Os pais se separaram.',
-            icon: Icons.heart_broken_outlined,
-            accent: Color(0xFFE0519A)),
-        InfographicTimelineEntry(
-            periodLabel: 'Atualidade',
-            description: 'Mora com o companheiro; iniciou terapia.',
-            icon: Icons.flight_outlined),
+      attachment: const InfographicItem(
+        title: 'Apego ansioso',
+        description:
+            'Deseja muita proximidade e teme rejeição ou abandono; tende a buscar confirmação constante do vínculo.',
+        icon: Icons.link_outlined,
+        accent: Color(0xFF3B82F6),
+      ),
+      modes: const [
+        InfographicItem(
+            title: 'Criança Vulnerável',
+            description: 'Média 4,8 no YAMI',
+            icon: Icons.theater_comedy_outlined,
+            accent: Color(0xFF00B2A9)),
+        InfographicItem(
+            title: 'Pai Punitivo',
+            description: 'Média 4,2 no YAMI',
+            icon: Icons.theater_comedy_outlined,
+            accent: Color(0xFF00B2A9)),
       ],
-      schemas: [
+      coping: const [
         InfographicItem(
-            title: 'Privação emocional',
-            description:
-                'Sente que suas necessidades nem sempre foram atendidas.',
-            icon: Icons.favorite_border),
-        InfographicItem(
-            title: 'Abandono / instabilidade',
-            description:
-                'Medo de não receber atenção e de ser deixada de lado.',
-            icon: Icons.person_off_outlined),
-        InfographicItem(
-            title: 'Padrões rígidos',
-            description: 'Autocobrança alta; dificuldade em flexibilizar.',
-            icon: Icons.rule_outlined),
+            title: 'Resignação',
+            description: 'Média 4,1',
+            icon: Icons.shield_outlined,
+            accent: Color(0xFF0096D6)),
       ],
-      strengths: [
+      resources: const [
         InfographicItem(
-            title: 'Comunicação e carisma',
-            description: 'Sabe se expressar com clareza e influência positiva.',
-            icon: Icons.star_outline),
+            title: 'Resiliência',
+            icon: Icons.spa_outlined,
+            accent: Color(0xFF059669)),
         InfographicItem(
-            title: 'Responsável e determinada',
-            description: 'Transforma planos em ações e resultados.',
-            icon: Icons.star_outline),
+            title: 'Capacidade reflexiva',
+            icon: Icons.spa_outlined,
+            accent: Color(0xFF059669)),
+        InfographicItem(
+            title: 'Rede familiar de apoio',
+            icon: Icons.spa_outlined,
+            accent: Color(0xFF059669)),
+        InfographicItem(
+            title: 'Senso de humor',
+            icon: Icons.spa_outlined,
+            accent: Color(0xFF059669)),
       ],
-      directions: [
+      plan: const [
         InfographicItem(
-            title: 'Fortalecer o autocuidado',
-            description: 'Desenvolver autovalidação independente de terceiros.',
-            icon: Icons.check_circle_outline),
+            title: 'Reconhecer necessidades e construir limites',
+            description: 'Praticar pedir ajuda em situações pequenas.',
+            bullets: ['Progresso: 40%'],
+            icon: Icons.flag_outlined,
+            accent: Color(0xFF7C6A9C)),
         InfographicItem(
-            title: 'Flexibilidade e limites',
-            description: 'Trabalhar tolerância à frustração nas relações.',
-            icon: Icons.check_circle_outline),
-      ],
-      needs: [
-        InfographicNeed(
-            need: 'Sentir-se amada de forma consistente',
-            relatedEvents: 'Separação dos pais; perdas na adolescência.'),
-        InfographicNeed(
-            need: 'Ter segurança emocional e estabilidade',
-            relatedEvents: 'Mudanças de cidade; perdas familiares.'),
-      ],
-      modes: [
-        InfographicItem(
-            title: 'Hipercompensação pelo desempenho',
-            icon: Icons.emoji_events_outlined,
-            bullets: [
-              'Foco em resultados e produtividade.',
-              'Precisa se destacar para se sentir valorizada.',
-              'Pode ignorar o próprio cansaço.',
-            ]),
-        InfographicItem(
-            title: 'Criança vulnerável',
-            icon: Icons.child_care_outlined,
-            bullets: [
-              'Sente-se injustiçada quando não é reconhecida.',
-              'Às vezes se sente insegura apesar de ter recursos.',
-            ]),
-      ],
-      challenges: [
-        InfographicItem(
-            title: 'Relação com figuras de autoridade',
-            description: 'Lidar com a sensação de não receber apoio esperado.',
-            icon: Icons.report_problem_outlined),
-        InfographicItem(
-            title: 'Relações pessoais',
-            description: 'Frustração quando o que recebe não é compatível.',
-            icon: Icons.report_problem_outlined),
-      ],
-      resources: [
-        InfographicItem(title: 'Resiliente', icon: Icons.shield_outlined),
-        InfographicItem(title: 'Dedicada', icon: Icons.favorite_border),
-        InfographicItem(title: 'Inteligente', icon: Icons.lightbulb_outline),
-        InfographicItem(title: 'Criativa', icon: Icons.brush_outlined),
-        InfographicItem(title: 'Empática', icon: Icons.diversity_1_outlined),
+            title: 'Negociar divisão de tarefas em casa',
+            icon: Icons.flag_outlined,
+            accent: Color(0xFF7C6A9C)),
       ],
       closingLine:
-          'Você já faz muito. Agora, mereça também o apoio e a leveza que sempre ofereceu aos outros.',
-      generatedOn: DateTime(2026, 8, 3),
+          'Um retrato de apoio à formulação do caso — sempre sob leitura clínica do profissional.',
+      generatedOn: DateTime(2026, 10, 22),
     );
 
-    tester.view.physicalSize = const Size(1060, 2200);
+    tester.view.physicalSize = const Size(1060, 2600);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
 
@@ -198,22 +270,29 @@ void main() {
         debugShowCheckedModeBanner: false,
         theme: ThemeData(fontFamily: 'Roboto'),
         home: Scaffold(
-          body: Center(
-            child: RepaintBoundary(
-              key: const Key('cap'),
-              child: PatientInfographicPoster(data: data),
+          body: SingleChildScrollView(
+            child: Center(
+              child: RepaintBoundary(
+                key: const Key('cap'),
+                child: PatientInfographicPoster(data: data),
+              ),
             ),
           ),
         ),
       ),
     );
-    await tester.pump(const Duration(milliseconds: 80));
+    await tester.runAsync(() async {
+      await precacheImage(
+          const AssetImage('assets/branding/esquema_core_logo_principal.png'),
+          tester.element(find.byKey(const Key('cap'))));
+    });
+    await tester.pump(const Duration(milliseconds: 200));
 
     final boundary = tester
         .renderObject<RenderRepaintBoundary>(find.byKey(const Key('cap')));
     late final Uint8List png;
     await tester.runAsync(() async {
-      final image = await boundary.toImage(pixelRatio: 2.0);
+      final image = await boundary.toImage(pixelRatio: 1.5);
       final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
       png = bytes!.buffer.asUint8List();
     });

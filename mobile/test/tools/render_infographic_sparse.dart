@@ -48,15 +48,15 @@ void main() {
       // Só a linha do tempo tem dados — o resto deve virar placeholder.
       timeline: const [
         InfographicTimelineEntry(
-            periodLabel: 'Data não informada',
+            periodLabel: '8 anos',
             description: 'não posso contar com ninguém',
             icon: Icons.event_note_outlined),
         InfographicTimelineEntry(
-            periodLabel: 'Data não informada',
+            periodLabel: 'Adolescência',
             description: 'estudar e aprender a tomar decisões difíceis',
             icon: Icons.event_note_outlined),
         InfographicTimelineEntry(
-            periodLabel: 'Data não informada',
+            periodLabel: 'Vida adulta',
             description: 'Cresci com meus amigos na rua',
             icon: Icons.event_note_outlined),
       ],

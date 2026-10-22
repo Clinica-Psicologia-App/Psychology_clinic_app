@@ -13,7 +13,7 @@ class PatientTimelineRepository {
   final SupabaseClient _client;
 
   static const _columns =
-      'id, clinic_id, patient_id, created_by, title, description, event_date, period_label, category, emotional_impact, emotional_need_keys, emotional_need_other, emotions_felt, self_meaning, others_meaning, world_meaning, coping_keys, coping_other, present_influence, present_area_keys, present_reaction, is_sensitive, created_at, updated_at';
+      'id, clinic_id, patient_id, created_by, title, description, event_date, period_label, life_chapter, age_at_event, category, emotional_impact, emotional_need_keys, emotional_need_other, emotions_felt, self_meaning, others_meaning, world_meaning, coping_keys, coping_other, present_influence, present_area_keys, present_reaction, is_sensitive, created_at, updated_at';
 
   // Embed padrão da junção pessoa↔evento (leitura). listForPerson usa a
   // variante `!inner` para filtrar pelo person_id embutido.

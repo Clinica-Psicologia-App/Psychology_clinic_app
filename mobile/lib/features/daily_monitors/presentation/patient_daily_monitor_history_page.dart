@@ -2,13 +2,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
-import '../../patients/providers/patients_providers.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/daily_monitor.dart';
 import '../providers/daily_monitors_providers.dart';
@@ -29,46 +29,20 @@ class PatientDailyMonitorHistoryPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ctx = StaffMonitorHistoryContext(role: role, patientId: patientId);
     final listAsync = ref.watch(staffPatientMonitorsProvider(ctx));
-    final patientAsync = ref.watch(patientDetailProvider(patientId));
 
-    return AppScaffold(
-      title: 'Monitor diário',
-      accent: AppColors.cyan,
-      actions: [
-        IconButton(
-          tooltip: 'Atualizar',
-          onPressed: () => ref.invalidate(staffPatientMonitorsProvider(ctx)),
-          icon: const Icon(Icons.refresh),
-        ),
-      ],
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.md,
-              0,
-            ),
-            child: patientAsync.when(
-              data: (p) => AppPageHeader(
-                title: 'Monitor diário',
-                subtitle: p != null
-                    ? 'Histórico de registros de ${p.fullName} para leitura clínica entre sessões.'
-                    : 'Histórico de registros do paciente para leitura clínica entre sessões.',
-                icon: Icons.monitor_heart_outlined,
-              ),
-              loading: () => const LinearProgressIndicator(),
-              error: (_, __) => const AppPageHeader(
-                title: 'Monitor diário',
-                subtitle:
-                    'Histórico de registros do paciente para leitura clínica entre sessões.',
-                icon: Icons.monitor_heart_outlined,
-              ),
+    return AppCanopyScaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: PatientContextHeader(
+              patientId: patientId,
+              pageTitle: 'MONITOR DIÁRIO',
+              role: role,
+              accentColor: AppColors.cyan,
             ),
           ),
-          Expanded(
+          SliverFillRemaining(
+            hasScrollBody: true,
             child: AsyncStateBody<List<DailyMonitor>>(
               asyncValue: listAsync,
               onRetry: () => ref.invalidate(staffPatientMonitorsProvider(ctx)),

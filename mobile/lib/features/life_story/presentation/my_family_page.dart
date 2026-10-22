@@ -4,17 +4,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/widgets/brand_loading.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../../shared/widgets/relationship_role_picker.dart';
 import '../../coach/domain/coach_step.dart';
 import '../../coach/domain/coach_tour.dart';
 import '../../coach/providers/coach_providers.dart';
+import '../../daily_monitors/providers/daily_monitors_providers.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
+import '../../profile/domain/profile_role.dart';
 import '../domain/family_person.dart';
 import '../domain/life_story_enums.dart';
 import '../providers/life_story_providers.dart';
 import 'life_story_routes.dart';
 import 'widgets/flow_ui.dart';
-import '../../../shared/widgets/brand_loading.dart';
 
 /// Tela 3 "Minha Família" — lista das pessoas da história do paciente, com a
 /// integração à Linha do Tempo ("aparece em N momentos"). Textos literais da
@@ -28,19 +32,17 @@ class MyFamilyPage extends ConsumerStatefulWidget {
 
 class _MyFamilyPageState extends ConsumerState<MyFamilyPage> {
   final _fabKey = GlobalKey();
-  final _titleKey = GlobalKey();
   bool _tourRequested = false;
 
   CoachTour _tour() => CoachTour(
         id: 'tour_minha_familia',
         steps: [
-          CoachStep(
+          const CoachStep(
             id: 'oque',
             text:
                 'Aqui você reúne as pessoas importantes da sua história — a sua '
                 'família e quem marcou a sua vida.',
             pose: MascotPose.wave,
-            targetKey: _titleKey,
           ),
           CoachStep(
             id: 'adicionar',
@@ -70,8 +72,7 @@ class _MyFamilyPageState extends ConsumerState<MyFamilyPage> {
   @override
   Widget build(BuildContext context) {
     final familyAsync = ref.watch(myFamilyProvider);
-    final theme = Theme.of(context);
-    final topInset = MediaQuery.paddingOf(context).top;
+    final patientIdAsync = ref.watch(myPatientIdProvider);
 
     // Aguarda o provider resolver para que o FAB já esteja na árvore quando
     // o tour chegar no step "adicionar".
@@ -80,92 +81,79 @@ class _MyFamilyPageState extends ConsumerState<MyFamilyPage> {
       WidgetsBinding.instance.addPostFrameCallback((_) => _startTour());
     }
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      floatingActionButton: familyAsync.maybeWhen(
-        data: (people) => people.isEmpty
-            ? null
-            : FloatingActionButton.extended(
-                key: _fabKey,
-                backgroundColor: AppColors.turquoise,
-                onPressed: () => _openAddPerson(context, ref),
-                icon: const Icon(Icons.person_add_alt),
-                label: const Text('Adicionar pessoa'),
-              ),
-        orElse: () => null,
+    final body = familyAsync.when(
+      loading: () => const BrandLoader(),
+      error: (e, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: OutlinedButton(
+            onPressed: () => ref.invalidate(myFamilyProvider),
+            child: const Text('Tentar de novo'),
+          ),
+        ),
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            padding: EdgeInsets.fromLTRB(16, topInset + 10, 16, 18),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [AppColors.turquoise, AppColors.cyan, AppColors.blue],
+      data: (people) => people.isEmpty
+          ? _FamilyInvite(onStart: () => _openAddPerson(context, ref))
+          : _FamilyList(
+              people: people,
+              onOpenContext: () async {
+                final ctx = await ref.read(myFamilyContextProvider.future);
+                if (context.mounted) {
+                  context.push(LifeStoryRoutes.familyContext, extra: ctx);
+                }
+              },
+            ),
+    );
+
+    return patientIdAsync.when(
+      loading: () => const AppCanopyScaffold(body: Center(child: BrandLoader())),
+      error: (_, __) => const AppScaffold(
+        title: 'Minha Família',
+        accent: AppColors.cyan,
+        body: Center(child: Text('Erro ao identificar paciente.')),
+      ),
+      data: (patientId) => AppCanopyScaffold(
+        floatingActionButton: familyAsync.maybeWhen(
+          data: (people) => people.isEmpty
+              ? null
+              : FloatingActionButton.extended(
+                  key: _fabKey,
+                  backgroundColor: AppColors.turquoise,
+                  onPressed: () => _openAddPerson(context, ref),
+                  icon: const Icon(Icons.person_add_alt),
+                  label: const Text('Adicionar pessoa'),
+                ),
+          orElse: () => null,
+        ),
+        body: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: PatientContextHeader(
+                patientId: patientId,
+                pageTitle: 'MINHA FAMÍLIA',
+                role: ProfileRole.patient,
+                accentColor: AppColors.cyan,
+                actions: [
+                  if (familyAsync.valueOrNull?.isNotEmpty == true)
+                    PatientHeaderActionBtn(
+                      icon: Icons.account_tree_outlined,
+                      label: 'Diagrama',
+                      onTap: () => context.push(
+                        LifeStoryRoutes.genogramDiagramPatient,
+                        extra: patientId,
+                      ),
+                    ),
+                  PatientHeaderActionBtn(
+                    icon: Icons.help_outline_rounded,
+                    label: 'Tutorial',
+                    onTap: () => _startTour(force: true),
+                  ),
+                ],
               ),
             ),
-            child: Row(
-              children: [
-                InkWell(
-                  onTap: () => context.pop(),
-                  customBorder: const CircleBorder(),
-                  child: Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.22),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.arrow_back_rounded,
-                        color: Colors.white, size: 18),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text('Minha Família',
-                      key: _titleKey,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                          color: Colors.white, fontWeight: FontWeight.w700)),
-                ),
-                IconButton(
-                  tooltip: 'Rever tutorial',
-                  onPressed: () => _startTour(force: true),
-                  icon: const Icon(Icons.help_outline_rounded,
-                      color: Colors.white),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: familyAsync.when(
-              loading: () => const BrandLoader(),
-              error: (e, _) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: OutlinedButton(
-                    onPressed: () => ref.invalidate(myFamilyProvider),
-                    child: const Text('Tentar de novo'),
-                  ),
-                ),
-              ),
-              data: (people) => people.isEmpty
-                  ? _FamilyInvite(onStart: () => _openAddPerson(context, ref))
-                  : _FamilyList(
-                      people: people,
-                      onOpenContext: () async {
-                        final ctx = await ref
-                            .read(myFamilyContextProvider.future);
-                        if (context.mounted) {
-                          context.push(LifeStoryRoutes.familyContext,
-                              extra: ctx);
-                        }
-                      },
-                    ),
-            ),
-          ),
-        ],
+            SliverFillRemaining(hasScrollBody: true, child: body),
+          ],
+        ),
       ),
     );
   }

@@ -4,11 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_spacing.dart';
+import '../../../shared/widgets/app_empty_state.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
+import '../../../shared/widgets/brand_loading.dart';
+import '../../patients/presentation/widgets/staff_section_header.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/created_patient_invitation.dart';
 import '../domain/patient_invitation.dart';
@@ -36,96 +38,167 @@ class _PatientInvitationsPageState
   @override
   Widget build(BuildContext context) {
     final listAsync = ref.watch(patientInvitationsListProvider);
+    final items = listAsync.valueOrNull;
 
-    return AppScaffold(
-      title: 'Convites de pacientes',
-      accent: AppColors.blue,
-      actions: [
-        IconButton(
-          tooltip: 'Atualizar',
-          onPressed: () =>
-              ref.read(patientInvitationsListProvider.notifier).refresh(),
-          icon: const Icon(Icons.refresh),
-        ),
-      ],
-      body: Column(
-        children: [
-          Expanded(
-            child: AsyncStateBody<List<PatientInvitation>>(
-              asyncValue: listAsync,
-              onRetry: () =>
-                  ref.read(patientInvitationsListProvider.notifier).refresh(),
-              emptyMessage: 'Nenhum convite encontrado.',
-              emptyIcon: Icons.mail_outline,
-              dataBuilder: (items) => RefreshIndicator(
-                onRefresh: () =>
-                    ref.read(patientInvitationsListProvider.notifier).refresh(),
-                child: ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.md,
-                    AppSpacing.md,
-                    AppSpacing.md,
-                    88,
-                  ),
-                  itemCount:
-                      items.length + 2 + (_recentInvitation != null ? 1 : 0),
-                  itemBuilder: (context, index) {
-                    if (index == 0) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.xl),
-                        child: AppPageHeader(
-                          title: 'Convites de pacientes',
-                          subtitle:
-                              'Envie convites de primeiro acesso e acompanhe o status de aceite.',
-                          icon: Icons.mark_email_unread_outlined,
-                          metadata: [
-                            Chip(label: Text('${items.length} convites')),
-                          ],
+    // Derive stats when data is available.
+    final pendingCount =
+        items?.where((i) => i.status == PatientInvitationStatus.pending).length;
+    final acceptedCount = items
+        ?.where((i) => i.status == PatientInvitationStatus.accepted)
+        .length;
+    final totalCount = items?.length;
+
+    final stats = items != null
+        ? [
+            StaffSectionStat(
+              value: '$pendingCount',
+              label: 'Pendentes',
+              accent: const Color(0xFFFBBF24),
+            ),
+            StaffSectionStat(
+              value: '$acceptedCount',
+              label: 'Aceitos',
+              accent: const Color(0xFF00D4C9),
+            ),
+            StaffSectionStat(
+              value: '$totalCount',
+              label: 'Total',
+            ),
+          ]
+        : null;
+
+    return AppCanopyScaffold(
+      body: RefreshIndicator(
+        onRefresh: () async =>
+            ref.read(patientInvitationsListProvider.notifier).refresh(),
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            // ── Header ───────────────────────────────────────────────────
+            SliverToBoxAdapter(
+              child: StaffSectionHeader(
+                navTitle: 'Convites',
+                eyebrow: 'CONVITES DE PACIENTES',
+                headline: Builder(
+                  builder: (ctx) {
+                    final theme = Theme.of(ctx);
+                    return RichText(
+                      text: TextSpan(
+                        style: theme.textTheme.headlineLarge?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          height: 1.1,
                         ),
-                      );
-                    }
-
-                    if (_recentInvitation != null && index == 1) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.xl),
-                        child: _RecentInvitationCard(
-                          invitation: _recentInvitation!,
-                          onCopy: () =>
-                              _copyInviteUrl(_recentInvitation!.inviteUrl),
-                          onDismiss: () =>
-                              setState(() => _recentInvitation = null),
-                        ),
-                      );
-                    }
-
-                    final sectionIndex = _recentInvitation != null ? 2 : 1;
-                    if (index == sectionIndex) {
-                      return const Padding(
-                        padding: EdgeInsets.only(bottom: AppSpacing.sm),
-                        child: AppSectionHeader(
-                          title: 'Histórico de convites',
-                          subtitle: 'Status dos links enviados pela clínica.',
-                        ),
-                      );
-                    }
-
-                    final itemIndex = index - sectionIndex - 1;
-                    final invitation = items[itemIndex];
-                    return MotionReveal(
-                      delay: staggerDelay(itemIndex),
-                      child: _InvitationTile(invitation: invitation),
+                        children: const [
+                          TextSpan(
+                            text: 'Convites',
+                            style: TextStyle(color: Color(0xFF00D4C9)),
+                          ),
+                          TextSpan(text: '\nde pacientes'),
+                        ],
+                      ),
                     );
                   },
                 ),
+                onBack: () => context.pop(),
+                onRefresh: () =>
+                    ref.read(patientInvitationsListProvider.notifier).refresh(),
+                stats: stats,
+                actions: [
+                  GlassActionButton(
+                    icon: Icons.mark_email_unread_outlined,
+                    label: 'Novo convite',
+                    filled: true,
+                    onPressed: _openCreateInvitation,
+                  ),
+                ],
               ),
             ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openCreateInvitation,
-        icon: const Icon(Icons.mark_email_unread_outlined),
-        label: const Text('Convidar paciente'),
+
+            // ── Loading ───────────────────────────────────────────────────
+            if (listAsync.isLoading)
+              const SliverFillRemaining(
+                child: Center(child: BrandLoader()),
+              )
+            // ── Error ─────────────────────────────────────────────────────
+            else if (listAsync.hasError)
+              SliverFillRemaining(
+                child: ErrorStatePanel(
+                  message: 'Não conseguimos carregar os convites. Tente novamente.',
+                  onRetry: () =>
+                      ref.read(patientInvitationsListProvider.notifier).refresh(),
+                ),
+              )
+            // ── Data ──────────────────────────────────────────────────────
+            else ...[
+              // Recent invitation banner (shown after creating one)
+              if (_recentInvitation != null)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.md,
+                      AppSpacing.md,
+                      0,
+                    ),
+                    child: _RecentInvitationCard(
+                      invitation: _recentInvitation!,
+                      onCopy: () => _copyInviteUrl(_recentInvitation!.inviteUrl),
+                      onDismiss: () => setState(() => _recentInvitation = null),
+                    ),
+                  ),
+                ),
+
+              // Section header
+              const SliverToBoxAdapter(
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    AppSpacing.lg,
+                    AppSpacing.md,
+                    AppSpacing.sm,
+                  ),
+                  child: AppSectionHeader(
+                    title: 'Histórico de convites',
+                    subtitle: 'Status dos links enviados pela clínica.',
+                  ),
+                ),
+              ),
+
+              // Empty state
+              if (items == null || items.isEmpty)
+                const SliverFillRemaining(
+                  hasScrollBody: false,
+                  child: Center(
+                    child: AppEmptyState(
+                      icon: Icons.mail_outline,
+                      title: 'Nenhum convite',
+                      message: 'Nenhum convite encontrado.\n'
+                          'Toque em "Novo convite" para enviar o primeiro.',
+                    ),
+                  ),
+                )
+              else
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.md,
+                    0,
+                    AppSpacing.md,
+                    88,
+                  ),
+                  sliver: SliverList.builder(
+                    itemCount: items.length,
+                    itemBuilder: (context, index) {
+                      return MotionReveal(
+                        delay: staggerDelay(index),
+                        child: _InvitationTile(invitation: items[index]),
+                      );
+                    },
+                  ),
+                ),
+            ],
+          ],
+        ),
       ),
     );
   }

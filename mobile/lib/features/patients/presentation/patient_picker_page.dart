@@ -9,7 +9,6 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_empty_state.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
-import '../../../shared/widgets/async_state_body.dart';
 import '../../../shared/widgets/clay_card.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../questionnaires/presentation/questionnaire_routes.dart';
@@ -18,6 +17,7 @@ import '../../therapy_resources/presentation/therapy_resource_routes.dart';
 import '../domain/patient.dart';
 import '../providers/patients_providers.dart';
 import 'patient_routes.dart';
+import 'widgets/staff_section_header.dart';
 
 /// Tela de escolha rápida de paciente, usada quando um atalho do workspace
 /// precisa de um paciente antes de abrir o módulo (ex.: "Liberar para
@@ -77,91 +77,161 @@ class _PatientPickerPageState extends ConsumerState<PatientPickerPage> {
   Widget build(BuildContext context) {
     final style = _PickerStyle.of(widget.intent);
     final listState = ref.watch(patientsListProvider);
+    final patients = listState.valueOrNull ?? [];
+    final totalActive = patients.where((p) => p.isActive).length;
 
-    return AppScaffold(
-      title: style.title,
-      subtitle: style.subtitle,
-      useResponsivePadding: true,
-      body: AsyncStateBody<List<Patient>>(
-        asyncValue: listState,
-        onRetry: () => ref.read(patientsListProvider.notifier).refresh(),
-        emptyMessage: 'Nenhum paciente cadastrado ainda.',
-        dataBuilder: (patients) {
-          final normalized = _query.trim().toLowerCase();
-          final matches = patients.where((patient) {
-            if (!patient.isActive) return false;
-            if (normalized.isEmpty) return true;
-            return patient.fullName.toLowerCase().contains(normalized) ||
-                (patient.email?.toLowerCase().contains(normalized) ?? false);
-          }).toList();
-
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  AppSpacing.md,
-                  AppSpacing.md,
-                  AppSpacing.sm,
-                ),
-                child: _PickerSearchField(
-                  controller: _controller,
-                  accent: style.accent,
-                  onChanged: (value) => setState(() => _query = value),
-                  onClear: () {
-                    _controller.clear();
-                    setState(() => _query = '');
-                  },
-                ),
-              ),
-              Expanded(
-                child: matches.isEmpty
-                    ? Center(
-                        child: AppEmptyState(
-                          icon: Icons.search_off_outlined,
-                          title: 'Nenhum paciente',
-                          message: 'Nenhum paciente ativo corresponde à busca.',
-                          action: TextButton.icon(
-                            onPressed: () {
-                              _controller.clear();
-                              setState(() => _query = '');
-                            },
-                            icon: const Icon(Icons.close),
-                            label: const Text('Limpar busca'),
-                          ),
-                        ),
-                      )
-                    : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.md,
-                          0,
-                          AppSpacing.md,
-                          AppSpacing.xxl,
-                        ),
-                        itemCount: matches.length,
-                        separatorBuilder: (_, __) =>
-                            const SizedBox(height: AppSpacing.xs),
-                        itemBuilder: (context, index) {
-                          final patient = matches[index];
-                          return MotionReveal(
-                            delay: staggerDelay(index),
-                            child: _PickerRow(
-                              patient: patient,
-                              accent: style.accent,
-                              onTap: () => _open(patient),
-                            ),
-                          );
-                        },
+    return AppCanopyScaffold(
+      body: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          // ── Header ──────────────────────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: StaffSectionHeader(
+              navTitle: style.title,
+              eyebrow: style.eyebrow,
+              headline: RichText(
+                text: TextSpan(
+                  style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        height: 1.1,
                       ),
+                  children: [
+                    TextSpan(
+                      text: style.headlineAccent,
+                      style: const TextStyle(color: Color(0xFF00D4C9)),
+                    ),
+                    TextSpan(text: style.headlineRest),
+                  ],
+                ),
               ),
-            ],
+              onBack: () => context.pop(),
+              onRefresh: () =>
+                  ref.read(patientsListProvider.notifier).refresh(),
+              stats: listState.hasValue
+                  ? [
+                      StaffSectionStat(
+                        value: '$totalActive',
+                        label: 'Pacientes ativos',
+                        accent: const Color(0xFF00D4C9),
+                      ),
+                    ]
+                  : null,
+            ),
+          ),
+
+          // ── Busca ────────────────────────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.sm,
+              ),
+              child: _PickerSearchField(
+                controller: _controller,
+                accent: style.accent,
+                onChanged: (v) => setState(() => _query = v),
+                onClear: () {
+                  _controller.clear();
+                  setState(() => _query = '');
+                },
+              ),
+            ),
+          ),
+
+          // ── Lista / estados ───────────────────────────────────────────────
+          if (listState.isLoading)
+            const SliverFillRemaining(
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (listState.hasError)
+            SliverFillRemaining(
+              child: Center(
+                child: FilledButton.icon(
+                  onPressed: () =>
+                      ref.read(patientsListProvider.notifier).refresh(),
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Tentar novamente'),
+                ),
+              ),
+            )
+          else
+            _buildList(patients, style),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildList(List<Patient> patients, _PickerStyle style) {
+    final normalized = _query.trim().toLowerCase();
+    final matches = patients.where((patient) {
+      if (!patient.isActive) return false;
+      if (normalized.isEmpty) return true;
+      return patient.fullName.toLowerCase().contains(normalized) ||
+          (patient.email?.toLowerCase().contains(normalized) ?? false);
+    }).toList();
+
+    if (patients.isEmpty) {
+      return const SliverFillRemaining(
+        child: Center(
+          child: AppEmptyState(
+            icon: Icons.people_outline,
+            title: 'Nenhum paciente',
+            message: 'Nenhum paciente cadastrado ainda.',
+          ),
+        ),
+      );
+    }
+
+    if (matches.isEmpty) {
+      return SliverFillRemaining(
+        child: Center(
+          child: AppEmptyState(
+            icon: Icons.search_off_outlined,
+            title: 'Nenhum paciente',
+            message: 'Nenhum paciente ativo corresponde à busca.',
+            action: TextButton.icon(
+              onPressed: () {
+                _controller.clear();
+                setState(() => _query = '');
+              },
+              icon: const Icon(Icons.close),
+              label: const Text('Limpar busca'),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        0,
+        AppSpacing.md,
+        AppSpacing.xxl,
+      ),
+      sliver: SliverList.separated(
+        itemCount: matches.length,
+        separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.xs),
+        itemBuilder: (context, index) {
+          final patient = matches[index];
+          return MotionReveal(
+            delay: staggerDelay(index),
+            child: _PickerRow(
+              patient: patient,
+              accent: style.accent,
+              onTap: () => _open(patient),
+            ),
           );
         },
       ),
     );
   }
 }
+
+// ── Search field ──────────────────────────────────────────────────────────────
 
 class _PickerSearchField extends StatelessWidget {
   const _PickerSearchField({
@@ -208,6 +278,8 @@ class _PickerSearchField extends StatelessWidget {
     );
   }
 }
+
+// ── Patient row ───────────────────────────────────────────────────────────────
 
 class _PickerRow extends StatelessWidget {
   const _PickerRow({
@@ -291,15 +363,23 @@ class _PickerRow extends StatelessWidget {
   }
 }
 
+// ── Style per intent ──────────────────────────────────────────────────────────
+
 class _PickerStyle {
   const _PickerStyle({
     required this.title,
     required this.subtitle,
+    required this.eyebrow,
+    required this.headlineAccent,
+    required this.headlineRest,
     required this.accent,
   });
 
   final String title;
   final String subtitle;
+  final String eyebrow;
+  final String headlineAccent;
+  final String headlineRest;
   final Color accent;
 
   static _PickerStyle of(PatientSelectionIntent intent) {
@@ -307,26 +387,41 @@ class _PickerStyle {
       PatientSelectionIntent.none => const _PickerStyle(
           title: 'Escolher paciente',
           subtitle: 'Toque para abrir',
+          eyebrow: 'ESCOLHA UM PACIENTE',
+          headlineAccent: 'Escolha\n',
+          headlineRest: 'um paciente',
           accent: AppColors.blue,
         ),
       PatientSelectionIntent.questionnaires => const _PickerStyle(
           title: 'Liberar questionário',
           subtitle: 'Toque no paciente para abrir os instrumentos',
+          eyebrow: 'LIBERAR PARA PACIENTE',
+          headlineAccent: 'Liberar\n',
+          headlineRest: 'questionário',
           accent: AppColors.turquoise,
         ),
       PatientSelectionIntent.results => const _PickerStyle(
           title: 'Ver resultados',
           subtitle: 'Toque no paciente para abrir os resultados',
+          eyebrow: 'RESULTADOS',
+          headlineAccent: 'Resultados\n',
+          headlineRest: 'por paciente',
           accent: AppColors.purple,
         ),
       PatientSelectionIntent.formulation => const _PickerStyle(
           title: 'Formulação clínica',
           subtitle: 'Toque no paciente para abrir a formulação do caso',
+          eyebrow: 'FORMULAÇÃO CLÍNICA',
+          headlineAccent: 'Formulação\n',
+          headlineRest: 'clínica',
           accent: AppColors.turquoise,
         ),
       PatientSelectionIntent.therapyResources => const _PickerStyle(
           title: 'Recursos terapêuticos',
           subtitle: 'Toque no paciente para abrir os materiais',
+          eyebrow: 'RECURSOS TERAPÊUTICOS',
+          headlineAccent: 'Recursos\n',
+          headlineRest: 'terapêuticos',
           accent: AppColors.cyan,
         ),
     };

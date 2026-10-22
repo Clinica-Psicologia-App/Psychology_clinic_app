@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/life_chapter.dart';
@@ -93,51 +94,20 @@ class _State extends ConsumerState<InitialAssessmentHistoryTherapistPage> {
   @override
   Widget build(BuildContext context) {
     final async = ref.watch(patientHistoryProvider(_ctx));
-    final topInset = MediaQuery.paddingOf(context).top;
-    final theme = Theme.of(context);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            padding: EdgeInsets.fromLTRB(16, topInset + 10, 16, 18),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [AppColors.turquoise, AppColors.cyan, AppColors.blue],
-              ),
-            ),
-            child: Row(
-              children: [
-                InkWell(
-                  onTap: () => context.pop(),
-                  customBorder: const CircleBorder(),
-                  child: Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.22),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.arrow_back_rounded,
-                        color: Colors.white, size: 18),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    'Linha do Tempo',
-                    style: theme.textTheme.titleMedium?.copyWith(
-                        color: Colors.white, fontWeight: FontWeight.w700),
-                  ),
-                ),
-              ],
+    return AppCanopyScaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: PatientContextHeader(
+              patientId: widget.patientId,
+              pageTitle: 'HISTÓRICO DE AVALIAÇÕES',
+              role: widget.role,
+              accentColor: AppColors.cyan,
             ),
           ),
-          Expanded(
+          SliverFillRemaining(
+            hasScrollBody: true,
             child: AsyncStateBody<PatientHistory>(
               asyncValue: async,
               onRetry: () => ref.invalidate(patientHistoryProvider(_ctx)),

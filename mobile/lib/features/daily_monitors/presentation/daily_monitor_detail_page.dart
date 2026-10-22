@@ -6,6 +6,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../profile/domain/profile_role.dart';
 import '../providers/daily_monitors_providers.dart';
 import 'daily_monitor_routes.dart';
@@ -31,65 +32,80 @@ class DailyMonitorDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final monitorAsync = ref.watch(dailyMonitorDetailProvider(monitorId));
+    final patientIdAsync = ref.watch(myPatientIdProvider);
 
-    return AppScaffold(
-      title: _isPatient ? 'Meu registro' : 'Registro diário',
-      accent: AppColors.cyan,
-      actions: [
-        IconButton(
-          tooltip: 'Atualizar',
-          onPressed: () =>
-              ref.invalidate(dailyMonitorDetailProvider(monitorId)),
-          icon: const Icon(Icons.refresh),
+    final body = monitorAsync.when(
+      loading: () => const BrandLoader(),
+      error: (_, __) => Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Erro ao carregar registro.'),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: () =>
+                  ref.invalidate(dailyMonitorDetailProvider(monitorId)),
+              child: const Text('Tentar novamente'),
+            ),
+          ],
         ),
-      ],
-      body: monitorAsync.when(
-        loading: () => const BrandLoader(),
-        error: (_, __) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Erro ao carregar registro.'),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: () =>
-                    ref.invalidate(dailyMonitorDetailProvider(monitorId)),
-                child: const Text('Tentar novamente'),
-              ),
-            ],
-          ),
-        ),
-        data: (monitor) {
-          if (monitor == null) {
-            return const Center(child: Text('Registro não encontrado.'));
-          }
+      ),
+      data: (monitor) {
+        if (monitor == null) {
+          return const Center(child: Text('Registro não encontrado.'));
+        }
 
-          return Column(
-            children: [
-              Expanded(
-                child: MotionReveal(
-                  child: DailyMonitorDetailBody(
-                    monitor: monitor,
-                    readOnly: readOnly || !_isPatient,
-                  ),
+        return Column(
+          children: [
+            Expanded(
+              child: MotionReveal(
+                child: DailyMonitorDetailBody(
+                  monitor: monitor,
+                  readOnly: readOnly || !_isPatient,
                 ),
               ),
-              if (_isPatient && monitor.isEditableToday) ...[
-                const Divider(height: 1),
-                Padding(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  child: FilledButton.icon(
-                    onPressed: () => context.push(
-                      DailyMonitorRoutes.patientEdit(monitorId),
-                    ),
-                    icon: const Icon(Icons.edit_outlined),
-                    label: const Text('Editar registro de hoje'),
+            ),
+            if (_isPatient && monitor.isEditableToday) ...[
+              const Divider(height: 1),
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: FilledButton.icon(
+                  onPressed: () => context.push(
+                    DailyMonitorRoutes.patientEdit(monitorId),
                   ),
+                  icon: const Icon(Icons.edit_outlined),
+                  label: const Text('Editar registro de hoje'),
                 ),
-              ],
+              ),
             ],
-          );
-        },
+          ],
+        );
+      },
+    );
+
+    return patientIdAsync.when(
+      loading: () => const AppCanopyScaffold(
+        body: Center(child: BrandLoader()),
+      ),
+      error: (_, __) => AppScaffold(
+        title: 'Monitor Diário',
+        accent: AppColors.cyan,
+        body: const Center(child: Text('Erro ao identificar paciente.')),
+      ),
+      data: (patientId) => AppCanopyScaffold(
+        body: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: PatientContextHeader(
+                patientId: patientId,
+                pageTitle: 'MONITOR DIÁRIO',
+                role: ProfileRole.patient,
+                accentColor: AppColors.cyan,
+              ),
+            ),
+            SliverFillRemaining(hasScrollBody: true, child: body),
+          ],
+        ),
       ),
     );
   }

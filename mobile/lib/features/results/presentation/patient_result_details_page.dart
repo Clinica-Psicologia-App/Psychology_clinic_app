@@ -7,6 +7,7 @@ import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/status_chip.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/category_result.dart';
 import '../domain/patient_result_detail.dart';
@@ -43,18 +44,20 @@ class PatientResultDetailsPage extends ConsumerWidget {
     );
     final detailAsync = ref.watch(patientResultDetailProvider(detailContext));
 
-    return AppScaffold(
-      title: 'Detalhe do resultado',
-      accent: AppColors.purple,
-      actions: [
-        IconButton(
-          tooltip: 'Atualizar',
-          onPressed: () =>
-              ref.invalidate(patientResultDetailProvider(detailContext)),
-          icon: const Icon(Icons.refresh),
-        ),
-      ],
-      body: detailAsync.when(
+    return AppCanopyScaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: PatientContextHeader(
+              patientId: patientId,
+              pageTitle: 'RESULTADO',
+              role: role,
+              accentColor: AppColors.blue,
+            ),
+          ),
+          SliverFillRemaining(
+            hasScrollBody: true,
+            child: detailAsync.when(
         loading: () => const BrandLoader(),
         error: (e, _) => Center(
           child: Padding(
@@ -95,6 +98,9 @@ class PatientResultDetailsPage extends ConsumerWidget {
             responseId: responseId,
           );
         },
+          ),
+          ),
+        ],
       ),
     );
   }

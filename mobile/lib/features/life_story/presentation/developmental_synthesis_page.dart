@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
+import '../../profile/domain/profile_role.dart';
 import '../domain/clinical_hypothesis.dart';
 import '../domain/family_context.dart';
 import '../domain/family_person.dart';
@@ -20,9 +23,14 @@ import '../../../shared/widgets/brand_loading.dart';
 /// só reúne e apresenta o que o paciente registrou. As hipóteses clínicas
 /// (§43) são um passo à parte, inteiramente editável pelo terapeuta.
 class DevelopmentalSynthesisPage extends ConsumerWidget {
-  const DevelopmentalSynthesisPage({super.key, required this.patientId});
+  const DevelopmentalSynthesisPage({
+    super.key,
+    required this.patientId,
+    this.role = ProfileRole.psychologist,
+  });
 
   final String patientId;
+  final ProfileRole role;
 
   static const _prolongedRecurrences = {
     EventRecurrence.frequent,
@@ -54,45 +62,54 @@ class DevelopmentalSynthesisPage extends ConsumerWidget {
     final familyAsync = ref.watch(familyForPatientProvider(patientId));
     final contextAsync = ref.watch(familyContextForPatientProvider(patientId));
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.navy,
-        foregroundColor: Colors.white,
-        title: const Text('Síntese Desenvolvimental',
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-      ),
-      body: timelineAsync.when(
-        loading: () => const BrandLoader(),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: OutlinedButton(
-              onPressed: () =>
-                  ref.invalidate(timelineForPatientProvider(patientId)),
-              child: const Text('Tentar de novo'),
+    return AppCanopyScaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: PatientContextHeader(
+              patientId: patientId,
+              pageTitle: 'SÍNTESE DESENVOLVIMENTAL',
+              role: role,
+              accentColor: AppColors.cyan,
             ),
           ),
-        ),
-        data: (events) {
-          final people = familyAsync.asData?.value ?? const <FamilyPerson>[];
-          final famContext =
-              contextAsync.asData?.value ?? const FamilyContext();
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-            children: [
-              _intro(),
-              _blockExperiences(events),
-              _blockPeople(context, people),
-              _blockNeeds(events, people),
-              _blockFamilyContext(famContext),
-              _blockPatterns(famContext),
-              _blockMeanings(events),
-              _blockPresentImpact(events),
-              _HypothesesSection(patientId: patientId),
-            ],
-          );
-        },
+          SliverFillRemaining(
+            hasScrollBody: true,
+            child: timelineAsync.when(
+              loading: () => const BrandLoader(),
+              error: (e, _) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: OutlinedButton(
+                    onPressed: () =>
+                        ref.invalidate(timelineForPatientProvider(patientId)),
+                    child: const Text('Tentar de novo'),
+                  ),
+                ),
+              ),
+              data: (events) {
+                final people =
+                    familyAsync.asData?.value ?? const <FamilyPerson>[];
+                final famContext =
+                    contextAsync.asData?.value ?? const FamilyContext();
+                return ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+                  children: [
+                    _intro(),
+                    _blockExperiences(events),
+                    _blockPeople(context, people),
+                    _blockNeeds(events, people),
+                    _blockFamilyContext(famContext),
+                    _blockPatterns(famContext),
+                    _blockMeanings(events),
+                    _blockPresentImpact(events),
+                    _HypothesesSection(patientId: patientId),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

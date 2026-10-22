@@ -16,7 +16,7 @@ import '../../../patient_infographic/presentation/patient_infographic_route_help
 import '../../../patient_library/presentation/patient_library_routes.dart';
 import '../../../psychoeducation/presentation/psychoeducation_routes.dart';
 import '../../../patient_check_ins/presentation/patient_check_in_routes.dart';
-import '../../../patient_problems/presentation/patient_problem_routes.dart';
+import '../../../therapy_demands/presentation/therapy_demands_routes.dart';
 import '../../../personality_assessment/presentation/personality_assessment_routes.dart';
 import '../../../profile/domain/profile_role.dart';
 import '../../../questionnaires/presentation/questionnaire_routes.dart';
@@ -140,10 +140,10 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
           _ModuleSpec(
             icon: Icons.record_voice_over_outlined,
             title: 'Demandas Terapêuticas',
-            subtitle: 'Motivos da procura e focos registrados.',
+            subtitle: 'Motivos, impressões e perspectiva diagnóstica.',
             accentColor: AppColors.cyan,
             onTap: () => _push(
-              PatientProblemRoutes.staffList(role: role, patientId: patientId),
+              TherapyDemandsRoutes.staff(role: role, patientId: patientId),
             ),
           ),
           _ModuleSpec(

@@ -6,8 +6,10 @@ import '../../../shared/widgets/app_motion.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../daily_monitors/providers/daily_monitors_providers.dart';
 import '../../genogram/presentation/genogram_routes.dart';
 import '../../genogram/providers/genogram_providers.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../profile/domain/profile_role.dart';
 import '../providers/patient_timeline_providers.dart';
 import 'patient_timeline_routes.dart';
@@ -29,19 +31,9 @@ class PatientTimelineEventDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final eventAsync = ref.watch(patientTimelineEventDetailProvider(eventId));
+    final patientIdAsync = ref.watch(myPatientIdProvider);
 
-    return AppScaffold(
-      title: 'Evento',
-      accent: AppColors.cyan,
-      actions: [
-        IconButton(
-          tooltip: 'Atualizar',
-          onPressed: () =>
-              ref.invalidate(patientTimelineEventDetailProvider(eventId)),
-          icon: const Icon(Icons.refresh),
-        ),
-      ],
-      body: eventAsync.when(
+    final asyncBody = eventAsync.when(
         loading: () => const BrandLoader(),
         error: (_, __) => Center(
           child: Column(
@@ -130,6 +122,48 @@ class PatientTimelineEventDetailPage extends ConsumerWidget {
             ],
           );
         },
+    );
+
+    if (patientId != null) {
+      return AppCanopyScaffold(
+        body: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: PatientContextHeader(
+                patientId: patientId!,
+                pageTitle: 'LINHA DO TEMPO',
+                role: role,
+                accentColor: AppColors.cyan,
+              ),
+            ),
+            SliverFillRemaining(hasScrollBody: true, child: asyncBody),
+          ],
+        ),
+      );
+    }
+    return patientIdAsync.when(
+      loading: () => const AppCanopyScaffold(
+        body: Center(child: BrandLoader()),
+      ),
+      error: (_, __) => AppScaffold(
+        title: 'Linha do Tempo',
+        accent: AppColors.cyan,
+        body: const Center(child: Text('Erro ao identificar paciente.')),
+      ),
+      data: (myPatientId) => AppCanopyScaffold(
+        body: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: PatientContextHeader(
+                patientId: myPatientId,
+                pageTitle: 'LINHA DO TEMPO',
+                role: ProfileRole.patient,
+                accentColor: AppColors.cyan,
+              ),
+            ),
+            SliverFillRemaining(hasScrollBody: true, child: asyncBody),
+          ],
+        ),
       ),
     );
   }

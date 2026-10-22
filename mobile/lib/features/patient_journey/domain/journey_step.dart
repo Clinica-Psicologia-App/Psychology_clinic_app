@@ -376,6 +376,17 @@ List<JourneyStep> buildPatientJourneySteps(
       progressFraction: genogramFraction(),
       order: 3,
     ),
+    JourneyStep(
+      id: JourneyStepId.problems,
+      title: 'Problemas e demandas',
+      subtitle: 'Focos, queixas e pontos de atenção em acompanhamento.',
+      icon: Icons.report_problem_outlined,
+      availability: problemsStatus(),
+      phase: JourneyPhase.conhecer,
+      progressHint: problemsHint(),
+      progressFraction: problemsFraction(),
+      order: 4,
+    ),
     // ── Fase 2 · Avaliar ─────────────────────────────────────────────────────
     JourneyStep(
       id: JourneyStepId.questionnaires,
@@ -386,20 +397,9 @@ List<JourneyStep> buildPatientJourneySteps(
       phase: JourneyPhase.avaliar,
       progressHint: questionnairesHint(),
       progressFraction: questFraction(),
-      order: 4,
-    ),
-    // ── Fase 3 · Compreender ─────────────────────────────────────────────────
-    JourneyStep(
-      id: JourneyStepId.problems,
-      title: 'Problemas e demandas',
-      subtitle: 'Focos, queixas e pontos de atenção em acompanhamento.',
-      icon: Icons.report_problem_outlined,
-      availability: problemsStatus(),
-      phase: JourneyPhase.compreender,
-      progressHint: problemsHint(),
-      progressFraction: problemsFraction(),
       order: 5,
     ),
+    // ── Fase 3 · Compreender ─────────────────────────────────────────────────
     JourneyStep(
       id: JourneyStepId.mentalMap,
       title: 'Mapa mental',

@@ -1,5 +1,22 @@
 # Estado atual — EsquemaCore
 
+## Atualização de 2026-10-22 — migration e homologação da Rodada 2
+
+A migration `20261021100000` foi aplicada no Supabase vinculado após autorização
+específica, sem aplicar outras migrations. RLS, policy de escrita própria e
+funções canônicas de acesso preservadas. **87 verificações HTTP aprovadas** com
+contas descartáveis: exercícios, isolamento entre responsáveis/clínicas e
+liberação/revogação YCI/YRAI, incluindo proteção dos campos privados.
+
+Build debug novo e Android 360 × 640: respostas preenchidas na visão do
+terapeuta, link Modos → Biblioteca 9, cartões YCI/YRAI e Diário aprovados.
+Registro do Diário salvo pela interface e confirmado por REST; revogação removeu
+os cartões ao reabrir, e nova liberação os recuperou. Conjunto de duas clínicas,
+seis contas e três pacientes integralmente removido, com ausência confirmada;
+demo anterior preservada. Sem push ou publicação. Os cartões continuam como
+modelos de reflexão, com os temas agregados disponíveis nos snapshots.
+Veja [evidências e limites](qa/round2-remote-smoke.md).
+
 ## Atualização de 2026-10-21 — Rodada 2 (`audit/astra`)
 
 Metas agora conta apenas ativas no cabeçalho. O cadastro do paciente oferece

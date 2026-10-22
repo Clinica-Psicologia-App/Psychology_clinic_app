@@ -3,7 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/widgets/brand_loading.dart';
 import '../../../shared/widgets/error_banner.dart';
+import '../../daily_monitors/providers/daily_monitors_providers.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
+import '../../profile/domain/profile_role.dart';
 import '../domain/family_person.dart';
 import '../domain/genogram_relationship_enums.dart';
 import '../providers/life_story_providers.dart';
@@ -118,31 +123,48 @@ class _DeepenRelationshipFlowPageState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          FlowHeader(
-            title: widget.person.fullName,
-            step: _step,
-            stepCount: _stepCount,
-            onBack: () => context.pop(),
+    final patientIdAsync = ref.watch(myPatientIdProvider);
+
+    final content = Column(
+      children: [
+        _FlowStepBar(step: _step, stepCount: _stepCount),
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
+            child: switch (_step) {
+              0 => _stepCaregiver(),
+              1 => _stepBond(),
+              2 => _stepFelt(),
+              3 => _stepReceived(),
+              4 => _stepWished(),
+              _ => _stepToday(),
+            },
           ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(16, 20, 16, 20),
-              child: switch (_step) {
-                0 => _stepCaregiver(),
-                1 => _stepBond(),
-                2 => _stepFelt(),
-                3 => _stepReceived(),
-                4 => _stepWished(),
-                _ => _stepToday(),
-              },
+        ),
+        _buildNav(),
+      ],
+    );
+
+    return patientIdAsync.when(
+      loading: () =>
+          const AppCanopyScaffold(body: Center(child: BrandLoader())),
+      error: (_, __) => const AppScaffold(
+        title: 'Minha Família',
+        accent: AppColors.cyan,
+        body: Center(child: Text('Erro ao identificar paciente.')),
+      ),
+      data: (patientId) => AppCanopyScaffold(
+        body: Column(
+          children: [
+            PatientContextHeader(
+              patientId: patientId,
+              pageTitle: widget.person.fullName.toUpperCase(),
+              role: ProfileRole.patient,
+              accentColor: AppColors.cyan,
             ),
-          ),
-          _buildNav(),
-        ],
+            Expanded(child: content),
+          ],
+        ),
       ),
     );
   }
@@ -367,6 +389,42 @@ class _DeepenRelationshipFlowPageState
                         strokeWidth: 2, color: Colors.white))
                 : Text(isLast ? 'Salvar' : 'Avançar'),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Barra de progresso horizontal de etapas — exibida abaixo do
+/// [PatientContextHeader] para indicar em qual passo do fluxo o paciente está.
+class _FlowStepBar extends StatelessWidget {
+  const _FlowStepBar({required this.step, required this.stepCount});
+
+  final int step;
+  final int stepCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      color: cs.surfaceContainerLow,
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: Row(
+        children: [
+          for (var i = 0; i < stepCount; i++) ...[
+            if (i > 0) const SizedBox(width: 4),
+            Expanded(
+              child: Container(
+                height: 3,
+                decoration: BoxDecoration(
+                  color: i <= step
+                      ? AppColors.cyan
+                      : AppColors.cyan.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

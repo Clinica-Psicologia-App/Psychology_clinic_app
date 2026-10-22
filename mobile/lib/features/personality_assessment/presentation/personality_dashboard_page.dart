@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import 'personality_domain_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../profile/domain/profile_role.dart';
@@ -93,37 +94,50 @@ class _PersonalityDashboardPageState
   Widget build(BuildContext context) {
     final async =
         ref.watch(personalityAssessmentByIdProvider(widget.assessmentId));
-    return AppScaffold(
-      title: 'Perfil de personalidade',
-      accent: AppColors.purple,
-      actions: [
-        IconButton(
-          tooltip: 'Editar',
-          onPressed: _navigating ? null : _openEdit,
-          icon: const Icon(Icons.edit_outlined),
-        ),
-        IconButton(
-          tooltip: 'Excluir avaliação',
-          onPressed: _confirmDelete,
-          icon: const Icon(Icons.delete_outline),
-        ),
-      ],
-      body: AsyncStateBody<PersonalityAssessment?>(
-        asyncValue: async,
-        onRetry: () =>
-            ref.invalidate(personalityAssessmentByIdProvider(widget.assessmentId)),
-        emptyMessage: 'Avaliação não encontrada.',
-        dataBuilder: (a) {
-          if (a == null) {
-            return const Center(child: Text('Avaliação não encontrada.'));
-          }
-          return _Body(
-            assessment: a,
-            role: widget.role,
-            patientId: widget.patientId,
-            assessmentId: widget.assessmentId,
-          );
-        },
+    return AppCanopyScaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: PatientContextHeader(
+              patientId: widget.patientId,
+              pageTitle: 'PERFIL DE PERSONALIDADE',
+              role: widget.role,
+              accentColor: AppColors.blue,
+              actions: [
+                PatientHeaderActionBtn(
+                  label: 'Editar',
+                  icon: Icons.edit_outlined,
+                  onTap: _navigating ? null : _openEdit,
+                ),
+                PatientHeaderActionBtn(
+                  label: 'Excluir',
+                  icon: Icons.delete_outline,
+                  onTap: _confirmDelete,
+                ),
+              ],
+            ),
+          ),
+          SliverFillRemaining(
+            hasScrollBody: true,
+            child: AsyncStateBody<PersonalityAssessment?>(
+              asyncValue: async,
+              onRetry: () => ref.invalidate(
+                  personalityAssessmentByIdProvider(widget.assessmentId)),
+              emptyMessage: 'Avaliação não encontrada.',
+              dataBuilder: (a) {
+                if (a == null) {
+                  return const Center(child: Text('Avaliação não encontrada.'));
+                }
+                return _Body(
+                  assessment: a,
+                  role: widget.role,
+                  patientId: widget.patientId,
+                  assessmentId: widget.assessmentId,
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -1,3 +1,4 @@
+import '../../personality_assessment/domain/personality_assessment.dart';
 import 'mental_case_map.dart';
 import 'mental_map_aggregator.dart';
 import 'mental_map_case_summary.dart';
@@ -29,6 +30,7 @@ class MentalMapData {
     required this.recentMonitors,
     required this.recentTimelineEvents,
     required this.genogram,
+    this.personalityAssessments = const [],
   });
 
   static const empty = MentalMapData(
@@ -61,6 +63,7 @@ class MentalMapData {
   final List<MentalMapMonitorSummary> recentMonitors;
   final List<MentalMapTimelineSummary> recentTimelineEvents;
   final MentalMapGenogramSummary genogram;
+  final List<PersonalityAssessment> personalityAssessments;
 
   bool get hasRelevantData => mentalMapHasRelevantData(this);
 }

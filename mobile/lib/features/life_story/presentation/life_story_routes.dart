@@ -17,6 +17,9 @@ abstract final class LifeStoryRoutes {
   /// Tela 3 — Minha Família (Genograma).
   static const myFamily = '/patient/my-family';
 
+  /// Genograma gráfico (§36–38) na visão do paciente; `patientId` via `extra`.
+  static const genogramDiagramPatient = '/patient/genogram-diagram';
+
   /// Cartão da pessoa (§39, só leitura) — recebe a pessoa via `extra`.
   static const personCard = '/patient/my-family/person';
 

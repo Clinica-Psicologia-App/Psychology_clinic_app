@@ -7,6 +7,8 @@ import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../daily_monitors/providers/daily_monitors_providers.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../profile/domain/profile_role.dart';
 import '../providers/patient_check_ins_providers.dart';
 import 'patient_check_in_routes.dart';
@@ -31,19 +33,9 @@ class PatientCheckInDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final checkInAsync = ref.watch(patientCheckInDetailProvider(checkInId));
+    final patientIdAsync = ref.watch(myPatientIdProvider);
 
-    return AppScaffold(
-      title: 'Check-in',
-      accent: AppColors.turquoise,
-      actions: [
-        IconButton(
-          tooltip: 'Atualizar',
-          onPressed: () =>
-              ref.invalidate(patientCheckInDetailProvider(checkInId)),
-          icon: const Icon(Icons.refresh),
-        ),
-      ],
-      body: checkInAsync.when(
+    final body = checkInAsync.when(
         loading: () => const BrandLoader(),
         error: (_, __) => Center(
           child: Column(
@@ -149,7 +141,39 @@ class PatientCheckInDetailPage extends ConsumerWidget {
             ],
           );
         },
-      ),
+    );
+
+    if (_isPatient) {
+      return patientIdAsync.when(
+        loading: () => const AppCanopyScaffold(
+          body: Center(child: BrandLoader()),
+        ),
+        error: (_, __) => AppScaffold(
+          title: 'Check-ins',
+          accent: AppColors.turquoise,
+          body: const Center(child: Text('Erro ao identificar paciente.')),
+        ),
+        data: (myPatientId) => AppCanopyScaffold(
+          body: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: PatientContextHeader(
+                  patientId: myPatientId,
+                  pageTitle: 'CHECK-INS',
+                  role: ProfileRole.patient,
+                  accentColor: AppColors.turquoise,
+                ),
+              ),
+              SliverFillRemaining(hasScrollBody: true, child: body),
+            ],
+          ),
+        ),
+      );
+    }
+    return AppScaffold(
+      title: 'Check-in',
+      accent: AppColors.turquoise,
+      body: body,
     );
   }
 }

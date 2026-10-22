@@ -18,6 +18,7 @@ import '../../clinical_dashboard/domain/clinical_dashboard_data.dart';
 import '../../clinical_dashboard/domain/clinical_instrument_dashboard.dart';
 import '../../clinical_dashboard/presentation/widgets/clinical_dashboard_widgets.dart';
 import '../../clinical_dashboard/providers/clinical_dashboard_providers.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../results/presentation/result_routes.dart';
 import '../domain/questionnaire.dart';
@@ -69,18 +70,29 @@ class PatientInstrumentDashboardPage extends ConsumerWidget {
       ),
     );
 
-    return AppScaffold(
-      title: questionnaire.name,
-      accent: AppColors.blue,
-      body: RefreshIndicator(
-        onRefresh: () async {
-          ref.invalidate(
-            staffClinicalDashboardProvider(
-              StaffClinicalDashboardContext(role: role, patientId: patientId),
+    return AppCanopyScaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: PatientContextHeader(
+              patientId: patientId,
+              pageTitle: 'INSTRUMENTOS',
+              role: role,
+              accentColor: AppColors.blue,
             ),
-          );
-        },
-        child: ListView(
+          ),
+          SliverFillRemaining(
+            hasScrollBody: true,
+            child: RefreshIndicator(
+              onRefresh: () async {
+                ref.invalidate(
+                  staffClinicalDashboardProvider(
+                    StaffClinicalDashboardContext(
+                        role: role, patientId: patientId),
+                  ),
+                );
+              },
+              child: ListView(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.md,
             AppSpacing.md,
@@ -156,6 +168,9 @@ class PatientInstrumentDashboardPage extends ConsumerWidget {
             ),
           ],
         ),
+            ),
+          ),
+        ],
       ),
     );
   }

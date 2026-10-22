@@ -10,6 +10,7 @@ import '../../../shared/widgets/async_state_body.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../patients/presentation/widgets/results_release_card.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../results/presentation/result_routes.dart';
 import '../domain/clinical_dashboard_data.dart';
@@ -68,32 +69,38 @@ class StaffPatientClinicalDashboardPage extends ConsumerWidget {
     final ctx = StaffClinicalDashboardContext(role: role, patientId: patientId);
     final dataAsync = ref.watch(staffClinicalDashboardProvider(ctx));
 
-    return AppScaffold(
-      title: 'Dashboard clínico',
-      accent: AppColors.navy,
-      actions: [
-        IconButton(
-          tooltip: 'Atualizar',
-          onPressed: () => ref.invalidate(staffClinicalDashboardProvider(ctx)),
-          icon: const Icon(Icons.refresh),
-        ),
-      ],
-      body: AsyncStateBody<ClinicalDashboardData>(
-        asyncValue: dataAsync,
-        onRetry: () => ref.invalidate(staffClinicalDashboardProvider(ctx)),
-        dataBuilder: (data) => RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(staffClinicalDashboardProvider(ctx));
-            await ref.read(staffClinicalDashboardProvider(ctx).future);
-          },
-          child: DashboardHomePage(
-            data: data,
-            role: role,
-            patientId: patientId,
-            onRefresh: () =>
-                ref.invalidate(staffClinicalDashboardProvider(ctx)),
+    return AppCanopyScaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: PatientContextHeader(
+              patientId: patientId,
+              pageTitle: 'PAINEL CLÍNICO',
+              role: role,
+              accentColor: AppColors.blue,
+            ),
           ),
-        ),
+          SliverFillRemaining(
+            hasScrollBody: true,
+            child: AsyncStateBody<ClinicalDashboardData>(
+              asyncValue: dataAsync,
+              onRetry: () => ref.invalidate(staffClinicalDashboardProvider(ctx)),
+              dataBuilder: (data) => RefreshIndicator(
+                onRefresh: () async {
+                  ref.invalidate(staffClinicalDashboardProvider(ctx));
+                  await ref.read(staffClinicalDashboardProvider(ctx).future);
+                },
+                child: DashboardHomePage(
+                  data: data,
+                  role: role,
+                  patientId: patientId,
+                  onRefresh: () =>
+                      ref.invalidate(staffClinicalDashboardProvider(ctx)),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

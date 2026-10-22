@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/life_chapter.dart';
 import '../domain/patient_history.dart';
@@ -30,35 +31,48 @@ class InitialAssessmentHistoryPage extends ConsumerWidget {
     final ctx = InitialAssessmentContext(role: role, patientId: patientId);
     final async = ref.watch(patientHistoryProvider(ctx));
 
-    return AppScaffold(
-      title: 'Minha História',
-      accent: AppColors.turquoise,
-      body: AsyncStateBody<PatientHistory>(
-        asyncValue: async,
-        onRetry: () => ref.invalidate(patientHistoryProvider(ctx)),
-        dataBuilder: (history) => ListView(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
-          children: [
-            Text(
-              'Nossa história é formada por experiências importantes. Vamos '
-              'percorrer alguns momentos da sua vida para compreender como ela '
-              'foi sendo construída.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    height: 1.4,
-                  ),
+    return AppCanopyScaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: PatientContextHeader(
+              patientId: patientId,
+              pageTitle: 'MINHA HISTÓRIA',
+              role: role,
+              accentColor: AppColors.cyan,
             ),
-            const SizedBox(height: 20),
-            for (final chapter in kLifeChaptersInOrder)
-              _ChapterSection(
-                ctx: ctx,
-                chapter: chapter,
-                entries: history.entriesFor(chapter),
+          ),
+          SliverFillRemaining(
+            hasScrollBody: true,
+            child: AsyncStateBody<PatientHistory>(
+              asyncValue: async,
+              onRetry: () => ref.invalidate(patientHistoryProvider(ctx)),
+              dataBuilder: (history) => ListView(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
+                children: [
+                  Text(
+                    'Nossa história é formada por experiências importantes. Vamos '
+                    'percorrer alguns momentos da sua vida para compreender como ela '
+                    'foi sendo construída.',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          height: 1.4,
+                        ),
+                  ),
+                  const SizedBox(height: 20),
+                  for (final chapter in kLifeChaptersInOrder)
+                    _ChapterSection(
+                      ctx: ctx,
+                      chapter: chapter,
+                      entries: history.entriesFor(chapter),
+                    ),
+                  if (history.unchaptered.isNotEmpty)
+                    _UnchapteredSection(ctx: ctx, entries: history.unchaptered),
+                ],
               ),
-            if (history.unchaptered.isNotEmpty)
-              _UnchapteredSection(ctx: ctx, entries: history.unchaptered),
-          ],
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }

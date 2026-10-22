@@ -12,6 +12,7 @@ import '../../genogram/domain/genogram_relationship_type.dart';
 import '../../genogram/presentation/genogram_routes.dart';
 import '../../genogram/presentation/widgets/motor_genogram_diagram.dart';
 import '../../genogram/providers/genogram_providers.dart';
+import '../../profile/domain/profile_role.dart';
 import '../providers/life_story_providers.dart';
 import 'widgets/genogram_diagram.dart';
 import '../../../shared/widgets/brand_loading.dart';
@@ -20,9 +21,14 @@ import '../../../shared/widgets/brand_loading.dart';
 /// familiar em gerações, com camadas ligáveis: relações emocionais (camada 2)
 /// e destaque das figuras de cuidado (camada 3, visão do terapeuta).
 class GenogramDiagramPage extends ConsumerStatefulWidget {
-  const GenogramDiagramPage({super.key, required this.patientId});
+  const GenogramDiagramPage({
+    super.key,
+    required this.patientId,
+    this.role = ProfileRole.psychologist,
+  });
 
   final String patientId;
+  final ProfileRole role;
 
   @override
   ConsumerState<GenogramDiagramPage> createState() =>
@@ -147,9 +153,10 @@ class _GenogramDiagramPageState extends ConsumerState<GenogramDiagramPage> {
     if (_navigating || !mounted) return;
     setState(() => _navigating = true);
     try {
-      await context.push(
-        GenogramRoutes.personDetailFor(widget.patientId, personId),
-      );
+      final route = widget.role == ProfileRole.patient
+          ? GenogramRoutes.patientPersonDetail(personId)
+          : GenogramRoutes.personDetailFor(widget.patientId, personId);
+      await context.push(route);
       if (mounted) ref.invalidate(genogramDataForPatientProvider(widget.patientId));
     } finally {
       if (mounted) setState(() => _navigating = false);

@@ -8,6 +8,8 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
+import '../../profile/domain/profile_role.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../domain/daily_monitor.dart';
 import '../domain/daily_monitor_input.dart';
@@ -196,10 +198,31 @@ class _CreateDailyMonitorPageState
   }
 
   Widget _buildForm(BuildContext context) {
-    return AppScaffold(
-      title: widget.isEdit ? 'Editar registro' : 'Novo registro',
-      accent: AppColors.cyan,
-      body: Form(
+    final patientIdAsync = ref.watch(myPatientIdProvider);
+
+    return patientIdAsync.when(
+      loading: () => const AppCanopyScaffold(
+        body: Center(child: BrandLoader()),
+      ),
+      error: (_, __) => AppScaffold(
+        title: 'Monitor Diário',
+        accent: AppColors.cyan,
+        body: const Center(child: Text('Erro ao identificar paciente.')),
+      ),
+      data: (patientId) => AppCanopyScaffold(
+        body: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: PatientContextHeader(
+                patientId: patientId,
+                pageTitle: 'MONITOR DIÁRIO',
+                role: ProfileRole.patient,
+                accentColor: AppColors.cyan,
+              ),
+            ),
+            SliverFillRemaining(
+              hasScrollBody: true,
+              child: Form(
         key: _formKey,
         child: MotionReveal(
           child: ListView(
@@ -293,6 +316,10 @@ class _CreateDailyMonitorPageState
               ),
             ],
           ),
+        ),
+      ),
+            ),
+          ],
         ),
       ),
     );

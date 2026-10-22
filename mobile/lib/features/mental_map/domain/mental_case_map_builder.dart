@@ -1,4 +1,6 @@
 ﻿import '../../genogram/domain/genogram_data.dart';
+import '../../personality_assessment/domain/personality_assessment.dart';
+import '../../personality_assessment/domain/personality_instrument.dart';
 import 'mental_case_map.dart';
 import 'mental_map_check_in_summary.dart';
 import 'mental_map_goal_summary.dart';
@@ -43,6 +45,7 @@ MentalCaseMap buildMentalCaseMap({
   required List<MentalMapTimelineSummary> timelineEvents,
   required GenogramData genogramData,
   List<MentalMapQuestionnaireContext> questionnaireContexts = const [],
+  List<PersonalityAssessment> personalityAssessments = const [],
 }) {
   final parentalContext = _findQuestionnaireContext(
     questionnaireContexts,
@@ -75,6 +78,7 @@ MentalCaseMap buildMentalCaseMap({
       _buildCopingNode(questionnaires),
       _buildParentalNode(questionnaires, parentalContext),
       _buildHistoryNode(timelineEvents, genogramData),
+      _buildPersonalityNode(personalityAssessments),
     ],
   );
 }
@@ -90,7 +94,7 @@ MentalCaseMapNode _buildSchemaNode(
     shortLabel: _buildFilledStatusLabel(items.isNotEmpty),
     items: items,
     emptyLabel: 'Pendente',
-    dataSource: 'YSQ - última resposta concluída',
+    dataSource: 'Questionário de Esquemas (YSQ)',
     lastUpdatedAt: block?.completedAt,
     responseId: block?.responseId,
     aggregateSeverityColorKey:
@@ -109,7 +113,7 @@ MentalCaseMapNode _buildModeNode(
     shortLabel: _buildFilledStatusLabel(items.isNotEmpty),
     items: items,
     emptyLabel: 'Pendente',
-    dataSource: 'YAMI - última resposta concluída',
+    dataSource: 'Inventário de Modos (YAMI)',
     lastUpdatedAt: block?.completedAt,
     responseId: block?.responseId,
     aggregateSeverityColorKey:
@@ -172,7 +176,7 @@ MentalCaseMapNode _buildAttachmentNode(
     shortLabel: _buildFilledStatusLabel(items.isNotEmpty),
     items: items,
     emptyLabel: 'Pendente',
-    dataSource: 'ATTACHMENT_STYLES_V1 - snapshot estruturado',
+    dataSource: 'Questionário de Estilos de Apego',
     lastUpdatedAt: block?.completedAt,
     responseId: block?.responseId,
     aggregateSeverityColorKey:
@@ -201,7 +205,7 @@ MentalCaseMapNode _buildCopingNode(
     shortLabel: _buildFilledStatusLabel(items.isNotEmpty),
     items: items,
     emptyLabel: 'Pendente',
-    dataSource: 'YCI / YRAI - snapshots estruturados',
+    dataSource: 'Inventário de Estilos de Coping (YCI / YRAI)',
     lastUpdatedAt: latest,
     responseId: yci?.responseId ?? yrai?.responseId,
     aggregateSeverityColorKey:
@@ -225,7 +229,7 @@ MentalCaseMapNode _buildParentalNode(
     shortLabel: _buildFilledStatusLabel(items.isNotEmpty),
     items: items.take(_nodeItemLimit).toList(growable: false),
     emptyLabel: 'Pendente',
-    dataSource: 'PARENTAL_STYLES_V1 - figuras parentais',
+    dataSource: 'Questionário de Estilos Parentais',
     lastUpdatedAt: context?.completedAt ?? block?.completedAt,
     responseId: context?.responseId ?? block?.responseId,
     aggregateSeverityColorKey:
@@ -256,6 +260,46 @@ MentalCaseMapNode _buildHistoryNode(
     items: items.take(_nodeItemLimit).toList(growable: false),
     emptyLabel: 'Pendente',
     dataSource: 'Linha do tempo + genograma',
+  );
+}
+
+MentalCaseMapNode _buildPersonalityNode(
+  List<PersonalityAssessment> assessments,
+) {
+  DateTime? lastUpdated;
+  final items = <String>[];
+
+  if (assessments.isNotEmpty) {
+    final candidate = assessments.firstWhere(
+      (a) => a.results != null && a.results!.domains.isNotEmpty,
+      orElse: () => assessments.first,
+    );
+    lastUpdated = candidate.createdAt;
+    final results = candidate.results;
+    if (results != null && results.domains.isNotEmpty) {
+      final instrument = instrumentForCode(candidate.instrument);
+      for (final domainDef in instrument.domains) {
+        final entry = results.domains[domainDef.code];
+        if (entry == null) continue;
+        final levelLabel = entry.overall.level?.label;
+        if (levelLabel != null) {
+          items.add('${domainDef.label}: $levelLabel');
+        } else {
+          items.add(domainDef.label);
+        }
+        if (items.length >= _nodeItemLimit) break;
+      }
+    }
+  }
+
+  return MentalCaseMapNode(
+    id: 'personality',
+    title: 'Personalidade',
+    shortLabel: _buildFilledStatusLabel(items.isNotEmpty),
+    items: items,
+    emptyLabel: 'Pendente',
+    dataSource: 'NEO PI-R - avaliação de personalidade',
+    lastUpdatedAt: lastUpdated,
   );
 }
 
@@ -359,9 +403,20 @@ List<String> _topHighlightItemsForCodes(
 String _highlightLabel(MentalMapScoreHighlight highlight) {
   final name = highlight.name.trim();
   if (name.isEmpty) return '';
+  final severity = _severityLabel(highlight.severityColorKey);
+  if (severity != null) return '$name — $severity';
   if (highlight.score == null) return name;
   return '$name ${highlight.displayScore}';
 }
+
+String? _severityLabel(String? colorKey) => switch (colorKey) {
+      'green' => 'Baixo',
+      'yellow' => 'Moderado-baixo',
+      'amber' => 'Moderado',
+      'orange' => 'Elevado',
+      'red' => 'Muito elevado',
+      _ => null,
+    };
 
 String _buildProblemsLabel(int count) {
   if (count == 0) return 'Sem problemas ativos';

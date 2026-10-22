@@ -8,6 +8,8 @@ import '../../../shared/widgets/app_page_header.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
+import '../../daily_monitors/providers/daily_monitors_providers.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/therapy_goal.dart';
 import '../domain/therapy_goal_status.dart';
@@ -33,56 +35,89 @@ class TherapyGoalDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final goalAsync = ref.watch(therapyGoalDetailProvider(goalId));
+    final patientIdAsync = ref.watch(myPatientIdProvider);
 
-    return AppScaffold(
-      title: 'Objetivo',
-      accent: AppColors.turquoise,
-      actions: [
-        IconButton(
-          tooltip: 'Atualizar',
-          onPressed: () => ref.invalidate(therapyGoalDetailProvider(goalId)),
-          icon: const Icon(Icons.refresh),
+    final body = goalAsync.when(
+      loading: () => const BrandLoader(),
+      error: (e, _) => Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Erro ao carregar objetivo.'),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: () =>
+                  ref.invalidate(therapyGoalDetailProvider(goalId)),
+              child: const Text('Tentar novamente'),
+            ),
+          ],
         ),
-      ],
-      body: goalAsync.when(
-        loading: () => const BrandLoader(),
-        error: (e, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Erro ao carregar objetivo.'),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: () =>
-                    ref.invalidate(therapyGoalDetailProvider(goalId)),
-                child: const Text('Tentar novamente'),
+      ),
+      data: (goal) {
+        if (goal == null) {
+          return const Center(child: Text('Objetivo não encontrado.'));
+        }
+
+        return _TherapyGoalDetailBody(
+          goal: goal,
+          role: role,
+          patientId: patientId,
+          onChanged: () {
+            ref.invalidate(therapyGoalDetailProvider(goalId));
+            if (_isPatient) {
+              ref.read(myTherapyGoalsProvider.notifier).refresh();
+            } else if (patientId != null) {
+              ref.invalidate(
+                staffPatientTherapyGoalsProvider(
+                  StaffTherapyGoalsContext(role: role, patientId: patientId!),
+                ),
+              );
+            }
+          },
+        );
+      },
+    );
+
+    if (patientId != null) {
+      return AppCanopyScaffold(
+        body: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: PatientContextHeader(
+                patientId: patientId!,
+                pageTitle: 'META TERAPÊUTICA',
+                role: role,
+                accentColor: AppColors.purple,
               ),
-            ],
-          ),
+            ),
+            SliverFillRemaining(hasScrollBody: true, child: body),
+          ],
         ),
-        data: (goal) {
-          if (goal == null) {
-            return const Center(child: Text('Objetivo não encontrado.'));
-          }
-
-          return _TherapyGoalDetailBody(
-            goal: goal,
-            role: role,
-            patientId: patientId,
-            onChanged: () {
-              ref.invalidate(therapyGoalDetailProvider(goalId));
-              if (_isPatient) {
-                ref.read(myTherapyGoalsProvider.notifier).refresh();
-              } else if (patientId != null) {
-                ref.invalidate(
-                  staffPatientTherapyGoalsProvider(
-                    StaffTherapyGoalsContext(role: role, patientId: patientId!),
-                  ),
-                );
-              }
-            },
-          );
-        },
+      );
+    }
+    return patientIdAsync.when(
+      loading: () => const AppCanopyScaffold(
+        body: Center(child: BrandLoader()),
+      ),
+      error: (_, __) => AppScaffold(
+        title: 'Meta Terapêutica',
+        accent: AppColors.purple,
+        body: const Center(child: Text('Erro ao identificar paciente.')),
+      ),
+      data: (myPatientId) => AppCanopyScaffold(
+        body: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: PatientContextHeader(
+                patientId: myPatientId,
+                pageTitle: 'META TERAPÊUTICA',
+                role: ProfileRole.patient,
+                accentColor: AppColors.purple,
+              ),
+            ),
+            SliverFillRemaining(hasScrollBody: true, child: body),
+          ],
+        ),
       ),
     );
   }

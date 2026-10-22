@@ -4,11 +4,14 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../daily_monitors/providers/daily_monitors_providers.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../../core/errors/error_mapper.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
+import '../../patients/presentation/widgets/staff_section_header.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../domain/genogram_family_patterns.dart';
 import '../../profile/domain/profile_role.dart';
@@ -23,16 +26,34 @@ class PatientGenogramPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    return _GenogramPageBody(
-      listAsync: ref.watch(myGenogramProvider),
-      onRefresh: () => ref.read(myGenogramProvider.notifier).refresh(),
-      onRetry: () => ref.read(myGenogramProvider.notifier).refresh(),
-      personCreateRoute: GenogramRoutes.patientPersonCreate,
-      relationshipCreateRoute: GenogramRoutes.patientRelationshipCreate,
-      personDetailRoute: GenogramRoutes.patientPersonDetail,
-      relationshipDetailRoute: GenogramRoutes.patientRelationshipDetail,
-      onDataChanged: () => ref.read(myGenogramProvider.notifier).refresh(),
-      familyPatternsPatientId: null,
+    final patientIdAsync = ref.watch(myPatientIdProvider);
+
+    return patientIdAsync.when(
+      loading: () => const AppCanopyScaffold(
+        body: Center(child: BrandLoader()),
+      ),
+      error: (_, __) => AppScaffold(
+        title: 'Mapa Familiar',
+        accent: AppColors.cyan,
+        body: const Center(child: Text('Erro ao identificar paciente.')),
+      ),
+      data: (patientId) => _GenogramPageBody(
+        listAsync: ref.watch(myGenogramProvider),
+        onRefresh: () => ref.read(myGenogramProvider.notifier).refresh(),
+        onRetry: () => ref.read(myGenogramProvider.notifier).refresh(),
+        personCreateRoute: GenogramRoutes.patientPersonCreate,
+        relationshipCreateRoute: GenogramRoutes.patientRelationshipCreate,
+        personDetailRoute: GenogramRoutes.patientPersonDetail,
+        relationshipDetailRoute: GenogramRoutes.patientRelationshipDetail,
+        onDataChanged: () => ref.read(myGenogramProvider.notifier).refresh(),
+        familyPatternsPatientId: null,
+        staffHeader: PatientContextHeader(
+          patientId: patientId,
+          pageTitle: 'MAPA FAMILIAR',
+          role: ProfileRole.patient,
+          accentColor: AppColors.cyan,
+        ),
+      ),
     );
   }
 }
@@ -90,6 +111,12 @@ class StaffPatientGenogramPage extends ConsumerWidget {
       onDataChanged: () => ref.invalidate(staffGenogramProvider(ctx)),
       familyPatternsPatientId:
           role == ProfileRole.psychologist ? patientId : null,
+      staffHeader: PatientContextHeader(
+        patientId: patientId,
+        pageTitle: 'GENOGRAMA',
+        role: role,
+        accentColor: AppColors.cyan,
+      ),
     );
   }
 }
@@ -105,6 +132,7 @@ class _GenogramPageBody extends StatelessWidget {
     required this.relationshipDetailRoute,
     required this.onDataChanged,
     required this.familyPatternsPatientId,
+    this.staffHeader,
   });
 
   final AsyncValue<GenogramData> listAsync;
@@ -117,37 +145,60 @@ class _GenogramPageBody extends StatelessWidget {
   final VoidCallback onDataChanged;
   final String? familyPatternsPatientId;
 
+  /// When provided, wraps the page in [AppCanopyScaffold] with this header
+  /// sliver instead of the standard [AppScaffold] with an AppBar.
+  final Widget? staffHeader;
+
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
-      title: 'Genograma',
-      accent: AppColors.blue,
-      actions: [
-        IconButton(
-          tooltip: 'Atualizar',
-          onPressed: () => onRefresh(),
-          icon: const Icon(Icons.refresh),
+    final body = AsyncStateBody<GenogramData>(
+      asyncValue: listAsync,
+      onRetry: onRetry,
+      emptyMessage:
+          'Nenhuma pessoa no genograma. Adicione membros da família e, depois, '
+          'registre as relações entre eles.',
+      emptyIcon: Icons.family_restroom_outlined,
+      dataBuilder: (data) => RefreshIndicator(
+        onRefresh: onRefresh,
+        child: _GenogramContent(
+          data: data,
+          personCreateRoute: personCreateRoute,
+          relationshipCreateRoute: relationshipCreateRoute,
+          personDetailRoute: personDetailRoute,
+          relationshipDetailRoute: relationshipDetailRoute,
+          onDataChanged: onDataChanged,
+          familyPatternsPatientId: familyPatternsPatientId,
         ),
-      ],
-      body: AsyncStateBody<GenogramData>(
-        asyncValue: listAsync,
-        onRetry: onRetry,
-        emptyMessage:
-            'Nenhuma pessoa no genograma. Adicione membros da família e, depois, '
-            'registre as relações entre eles.',
-        emptyIcon: Icons.family_restroom_outlined,
-        dataBuilder: (data) => RefreshIndicator(
-          onRefresh: onRefresh,
-          child: _GenogramContent(
-            data: data,
-            personCreateRoute: personCreateRoute,
-            relationshipCreateRoute: relationshipCreateRoute,
-            personDetailRoute: personDetailRoute,
-            relationshipDetailRoute: relationshipDetailRoute,
-            onDataChanged: onDataChanged,
-            familyPatternsPatientId: familyPatternsPatientId,
+      ),
+    );
+
+    if (staffHeader != null) {
+      return AppCanopyScaffold(
+        body: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(child: staffHeader!),
+            SliverFillRemaining(hasScrollBody: true, child: body),
+          ],
+        ),
+      );
+    }
+
+    return AppCanopyScaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: StaffSectionHeader(
+              navTitle: 'Mapa familiar',
+              eyebrow: 'CONHECER',
+              headline: const Text(
+                'Mapa familiar',
+                style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w800, height: 1.2),
+              ),
+              onBack: () => Navigator.of(context).maybePop(),
+            ),
           ),
-        ),
+          SliverFillRemaining(hasScrollBody: true, child: body),
+        ],
       ),
     );
   }

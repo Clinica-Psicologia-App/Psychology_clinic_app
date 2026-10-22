@@ -8,7 +8,10 @@ import '../../../shared/widgets/app_page_header.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
+import '../../../shared/widgets/brand_loading.dart';
 import '../../../shared/widgets/status_chip.dart';
+import '../../daily_monitors/providers/daily_monitors_providers.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/patient_timeline_event.dart';
 import '../providers/patient_timeline_providers.dart';
@@ -21,45 +24,60 @@ class PatientTimelinePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final listAsync = ref.watch(myPatientTimelineProvider);
+    final patientIdAsync = ref.watch(myPatientIdProvider);
 
-    return AppScaffold(
-      title: 'Linha do tempo',
-      accent: AppColors.cyan,
-      actions: [
-        IconButton(
-          tooltip: 'Atualizar',
-          onPressed: () =>
-              ref.read(myPatientTimelineProvider.notifier).refresh(),
-          icon: const Icon(Icons.refresh),
-        ),
-      ],
-      body: AsyncStateBody<List<PatientTimelineEvent>>(
-        asyncValue: listAsync,
-        onRetry: () => ref.read(myPatientTimelineProvider.notifier).refresh(),
-        emptyMessage:
-            'Nenhum evento na linha do tempo. Registre marcos da sua história ou do processo terapêutico.',
-        emptyIcon: Icons.timeline_outlined,
-        dataBuilder: (items) => RefreshIndicator(
-          onRefresh: () async {
-            await ref.read(myPatientTimelineProvider.notifier).refresh();
-          },
-          child: _TimelineList(
-            events: items,
-            title: 'Sua linha do tempo',
-            subtitle:
-                'Organize marcos por etapa da vida e registre como eles ainda aparecem no presente.',
-            onCreate: () async {
-              final created =
-                  await context.push<bool>(PatientTimelineRoutes.patientCreate);
-              if (created == true) {
-                ref.read(myPatientTimelineProvider.notifier).refresh();
-              }
-            },
-            onTap: (event) async {
-              await context.push(PatientTimelineRoutes.patientDetail(event.id));
+    final body = AsyncStateBody<List<PatientTimelineEvent>>(
+      asyncValue: listAsync,
+      onRetry: () => ref.read(myPatientTimelineProvider.notifier).refresh(),
+      emptyMessage:
+          'Nenhum evento na linha do tempo. Registre marcos da sua história ou do processo terapêutico.',
+      emptyIcon: Icons.timeline_outlined,
+      dataBuilder: (items) => RefreshIndicator(
+        onRefresh: () async {
+          await ref.read(myPatientTimelineProvider.notifier).refresh();
+        },
+        child: _TimelineList(
+          events: items,
+          title: 'Sua linha do tempo',
+          subtitle:
+              'Organize marcos por etapa da vida e registre como eles ainda aparecem no presente.',
+          onCreate: () async {
+            final created =
+                await context.push<bool>(PatientTimelineRoutes.patientCreate);
+            if (created == true) {
               ref.read(myPatientTimelineProvider.notifier).refresh();
-            },
-          ),
+            }
+          },
+          onTap: (event) async {
+            await context.push(PatientTimelineRoutes.patientDetail(event.id));
+            ref.read(myPatientTimelineProvider.notifier).refresh();
+          },
+        ),
+      ),
+    );
+
+    return patientIdAsync.when(
+      loading: () => const AppCanopyScaffold(
+        body: Center(child: BrandLoader()),
+      ),
+      error: (_, __) => AppScaffold(
+        title: 'Linha do Tempo',
+        accent: AppColors.cyan,
+        body: const Center(child: Text('Erro ao identificar paciente.')),
+      ),
+      data: (patientId) => AppCanopyScaffold(
+        body: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: PatientContextHeader(
+                patientId: patientId,
+                pageTitle: 'LINHA DO TEMPO',
+                role: ProfileRole.patient,
+                accentColor: AppColors.cyan,
+              ),
+            ),
+            SliverFillRemaining(hasScrollBody: true, child: body),
+          ],
         ),
       ),
     );
@@ -81,54 +99,60 @@ class StaffPatientTimelinePage extends ConsumerWidget {
     final ctx = StaffPatientTimelineContext(role: role, patientId: patientId);
     final listAsync = ref.watch(staffPatientTimelineProvider(ctx));
 
-    return AppScaffold(
-      title: 'Linha do tempo',
-      accent: AppColors.cyan,
-      actions: [
-        IconButton(
-          tooltip: 'Atualizar',
-          onPressed: () => ref.invalidate(staffPatientTimelineProvider(ctx)),
-          icon: const Icon(Icons.refresh),
-        ),
-      ],
-      body: AsyncStateBody<List<PatientTimelineEvent>>(
-        asyncValue: listAsync,
-        onRetry: () => ref.invalidate(staffPatientTimelineProvider(ctx)),
-        emptyMessage: 'Nenhum evento registrado para este paciente.',
-        emptyIcon: Icons.timeline_outlined,
-        dataBuilder: (items) => RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(staffPatientTimelineProvider(ctx));
-            await ref.read(staffPatientTimelineProvider(ctx).future);
-          },
-          child: _TimelineList(
-            events: items,
-            title: 'Linha do tempo clínica',
-            subtitle:
-                'Visualize eventos-chave, etapas da vida e pontes com o presente.',
-            onCreate: () async {
-              final created = await context.push<bool>(
-                PatientTimelineRoutes.staffCreate(
-                  role: role,
-                  patientId: patientId,
-                ),
-              );
-              if (created == true) {
-                ref.invalidate(staffPatientTimelineProvider(ctx));
-              }
-            },
-            onTap: (event) async {
-              await context.push(
-                PatientTimelineRoutes.staffDetail(
-                  role: role,
-                  patientId: patientId,
-                  eventId: event.id,
-                ),
-              );
-              ref.invalidate(staffPatientTimelineProvider(ctx));
-            },
+    return AppCanopyScaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: PatientContextHeader(
+              patientId: patientId,
+              pageTitle: 'LINHA DO TEMPO',
+              role: role,
+              accentColor: AppColors.cyan,
+            ),
           ),
-        ),
+          SliverFillRemaining(
+            hasScrollBody: true,
+            child: AsyncStateBody<List<PatientTimelineEvent>>(
+              asyncValue: listAsync,
+              onRetry: () => ref.invalidate(staffPatientTimelineProvider(ctx)),
+              emptyMessage: 'Nenhum evento registrado para este paciente.',
+              emptyIcon: Icons.timeline_outlined,
+              dataBuilder: (items) => RefreshIndicator(
+                onRefresh: () async {
+                  ref.invalidate(staffPatientTimelineProvider(ctx));
+                  await ref.read(staffPatientTimelineProvider(ctx).future);
+                },
+                child: _TimelineList(
+                  events: items,
+                  title: 'Linha do tempo clínica',
+                  subtitle:
+                      'Visualize eventos-chave, etapas da vida e pontes com o presente.',
+                  onCreate: () async {
+                    final created = await context.push<bool>(
+                      PatientTimelineRoutes.staffCreate(
+                        role: role,
+                        patientId: patientId,
+                      ),
+                    );
+                    if (created == true) {
+                      ref.invalidate(staffPatientTimelineProvider(ctx));
+                    }
+                  },
+                  onTap: (event) async {
+                    await context.push(
+                      PatientTimelineRoutes.staffDetail(
+                        role: role,
+                        patientId: patientId,
+                        eventId: event.id,
+                      ),
+                    );
+                    ref.invalidate(staffPatientTimelineProvider(ctx));
+                  },
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

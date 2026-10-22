@@ -8,6 +8,9 @@ import '../../../shared/widgets/app_page_header.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
+import '../../../shared/widgets/brand_loading.dart';
+import '../../daily_monitors/providers/daily_monitors_providers.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/patient_problem.dart';
 import '../domain/patient_problem_status.dart';
@@ -21,46 +24,61 @@ class PatientProblemsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final listAsync = ref.watch(myPatientProblemsProvider);
+    final patientIdAsync = ref.watch(myPatientIdProvider);
 
-    return AppScaffold(
-      title: 'Problemas',
-      accent: AppColors.warning,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final created =
-              await context.push<bool>(PatientProblemRoutes.patientCreate);
-          if (created == true) {
-            ref.read(myPatientProblemsProvider.notifier).refresh();
-          }
+    final body = AsyncStateBody<List<PatientProblem>>(
+      asyncValue: listAsync,
+      onRetry: () => ref.read(myPatientProblemsProvider.notifier).refresh(),
+      emptyMessage:
+          'Nenhum problema registrado. Use o botão abaixo para adicionar uma queixa ou foco de trabalho.',
+      emptyIcon: Icons.report_problem_outlined,
+      dataBuilder: (items) => RefreshIndicator(
+        onRefresh: () async {
+          await ref.read(myPatientProblemsProvider.notifier).refresh();
         },
-        icon: const Icon(Icons.add),
-        label: const Text('Novo problema'),
-      ),
-      actions: [
-        IconButton(
-          tooltip: 'Atualizar',
-          onPressed: () =>
-              ref.read(myPatientProblemsProvider.notifier).refresh(),
-          icon: const Icon(Icons.refresh),
-        ),
-      ],
-      body: AsyncStateBody<List<PatientProblem>>(
-        asyncValue: listAsync,
-        onRetry: () => ref.read(myPatientProblemsProvider.notifier).refresh(),
-        emptyMessage:
-            'Nenhum problema registrado. Use o botão abaixo para adicionar uma queixa ou foco de trabalho.',
-        emptyIcon: Icons.report_problem_outlined,
-        dataBuilder: (items) => RefreshIndicator(
-          onRefresh: () async {
-            await ref.read(myPatientProblemsProvider.notifier).refresh();
+        child: _ProblemsList(
+          problems: items,
+          onTap: (p) async {
+            await context.push(PatientProblemRoutes.patientDetail(p.id));
+            ref.read(myPatientProblemsProvider.notifier).refresh();
           },
-          child: _ProblemsList(
-            problems: items,
-            onTap: (p) async {
-              await context.push(PatientProblemRoutes.patientDetail(p.id));
+        ),
+      ),
+    );
+
+    return patientIdAsync.when(
+      loading: () => const AppCanopyScaffold(
+        body: Center(child: BrandLoader()),
+      ),
+      error: (_, __) => AppScaffold(
+        title: 'Problemas',
+        accent: AppColors.purple,
+        body: const Center(child: Text('Erro ao identificar paciente.')),
+      ),
+      data: (patientId) => AppCanopyScaffold(
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () async {
+            final created =
+                await context.push<bool>(PatientProblemRoutes.patientCreate);
+            if (created == true) {
               ref.read(myPatientProblemsProvider.notifier).refresh();
-            },
-          ),
+            }
+          },
+          icon: const Icon(Icons.add),
+          label: const Text('Novo problema'),
+        ),
+        body: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: PatientContextHeader(
+                patientId: patientId,
+                pageTitle: 'PROBLEMAS',
+                role: ProfileRole.patient,
+                accentColor: AppColors.purple,
+              ),
+            ),
+            SliverFillRemaining(hasScrollBody: true, child: body),
+          ],
         ),
       ),
     );
@@ -82,9 +100,7 @@ class StaffPatientProblemsPage extends ConsumerWidget {
     final ctx = StaffPatientProblemsContext(role: role, patientId: patientId);
     final listAsync = ref.watch(staffPatientProblemsProvider(ctx));
 
-    return AppScaffold(
-      title: 'Problemas',
-      accent: AppColors.warning,
+    return AppCanopyScaffold(
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final created = await context.push<bool>(
@@ -97,37 +113,45 @@ class StaffPatientProblemsPage extends ConsumerWidget {
         icon: const Icon(Icons.add),
         label: const Text('Novo problema'),
       ),
-      actions: [
-        IconButton(
-          tooltip: 'Atualizar',
-          onPressed: () => ref.invalidate(staffPatientProblemsProvider(ctx)),
-          icon: const Icon(Icons.refresh),
-        ),
-      ],
-      body: AsyncStateBody<List<PatientProblem>>(
-        asyncValue: listAsync,
-        onRetry: () => ref.invalidate(staffPatientProblemsProvider(ctx)),
-        emptyMessage: 'Nenhum problema registrado para este paciente.',
-        emptyIcon: Icons.report_problem_outlined,
-        dataBuilder: (items) => RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(staffPatientProblemsProvider(ctx));
-            await ref.read(staffPatientProblemsProvider(ctx).future);
-          },
-          child: _ProblemsList(
-            problems: items,
-            onTap: (p) async {
-              await context.push(
-                PatientProblemRoutes.staffDetail(
-                  role: role,
-                  patientId: patientId,
-                  problemId: p.id,
-                ),
-              );
-              ref.invalidate(staffPatientProblemsProvider(ctx));
-            },
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: PatientContextHeader(
+              patientId: patientId,
+              pageTitle: 'PROBLEMAS CLÍNICOS',
+              role: role,
+              accentColor: AppColors.cyan,
+            ),
           ),
-        ),
+          SliverFillRemaining(
+            hasScrollBody: true,
+            child: AsyncStateBody<List<PatientProblem>>(
+              asyncValue: listAsync,
+              onRetry: () => ref.invalidate(staffPatientProblemsProvider(ctx)),
+              emptyMessage: 'Nenhum problema registrado para este paciente.',
+              emptyIcon: Icons.report_problem_outlined,
+              dataBuilder: (items) => RefreshIndicator(
+                onRefresh: () async {
+                  ref.invalidate(staffPatientProblemsProvider(ctx));
+                  await ref.read(staffPatientProblemsProvider(ctx).future);
+                },
+                child: _ProblemsList(
+                  problems: items,
+                  onTap: (p) async {
+                    await context.push(
+                      PatientProblemRoutes.staffDetail(
+                        role: role,
+                        patientId: patientId,
+                        problemId: p.id,
+                      ),
+                    );
+                    ref.invalidate(staffPatientProblemsProvider(ctx));
+                  },
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../profile/domain/profile_role.dart';
 import 'initial_assessment_routes.dart';
@@ -198,13 +199,23 @@ class _InitialAssessmentPatientPageState
     final async = ref.watch(initialAssessmentProvider(_ctx));
     final saving = ref.watch(initialAssessmentMutationProvider(_ctx)).isLoading;
 
-    return AppScaffold(
-      title: 'Como você está hoje?',
-      accent: AppColors.turquoise,
-      body: AsyncStateBody<InitialAssessment>(
-        asyncValue: async,
-        onRetry: () => ref.invalidate(initialAssessmentProvider(_ctx)),
-        dataBuilder: (data) {
+    return AppCanopyScaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: PatientContextHeader(
+              patientId: widget.patientId,
+              pageTitle: 'CONHECENDO VOCÊ',
+              role: widget.role,
+              accentColor: AppColors.cyan,
+            ),
+          ),
+          SliverFillRemaining(
+            hasScrollBody: true,
+            child: AsyncStateBody<InitialAssessment>(
+              asyncValue: async,
+              onRetry: () => ref.invalidate(initialAssessmentProvider(_ctx)),
+              dataBuilder: (data) {
           _initFromData(data);
           return Stack(
             children: [
@@ -370,6 +381,9 @@ class _InitialAssessmentPatientPageState
             ],
           );
         },
+      ),
+          ),
+        ],
       ),
     );
   }

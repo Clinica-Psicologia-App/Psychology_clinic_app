@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/brand_loading.dart';
 import '../../../shared/widgets/error_banner.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/personality_assessment.dart';
 import '../providers/personality_assessment_providers.dart';
@@ -26,35 +27,56 @@ class PersonalitySynthesisPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(personalityAssessmentByIdProvider(assessmentId));
+    final header = PatientContextHeader(
+      patientId: patientId,
+      pageTitle: 'SÍNTESE DE PERSONALIDADE',
+      role: role,
+      accentColor: AppColors.blue,
+    );
+
     return async.when(
-      loading: () => const AppScaffold(
-        title: 'Carregando…',
-        accent: AppColors.purple,
-        body: BrandLoader(),
+      loading: () => AppCanopyScaffold(
+        body: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(child: header),
+            const SliverFillRemaining(child: BrandLoader()),
+          ],
+        ),
       ),
-      error: (_, __) => AppScaffold(
-        title: 'Erro',
-        accent: AppColors.purple,
-        body: Center(
-          child: FilledButton(
-            onPressed: () =>
-                ref.invalidate(personalityAssessmentByIdProvider(assessmentId)),
-            child: const Text('Tentar novamente'),
-          ),
+      error: (_, __) => AppCanopyScaffold(
+        body: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(child: header),
+            SliverFillRemaining(
+              child: Center(
+                child: FilledButton(
+                  onPressed: () => ref
+                      .invalidate(personalityAssessmentByIdProvider(assessmentId)),
+                  child: const Text('Tentar novamente'),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
       data: (a) {
         if (a == null) {
-          return const AppScaffold(
-            title: 'Síntese',
-            accent: AppColors.purple,
-            body: Center(child: Text('Avaliação não encontrada.')),
+          return AppCanopyScaffold(
+            body: CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(child: header),
+                const SliverFillRemaining(
+                  child: Center(child: Text('Avaliação não encontrada.')),
+                ),
+              ],
+            ),
           );
         }
         return _Form(
           patientId: patientId,
           assessmentId: assessmentId,
           initial: a,
+          role: role,
         );
       },
     );
@@ -66,11 +88,13 @@ class _Form extends ConsumerStatefulWidget {
     required this.patientId,
     required this.assessmentId,
     required this.initial,
+    required this.role,
   });
 
   final String patientId;
   final String assessmentId;
   final PersonalityAssessment initial;
+  final ProfileRole role;
 
   @override
   ConsumerState<_Form> createState() => _FormState();
@@ -150,12 +174,21 @@ class _FormState extends ConsumerState<_Form> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return AppScaffold(
-      title: 'Síntese clínica',
-      accent: AppColors.purple,
-      body: Column(
-        children: [
-          Expanded(
+    return AppCanopyScaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: PatientContextHeader(
+              patientId: widget.patientId,
+              pageTitle: 'SÍNTESE DE PERSONALIDADE',
+              role: widget.role,
+              accentColor: AppColors.blue,
+            ),
+          ),
+          SliverFillRemaining(
+            child: Column(
+              children: [
+                Expanded(
             child: ListView(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 24),
               children: [
@@ -247,6 +280,9 @@ class _FormState extends ConsumerState<_Form> {
                       : const Text('Salvar síntese'),
                 ),
               ),
+            ),
+          ),
+              ],
             ),
           ),
         ],

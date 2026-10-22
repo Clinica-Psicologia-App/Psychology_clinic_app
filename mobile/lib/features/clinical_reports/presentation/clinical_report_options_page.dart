@@ -5,15 +5,16 @@ import 'package:open_filex/open_filex.dart';
 import 'package:printing/printing.dart';
 
 import '../../../core/errors/app_exception.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/errors/error_mapper.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../../shared/widgets/homologation_ui.dart';
 import '../../../shared/widgets/status_chip.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/clinical_report_include_options.dart';
 import '../providers/clinical_report_providers.dart';
@@ -113,12 +114,23 @@ class _ClinicalReportOptionsPageState
     final theme = Theme.of(context);
     final selectedCount = _selectedSectionCount();
 
-    return AppScaffold(
-      title: 'Gerar relatório',
-      accent: AppColors.navy,
-      body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        children: [
+    return AppCanopyScaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: PatientContextHeader(
+              patientId: widget.patientId,
+              pageTitle: 'RELATÓRIO CLÍNICO',
+              role: widget.role,
+              accentColor: AppColors.blue,
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: ListView(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(AppSpacing.md),
+              children: [
           MotionStaggered(
             children: [
               AppPageHeader(
@@ -245,6 +257,9 @@ class _ClinicalReportOptionsPageState
                 ),
               ),
             ],
+          ),
+        ],
+            ),
           ),
         ],
       ),

@@ -7,9 +7,7 @@ import '../../../core/errors/error_mapper.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
-import '../../../shared/widgets/status_chip.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/genogram_data.dart';
 import '../domain/genogram_relationship.dart';
@@ -136,14 +134,8 @@ class _GenogramRelationshipFormPageState
         genogramRelationshipDetailProvider(widget.relationshipId!),
       );
       return relAsync.when(
-        loading: () => const AppScaffold(
-          title: 'Carregando...',
-          accent: AppColors.blue,
-          body: BrandLoader(),
-        ),
-        error: (_, __) => AppScaffold(
-          title: 'Erro',
-          accent: AppColors.blue,
+        loading: () => const AppCanopyScaffold(body: BrandLoader()),
+        error: (_, __) => AppCanopyScaffold(
           body: Center(
             child: FilledButton(
               onPressed: () => ref.invalidate(
@@ -155,9 +147,7 @@ class _GenogramRelationshipFormPageState
         ),
         data: (rel) {
           if (rel == null) {
-            return const AppScaffold(
-              title: 'Relação',
-              accent: AppColors.blue,
+            return const AppCanopyScaffold(
               body: Center(child: Text('Relação não encontrada.')),
             );
           }
@@ -183,14 +173,8 @@ class _GenogramRelationshipFormPageState
           );
 
     return genogramAsync.when(
-      loading: () => const AppScaffold(
-        title: 'Carregando...',
-        accent: AppColors.blue,
-        body: BrandLoader(),
-      ),
-      error: (_, __) => AppScaffold(
-        title: 'Erro',
-        accent: AppColors.blue,
+      loading: () => const AppCanopyScaffold(body: BrandLoader()),
+      error: (_, __) => AppCanopyScaffold(
         body: Center(
           child: FilledButton(
             onPressed: () {
@@ -213,17 +197,26 @@ class _GenogramRelationshipFormPageState
       ),
       data: (data) {
         if (data.people.length < 2) {
-          return const AppScaffold(
-            title: 'Nova relação',
-            accent: AppColors.blue,
-            body: Center(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: Text(
-                  'Cadastre pelo menos duas pessoas antes de registrar uma relação.',
-                  textAlign: TextAlign.center,
+          return AppCanopyScaffold(
+            body: Column(
+              children: [
+                _RelationshipFormHeader(
+                  isEdit: widget.isEdit,
+                  typeName: _type.label,
+                  isSensitive: _isSensitive,
                 ),
-              ),
+                const Expanded(
+                  child: Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(24),
+                      child: Text(
+                        'Cadastre pelo menos duas pessoas antes de registrar uma relação.',
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           );
         }
@@ -233,135 +226,130 @@ class _GenogramRelationshipFormPageState
   }
 
   Widget _buildForm(GenogramData data) {
-    return AppScaffold(
-      title: widget.isEdit ? 'Editar relação' : 'Nova relação',
-      accent: AppColors.blue,
+    return AppCanopyScaffold(
       body: MotionReveal(
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.xxl,
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: _RelationshipFormHeader(
+                isEdit: widget.isEdit,
+                typeName: _type.label,
+                isSensitive: _isSensitive,
+              ),
             ),
-            children: [
-              AppPageHeader(
-                icon: Icons.link_outlined,
-                title: widget.isEdit ? 'Editar relação' : 'Nova relação',
-                subtitle:
-                    'Descreva a natureza da conexão entre duas pessoas do genograma.',
-                metadata: [
-                  StatusChip(
-                    label: _type.label,
-                    tone: AppStatusTone.info,
-                    icon: Icons.sync_alt_outlined,
-                  ),
-                  StatusChip(
-                    label: _isSensitive ? 'Sensível' : 'Visível',
-                    tone: _isSensitive
-                        ? AppStatusTone.warning
-                        : AppStatusTone.neutral,
-                    icon: _isSensitive
-                        ? Icons.lock_outline
-                        : Icons.visibility_outlined,
-                  ),
-                ],
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.md,
+                AppSpacing.xxl,
               ),
-              const SizedBox(height: AppSpacing.lg),
-              const AppSectionHeader(
-                title: 'Pessoas envolvidas',
-                subtitle:
-                    'Selecione as duas pessoas conectadas por esta relação.',
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              DropdownButtonFormField<String>(
-                initialValue: _personAId,
-                decoration: const InputDecoration(labelText: 'Pessoa A *'),
-                items: _personItems(data),
-                onChanged: (v) => setState(() => _personAId = v),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              DropdownButtonFormField<String>(
-                initialValue: _personBId,
-                decoration: const InputDecoration(labelText: 'Pessoa B *'),
-                items: _personItems(data, excludeId: _personAId),
-                onChanged: (v) => setState(() => _personBId = v),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              const AppSectionHeader(
-                title: 'Natureza da relação',
-                subtitle:
-                    'Escolha o tipo de vínculo e registre observações clínicas quando necessário.',
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              DropdownButtonFormField<GenogramRelationshipType>(
-                initialValue: _type,
-                decoration:
-                    const InputDecoration(labelText: 'Tipo da relação *'),
-                items: GenogramRelationshipType.values
-                    .map(
-                      (t) => DropdownMenuItem(
-                        value: t,
-                        child: Text(t.label),
+              sliver: SliverToBoxAdapter(
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const AppSectionHeader(
+                        title: 'Pessoas envolvidas',
+                        subtitle:
+                            'Selecione as duas pessoas conectadas por esta relação.',
                       ),
-                    )
-                    .toList(),
-                onChanged: (v) {
-                  if (v != null) setState(() => _type = v);
-                },
-              ),
-              if (_type == GenogramRelationshipType.parentChild) ...[
-                const SizedBox(height: AppSpacing.xs),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: const Text('Filiação adotiva'),
-                  subtitle: const Text(
-                    'Desenha a descida tracejada no genograma (padrão McGoldrick).',
+                      const SizedBox(height: AppSpacing.sm),
+                      DropdownButtonFormField<String>(
+                        initialValue: _personAId,
+                        decoration:
+                            const InputDecoration(labelText: 'Pessoa A *'),
+                        items: _personItems(data),
+                        onChanged: (v) => setState(() => _personAId = v),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      DropdownButtonFormField<String>(
+                        initialValue: _personBId,
+                        decoration:
+                            const InputDecoration(labelText: 'Pessoa B *'),
+                        items: _personItems(data, excludeId: _personAId),
+                        onChanged: (v) => setState(() => _personBId = v),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      const AppSectionHeader(
+                        title: 'Natureza da relação',
+                        subtitle:
+                            'Escolha o tipo de vínculo e registre observações clínicas quando necessário.',
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      DropdownButtonFormField<GenogramRelationshipType>(
+                        initialValue: _type,
+                        decoration: const InputDecoration(
+                            labelText: 'Tipo da relação *'),
+                        items: GenogramRelationshipType.values
+                            .map(
+                              (t) => DropdownMenuItem(
+                                value: t,
+                                child: Text(t.label),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (v) {
+                          if (v != null) setState(() => _type = v);
+                        },
+                      ),
+                      if (_type == GenogramRelationshipType.parentChild) ...[
+                        const SizedBox(height: AppSpacing.xs),
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text('Filiação adotiva'),
+                          subtitle: const Text(
+                            'Desenha a descida tracejada no genograma (padrão McGoldrick).',
+                          ),
+                          value: _isAdoptive,
+                          onChanged: (v) => setState(() => _isAdoptive = v),
+                        ),
+                      ],
+                      const SizedBox(height: AppSpacing.md),
+                      TextFormField(
+                        controller: _notesController,
+                        decoration: const InputDecoration(
+                          labelText: 'Observações',
+                          hintText:
+                              'Descreva como essa relação costuma ser. Ex.: '
+                              'fonte de apoio, aceitação e segurança; fonte de '
+                              'crítica; fonte de rejeição; fonte de proteção '
+                              'excessiva; fonte de exigência excessiva.',
+                          alignLabelWithHint: true,
+                        ),
+                        maxLines: 3,
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Conteúdo sensível'),
+                        subtitle: const Text(
+                          'Oculta detalhes na visualização principal e exibe aviso antes do acesso.',
+                        ),
+                        value: _isSensitive,
+                        onChanged: (v) => setState(() => _isSensitive = v),
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      FilledButton(
+                        onPressed: _saving ? null : _save,
+                        child: _saving
+                            ? const SizedBox(
+                                height: 22,
+                                width: 22,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : Text(widget.isEdit
+                                ? 'Salvar alterações'
+                                : 'Registrar relação'),
+                      ),
+                    ],
                   ),
-                  value: _isAdoptive,
-                  onChanged: (v) => setState(() => _isAdoptive = v),
                 ),
-              ],
-              const SizedBox(height: AppSpacing.md),
-              TextFormField(
-                controller: _notesController,
-                decoration: const InputDecoration(
-                  labelText: 'Observações',
-                  hintText: 'Descreva como essa relação costuma ser. Ex.: '
-                      'fonte de apoio, aceitação e segurança; fonte de '
-                      'crítica; fonte de rejeição; fonte de proteção '
-                      'excessiva; fonte de exigência excessiva.',
-                  alignLabelWithHint: true,
-                ),
-                maxLines: 3,
               ),
-              const SizedBox(height: AppSpacing.xs),
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text('Conteúdo sensível'),
-                subtitle: const Text(
-                  'Oculta detalhes na visualização principal e exibe aviso antes do acesso.',
-                ),
-                value: _isSensitive,
-                onChanged: (v) => setState(() => _isSensitive = v),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              FilledButton(
-                onPressed: _saving ? null : _save,
-                child: _saving
-                    ? const SizedBox(
-                        height: 22,
-                        width: 22,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : Text(widget.isEdit
-                        ? 'Salvar alterações'
-                        : 'Registrar relação'),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -380,5 +368,115 @@ class _GenogramRelationshipFormPageState
           ),
         )
         .toList();
+  }
+}
+
+// ── Form hero header ──────────────────────────────────────────────────────────
+
+class _RelationshipFormHeader extends StatelessWidget {
+  const _RelationshipFormHeader({
+    required this.isEdit,
+    required this.typeName,
+    required this.isSensitive,
+  });
+
+  final bool isEdit;
+  final String typeName;
+  final bool isSensitive;
+
+  @override
+  Widget build(BuildContext context) {
+    final top = MediaQuery.paddingOf(context).top;
+
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF063530), Color(0xFF1D9E75)],
+        ),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+      ),
+      child: Padding(
+        padding: EdgeInsets.only(top: top),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top bar
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm,
+                vertical: AppSpacing.xs,
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () => context.pop(),
+                    icon: const Icon(Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white70, size: 20),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Genograma',
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                          color: Colors.white70,
+                          letterSpacing: 0.5,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            // Icon + title
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, 0),
+              child: Row(
+                children: [
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.15),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Icon(
+                      isSensitive ? Icons.lock_outline : Icons.link_outlined,
+                      color: Colors.white,
+                      size: 26,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isEdit ? 'Editar relação' : 'Nova relação',
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                        Text(
+                          typeName,
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Colors.white70,
+                                  ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
+          ],
+        ),
+      ),
+    );
   }
 }

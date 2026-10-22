@@ -8,6 +8,9 @@ import '../../../shared/widgets/app_page_header.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
+import '../../../shared/widgets/brand_loading.dart';
+import '../../daily_monitors/providers/daily_monitors_providers.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/therapy_goal.dart';
 import '../domain/therapy_goal_status.dart';
@@ -21,45 +24,61 @@ class PatientTherapyGoalsPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final listAsync = ref.watch(myTherapyGoalsProvider);
+    final patientIdAsync = ref.watch(myPatientIdProvider);
 
-    return AppScaffold(
-      title: 'Objetivos da terapia',
-      accent: AppColors.turquoise,
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () async {
-          final created =
-              await context.push<bool>(TherapyGoalRoutes.patientCreate);
-          if (created == true) {
-            ref.read(myTherapyGoalsProvider.notifier).refresh();
-          }
+    final body = AsyncStateBody<List<TherapyGoal>>(
+      asyncValue: listAsync,
+      onRetry: () => ref.read(myTherapyGoalsProvider.notifier).refresh(),
+      emptyMessage:
+          'Você ainda não registrou objetivos. Crie o primeiro com o botão abaixo.',
+      emptyIcon: Icons.flag_outlined,
+      dataBuilder: (items) => RefreshIndicator(
+        onRefresh: () async {
+          await ref.read(myTherapyGoalsProvider.notifier).refresh();
         },
-        icon: const Icon(Icons.add),
-        label: const Text('Novo objetivo'),
-      ),
-      actions: [
-        IconButton(
-          tooltip: 'Atualizar',
-          onPressed: () => ref.read(myTherapyGoalsProvider.notifier).refresh(),
-          icon: const Icon(Icons.refresh),
-        ),
-      ],
-      body: AsyncStateBody<List<TherapyGoal>>(
-        asyncValue: listAsync,
-        onRetry: () => ref.read(myTherapyGoalsProvider.notifier).refresh(),
-        emptyMessage:
-            'Você ainda não registrou objetivos. Crie o primeiro com o botão abaixo.',
-        emptyIcon: Icons.flag_outlined,
-        dataBuilder: (items) => RefreshIndicator(
-          onRefresh: () async {
-            await ref.read(myTherapyGoalsProvider.notifier).refresh();
+        child: _GoalsList(
+          goals: items,
+          onTap: (g) async {
+            await context.push(TherapyGoalRoutes.patientDetail(g.id));
+            ref.read(myTherapyGoalsProvider.notifier).refresh();
           },
-          child: _GoalsList(
-            goals: items,
-            onTap: (g) async {
-              await context.push(TherapyGoalRoutes.patientDetail(g.id));
+        ),
+      ),
+    );
+
+    return patientIdAsync.when(
+      loading: () => const AppCanopyScaffold(
+        body: Center(child: BrandLoader()),
+      ),
+      error: (_, __) => AppScaffold(
+        title: 'Metas',
+        accent: AppColors.purple,
+        body: const Center(child: Text('Erro ao identificar paciente.')),
+      ),
+      data: (patientId) => AppCanopyScaffold(
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: () async {
+            final created =
+                await context.push<bool>(TherapyGoalRoutes.patientCreate);
+            if (created == true) {
               ref.read(myTherapyGoalsProvider.notifier).refresh();
-            },
-          ),
+            }
+          },
+          icon: const Icon(Icons.add),
+          label: const Text('Novo objetivo'),
+        ),
+        body: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: PatientContextHeader(
+                patientId: patientId,
+                pageTitle: 'METAS',
+                role: ProfileRole.patient,
+                accentColor: AppColors.purple,
+              ),
+            ),
+            SliverFillRemaining(hasScrollBody: true, child: body),
+          ],
         ),
       ),
     );
@@ -81,9 +100,7 @@ class StaffPatientTherapyGoalsPage extends ConsumerWidget {
     final ctx = StaffTherapyGoalsContext(role: role, patientId: patientId);
     final listAsync = ref.watch(staffPatientTherapyGoalsProvider(ctx));
 
-    return AppScaffold(
-      title: 'Objetivos da terapia',
-      accent: AppColors.turquoise,
+    return AppCanopyScaffold(
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () async {
           final created = await context.push<bool>(
@@ -96,38 +113,46 @@ class StaffPatientTherapyGoalsPage extends ConsumerWidget {
         icon: const Icon(Icons.add),
         label: const Text('Novo objetivo'),
       ),
-      actions: [
-        IconButton(
-          tooltip: 'Atualizar',
-          onPressed: () =>
-              ref.invalidate(staffPatientTherapyGoalsProvider(ctx)),
-          icon: const Icon(Icons.refresh),
-        ),
-      ],
-      body: AsyncStateBody<List<TherapyGoal>>(
-        asyncValue: listAsync,
-        onRetry: () => ref.invalidate(staffPatientTherapyGoalsProvider(ctx)),
-        emptyMessage: 'Nenhum objetivo registrado para este paciente.',
-        emptyIcon: Icons.flag_outlined,
-        dataBuilder: (items) => RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(staffPatientTherapyGoalsProvider(ctx));
-            await ref.read(staffPatientTherapyGoalsProvider(ctx).future);
-          },
-          child: _GoalsList(
-            goals: items,
-            onTap: (g) async {
-              await context.push(
-                TherapyGoalRoutes.staffDetail(
-                  role: role,
-                  patientId: patientId,
-                  goalId: g.id,
-                ),
-              );
-              ref.invalidate(staffPatientTherapyGoalsProvider(ctx));
-            },
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: PatientContextHeader(
+              patientId: patientId,
+              pageTitle: 'METAS TERAPÊUTICAS',
+              role: role,
+              accentColor: AppColors.purple,
+            ),
           ),
-        ),
+          SliverFillRemaining(
+            hasScrollBody: true,
+            child: AsyncStateBody<List<TherapyGoal>>(
+              asyncValue: listAsync,
+              onRetry: () =>
+                  ref.invalidate(staffPatientTherapyGoalsProvider(ctx)),
+              emptyMessage: 'Nenhum objetivo registrado para este paciente.',
+              emptyIcon: Icons.flag_outlined,
+              dataBuilder: (items) => RefreshIndicator(
+                onRefresh: () async {
+                  ref.invalidate(staffPatientTherapyGoalsProvider(ctx));
+                  await ref.read(staffPatientTherapyGoalsProvider(ctx).future);
+                },
+                child: _GoalsList(
+                  goals: items,
+                  onTap: (g) async {
+                    await context.push(
+                      TherapyGoalRoutes.staffDetail(
+                        role: role,
+                        patientId: patientId,
+                        goalId: g.id,
+                      ),
+                    );
+                    ref.invalidate(staffPatientTherapyGoalsProvider(ctx));
+                  },
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

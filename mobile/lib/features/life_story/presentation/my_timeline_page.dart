@@ -3,16 +3,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/widgets/brand_loading.dart';
 import '../../coach/domain/coach_step.dart';
 import '../../coach/domain/coach_tour.dart';
 import '../../coach/providers/coach_providers.dart';
+import '../../daily_monitors/providers/daily_monitors_providers.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
+import '../../profile/domain/profile_role.dart';
 import '../domain/family_person.dart';
 import '../domain/life_story_deepen_enums.dart';
 import '../domain/life_story_enums.dart';
 import '../domain/life_timeline_event.dart';
 import '../providers/life_story_providers.dart';
 import 'life_story_routes.dart';
-import '../../../shared/widgets/brand_loading.dart';
 
 /// Resultado visual da Linha do Tempo — trilha vertical (spec §15).
 /// Quando vazia, mostra o convite de abertura (spec §3).
@@ -31,7 +35,6 @@ class MyTimelinePage extends ConsumerStatefulWidget {
 
 class _MyTimelinePageState extends ConsumerState<MyTimelinePage> {
   final _fabKey = GlobalKey();
-  final _titleKey = GlobalKey();
   bool _tourRequested = false;
 
   FamilyPerson? get person => widget.person;
@@ -40,13 +43,12 @@ class _MyTimelinePageState extends ConsumerState<MyTimelinePage> {
   CoachTour _tour() => CoachTour(
         id: 'tour_linha_do_tempo',
         steps: [
-          CoachStep(
+          const CoachStep(
             id: 'oque',
             text:
                 'Esta é a sua Linha do Tempo — os momentos que marcaram a sua '
                 'história, dos primeiros anos até hoje.',
             pose: MascotPose.wave,
-            targetKey: _titleKey,
           ),
           CoachStep(
             id: 'adicionar',
@@ -76,8 +78,7 @@ class _MyTimelinePageState extends ConsumerState<MyTimelinePage> {
   @override
   Widget build(BuildContext context) {
     final timelineAsync = ref.watch(myTimelineProvider);
-    final theme = Theme.of(context);
-    final topInset = MediaQuery.paddingOf(context).top;
+    final patientIdAsync = ref.watch(myPatientIdProvider);
 
     // Auto-start só na trilha principal (não na visão filtrada por pessoa).
     if (!_filtered && !_tourRequested) {
@@ -85,105 +86,81 @@ class _MyTimelinePageState extends ConsumerState<MyTimelinePage> {
       WidgetsBinding.instance.addPostFrameCallback((_) => _startTour());
     }
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      floatingActionButton: _filtered
-          ? null
-          : FloatingActionButton.extended(
-              key: _fabKey,
-              backgroundColor: AppColors.turquoise,
-              onPressed: () => context.push(LifeStoryRoutes.newEvent),
-              icon: const Icon(Icons.add),
-              label: const Text('Adicionar acontecimento'),
-            ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            padding: EdgeInsets.fromLTRB(16, topInset + 10, 16, 18),
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [AppColors.turquoise, AppColors.cyan, AppColors.blue],
+    final pageTitle = _filtered
+        ? 'MOMENTOS COM ${person!.fullName.toUpperCase()}'
+        : 'MINHA HISTÓRIA';
+
+    final body = timelineAsync.when(
+      loading: () => const BrandLoader(),
+      error: (e, _) => Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Não conseguimos carregar agora.',
+                  style: TextStyle(color: AppColors.textSecondary)),
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: () => ref.invalidate(myTimelineProvider),
+                child: const Text('Tentar de novo'),
+              ),
+            ],
+          ),
+        ),
+      ),
+      data: (events) {
+        final shown = _filtered
+            ? events.where((e) => e.peopleIds.contains(person!.id)).toList()
+            : events;
+        if (shown.isEmpty) {
+          return _filtered
+              ? _NoMomentsForPerson(name: person!.fullName)
+              : _EmptyInvite(onStart: () => context.push(LifeStoryRoutes.newEvent));
+        }
+        return _TimelineTrail(events: shown, showToday: !_filtered);
+      },
+    );
+
+    return patientIdAsync.when(
+      loading: () => const AppCanopyScaffold(body: Center(child: BrandLoader())),
+      error: (_, __) => const AppScaffold(
+        title: 'Minha História',
+        accent: AppColors.cyan,
+        body: Center(child: Text('Erro ao identificar paciente.')),
+      ),
+      data: (patientId) => AppCanopyScaffold(
+        floatingActionButton: _filtered
+            ? null
+            : FloatingActionButton.extended(
+                key: _fabKey,
+                backgroundColor: AppColors.turquoise,
+                onPressed: () => context.push(LifeStoryRoutes.newEvent),
+                icon: const Icon(Icons.add),
+                label: const Text('Adicionar acontecimento'),
+              ),
+        body: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: PatientContextHeader(
+                patientId: patientId,
+                pageTitle: pageTitle,
+                role: ProfileRole.patient,
+                accentColor: AppColors.cyan,
+                actions: _filtered
+                    ? null
+                    : [
+                        PatientHeaderActionBtn(
+                          icon: Icons.help_outline_rounded,
+                          label: 'Tutorial',
+                          onTap: () => _startTour(force: true),
+                        ),
+                      ],
               ),
             ),
-            child: Row(
-              children: [
-                InkWell(
-                  onTap: () => context.pop(),
-                  customBorder: const CircleBorder(),
-                  child: Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.22),
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.arrow_back_rounded,
-                        color: Colors.white, size: 18),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    _filtered
-                        ? 'Momentos com ${person!.fullName}'
-                        : 'Minha História',
-                    key: _titleKey,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                        color: Colors.white, fontWeight: FontWeight.w700),
-                  ),
-                ),
-                if (!_filtered)
-                  IconButton(
-                    tooltip: 'Rever tutorial',
-                    onPressed: () => _startTour(force: true),
-                    icon: const Icon(Icons.help_outline_rounded,
-                        color: Colors.white),
-                  ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: timelineAsync.when(
-              loading: () =>
-                  const BrandLoader(),
-              error: (e, _) => Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Text('Não conseguimos carregar agora.',
-                          style: TextStyle(color: AppColors.textSecondary)),
-                      const SizedBox(height: 12),
-                      OutlinedButton(
-                        onPressed: () => ref.invalidate(myTimelineProvider),
-                        child: const Text('Tentar de novo'),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              data: (events) {
-                final shown = _filtered
-                    ? events
-                        .where((e) => e.peopleIds.contains(person!.id))
-                        .toList()
-                    : events;
-                if (shown.isEmpty) {
-                  return _filtered
-                      ? _NoMomentsForPerson(name: person!.fullName)
-                      : _EmptyInvite(
-                          onStart: () =>
-                              context.push(LifeStoryRoutes.newEvent));
-                }
-                return _TimelineTrail(events: shown, showToday: !_filtered);
-              },
-            ),
-          ),
-        ],
+            SliverFillRemaining(hasScrollBody: true, child: body),
+          ],
+        ),
       ),
     );
   }

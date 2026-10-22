@@ -236,52 +236,265 @@ class GeneralImpressions {
   }
 }
 
-/// Um diagnóstico (seção 4).
+/// Sistemas de referência aceitos na perspectiva diagnóstica.
+const List<String> kDiagnosisSystems = ['CID-11', 'DSM-5-TR'];
+
+/// Situação da avaliação de um registro diagnóstico.
+enum DiagnosisStatus {
+  investigating('investigating', 'Em investigação'),
+  established('established', 'Diagnóstico estabelecido');
+
+  const DiagnosisStatus(this.key, this.label);
+  final String key;
+  final String label;
+
+  static DiagnosisStatus? fromKey(String? key) {
+    for (final s in DiagnosisStatus.values) {
+      if (s.key == key) return s;
+    }
+    return null;
+  }
+}
+
+int _idCounter = 0;
+
+/// Um registro diagnóstico (seção 4): diagnóstico ou hipótese, com sistema,
+/// situação, observações, data da revisão, autoria e revisões anteriores.
+/// Registros antigos (só nome + código) continuam válidos.
 class DiagnosisItem {
-  const DiagnosisItem({this.name, this.code});
+  const DiagnosisItem({
+    this.id,
+    this.name,
+    this.code,
+    this.system,
+    this.status,
+    this.notes,
+    this.reviewedOn,
+    this.updatedByName,
+    this.updatedAt,
+    this.revisions = const [],
+  });
+
+  /// Identificador estável do registro (liga revisões ao mesmo diagnóstico).
+  final String? id;
   final String? name;
   final String? code;
+
+  /// 'CID-11' ou 'DSM-5-TR'. Null em registros antigos (vale o sistema geral).
+  final String? system;
+  final DiagnosisStatus? status;
+  final String? notes;
+
+  /// Data do registro clínico, `yyyy-MM-dd`.
+  final String? reviewedOn;
+  final String? updatedByName;
+
+  /// Momento da última alteração (ISO-8601, UTC).
+  final String? updatedAt;
+
+  /// Versões anteriores deste registro (mais recente primeiro).
+  final List<DiagnosisItem> revisions;
+
+  static String newId() =>
+      'dx_${DateTime.now().microsecondsSinceEpoch.toRadixString(36)}'
+      '${(_idCounter++).toRadixString(36)}';
 
   bool get isEmpty =>
       (name ?? '').trim().isEmpty && (code ?? '').trim().isEmpty;
 
-  factory DiagnosisItem.fromJson(Map<String, dynamic> j) => DiagnosisItem(
-        name: j['name'] as String?,
-        code: j['code'] as String?,
+  /// Linha de apoio: "CID-11 · Em investigação" (usa [fallbackSystem] em
+  /// registros antigos que só têm o sistema geral).
+  String? metaLine([String? fallbackSystem]) {
+    final parts = [
+      if ((system ?? fallbackSystem ?? '').trim().isNotEmpty)
+        (system ?? fallbackSystem)!.trim(),
+      if (status != null) status!.label,
+    ];
+    return parts.isEmpty ? null : parts.join(' · ');
+  }
+
+  /// Mesmo conteúdo clínico (ignora id, autoria e revisões).
+  bool sameContentAs(DiagnosisItem o) {
+    String n(String? v) => (v ?? '').trim();
+    return n(name) == n(o.name) &&
+        n(code) == n(o.code) &&
+        n(system) == n(o.system) &&
+        status == o.status &&
+        n(notes) == n(o.notes) &&
+        n(reviewedOn) == n(o.reviewedOn);
+  }
+
+  DiagnosisItem copyWith({
+    String? id,
+    String? updatedByName,
+    String? updatedAt,
+    List<DiagnosisItem>? revisions,
+  }) =>
+      DiagnosisItem(
+        id: id ?? this.id,
+        name: name,
+        code: code,
+        system: system,
+        status: status,
+        notes: notes,
+        reviewedOn: reviewedOn,
+        updatedByName: updatedByName ?? this.updatedByName,
+        updatedAt: updatedAt ?? this.updatedAt,
+        revisions: revisions ?? this.revisions,
       );
 
-  Map<String, dynamic> toJson() {
+  factory DiagnosisItem.fromJson(Map<String, dynamic> j) => DiagnosisItem(
+        id: j['id'] as String?,
+        name: j['name'] as String?,
+        code: j['code'] as String?,
+        system: j['system'] as String?,
+        status: DiagnosisStatus.fromKey(j['status'] as String?),
+        notes: j['notes'] as String?,
+        reviewedOn: j['reviewed_on'] as String?,
+        updatedByName: j['updated_by_name'] as String?,
+        updatedAt: j['updated_at'] as String?,
+        revisions: [
+          for (final e in (j['revisions'] as List?) ?? const [])
+            DiagnosisItem.fromJson(Map<String, dynamic>.from(e as Map)),
+        ],
+      );
+
+  Map<String, dynamic> toJson({bool withRevisions = true}) {
     String? t(String? v) => (v ?? '').trim().isEmpty ? null : v!.trim();
     return {
+      if (t(id) != null) 'id': t(id),
       if (t(name) != null) 'name': t(name),
       if (t(code) != null) 'code': t(code),
+      if (t(system) != null) 'system': t(system),
+      if (status != null) 'status': status!.key,
+      if (t(notes) != null) 'notes': t(notes),
+      if (t(reviewedOn) != null) 'reviewed_on': t(reviewedOn),
+      if (t(updatedByName) != null) 'updated_by_name': t(updatedByName),
+      if (t(updatedAt) != null) 'updated_at': t(updatedAt),
+      if (withRevisions && revisions.isNotEmpty)
+        'revisions': [for (final r in revisions) r.toJson(withRevisions: false)],
     };
   }
 }
 
-/// Perspectiva diagnóstica (seção 4): sistema (CID-11/DSM-5-TR) + diagnósticos.
+/// Perspectiva diagnóstica (seção 4): registros com sistema/situação próprios,
+/// mais a declaração explícita "Sem diagnóstico estabelecido no momento".
+/// "Aba não avaliada" (nada salvo) e "sem diagnóstico" (marcado) são estados
+/// distintos.
 class Diagnosis {
-  const Diagnosis({this.system, this.items = const []});
+  const Diagnosis({
+    this.system,
+    this.items = const [],
+    this.noDiagnosis = false,
+    this.removed = const [],
+  });
+
+  /// Sistema geral (formato antigo). Novos registros guardam o sistema em
+  /// cada item.
   final String? system;
   final List<DiagnosisItem> items;
 
-  bool get isEmpty =>
-      (system ?? '').trim().isEmpty && items.every((d) => d.isEmpty);
+  /// Marcação explícita "Sem diagnóstico estabelecido no momento".
+  final bool noDiagnosis;
 
-  factory Diagnosis.fromJson(Map<String, dynamic> j) => Diagnosis(
-        system: j['system'] as String?,
-        items: [
-          for (final e in (j['items'] as List?) ?? const [])
-            DiagnosisItem.fromJson(Map<String, dynamic>.from(e as Map)),
-        ],
-      );
+  /// Registros removidos pelo terapeuta, preservados para o histórico.
+  final List<DiagnosisItem> removed;
+
+  bool get isEmpty =>
+      !noDiagnosis &&
+      (system ?? '').trim().isEmpty &&
+      items.every((d) => d.isEmpty);
+
+  bool get hasEstablished => items.any(
+      (d) => !d.isEmpty && d.status == DiagnosisStatus.established);
+
+  /// "Sem diagnóstico" pode coexistir com hipóteses, mas não com um
+  /// diagnóstico estabelecido.
+  String? get conflictError => noDiagnosis && hasEstablished
+      ? 'Remova a marcação "Sem diagnóstico estabelecido" ou altere os '
+          'registros marcados como estabelecidos.'
+      : null;
+
+  factory Diagnosis.fromJson(Map<String, dynamic> j) {
+    final raw = (j['items'] as List?) ?? const [];
+    return Diagnosis(
+      system: j['system'] as String?,
+      noDiagnosis: j['no_diagnosis'] == true,
+      items: [
+        for (var i = 0; i < raw.length; i++)
+          () {
+            final it =
+                DiagnosisItem.fromJson(Map<String, dynamic>.from(raw[i] as Map));
+            return (it.id ?? '').isEmpty ? it.copyWith(id: 'legacy_$i') : it;
+          }(),
+      ],
+      removed: [
+        for (final e in (j['removed'] as List?) ?? const [])
+          DiagnosisItem.fromJson(Map<String, dynamic>.from(e as Map)),
+      ],
+    );
+  }
 
   Map<String, dynamic> toJson() {
     final list = [for (final d in items) if (!d.isEmpty) d.toJson()];
     return {
       if ((system ?? '').trim().isNotEmpty) 'system': system!.trim(),
+      if (noDiagnosis) 'no_diagnosis': true,
       if (list.isNotEmpty) 'items': list,
+      if (removed.isNotEmpty)
+        'removed': [for (final r in removed) r.toJson(withRevisions: false)],
     };
+  }
+
+  /// Aplica autoria e preserva o histórico em relação ao estado salvo
+  /// ([previous]): registro alterado guarda a versão anterior em `revisions`;
+  /// registro removido vai para `removed`; registro novo recebe autoria.
+  Diagnosis withRevisions({
+    required Diagnosis previous,
+    required DateTime now,
+    String? authorName,
+  }) {
+    final stamp = now.toUtc().toIso8601String();
+    final prevById = {
+      for (final p in previous.items)
+        if ((p.id ?? '').isNotEmpty) p.id!: p,
+    };
+    final kept = <DiagnosisItem>[];
+    final keptIds = <String>{};
+    for (final it in items) {
+      if (it.isEmpty) continue;
+      final id = (it.id ?? '').isEmpty ? DiagnosisItem.newId() : it.id!;
+      keptIds.add(id);
+      final prev = prevById[id];
+      if (prev == null) {
+        kept.add(it.copyWith(
+            id: id, updatedAt: stamp, updatedByName: authorName));
+      } else if (prev.sameContentAs(it)) {
+        kept.add(it.copyWith(
+          id: id,
+          updatedAt: prev.updatedAt,
+          updatedByName: prev.updatedByName,
+          revisions: prev.revisions,
+        ));
+      } else {
+        kept.add(it.copyWith(
+          id: id,
+          updatedAt: stamp,
+          updatedByName: authorName,
+          revisions: [prev.copyWith(revisions: const []), ...prev.revisions],
+        ));
+      }
+    }
+    final removedNow = [
+      for (final p in previous.items)
+        if (!p.isEmpty && !keptIds.contains(p.id)) p.copyWith(revisions: const []),
+    ];
+    return Diagnosis(
+      system: system,
+      noDiagnosis: noDiagnosis,
+      items: kept,
+      removed: [...removedNow, ...previous.removed],
+    );
   }
 }
 
@@ -804,7 +1017,11 @@ class CaseConceptualization {
     this.motivoCurrent,
     this.allSchemas,
     this.additionalComments,
+    this.updatedAt,
   });
+
+  /// Última gravação do documento (qualquer seção).
+  final DateTime? updatedAt;
 
   final List<UnmetNeed> unmetNeeds;
   final List<ModeSequence> modeSequences;
@@ -933,6 +1150,7 @@ class CaseConceptualization {
       motivoCurrent: j['motivo_current'] as String?,
       allSchemas: j['all_schemas'] as String?,
       additionalComments: j['additional_comments'] as String?,
+      updatedAt: DateTime.tryParse((j['updated_at'] as String?) ?? '')?.toLocal(),
     );
   }
 

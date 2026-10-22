@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../results/presentation/result_routes.dart';
 import '../providers/clinical_dashboard_providers.dart';
@@ -27,10 +28,20 @@ class ClinicalDashboardComparePage extends ConsumerWidget {
     final ctx = StaffClinicalDashboardContext(role: role, patientId: patientId);
     final dataAsync = ref.watch(staffClinicalDashboardProvider(ctx));
 
-    return AppScaffold(
-      title: 'Histórico comparativo',
-      accent: AppColors.navy,
-      body: dataAsync.when(
+    return AppCanopyScaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: PatientContextHeader(
+              patientId: patientId,
+              pageTitle: 'COMPARATIVO CLÍNICO',
+              role: role,
+              accentColor: AppColors.blue,
+            ),
+          ),
+          SliverFillRemaining(
+            hasScrollBody: true,
+            child: dataAsync.when(
         loading: () => const BrandLoader(),
         error: (e, _) => Center(
           child: Padding(
@@ -173,6 +184,9 @@ class ClinicalDashboardComparePage extends ConsumerWidget {
             ],
           );
         },
+          ),
+          ),
+        ],
       ),
     );
   }

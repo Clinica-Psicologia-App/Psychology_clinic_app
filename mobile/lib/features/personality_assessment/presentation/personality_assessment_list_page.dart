@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../personality_reference/presentation/personality_reference_routes.dart';
 import '../../profile/domain/profile_role.dart';
@@ -25,21 +26,7 @@ class PersonalityAssessmentListPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(personalityAssessmentsProvider(patientId));
-    return AppScaffold(
-      title: 'Personalidade',
-      accent: AppColors.purple,
-      actions: [
-        IconButton(
-          tooltip: 'O que significa cada fator?',
-          onPressed: () => context.push(
-            PersonalityReferenceRoutes.staffList(
-              role: role,
-              patientId: patientId,
-            ),
-          ),
-          icon: const Icon(Icons.menu_book_outlined),
-        ),
-      ],
+    return AppCanopyScaffold(
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: AppColors.purple,
         foregroundColor: Colors.white,
@@ -55,32 +42,60 @@ class PersonalityAssessmentListPage extends ConsumerWidget {
         icon: const Icon(Icons.add),
         label: const Text('Registrar avaliação'),
       ),
-      body: AsyncStateBody<List<PersonalityAssessment>>(
-        asyncValue: async,
-        onRetry: () => ref.invalidate(personalityAssessmentsProvider(patientId)),
-        emptyIcon: Icons.psychology_alt_outlined,
-        emptyMessage: 'Nenhuma avaliação de personalidade registrada.',
-        dataBuilder: (list) => ListView(
-          padding: const EdgeInsets.fromLTRB(14, 14, 14, 96),
-          children: [
-            _intro(context),
-            const SizedBox(height: 12),
-            for (final a in list)
-              _AssessmentTile(
-                assessment: a,
-                onTap: () async {
-                  await context.push(
-                    PersonalityAssessmentRoutes.staffDetail(
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: PatientContextHeader(
+              patientId: patientId,
+              pageTitle: 'AVALIAÇÃO DE PERSONALIDADE',
+              role: role,
+              accentColor: AppColors.blue,
+              actions: [
+                PatientHeaderActionBtn(
+                  label: 'Referência',
+                  icon: Icons.menu_book_outlined,
+                  onTap: () => context.push(
+                    PersonalityReferenceRoutes.staffList(
                       role: role,
                       patientId: patientId,
-                      assessmentId: a.id,
                     ),
-                  );
-                  ref.invalidate(personalityAssessmentsProvider(patientId));
-                },
+                  ),
+                ),
+              ],
+            ),
+          ),
+          SliverFillRemaining(
+            hasScrollBody: true,
+            child: AsyncStateBody<List<PersonalityAssessment>>(
+              asyncValue: async,
+              onRetry: () =>
+                  ref.invalidate(personalityAssessmentsProvider(patientId)),
+              emptyIcon: Icons.psychology_alt_outlined,
+              emptyMessage: 'Nenhuma avaliação de personalidade registrada.',
+              dataBuilder: (list) => ListView(
+                padding: const EdgeInsets.fromLTRB(14, 14, 14, 96),
+                children: [
+                  _intro(context),
+                  const SizedBox(height: 12),
+                  for (final a in list)
+                    _AssessmentTile(
+                      assessment: a,
+                      onTap: () async {
+                        await context.push(
+                          PersonalityAssessmentRoutes.staffDetail(
+                            role: role,
+                            patientId: patientId,
+                            assessmentId: a.id,
+                          ),
+                        );
+                        ref.invalidate(personalityAssessmentsProvider(patientId));
+                      },
+                    ),
+                ],
               ),
-          ],
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }

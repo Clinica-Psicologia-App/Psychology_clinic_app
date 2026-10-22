@@ -3,9 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
-import '../../../shared/widgets/app_page_header.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_scaffold.dart';
-import '../../../shared/widgets/async_state_body.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/library_work_full.dart';
@@ -14,6 +13,7 @@ import 'patient_library_routes.dart';
 import 'widgets/indicate_work_sheet.dart';
 import 'widgets/library_cover.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 
 /// Catálogo clínico (psicólogo): busca + filtro por esquema + indicação.
 class StaffLibraryCatalogPage extends ConsumerStatefulWidget {
@@ -43,86 +43,107 @@ class _StaffLibraryCatalogPageState
     final worksAsync = ref.watch(libraryCatalogProvider(filter));
     final schemasAsync = ref.watch(librarySchemasProvider);
 
-    return AppScaffold(
-      title: 'Biblioteca clínica',
-      accent: AppColors.cyan,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: AppPageHeader(
-              icon: Icons.movie_filter_outlined,
-              title: 'Biblioteca clínica',
-              subtitle:
-                  'Filmes e séries por esquema, para indicar ao paciente a partir '
-                  'da conceitualização.',
+    return AppCanopyScaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: PatientContextHeader(
+              patientId: widget.patientId,
+              pageTitle: 'BIBLIOTECA CLÍNICA',
+              role: widget.role,
+              accentColor: AppColors.purple,
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Buscar por título…',
-                prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: Theme.of(context).colorScheme.surfaceContainerLow,
-                isDense: true,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-              onChanged: (v) => setState(() => _query = v),
-            ),
-          ),
-          SizedBox(
-            height: 40,
-            child: schemasAsync.maybeWhen(
-              data: (schemas) => ListView(
-                scrollDirection: Axis.horizontal,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                children: [
-                  _SchemaChip(
-                    label: 'Todos',
-                    selected: _schema == null,
-                    onTap: () => setState(() => _schema = null),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Buscar por título…',
+                  prefixIcon: const Icon(Icons.search),
+                  filled: true,
+                  fillColor:
+                      Theme.of(context).colorScheme.surfaceContainerLow,
+                  isDense: true,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
                   ),
-                  for (final s in schemas)
+                ),
+                onChanged: (v) => setState(() => _query = v),
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: 40,
+              child: schemasAsync.maybeWhen(
+                data: (schemas) => ListView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  children: [
                     _SchemaChip(
-                      label: s,
-                      selected: _schema == s,
-                      onTap: () => setState(() => _schema = s),
+                      label: 'Todos',
+                      selected: _schema == null,
+                      onTap: () => setState(() => _schema = null),
                     ),
-                ],
+                    for (final s in schemas)
+                      _SchemaChip(
+                        label: s,
+                        selected: _schema == s,
+                        onTap: () => setState(() => _schema = s),
+                      ),
+                  ],
+                ),
+                orElse: () => const SizedBox.shrink(),
               ),
-              orElse: () => const SizedBox.shrink(),
             ),
           ),
-          const SizedBox(height: 8),
-          Expanded(
-            child: AsyncStateBody<List<LibraryWorkFull>>(
-              asyncValue: worksAsync,
-              onRetry: () => ref.invalidate(libraryCatalogProvider(filter)),
-              emptyMessage: 'Nenhuma obra para este filtro.',
-              emptyIcon: Icons.movie_outlined,
-              dataBuilder: (works) => ListView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
-                itemCount: works.length,
-                itemBuilder: (_, i) => _WorkTile(
-                  work: works[i],
-                  patientId: widget.patientId,
-                  onTap: () => context.push(
-                    PatientLibraryRoutes.staffWork(
-                      role: widget.role,
-                      patientId: widget.patientId,
-                      workId: works[i].id,
-                    ),
-                  ),
+          const SliverToBoxAdapter(child: SizedBox(height: 8)),
+          if (worksAsync.isLoading)
+            const SliverFillRemaining(
+              child: Center(child: CircularProgressIndicator()),
+            )
+          else if (worksAsync.hasError)
+            SliverFillRemaining(
+              child: Center(
+                child: FilledButton.icon(
+                  onPressed: () =>
+                      ref.invalidate(libraryCatalogProvider(filter)),
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Tentar novamente'),
                 ),
               ),
-            ),
-          ),
+            )
+          else ...[
+            if ((worksAsync.valueOrNull ?? []).isEmpty)
+              const SliverFillRemaining(
+                child: Center(
+                  child: Text('Nenhuma obra para este filtro.'),
+                ),
+              )
+            else
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, AppSpacing.xxxl),
+                sliver: SliverList.builder(
+                  itemCount: worksAsync.valueOrNull?.length ?? 0,
+                  itemBuilder: (_, i) {
+                    final works = worksAsync.valueOrNull!;
+                    return _WorkTile(
+                      work: works[i],
+                      patientId: widget.patientId,
+                      onTap: () => context.push(
+                        PatientLibraryRoutes.staffWork(
+                          role: widget.role,
+                          patientId: widget.patientId,
+                          workId: works[i].id,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+          ],
         ],
       ),
     );

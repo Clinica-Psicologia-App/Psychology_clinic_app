@@ -363,6 +363,12 @@ class CaseConceptualizationPdf {
               style: pw.TextStyle(
                   fontSize: 9, fontWeight: pw.FontWeight.bold, color: _blue)),
         ),
+      if (d.noDiagnosis)
+        pw.Padding(
+          padding: const pw.EdgeInsets.only(bottom: 3),
+          child: pw.Text('Sem diagnóstico estabelecido no momento.',
+              style: const pw.TextStyle(fontSize: 10, color: _navy)),
+        ),
       for (final e in items)
         pw.Padding(
           padding: const pw.EdgeInsets.only(bottom: 3),
@@ -376,6 +382,14 @@ class CaseConceptualizationPdf {
                 if ((e.code ?? '').trim().isNotEmpty)
                   pw.TextSpan(
                       text: '   ·   ${e.code!.trim()}',
+                      style: const pw.TextStyle(color: _muted)),
+                if (e.metaLine(d.system) != null)
+                  pw.TextSpan(
+                      text: '\n${e.metaLine(d.system)}',
+                      style: const pw.TextStyle(color: _muted)),
+                if ((e.notes ?? '').trim().isNotEmpty)
+                  pw.TextSpan(
+                      text: '\n${e.notes!.trim()}',
                       style: const pw.TextStyle(color: _muted)),
               ],
             ),

@@ -8,6 +8,8 @@ import '../../../shared/widgets/app_page_header.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
+import '../../daily_monitors/providers/daily_monitors_providers.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/patient_problem.dart';
 import '../domain/patient_problem_status.dart';
@@ -31,60 +33,92 @@ class PatientProblemDetailPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final problemAsync = ref.watch(patientProblemDetailProvider(problemId));
+    final patientIdAsync = ref.watch(myPatientIdProvider);
 
-    return AppScaffold(
-      title: 'Problema',
-      accent: AppColors.warning,
-      actions: [
-        IconButton(
-          tooltip: 'Atualizar',
-          onPressed: () =>
-              ref.invalidate(patientProblemDetailProvider(problemId)),
-          icon: const Icon(Icons.refresh),
+    final body = problemAsync.when(
+      loading: () => const BrandLoader(),
+      error: (_, __) => Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Erro ao carregar problema.'),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: () =>
+                  ref.invalidate(patientProblemDetailProvider(problemId)),
+              child: const Text('Tentar novamente'),
+            ),
+          ],
         ),
-      ],
-      body: problemAsync.when(
-        loading: () => const BrandLoader(),
-        error: (_, __) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Erro ao carregar problema.'),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: () =>
-                    ref.invalidate(patientProblemDetailProvider(problemId)),
-                child: const Text('Tentar novamente'),
-              ),
-            ],
-          ),
-        ),
-        data: (problem) {
-          if (problem == null) {
-            return const Center(child: Text('Problema não encontrado.'));
-          }
+      ),
+      data: (problem) {
+        if (problem == null) {
+          return const Center(child: Text('Problema não encontrado.'));
+        }
 
-          return _PatientProblemDetailBody(
-            problem: problem,
-            role: role,
-            patientId: patientId,
-            onChanged: () {
-              ref.invalidate(patientProblemDetailProvider(problemId));
-              if (role == ProfileRole.patient) {
-                ref.read(myPatientProblemsProvider.notifier).refresh();
-              } else if (patientId != null) {
-                ref.invalidate(
-                  staffPatientProblemsProvider(
-                    StaffPatientProblemsContext(
-                      role: role,
-                      patientId: patientId!,
-                    ),
+        return _PatientProblemDetailBody(
+          problem: problem,
+          role: role,
+          patientId: patientId,
+          onChanged: () {
+            ref.invalidate(patientProblemDetailProvider(problemId));
+            if (role == ProfileRole.patient) {
+              ref.read(myPatientProblemsProvider.notifier).refresh();
+            } else if (patientId != null) {
+              ref.invalidate(
+                staffPatientProblemsProvider(
+                  StaffPatientProblemsContext(
+                    role: role,
+                    patientId: patientId!,
                   ),
-                );
-              }
-            },
-          );
-        },
+                ),
+              );
+            }
+          },
+        );
+      },
+    );
+
+    if (patientId != null) {
+      return AppCanopyScaffold(
+        body: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: PatientContextHeader(
+                patientId: patientId!,
+                pageTitle: 'PROBLEMA CLÍNICO',
+                role: role,
+                accentColor: AppColors.cyan,
+              ),
+            ),
+            SliverFillRemaining(hasScrollBody: true, child: body),
+          ],
+        ),
+      );
+    }
+    return patientIdAsync.when(
+      loading: () => const AppCanopyScaffold(
+        body: Center(child: BrandLoader()),
+      ),
+      error: (_, __) => AppScaffold(
+        title: 'Problema',
+        accent: AppColors.purple,
+        body: const Center(child: Text('Erro ao identificar paciente.')),
+      ),
+      data: (myPatientId) => AppCanopyScaffold(
+        body: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: PatientContextHeader(
+                patientId: myPatientId,
+                pageTitle: 'PROBLEMA',
+                role: ProfileRole.patient,
+                accentColor: AppColors.purple,
+              ),
+            ),
+            SliverFillRemaining(hasScrollBody: true, child: body),
+          ],
+        ),
       ),
     );
   }

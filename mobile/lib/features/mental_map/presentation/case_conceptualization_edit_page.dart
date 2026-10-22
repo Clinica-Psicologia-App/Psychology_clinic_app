@@ -8,6 +8,7 @@ import '../../../shared/widgets/error_banner.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/case_conceptualization.dart';
 import '../providers/case_conceptualization_providers.dart';
+import '../../therapy_demands/presentation/therapy_demands_routes.dart';
 
 /// Edição dos campos do terapeuta da Conceitualização de caso (Síntese):
 /// necessidades não atendidas (7.2), sequência de modos (10) e relação
@@ -249,18 +250,10 @@ class _EditState extends ConsumerState<_EditForm> {
   late final TextEditingController _collabNotes;
   late final TextEditingController _bondNotes;
   late final TextEditingController _therapistReactions;
-  // 2 · motivo (2a + 2b)
-  late final TextEditingController _motivoInitial;
-  late final TextEditingController _motivoCurrent;
-
   // 8.1 · lista completa de esquemas antes de selecionar os centrais
   late final TextEditingController _allSchemas;
 
-  // 3 · impressões gerais / 4 · diagnóstico / 13 · comentários
-  late final TextEditingController _impInitial;
-  late final TextEditingController _impCurrent;
-  String? _dxSystem;
-  late final List<(TextEditingController, TextEditingController)> _dxItems;
+  // 13 · comentários (2, 3 e 4 são preenchidos em Demandas terapêuticas)
   late final TextEditingController _comments;
 
   // 7 · origens (7.1 história inicial, 7.3 temperamento, 7.4 cultural)
@@ -346,26 +339,8 @@ class _EditState extends ConsumerState<_EditForm> {
     _therapistReactions =
         TextEditingController(text: rel.therapistReactions ?? '');
 
-    _impInitial =
-        TextEditingController(text: data.generalImpressions.initial ?? '');
-    _impCurrent =
-        TextEditingController(text: data.generalImpressions.current ?? '');
-    _dxSystem = data.diagnosis.system;
-    _dxItems = [
-      for (var i = 0; i < 4; i++)
-        () {
-          final it =
-              i < data.diagnosis.items.length ? data.diagnosis.items[i] : null;
-          return (
-            TextEditingController(text: it?.name ?? ''),
-            TextEditingController(text: it?.code ?? ''),
-          );
-        }()
-    ];
     _comments = TextEditingController(text: data.additionalComments ?? '');
 
-    _motivoInitial = TextEditingController(text: data.motivoInitial ?? '');
-    _motivoCurrent = TextEditingController(text: data.motivoCurrent ?? '');
     _allSchemas = TextEditingController(text: data.allSchemas ?? '');
 
     final o = data.origins;
@@ -469,15 +444,7 @@ class _EditState extends ConsumerState<_EditForm> {
     _collabNotes.dispose();
     _bondNotes.dispose();
     _therapistReactions.dispose();
-    _impInitial.dispose();
-    _impCurrent.dispose();
-    for (final p in _dxItems) {
-      p.$1.dispose();
-      p.$2.dispose();
-    }
     _comments.dispose();
-    _motivoInitial.dispose();
-    _motivoCurrent.dispose();
     _allSchemas.dispose();
     _earlyHistory.dispose();
     _temperament.dispose();
@@ -545,17 +512,6 @@ class _EditState extends ConsumerState<_EditForm> {
         bondNotes: _bondNotes.text,
         therapistReactions: _therapistReactions.text,
       ),
-      generalImpressions: GeneralImpressions(
-        initial: _impInitial.text,
-        current: _impCurrent.text,
-      ),
-      diagnosis: Diagnosis(
-        system: _dxSystem,
-        items: [
-          for (final p in _dxItems)
-            DiagnosisItem(name: p.$1.text, code: p.$2.text),
-        ],
-      ),
       origins: CaseOrigins(
         earlyHistory: _earlyHistory.text,
         temperament: _temperament.text,
@@ -603,8 +559,6 @@ class _EditState extends ConsumerState<_EditForm> {
         copingModes: [for (final c in _copingModes) c.toModel()],
       ),
       therapyObjectives: [for (final t in _therapyObjs) t.toModel()],
-      motivoInitial: _motivoInitial.text,
-      motivoCurrent: _motivoCurrent.text,
       allSchemas: _allSchemas.text,
       additionalComments: _comments.text,
     );
@@ -636,72 +590,21 @@ class _EditState extends ConsumerState<_EditForm> {
             padding: const EdgeInsets.fromLTRB(14, 14, 14, 96),
             children: [
               _card(
-                icon: Icons.chat_bubble_outline,
-                title: '2 · Motivo da terapia',
+                icon: Icons.assignment_ind_outlined,
+                title: '2, 3 e 4 · Demandas terapêuticas',
                 subtitle:
-                    'Complemento do terapeuta (contexto e demandas já vêm do Mapa mental).',
+                    'Motivos da terapia, impressões gerais e perspectiva diagnóstica são preenchidos em Conhecer › Demandas Terapêuticas e alimentam esta síntese.',
                 children: [
-                  _field(_motivoInitial, 'a. Inicialmente'),
-                  _field(_motivoCurrent, 'b. Atualmente'),
-                ],
-              ),
-              _card(
-                icon: Icons.visibility_outlined,
-                title: '3 · Impressões gerais',
-                subtitle: 'Como o cliente se apresenta nas sessões.',
-                children: [
-                  _field(_impInitial, 'Inicialmente'),
-                  _field(_impCurrent, 'Atualmente'),
-                ],
-              ),
-              _card(
-                icon: Icons.medical_information_outlined,
-                title: '4 · Perspectiva diagnóstica',
-                subtitle: 'Sistema e diagnósticos principais.',
-                children: [
-                  Wrap(
-                    spacing: 6,
-                    children: [
-                      for (final s in const ['CID-11', 'DSM-5-TR'])
-                        ChoiceChip(
-                          label: Text(s),
-                          selected: _dxSystem == s,
-                          onSelected: (sel) =>
-                              setState(() => _dxSystem = sel ? s : null),
-                        ),
-                    ],
-                  ),
-                  for (var i = 0; i < _dxItems.length; i++)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            flex: 3,
-                            child: TextField(
-                              controller: _dxItems[i].$1,
-                              textCapitalization: TextCapitalization.sentences,
-                              decoration: InputDecoration(
-                                labelText: 'Diagnóstico ${i + 1}',
-                                isDense: true,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            flex: 1,
-                            child: TextField(
-                              controller: _dxItems[i].$2,
-                              decoration: const InputDecoration(
-                                labelText: 'Código',
-                                isDense: true,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: OutlinedButton.icon(
+                      key: const Key('edit_open_demands'),
+                      onPressed: () => context.push(TherapyDemandsRoutes.staff(
+                          role: widget.role, patientId: widget.patientId)),
+                      icon: const Icon(Icons.open_in_new, size: 16),
+                      label: const Text('Abrir Demandas Terapêuticas'),
                     ),
+                  ),
                 ],
               ),
               _card(

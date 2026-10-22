@@ -12,6 +12,7 @@ import '../../../shared/widgets/status_chip.dart';
 import '../../clinical_dashboard/domain/clinical_dashboard_data.dart';
 import '../../clinical_dashboard/presentation/widgets/clinical_dashboard_widgets.dart';
 import '../../clinical_dashboard/providers/clinical_dashboard_providers.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../patients/providers/patients_providers.dart';
 import '../../profile/domain/profile_role.dart';
 import '../providers/results_providers.dart';
@@ -48,36 +49,44 @@ class PatientResultsPage extends ConsumerWidget {
       }
     }
 
-    return AppScaffold(
-      title: 'Dashboard clínico',
-      accent: AppColors.purple,
-      actions: [
-        IconButton(
-          tooltip: 'Atualizar',
-          onPressed: refreshDashboard,
-          icon: const Icon(Icons.refresh),
-        ),
-      ],
-      body: AsyncStateBody<ClinicalDashboardData>(
-        asyncValue: dashboardAsync,
-        onRetry: refreshDashboard,
-        emptyIcon: Icons.analytics_outlined,
-        dataBuilder: (data) {
-          final patientName =
-              ref.watch(patientDetailProvider(patientId)).valueOrNull?.fullName;
-          return RefreshIndicator(
-            onRefresh: () async {
-              refreshDashboard();
-            },
-            child: _ConsolidatedResultsView(
-              data: data,
-              role: role,
+    return AppCanopyScaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: PatientContextHeader(
               patientId: patientId,
-              patientName: isPatient ? null : patientName,
-              onActivationChanged: refreshDashboard,
+              pageTitle: 'RESULTADOS',
+              role: role,
+              accentColor: AppColors.blue,
             ),
-          );
-        },
+          ),
+          SliverFillRemaining(
+            hasScrollBody: true,
+            child: AsyncStateBody<ClinicalDashboardData>(
+              asyncValue: dashboardAsync,
+              onRetry: refreshDashboard,
+              emptyIcon: Icons.analytics_outlined,
+              dataBuilder: (data) {
+                final patientName = ref
+                    .watch(patientDetailProvider(patientId))
+                    .valueOrNull
+                    ?.fullName;
+                return RefreshIndicator(
+                  onRefresh: () async {
+                    refreshDashboard();
+                  },
+                  child: _ConsolidatedResultsView(
+                    data: data,
+                    role: role,
+                    patientId: patientId,
+                    patientName: isPatient ? null : patientName,
+                    onActivationChanged: refreshDashboard,
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

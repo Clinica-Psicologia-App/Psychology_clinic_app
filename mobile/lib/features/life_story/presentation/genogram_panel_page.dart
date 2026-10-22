@@ -3,7 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../shared/widgets/app_scaffold.dart';
 import '../domain/family_context.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
+import '../../profile/domain/profile_role.dart';
 import '../domain/family_person.dart';
 import '../domain/genogram_relationship_enums.dart';
 import '../domain/life_story_enums.dart';
@@ -20,9 +23,14 @@ import '../../../shared/widgets/brand_loading.dart';
 /// (§36–38) entram depois — o gráfico com sua própria etapa e o comentário de
 /// painel junto da Síntese/Hipóteses (§42–43), mesma classe de campo editável.
 class GenogramPanelPage extends ConsumerStatefulWidget {
-  const GenogramPanelPage({super.key, required this.patientId});
+  const GenogramPanelPage({
+    super.key,
+    required this.patientId,
+    this.role = ProfileRole.psychologist,
+  });
 
   final String patientId;
+  final ProfileRole role;
 
   @override
   ConsumerState<GenogramPanelPage> createState() => _GenogramPanelPageState();
@@ -63,104 +71,114 @@ class _GenogramPanelPageState extends ConsumerState<GenogramPanelPage> {
     final familyAsync = ref.watch(familyForPatientProvider(patientId));
     final contextAsync = ref.watch(familyContextForPatientProvider(patientId));
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: AppColors.navy,
-        foregroundColor: Colors.white,
-        title: const Text('Genograma',
-            style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
-      ),
-      body: familyAsync.when(
-        loading: () => const BrandLoader(),
-        error: (e, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: OutlinedButton(
-              onPressed: () =>
-                  ref.invalidate(familyForPatientProvider(patientId)),
-              child: const Text('Tentar de novo'),
+    return AppCanopyScaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: PatientContextHeader(
+              patientId: patientId,
+              pageTitle: 'HISTÓRIA DE VIDA',
+              role: widget.role,
+              accentColor: AppColors.cyan,
             ),
           ),
-        ),
-        data: (people) {
-          final famContext = contextAsync.asData?.value ?? const FamilyContext();
-          final caregivers = people
-              .where((p) =>
-                  p.caregiverRole == CaregiverRole.important ||
-                  p.caregiverRole == CaregiverRole.partial)
-              .toList();
-          final withBond =
-              people.where((p) => p.hasRelationshipData).toList();
-          final protective = [
-            for (final p in people)
-              if (p.receivedNeeds.any(_protectiveNeeds.contains))
-                (p, p.receivedNeeds.where(_protectiveNeeds.contains).toList()),
-          ];
-
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
-            children: [
-              // O diagrama é o protagonista desta tela — fica no topo, como
-              // destaque, e não escondido dentro do bloco de estrutura.
-              _GenogramHeroCard(
-                patientId: patientId,
-                peopleCount: people.length,
-              ),
-              const SizedBox(height: 12),
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: FilledButton.icon(
-                  onPressed: _navigating
-                      ? null
-                      : () => _push(
-                            LifeStoryRoutes.developmentalSynthesis,
-                            extra: patientId,
-                          ),
-                  icon: const Icon(Icons.auto_stories_outlined, size: 18),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.navy,
-                    minimumSize: const Size.fromHeight(48),
+          SliverFillRemaining(
+            hasScrollBody: true,
+            child: familyAsync.when(
+              loading: () => const BrandLoader(),
+              error: (e, _) => Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: OutlinedButton(
+                    onPressed: () =>
+                        ref.invalidate(familyForPatientProvider(patientId)),
+                    child: const Text('Tentar de novo'),
                   ),
-                  label: const Text('Síntese Desenvolvimental'),
                 ),
               ),
-              // Superfície de edição: cadastrar/editar pessoas e relações. Este
-              // painel é a visão; o construtor detalhado abre a partir daqui, de
-              // modo que ver e editar convivem num só lugar.
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _NavGuardButton.outlined(
-                  route: GenogramRoutes.staffListFor(patientId),
-                  icon: Icons.edit_outlined,
-                  label: 'Editar pessoas e relações',
-                ),
-              ),
-              // Bootstrap: infere os vínculos estruturais (casamento, pai/mãe–
-              // filho) a partir dos papéis, para o terapeuta só confirmar.
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _NavGuardButton.text(
-                  route: GenogramRoutes.bootstrapFor(patientId),
-                  icon: Icons.auto_fix_high_outlined,
-                  label: 'Sugerir vínculos a partir dos papéis',
-                ),
-              ),
-              _StructureBlock(people: people, patientId: patientId),
-              if (caregivers.isNotEmpty)
-                _FiguresBlock(people: caregivers, patientId: patientId),
-              if (withBond.isNotEmpty) _BondsBlock(people: withBond),
-              if (withBond.isNotEmpty) _NeedsBlock(people: withBond),
-              if (famContext.climateTraits.isNotEmpty ||
-                  (famContext.climateNote ?? '').trim().isNotEmpty)
-                _ClimateBlock(context: famContext),
-              if (famContext.hasPatterns != null ||
-                  famContext.patternTraits.isNotEmpty)
-                _PatternsBlock(context: famContext),
-              if (protective.isNotEmpty) _ProtectiveBlock(items: protective),
-            ],
-          );
-        },
+              data: (people) {
+                final famContext =
+                    contextAsync.asData?.value ?? const FamilyContext();
+                final caregivers = people
+                    .where((p) =>
+                        p.caregiverRole == CaregiverRole.important ||
+                        p.caregiverRole == CaregiverRole.partial)
+                    .toList();
+                final withBond =
+                    people.where((p) => p.hasRelationshipData).toList();
+                final protective = [
+                  for (final p in people)
+                    if (p.receivedNeeds.any(_protectiveNeeds.contains))
+                      (p,
+                        p.receivedNeeds
+                            .where(_protectiveNeeds.contains)
+                            .toList()),
+                ];
+
+                return ListView(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+                  children: [
+                    // O diagrama é o protagonista desta tela — fica no topo,
+                    // como destaque, e não escondido dentro do bloco de estrutura.
+                    _GenogramHeroCard(
+                      patientId: patientId,
+                      peopleCount: people.length,
+                    ),
+                    const SizedBox(height: 12),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: FilledButton.icon(
+                        onPressed: _navigating
+                            ? null
+                            : () => _push(
+                                  LifeStoryRoutes.developmentalSynthesis,
+                                  extra: patientId,
+                                ),
+                        icon: const Icon(Icons.auto_stories_outlined, size: 18),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.navy,
+                          minimumSize: const Size.fromHeight(48),
+                        ),
+                        label: const Text('Síntese Desenvolvimental'),
+                      ),
+                    ),
+                    // Superfície de edição: cadastrar/editar pessoas e relações.
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _NavGuardButton.outlined(
+                        route: GenogramRoutes.staffListFor(patientId),
+                        icon: Icons.edit_outlined,
+                        label: 'Editar pessoas e relações',
+                      ),
+                    ),
+                    // Bootstrap: infere os vínculos estruturais.
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _NavGuardButton.text(
+                        route: GenogramRoutes.bootstrapFor(patientId),
+                        icon: Icons.auto_fix_high_outlined,
+                        label: 'Sugerir vínculos a partir dos papéis',
+                      ),
+                    ),
+                    _StructureBlock(people: people, patientId: patientId),
+                    if (caregivers.isNotEmpty)
+                      _FiguresBlock(people: caregivers, patientId: patientId),
+                    if (withBond.isNotEmpty) _BondsBlock(people: withBond),
+                    if (withBond.isNotEmpty) _NeedsBlock(people: withBond),
+                    if (famContext.climateTraits.isNotEmpty ||
+                        (famContext.climateNote ?? '').trim().isNotEmpty)
+                      _ClimateBlock(context: famContext),
+                    if (famContext.hasPatterns != null ||
+                        famContext.patternTraits.isNotEmpty)
+                      _PatternsBlock(context: famContext),
+                    if (protective.isNotEmpty)
+                      _ProtectiveBlock(items: protective),
+                  ],
+                );
+              },
+            ),
+          ),
+        ],
       ),
     );
   }

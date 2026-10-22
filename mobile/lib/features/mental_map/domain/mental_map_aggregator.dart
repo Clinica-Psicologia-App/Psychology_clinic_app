@@ -222,6 +222,7 @@ bool mentalMapHasRelevantData(MentalMapData data) {
   if (data.recentMonitors.isNotEmpty) return true;
   if (data.recentTimelineEvents.isNotEmpty) return true;
   if (data.genogram.hasContent) return true;
+  if (data.personalityAssessments.isNotEmpty) return true;
   return false;
 }
 

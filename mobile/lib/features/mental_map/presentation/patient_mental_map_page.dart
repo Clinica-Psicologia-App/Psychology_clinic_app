@@ -8,7 +8,10 @@ import '../../../shared/widgets/app_page_header.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
+import '../../../shared/widgets/brand_loading.dart';
 import '../../../shared/widgets/status_chip.dart';
+import '../../daily_monitors/providers/daily_monitors_providers.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../../shared/widgets/homologation_ui.dart';
 import '../domain/mental_map_check_in_summary.dart';
@@ -26,33 +29,49 @@ class PatientMentalMapPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final mapAsync = ref.watch(myMentalMapProvider);
+    final patientIdAsync = ref.watch(myPatientIdProvider);
 
-    return AppScaffold(
-      title: 'Mapa mental',
-      accent: AppColors.purple,
-      actions: [
-        IconButton(
-          tooltip: 'Atualizar',
-          onPressed: () => ref.read(myMentalMapProvider.notifier).refresh(),
-          icon: const Icon(Icons.refresh),
+    final body = AsyncStateBody<MentalMapData>(
+      asyncValue: mapAsync,
+      onRetry: () => ref.read(myMentalMapProvider.notifier).refresh(),
+      emptyMessage:
+          'Ainda não há dados clínicos suficientes para montar o mapa mental. '
+          'Conforme você registra questionários, problemas, objetivos e outros '
+          'módulos, as seções aparecerão aqui.',
+      emptyIcon: Icons.hub_outlined,
+      dataBuilder: (data) => RefreshIndicator(
+        onRefresh: () async {
+          await ref.read(myMentalMapProvider.notifier).refresh();
+        },
+        child: _MentalMapBody(
+          data: data,
+          role: ProfileRole.patient,
         ),
-      ],
-      body: AsyncStateBody<MentalMapData>(
-        asyncValue: mapAsync,
-        onRetry: () => ref.read(myMentalMapProvider.notifier).refresh(),
-        emptyMessage:
-            'Ainda não há dados clínicos suficientes para montar o mapa mental. '
-            'Conforme você registra questionários, problemas, objetivos e outros '
-            'módulos, as seções aparecerão aqui.',
-        emptyIcon: Icons.hub_outlined,
-        dataBuilder: (data) => RefreshIndicator(
-          onRefresh: () async {
-            await ref.read(myMentalMapProvider.notifier).refresh();
-          },
-          child: _MentalMapBody(
-            data: data,
-            role: ProfileRole.patient,
-          ),
+      ),
+    );
+
+    return patientIdAsync.when(
+      loading: () => const AppCanopyScaffold(
+        body: Center(child: BrandLoader()),
+      ),
+      error: (_, __) => AppScaffold(
+        title: 'Mapa Mental',
+        accent: AppColors.purple,
+        body: const Center(child: Text('Erro ao identificar paciente.')),
+      ),
+      data: (patientId) => AppCanopyScaffold(
+        body: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: PatientContextHeader(
+                patientId: patientId,
+                pageTitle: 'MAPA MENTAL',
+                role: ProfileRole.patient,
+                accentColor: AppColors.purple,
+              ),
+            ),
+            SliverFillRemaining(hasScrollBody: true, child: body),
+          ],
         ),
       ),
     );
@@ -74,33 +93,39 @@ class StaffPatientMentalMapPage extends ConsumerWidget {
     final ctx = StaffMentalMapContext(role: role, patientId: patientId);
     final mapAsync = ref.watch(staffMentalMapProvider(ctx));
 
-    return AppScaffold(
-      title: 'Mapa mental',
-      accent: AppColors.purple,
-      actions: [
-        IconButton(
-          tooltip: 'Atualizar',
-          onPressed: () => ref.invalidate(staffMentalMapProvider(ctx)),
-          icon: const Icon(Icons.refresh),
-        ),
-      ],
-      body: AsyncStateBody<MentalMapData>(
-        asyncValue: mapAsync,
-        onRetry: () => ref.invalidate(staffMentalMapProvider(ctx)),
-        emptyMessage:
-            'Ainda não há dados clínicos registrados para este paciente.',
-        emptyIcon: Icons.hub_outlined,
-        dataBuilder: (data) => RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(staffMentalMapProvider(ctx));
-            await ref.read(staffMentalMapProvider(ctx).future);
-          },
-          child: _MentalMapBody(
-            data: data,
-            role: role,
-            patientId: patientId,
+    return AppCanopyScaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: PatientContextHeader(
+              patientId: patientId,
+              pageTitle: 'MAPA MENTAL',
+              role: role,
+              accentColor: AppColors.purple,
+            ),
           ),
-        ),
+          SliverFillRemaining(
+            hasScrollBody: true,
+            child: AsyncStateBody<MentalMapData>(
+              asyncValue: mapAsync,
+              onRetry: () => ref.invalidate(staffMentalMapProvider(ctx)),
+              emptyMessage:
+                  'Ainda não há dados clínicos registrados para este paciente.',
+              emptyIcon: Icons.hub_outlined,
+              dataBuilder: (data) => RefreshIndicator(
+                onRefresh: () async {
+                  ref.invalidate(staffMentalMapProvider(ctx));
+                  await ref.read(staffMentalMapProvider(ctx).future);
+                },
+                child: _MentalMapBody(
+                  data: data,
+                  role: role,
+                  patientId: patientId,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

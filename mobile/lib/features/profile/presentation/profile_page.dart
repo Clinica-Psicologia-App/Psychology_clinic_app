@@ -14,6 +14,7 @@ import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../auth/providers/auth_providers.dart';
+import '../../patients/presentation/widgets/staff_section_header.dart';
 import '../domain/profile_role.dart';
 import '../providers/profile_providers.dart';
 import 'profile_routes.dart';
@@ -159,11 +160,20 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
     return ListView(
       padding: EdgeInsets.zero,
       children: [
-        _ProfileCanopyHeader(
-          profile: p,
-          busy: _busyAvatar,
-          onEditPhoto: _busyAvatar ? null : _openPhotoSheet,
+        StaffSectionHeader(
+          navTitle: 'Meu perfil',
+          eyebrow: 'CONTA',
+          headline: Text(
+            p.fullName,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              height: 1.2,
+            ),
+          ),
           onBack: () => Navigator.of(context).maybePop(),
+          extraBottomPadding: 32,
         ),
         Padding(
           padding: EdgeInsets.fromLTRB(
@@ -176,6 +186,12 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                _ProfileAvatarCard(
+                  profile: p,
+                  busy: _busyAvatar,
+                  onEditPhoto: _busyAvatar ? null : _openPhotoSheet,
+                ),
+                const SizedBox(height: AppSpacing.md),
                 _SectionCard(
                   title: 'Dados pessoais',
                   icon: Icons.badge_outlined,
@@ -585,7 +601,124 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
 }
 
 // ---------------------------------------------------------------------------
-// Header
+// Profile avatar card (body)
+// ---------------------------------------------------------------------------
+
+class _ProfileAvatarCard extends StatelessWidget {
+  const _ProfileAvatarCard({
+    required this.profile,
+    required this.busy,
+    required this.onEditPhoto,
+  });
+
+  final UserProfile profile;
+  final bool busy;
+  final VoidCallback? onEditPhoto;
+
+  @override
+  Widget build(BuildContext context) {
+    final roleLabel = switch (profile.role) {
+      ProfileRole.platformAdmin => 'Administrador',
+      ProfileRole.psychologist => 'Psicólogo',
+      ProfileRole.patient => 'Paciente',
+    };
+
+    return ClayCard(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+        child: Row(
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Opacity(
+                  opacity: busy ? 0.5 : 1,
+                  child: UserAvatar(profile: profile, size: 68),
+                ),
+                if (busy)
+                  const Positioned.fill(
+                    child: Center(
+                      child: SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          color: AppColors.turquoise,
+                        ),
+                      ),
+                    ),
+                  ),
+                if (onEditPhoto != null)
+                  Positioned(
+                    right: -2,
+                    bottom: -2,
+                    child: GestureDetector(
+                      onTap: onEditPhoto,
+                      child: Container(
+                        width: 26,
+                        height: 26,
+                        decoration: BoxDecoration(
+                          color: AppColors.turquoise,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.white, width: 2),
+                        ),
+                        child: const Icon(
+                          Icons.camera_alt_rounded,
+                          size: 13,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    profile.fullName,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    profile.email,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                  const SizedBox(height: 6),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 3),
+                    decoration: BoxDecoration(
+                      color: AppColors.turquoise.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      roleLabel,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.turquoise,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Header (legacy — kept for patient role that has no patientId)
 // ---------------------------------------------------------------------------
 
 /// Canopy de identidade: avatar grande com botão de foto, nome, e-mail e papel

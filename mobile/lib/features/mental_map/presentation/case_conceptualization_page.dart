@@ -7,13 +7,17 @@ import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../initial_assessment/domain/initial_assessment.dart';
+import '../../initial_assessment/domain/life_area.dart';
+import '../../initial_assessment/domain/life_area_assessment.dart';
 import '../../initial_assessment/domain/patient_basics.dart';
 import '../../initial_assessment/providers/initial_assessment_providers.dart';
 import '../../personality_assessment/domain/personality_assessment.dart';
 import '../../personality_assessment/presentation/personality_assessment_routes.dart';
 import '../../personality_assessment/providers/personality_assessment_providers.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../profile/domain/profile_role.dart';
 import 'case_conceptualization_pdf.dart';
+import 'case_conceptualization_word.dart';
 import 'mental_map_routes.dart';
 import '../domain/case_conceptualization.dart';
 import '../domain/mental_map_case_summary.dart';
@@ -46,59 +50,97 @@ class CaseConceptualizationPage extends ConsumerWidget {
     final ctx = StaffMentalMapContext(role: role, patientId: patientId);
     final async = ref.watch(staffMentalMapProvider(ctx));
 
-    return AppScaffold(
-      title: 'Conceitualização de caso',
-      accent: AppColors.navy,
-      actions: [
-        IconButton(
-          tooltip: 'Exportar PDF',
-          onPressed: () async {
-            final data = ref.read(staffMentalMapProvider(ctx)).valueOrNull;
-            if (data == null) {
-              showErrorBanner(
-                context,
-                'Aguarde os dados carregarem para exportar.',
-              );
-              return;
-            }
-            try {
-              await CaseConceptualizationPdf.shareOrPrint(
-                data: data,
-                concept:
-                    ref.read(caseConceptualizationProvider(patientId)).valueOrNull,
-                assessment: ref
-                    .read(initialAssessmentProvider(
-                      InitialAssessmentContext(
-                          role: role, patientId: patientId),
-                    ))
-                    .valueOrNull,
-              );
-            } catch (e) {
-              if (context.mounted) showErrorBanner(context, e);
-            }
-          },
-          icon: const Icon(Icons.picture_as_pdf_outlined),
-        ),
-        IconButton(
-          tooltip: 'Editar campos do terapeuta',
-          onPressed: () async {
-            await context.push(
-              MentalMapRoutes.staffCaseConceptualizationEdit(
-                role: role,
-                patientId: patientId,
-              ),
-            );
-            ref.invalidate(caseConceptualizationProvider(patientId));
-          },
-          icon: const Icon(Icons.edit_outlined),
-        ),
-        IconButton(
-          tooltip: 'Atualizar',
-          onPressed: () => ref.invalidate(staffMentalMapProvider(ctx)),
-          icon: const Icon(Icons.refresh),
-        ),
-      ],
-      body: AsyncStateBody<MentalMapData>(
+    return AppCanopyScaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: PatientContextHeader(
+              patientId: patientId,
+              pageTitle: 'CONCEITUALIZAÇÃO',
+              role: role,
+              accentColor: AppColors.purple,
+              actions: [
+                PatientHeaderActionBtn(
+                  label: 'PDF',
+                  icon: Icons.picture_as_pdf_outlined,
+                  onTap: () async {
+                    final data =
+                        ref.read(staffMentalMapProvider(ctx)).valueOrNull;
+                    if (data == null) {
+                      showErrorBanner(
+                        context,
+                        'Aguarde os dados carregarem para exportar.',
+                      );
+                      return;
+                    }
+                    try {
+                      await CaseConceptualizationPdf.shareOrPrint(
+                        data: data,
+                        concept: ref
+                            .read(caseConceptualizationProvider(patientId))
+                            .valueOrNull,
+                        assessment: ref
+                            .read(initialAssessmentProvider(
+                              InitialAssessmentContext(
+                                  role: role, patientId: patientId),
+                            ))
+                            .valueOrNull,
+                      );
+                    } catch (e) {
+                      if (context.mounted) showErrorBanner(context, e);
+                    }
+                  },
+                ),
+                PatientHeaderActionBtn(
+                  label: 'Word',
+                  icon: Icons.description_outlined,
+                  onTap: () async {
+                    final data =
+                        ref.read(staffMentalMapProvider(ctx)).valueOrNull;
+                    if (data == null) {
+                      showErrorBanner(
+                        context,
+                        'Aguarde os dados carregarem para exportar.',
+                      );
+                      return;
+                    }
+                    try {
+                      await CaseConceptualizationWord.shareOrOpen(
+                        data: data,
+                        concept: ref
+                            .read(caseConceptualizationProvider(patientId))
+                            .valueOrNull,
+                        assessment: ref
+                            .read(initialAssessmentProvider(
+                              InitialAssessmentContext(
+                                  role: role, patientId: patientId),
+                            ))
+                            .valueOrNull,
+                      );
+                    } catch (e) {
+                      if (context.mounted) showErrorBanner(context, e);
+                    }
+                  },
+                ),
+                PatientHeaderActionBtn(
+                  label: 'Editar',
+                  icon: Icons.edit_outlined,
+                  onTap: () async {
+                    await context.push(
+                      MentalMapRoutes.staffCaseConceptualizationEdit(
+                        role: role,
+                        patientId: patientId,
+                      ),
+                    );
+                    ref.invalidate(caseConceptualizationProvider(patientId));
+                  },
+                ),
+              ],
+            ),
+          ),
+          SliverFillRemaining(
+            hasScrollBody: true,
+            child: AsyncStateBody<MentalMapData>(
         asyncValue: async,
         onRetry: () => ref.invalidate(staffMentalMapProvider(ctx)),
         emptyMessage:
@@ -119,6 +161,9 @@ class CaseConceptualizationPage extends ConsumerWidget {
               ref.watch(personalityIntegrationsProvider(patientId)).valueOrNull ??
                   const [],
         ),
+      ),
+          ),
+        ],
       ),
     );
   }
@@ -202,9 +247,7 @@ class _Body extends StatelessWidget {
           title: 'Nível de funcionamento',
           child: (concept?.hasFunctioning ?? false)
               ? _FunctioningView(functioning: concept!.functioning)
-              : const _Placeholder(
-                  'Avaliação clínica do terapeuta (escala 1–6) — a preencher.',
-                ),
+              : _LifeAreaFallback(lifeAreas: assessment?.lifeAreas ?? const []),
         ),
 
         // 6. Problemas de vida — narrativa do terapeuta (documento §6).
@@ -381,6 +424,17 @@ class _Body extends StatelessWidget {
                 ),
               ),
             ),
+          if (d.noDiagnosis)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 5),
+              child: Text(
+                'Sem diagnóstico estabelecido no momento.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.textPrimary,
+                    fontStyle: FontStyle.italic,
+                    height: 1.4),
+              ),
+            ),
           for (final e in items)
             Padding(
               padding: const EdgeInsets.only(bottom: 5),
@@ -397,6 +451,18 @@ class _Body extends StatelessWidget {
                       TextSpan(
                         text: '  ·  ${e.code!.trim()}',
                         style: const TextStyle(color: AppColors.textMuted),
+                      ),
+                    if (e.metaLine(d.system) != null)
+                      TextSpan(
+                        text: '\n${e.metaLine(d.system)}',
+                        style: const TextStyle(color: AppColors.textMuted),
+                      ),
+                    if ((e.notes ?? '').trim().isNotEmpty)
+                      TextSpan(
+                        text: '\n${e.notes!.trim()}',
+                        style: const TextStyle(
+                            color: AppColors.textMuted,
+                            fontStyle: FontStyle.italic),
                       ),
                   ],
                 ),
@@ -1470,6 +1536,154 @@ class _ModesList extends StatelessWidget {
               ),
             );
           }),
+      ],
+    );
+  }
+}
+
+// ── Seção 5: fallback — dados do Bloco 3 (Contexto de Vida) ─────────────────
+
+/// Exibido no §5 enquanto o terapeuta ainda não avaliou o funcionamento.
+/// Mostra as notas de satisfação/sofrimento do paciente agrupadas pelos
+/// 6 grupos clínicos, servindo de referência para a avaliação 1–6.
+class _LifeAreaFallback extends StatelessWidget {
+  const _LifeAreaFallback({required this.lifeAreas});
+
+  final List<LifeAreaAssessment> lifeAreas;
+
+  Color _scoreColor(int? score) {
+    if (score == null) return AppColors.textMuted;
+    if (score <= 3) return AppColors.error;
+    if (score <= 5) return AppColors.warning;
+    if (score <= 7) return AppColors.info;
+    return AppColors.success;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final rated = lifeAreas.where((a) => a.hasRating).toList();
+
+    if (rated.isEmpty) {
+      return const _Placeholder(
+        'Avaliação clínica do terapeuta (escala 1–6) — a preencher.\n'
+        'O paciente ainda não preencheu o Contexto de Vida.',
+      );
+    }
+
+    // Agrupa as áreas pelos 6 grupos clínicos.
+    final byGroup = <FunctioningGroup, List<LifeAreaAssessment>>{};
+    for (final a in rated) {
+      byGroup.putIfAbsent(a.area.group, () => []).add(a);
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+          decoration: BoxDecoration(
+            color: AppColors.info.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: AppColors.info.withValues(alpha: 0.25)),
+          ),
+          child: Row(
+            children: [
+              Icon(Icons.info_outline,
+                  size: 14, color: AppColors.info.withValues(alpha: 0.8)),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  'Dados do paciente (Contexto de Vida). '
+                  'Avaliação clínica 1–6 ainda não preenchida.',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.info.withValues(alpha: 0.85),
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 10),
+        for (final entry in byGroup.entries)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  entry.key.label,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                for (final area in entry.value)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 3, left: 4),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 26,
+                          alignment: Alignment.center,
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          decoration: BoxDecoration(
+                            color: _scoreColor(area.score)
+                                .withValues(alpha: 0.14),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            area.score != null ? '${area.score}' : '—',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: _scoreColor(area.score),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                area.area.label,
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                              if ((area.guidedAnswer ?? '').trim().isNotEmpty)
+                                Text(
+                                  area.guidedAnswer!.trim(),
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                    color: AppColors.textMuted,
+                                    fontStyle: FontStyle.italic,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                        if (area.suffering != null) ...[
+                          const SizedBox(width: 6),
+                          Tooltip(
+                            message: 'Sofrimento: ${area.suffering}/10',
+                            child: Icon(
+                              Icons.mood_bad_outlined,
+                              size: 14,
+                              color: _scoreColor(10 - area.suffering!)
+                                  .withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+          ),
       ],
     );
   }

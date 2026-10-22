@@ -1,4 +1,5 @@
-﻿import '../../profile/domain/profile_role.dart';
+﻿import '../../personality_assessment/presentation/personality_assessment_routes.dart';
+import '../../profile/domain/profile_role.dart';
 import '../presentation/mental_map_navigation_targets.dart';
 import 'mental_case_map.dart';
 import 'mental_map_node_detail.dart';
@@ -123,6 +124,23 @@ _NodeRoutes _routesForNode({
           patientId: patientId,
         ),
       );
+    case 'personality':
+      if (role == ProfileRole.patient) {
+        return const _NodeRoutes(
+          primaryLabel: 'Ver perfil de personalidade',
+          primaryRoute: PersonalityAssessmentRoutes.patientShared,
+        );
+      }
+      if (patientId != null) {
+        return _NodeRoutes(
+          primaryLabel: 'Abrir avaliação de personalidade',
+          primaryRoute: PersonalityAssessmentRoutes.staffList(
+            role: role,
+            patientId: patientId,
+          ),
+        );
+      }
+      return const _NodeRoutes(primaryLabel: 'Ver personalidade');
     default:
       return const _NodeRoutes(
         primaryLabel: 'Ver detalhes',

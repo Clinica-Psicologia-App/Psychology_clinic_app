@@ -2,17 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
-import '../../patients/providers/patients_providers.dart';
 import '../../profile/domain/profile_role.dart';
 import '../providers/therapy_resources_providers.dart';
 import 'therapy_resource_routes.dart';
 import 'widgets/therapy_resource_widgets.dart';
 import '../../../shared/widgets/brand_loading.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 
 class TherapyResourcesPage extends ConsumerWidget {
   const TherapyResourcesPage({
@@ -28,105 +28,87 @@ class TherapyResourcesPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final ctx = StaffTherapyContext(role: role, patientId: patientId);
     final bundleAsync = ref.watch(staffTherapyBundleProvider(ctx));
+
+    return AppCanopyScaffold(
+      body: CustomScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(
+            child: PatientContextHeader(
+              patientId: patientId,
+              pageTitle: 'RECURSOS TERAPÊUTICOS',
+              role: role,
+              accentColor: AppColors.purple,
+              actions: [
+                PatientHeaderActionBtn(
+                  icon: Icons.add,
+                  label: 'Novo material',
+                  onTap: () => context.push(
+                    TherapyResourceRoutes.newResource(
+                      role: role,
+                      patientId: patientId,
+                    ),
+                  ),
+                ),
+                PatientHeaderActionBtn(
+                  icon: Icons.refresh,
+                  label: 'Atualizar',
+                  onTap: () => ref.invalidate(staffTherapyBundleProvider(ctx)),
+                ),
+              ],
+            ),
+          ),
+          if (bundleAsync.isLoading)
+            const SliverFillRemaining(child: BrandLoader())
+          else if (bundleAsync.hasError)
+            SliverFillRemaining(
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text('Erro ao carregar recursos.'),
+                    const SizedBox(height: 16),
+                    FilledButton(
+                      onPressed: () =>
+                          ref.invalidate(staffTherapyBundleProvider(ctx)),
+                      child: const Text('Tentar novamente'),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            _buildContent(context, ref, ctx),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContent(
+    BuildContext context,
+    WidgetRef ref,
+    StaffTherapyContext ctx,
+  ) {
+    final bundleAsync = ref.watch(staffTherapyBundleProvider(ctx));
     final recommendationsAsync = ref.watch(
       staffResourceRecommendationsProvider(ctx),
     );
-    final patientAsync = ref.watch(patientDetailProvider(patientId));
+    final bundle = bundleAsync.valueOrNull;
+    if (bundle == null) return const SliverToBoxAdapter(child: SizedBox());
 
-    return AppScaffold(
-      title: 'Recursos terapêuticos',
-      accent: AppColors.purple,
-      actions: [
-        IconButton(
-          tooltip: 'Novo material',
-          onPressed: () => context.push(
-            TherapyResourceRoutes.newResource(
-              role: role,
-              patientId: patientId,
-            ),
-          ),
-          icon: const Icon(Icons.add),
-        ),
-        IconButton(
-          tooltip: 'Atualizar',
-          onPressed: () => ref.invalidate(staffTherapyBundleProvider(ctx)),
-          icon: const Icon(Icons.refresh),
-        ),
-      ],
-      body: bundleAsync.when(
-        loading: () => const BrandLoader(),
-        error: (e, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text('Erro ao carregar recursos.'),
-              const SizedBox(height: 16),
-              FilledButton(
-                onPressed: () =>
-                    ref.invalidate(staffTherapyBundleProvider(ctx)),
-                child: const Text('Tentar novamente'),
-              ),
-            ],
-          ),
-        ),
-        data: (bundle) {
-          final activeAssigned =
-              bundle.assigned.where((a) => a.isActive).toList();
-          final inactiveAssigned =
-              bundle.assigned.where((a) => !a.isActive).toList();
+    final activeAssigned = bundle.assigned.where((a) => a.isActive).toList();
+    final inactiveAssigned =
+        bundle.assigned.where((a) => !a.isActive).toList();
 
-          return RefreshIndicator(
-            onRefresh: () async {
-              ref.invalidate(staffTherapyBundleProvider(ctx));
-              await ref.read(staffTherapyBundleProvider(ctx).future);
-            },
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md,
-                AppSpacing.md,
-                AppSpacing.md,
-                AppSpacing.xxxl,
-              ),
-              children: [
-                patientAsync.when(
-                  data: (p) => AppPageHeader(
-                    title: 'Recursos terapêuticos',
-                    subtitle: p != null
-                        ? 'Gerencie materiais liberados para ${p.fullName}, sugestões clínicas e biblioteca da clínica.'
-                        : 'Gerencie materiais liberados, sugestões clínicas e biblioteca da clínica.',
-                    icon: Icons.menu_book_outlined,
-                    metadata: [
-                      Chip(label: Text('${activeAssigned.length} liberados')),
-                      Chip(
-                          label:
-                              Text('${bundle.library.length} na biblioteca')),
-                    ],
-                    primaryAction: FilledButton.icon(
-                      onPressed: () => context.push(
-                        TherapyResourceRoutes.newResource(
-                          role: role,
-                          patientId: patientId,
-                        ),
-                      ),
-                      icon: const Icon(Icons.add),
-                      label: const Text('Novo material'),
-                    ),
-                  ),
-                  loading: () => const LinearProgressIndicator(),
-                  error: (_, __) => AppPageHeader(
-                    title: 'Recursos terapêuticos',
-                    subtitle:
-                        'Gerencie materiais liberados, sugestões clínicas e biblioteca da clínica.',
-                    icon: Icons.menu_book_outlined,
-                    metadata: [
-                      Chip(label: Text('${activeAssigned.length} liberados')),
-                      Chip(
-                          label:
-                              Text('${bundle.library.length} na biblioteca')),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.xl),
+    return SliverPadding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.md,
+        AppSpacing.xxxl,
+      ),
+      sliver: SliverList(
+        delegate: SliverChildListDelegate([
                 const AppSectionHeader(
                   title: 'Sugestões terapêuticas',
                   subtitle:
@@ -285,10 +267,7 @@ class TherapyResourcesPage extends ConsumerWidget {
                         ),
                     ],
                   ),
-              ],
-            ),
-          );
-        },
+        ]),
       ),
     );
   }

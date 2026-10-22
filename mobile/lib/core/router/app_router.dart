@@ -34,6 +34,7 @@ import '../../features/clinical_reports/presentation/clinical_report_route_helpe
 import '../../features/clinics/presentation/clinic_routes.dart';
 import '../../features/clinics/presentation/clinics_page.dart';
 import '../../features/initial_assessment/presentation/initial_assessment_route_helpers.dart';
+import '../../features/therapy_demands/presentation/therapy_demands_routes.dart';
 import '../../features/mental_map/presentation/mental_map_route_helpers.dart';
 import '../../features/patient_infographic/presentation/patient_infographic_route_helpers.dart';
 import '../../features/patient_check_ins/presentation/patient_check_in_route_helpers.dart';
@@ -55,6 +56,7 @@ import '../../features/life_story/presentation/person_card_page.dart';
 import '../../features/life_story/presentation/person_clinical_card_page.dart';
 import '../../features/life_story/presentation/my_timeline_page.dart';
 import '../../features/life_story/presentation/timeline_event_flow_page.dart';
+import '../../features/healthy_resources/presentation/healthy_resources_route_helpers.dart';
 import '../../features/patient_problems/presentation/patient_problem_route_helpers.dart';
 import '../../features/personality_assessment/presentation/personality_assessment_route_helpers.dart';
 import '../../features/personality_reference/presentation/personality_reference_route_helpers.dart';
@@ -246,6 +248,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: LifeStoryRoutes.myFamily,
         builder: (_, __) => const MyFamilyPage(),
+      ),
+      GoRoute(
+        path: LifeStoryRoutes.genogramDiagramPatient,
+        builder: (_, state) => GenogramDiagramPage(
+          patientId: state.extra as String,
+          role: ProfileRole.patient,
+        ),
       ),
       GoRoute(
         path: LifeStoryRoutes.personCard,
@@ -607,6 +616,8 @@ List<RouteBase> _staffPatientRoutes(ProfileRole role) {
             ...psychoeducationStaffPatientRoutes(),
             ...staffTherapyGoalRoutes(role: role),
             ...staffPatientProblemRoutes(role: role),
+            ...staffTherapyDemandsRoutes(role: role),
+            ...staffHealthyResourcesRoutes(role: role),
             ...staffPatientCheckInRoutes(role: role),
             ...staffPatientTimelineRoutes(role: role),
             ...staffPatientGenogramRoutes(role: role),

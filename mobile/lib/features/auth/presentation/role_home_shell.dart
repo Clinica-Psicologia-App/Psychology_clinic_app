@@ -350,41 +350,68 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
-                  // Coluna única no celular: com 3 cards e 2 colunas, um deles
-                  // sempre fica sozinho numa linha, ocupando só metade da
-                  // largura — problema de item órfão já corrigido nesta sessão.
-                  // Em telas largas os 3 cabem numa linha só. Cada card entra
-                  // com um pequeno atraso em cascata.
-                  ResponsiveGrid(
-                    compactColumns: 1,
-                    mediumColumns: 3,
-                    expandedColumns: 3,
+                  // Bento grid com gradiente animado:
+                  // linha 1 — card destaque (largura total, gradiente animado)
+                  // linha 2 — 2 tiles verticais
+                  // linha 3 — card horizontal (Monitor diário)
+                  Column(
                     children: [
                       MotionReveal(
                         delay: const Duration(milliseconds: 340),
-                        child: _PatientExploreCard(
-                          icon: Icons.hub_outlined,
-                          title: 'Mapa mental',
-                          subtitle: 'Uma visão geral do que já conversamos.',
-                          accentColor: AppColors.purple,
-                          onTap: () =>
-                              context.push(MentalMapRoutes.patientList),
+                        child: KeyedSubtree(
+                          key: _patientPlanKey,
+                          child: _FeaturedExploreCard(
+                            icon: Icons.route_outlined,
+                            title: 'Meu plano terapêutico',
+                            subtitle:
+                                'Continue de onde parou: questionários, '
+                                'monitor diário e seus recursos.',
+                            onTap: () =>
+                                context.push(PatientJourneyRoutes.journey),
+                          ),
                         ),
                       ),
-                      MotionReveal(
-                        delay: const Duration(milliseconds: 400),
-                        child: _PatientExploreCard(
-                          icon: Icons.menu_book_outlined,
-                          title: 'Biblioteca',
-                          subtitle:
-                              'Materiais e exercícios pensados para você.',
-                          accentColor: const Color(0xFF1D9E75),
-                          onTap: () =>
-                              context.push(TherapyResourceRoutes.patientList),
+                      const SizedBox(height: AppSpacing.sm),
+                      IntrinsicHeight(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Expanded(
+                              child: MotionReveal(
+                                delay: const Duration(milliseconds: 400),
+                                child: _PatientExploreTile(
+                                  icon: Icons.hub_outlined,
+                                  title: 'Mapa mental',
+                                  subtitle:
+                                      'Uma visão geral do que já conversamos.',
+                                  accentColor: AppColors.purple,
+                                  onTap: () => context
+                                      .push(MentalMapRoutes.patientList),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.sm),
+                            Expanded(
+                              child: MotionReveal(
+                                delay: const Duration(milliseconds: 460),
+                                child: _PatientExploreTile(
+                                  icon: Icons.menu_book_outlined,
+                                  title: 'Biblioteca',
+                                  subtitle:
+                                      'Materiais e exercícios pensados para você.',
+                                  accentColor: const Color(0xFF1D9E75),
+                                  onTap: () => context.push(
+                                    TherapyResourceRoutes.patientList,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
+                      const SizedBox(height: AppSpacing.sm),
                       MotionReveal(
-                        delay: const Duration(milliseconds: 460),
+                        delay: const Duration(milliseconds: 520),
                         child: _PatientExploreCard(
                           icon: Icons.monitor_heart_outlined,
                           title: 'Monitor diário',
@@ -395,46 +422,25 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                               context.push(DailyMonitorRoutes.patientList),
                         ),
                       ),
+                      if (hasSharedPersonality) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        MotionReveal(
+                          delay: const Duration(milliseconds: 580),
+                          child: _PatientExploreCard(
+                            icon: Icons.psychology_alt_outlined,
+                            title: 'Personalidade',
+                            subtitle:
+                                'Resultados que seu psicólogo compartilhou '
+                                'com você.',
+                            accentColor: AppColors.purple,
+                            onTap: () => context.push(
+                              PersonalityAssessmentRoutes.patientShared,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
-                  const SizedBox(height: AppSpacing.xl),
-                  MotionReveal(
-                    delay: const Duration(milliseconds: 520),
-                    child: AppSectionHeader(
-                      key: _patientPlanKey,
-                      title: 'Sua continuidade',
-                      subtitle:
-                          'O caminho completo do seu acompanhamento, no seu ritmo.',
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  MotionReveal(
-                    delay: const Duration(milliseconds: 560),
-                    child: ClinicalModuleCard(
-                      icon: Icons.route_outlined,
-                      title: 'Meu plano terapêutico',
-                      subtitle:
-                          'Continue de onde parou: questionários, monitor diário e '
-                          'seus recursos.',
-                      accentColor: AppColors.purple,
-                      onTap: () => context.push(PatientJourneyRoutes.journey),
-                    ),
-                  ),
-                  if (hasSharedPersonality) ...[
-                    const SizedBox(height: AppSpacing.sm),
-                    MotionReveal(
-                      delay: const Duration(milliseconds: 600),
-                      child: ClinicalModuleCard(
-                        icon: Icons.psychology_alt_outlined,
-                        title: 'Personalidade',
-                        subtitle:
-                            'Resultados que seu psicólogo compartilhou com você.',
-                        accentColor: AppColors.purple,
-                        onTap: () => context
-                            .push(PersonalityAssessmentRoutes.patientShared),
-                      ),
-                    ),
-                  ],
                 ],
               ],
             ),
@@ -1379,6 +1385,262 @@ class _PatientNextStep extends ConsumerWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Card destaque da seção "Seus espaços": largura total, layout horizontal
+/// e gradiente animado que oscila entre azul e roxo. Usado apenas para
+/// "Meu plano terapêutico" — o primeiro e mais importante atalho.
+class _FeaturedExploreCard extends StatefulWidget {
+  const _FeaturedExploreCard({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  State<_FeaturedExploreCard> createState() => _FeaturedExploreCardState();
+}
+
+class _FeaturedExploreCardState extends State<_FeaturedExploreCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl;
+  late final Animation<double> _anim;
+
+  @override
+  void initState() {
+    super.initState();
+    _ctrl = AnimationController(
+      duration: const Duration(seconds: 5),
+      vsync: this,
+    )..repeat(reverse: true);
+    _anim = CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut);
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    const c1a = AppColors.blue;
+    const c1b = Color(0xFF7C3AED);
+    const c2a = Color(0xFF1e3a8a);
+    const c2b = Color(0xFF4c1d95);
+
+    // Conteúdo estático construído uma única vez e reutilizado pelo
+    // AnimatedBuilder a cada frame — evita reconstruir textos e ícones a 60fps.
+    final staticContent = Padding(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 54,
+            height: 54,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.22),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(widget.icon, color: Colors.white, size: 28),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  widget.title,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xxs),
+                Text(
+                  widget.subtitle,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: Colors.white.withValues(alpha: 0.85),
+                    height: 1.35,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 6),
+          Icon(
+            Icons.chevron_right_rounded,
+            color: Colors.white.withValues(alpha: 0.8),
+            size: 22,
+          ),
+        ],
+      ),
+    );
+
+    return AnimatedBuilder(
+      animation: _anim,
+      // child é construído uma vez; o builder recebe de volta como argumento.
+      child: staticContent,
+      builder: (context, child) {
+        final top = Color.lerp(c1a, c1b, _anim.value)!;
+        final bottom = Color.lerp(c2a, c2b, _anim.value)!;
+        final orbDx = _anim.value * -20;
+        final orbDy = _anim.value * 20;
+
+        return MotionSurface(
+          onTap: widget.onTap,
+          borderRadius: AppRadius.xlAll,
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: AppRadius.xlAll,
+            clipBehavior: Clip.antiAlias,
+            child: Ink(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [top, bottom],
+                ),
+                borderRadius: AppRadius.xlAll,
+                boxShadow: [
+                  BoxShadow(
+                    color: top.withValues(alpha: 0.35),
+                    blurRadius: 18,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Stack(
+                clipBehavior: Clip.antiAlias,
+                children: [
+                  Positioned(
+                    right: -15 + orbDx,
+                    top: -15 + orbDy,
+                    child: Container(
+                      width: 110,
+                      height: 110,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+                  InkWell(
+                    onTap: widget.onTap,
+                    borderRadius: AppRadius.xlAll,
+                    child: child!,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Tile vertical para o grid 2×2 da seção "Seus espaços". Ícone no topo,
+/// título e subtítulo abaixo — contrasta com os cards horizontais.
+class _PatientExploreTile extends StatelessWidget {
+  const _PatientExploreTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.accentColor,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final Color accentColor;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final dark = Color.lerp(accentColor, const Color(0xFF0D1B3D), 0.42)!;
+
+    return MotionSurface(
+      onTap: onTap,
+      borderRadius: AppRadius.xlAll,
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: AppRadius.xlAll,
+        clipBehavior: Clip.antiAlias,
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [accentColor, dark],
+            ),
+            borderRadius: AppRadius.xlAll,
+            boxShadow: [
+              BoxShadow(
+                color: accentColor.withValues(alpha: 0.28),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: AppRadius.xlAll,
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.22),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(icon, color: Colors.white, size: 24),
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    title,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xxs),
+                  Text(
+                    subtitle,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: Colors.white.withValues(alpha: 0.8),
+                      height: 1.35,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

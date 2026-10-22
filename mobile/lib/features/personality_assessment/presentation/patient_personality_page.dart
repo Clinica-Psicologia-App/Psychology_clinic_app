@@ -4,6 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
+import '../../../shared/widgets/brand_loading.dart';
+import '../../daily_monitors/providers/daily_monitors_providers.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
+import '../../profile/domain/profile_role.dart';
 import '../domain/personality_assessment.dart';
 import '../providers/personality_assessment_providers.dart';
 import 'personality_dashboard_page.dart';
@@ -16,29 +20,53 @@ class PatientPersonalityPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(patientSharedPersonalityProvider);
-    return AppScaffold(
-      title: 'Personalidade',
-      accent: AppColors.purple,
-      body: AsyncStateBody<List<PersonalityAssessment>>(
-        asyncValue: async,
-        onRetry: () => ref.invalidate(patientSharedPersonalityProvider),
-        emptyIcon: Icons.psychology_alt_outlined,
-        emptyMessage:
-            'Nenhum perfil compartilhado pelo seu psicólogo por enquanto.',
-        dataBuilder: (list) => ListView(
-          padding: const EdgeInsets.fromLTRB(14, 14, 14, 32),
-          children: [
-            _intro(context),
-            const SizedBox(height: 12),
-            for (final a in list) ...[
-              _title(context, a),
-              const SizedBox(height: 8),
-              ProfilePanel(assessment: a),
-              const SizedBox(height: 4),
-              for (final d in a.instrumentDef.domains)
-                DomainCard(domain: d, result: a.results.forDomain(d.code)),
-              const SizedBox(height: 16),
-            ],
+    final patientIdAsync = ref.watch(myPatientIdProvider);
+
+    final body = AsyncStateBody<List<PersonalityAssessment>>(
+      asyncValue: async,
+      onRetry: () => ref.invalidate(patientSharedPersonalityProvider),
+      emptyIcon: Icons.psychology_alt_outlined,
+      emptyMessage:
+          'Nenhum perfil compartilhado pelo seu psicólogo por enquanto.',
+      dataBuilder: (list) => ListView(
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 32),
+        children: [
+          _intro(context),
+          const SizedBox(height: 12),
+          for (final a in list) ...[
+            _title(context, a),
+            const SizedBox(height: 8),
+            ProfilePanel(assessment: a),
+            const SizedBox(height: 4),
+            for (final d in a.instrumentDef.domains)
+              DomainCard(domain: d, result: a.results.forDomain(d.code)),
+            const SizedBox(height: 16),
+          ],
+        ],
+      ),
+    );
+
+    return patientIdAsync.when(
+      loading: () => const AppCanopyScaffold(
+        body: Center(child: BrandLoader()),
+      ),
+      error: (_, __) => AppScaffold(
+        title: 'Personalidade',
+        accent: AppColors.blue,
+        body: const Center(child: Text('Erro ao identificar paciente.')),
+      ),
+      data: (patientId) => AppCanopyScaffold(
+        body: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: PatientContextHeader(
+                patientId: patientId,
+                pageTitle: 'PERSONALIDADE',
+                role: ProfileRole.patient,
+                accentColor: AppColors.blue,
+              ),
+            ),
+            SliverFillRemaining(hasScrollBody: true, child: body),
           ],
         ),
       ),

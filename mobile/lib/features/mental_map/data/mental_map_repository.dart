@@ -9,6 +9,7 @@ import '../../patient_problems/domain/patient_problem_status.dart';
 import '../../patients/data/patients_repository.dart';
 import '../../patient_timeline/data/patient_timeline_repository.dart';
 import '../../patient_timeline/domain/patient_timeline_event_input.dart';
+import '../../personality_assessment/data/personality_assessment_repository.dart';
 import '../../results/data/results_repository.dart';
 import '../../therapy_goals/data/therapy_goals_repository.dart';
 import '../../therapy_goals/domain/therapy_goal_status.dart';
@@ -41,6 +42,7 @@ class MentalMapRepository {
     GenogramRepository? genogramRepository,
     TherapyResourcesRepository? resourcesRepository,
     PatientsRepository? patientsRepository,
+    PersonalityAssessmentRepository? personalityRepository,
   })  : _results = resultsRepository ?? ResultsRepository(),
         _problems = problemsRepository ?? PatientProblemsRepository(),
         _goals = goalsRepository ?? TherapyGoalsRepository(),
@@ -49,7 +51,8 @@ class MentalMapRepository {
         _timeline = timelineRepository ?? PatientTimelineRepository(),
         _genogram = genogramRepository ?? GenogramRepository(),
         _resources = resourcesRepository ?? TherapyResourcesRepository(),
-        _patients = patientsRepository ?? PatientsRepository();
+        _patients = patientsRepository ?? PatientsRepository(),
+        _personality = personalityRepository ?? PersonalityAssessmentRepository();
 
   final ResultsRepository _results;
   final PatientProblemsRepository _problems;
@@ -60,6 +63,7 @@ class MentalMapRepository {
   final GenogramRepository _genogram;
   final TherapyResourcesRepository _resources;
   final PatientsRepository _patients;
+  final PersonalityAssessmentRepository _personality;
 
   Future<String> resolvePatientId({String? patientId}) async {
     if (patientId != null) return patientId;
@@ -173,6 +177,8 @@ class MentalMapRepository {
       );
     }).toList();
 
+    final personalityAssessments = await _personality.listForPatient(patientId);
+
     final genogramData = await _genogram.loadForPatient(patientId);
     var sensitivePeople = 0;
     for (final p in genogramData.people) {
@@ -231,6 +237,7 @@ class MentalMapRepository {
         timelineEvents: recentTimeline,
         genogramData: genogramData,
         questionnaireContexts: questionnaireContexts,
+        personalityAssessments: personalityAssessments,
       ),
       caseSummary: caseSummary,
       validationSummary: validationSummary,
@@ -262,6 +269,7 @@ class MentalMapRepository {
         sensitivePeopleCount: sensitivePeople,
         sensitiveRelationshipCount: sensitiveRels,
       ),
+      personalityAssessments: personalityAssessments,
     );
   }
 

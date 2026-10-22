@@ -5,12 +5,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/errors/app_exception.dart';
 import '../../../core/errors/error_mapper.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/status_chip.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/genogram_gender.dart';
 import '../domain/genogram_person.dart';
@@ -194,20 +195,20 @@ class _GenogramPersonFormPageState
   }
 
   Widget _buildForm() {
-    return AppScaffold(
-      title: widget.isEdit ? 'Editar pessoa' : 'Nova pessoa',
-      accent: AppColors.blue,
-      body: MotionReveal(
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.md,
-              AppSpacing.xxl,
-            ),
-            children: [
+    final pageTitle =
+        widget.isEdit ? 'Editar pessoa' : 'Nova pessoa';
+
+    final formBody = MotionReveal(
+      child: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.md,
+            AppSpacing.xxl,
+          ),
+          children: [
               AppPageHeader(
                 icon: Icons.person_outline,
                 title: widget.isEdit ? 'Editar pessoa' : 'Nova pessoa',
@@ -409,7 +410,30 @@ class _GenogramPersonFormPageState
             ],
           ),
         ),
-      ),
+    );
+
+    if (widget.patientId != null) {
+      return AppCanopyScaffold(
+        body: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: PatientContextHeader(
+                patientId: widget.patientId!,
+                pageTitle: pageTitle.toUpperCase(),
+                role: widget.role,
+                accentColor: AppColors.cyan,
+              ),
+            ),
+            SliverFillRemaining(hasScrollBody: true, child: formBody),
+          ],
+        ),
+      );
+    }
+
+    return AppScaffold(
+      title: pageTitle,
+      accent: AppColors.blue,
+      body: formBody,
     );
   }
 }

@@ -5,8 +5,11 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
+import '../../../shared/widgets/brand_loading.dart';
 import '../../../shared/widgets/status_chip.dart';
-import '../../auth/providers/auth_providers.dart';
+import '../../daily_monitors/providers/daily_monitors_providers.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
+import '../../profile/domain/profile_role.dart';
 import '../domain/journey_phase.dart';
 import '../domain/journey_step.dart';
 import '../domain/journey_step_availability.dart';
@@ -21,67 +24,79 @@ class PatientJourneyPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final stepsAsync = ref.watch(patientJourneyStepsProvider);
-    final profile = ref.watch(authControllerProvider).valueOrNull;
-    final firstName = profile?.fullName.trim().split(RegExp(r'\s+')).first;
+    final patientIdAsync = ref.watch(myPatientIdProvider);
 
     return AppCanopyScaffold(
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _JourneyCanopyHeader(
-            firstName: firstName,
-            steps: stepsAsync.valueOrNull,
-          ),
-          Expanded(
-            // A atmosfera fica fixa no viewport, atrás do scroll da trilha:
-            // as auras respiram no lugar em vez de acompanhar o conteúdo.
-            child: Stack(
-              children: [
-                const Positioned.fill(child: JourneyAmbience()),
-                AsyncStateBody<List<JourneyStep>>(
-                  asyncValue: stepsAsync,
-                  onRetry: () {
-                    ref.invalidate(patientJourneyProgressProvider);
-                    ref.invalidate(patientJourneyStepsProvider);
-                  },
-                  emptyMessage: 'Nenhum passo configurado na trilha.',
-                  emptyIcon: Icons.route_outlined,
-                  dataBuilder: (steps) => RefreshIndicator(
-                    onRefresh: () async {
+      body: patientIdAsync.when(
+        loading: () => const Center(child: BrandLoader()),
+        error: (_, __) => const Center(
+          child: Text('Erro ao identificar paciente.'),
+        ),
+        data: (patientId) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            PatientContextHeader(
+              patientId: patientId,
+              pageTitle: 'MEU PLANO',
+              role: ProfileRole.patient,
+              accentColor: AppColors.cyan,
+            ),
+            _JourneyProgressStrip(
+              steps: stepsAsync.valueOrNull,
+              onLegend: () => _showLegend(context),
+            ),
+            Expanded(
+              // A atmosfera fica fixa no viewport, atrás do scroll da trilha:
+              // as auras respiram no lugar em vez de acompanhar o conteúdo.
+              child: Stack(
+                children: [
+                  const Positioned.fill(child: JourneyAmbience()),
+                  AsyncStateBody<List<JourneyStep>>(
+                    asyncValue: stepsAsync,
+                    onRetry: () {
                       ref.invalidate(patientJourneyProgressProvider);
                       ref.invalidate(patientJourneyStepsProvider);
-                      await ref.read(patientJourneyStepsProvider.future);
                     },
-                    child: JourneyTrail(
-                      steps: steps,
-                      onStepTap: (step) =>
-                          navigateFromJourneyStep(context, ref, step),
+                    emptyMessage: 'Nenhum passo configurado na trilha.',
+                    emptyIcon: Icons.route_outlined,
+                    dataBuilder: (steps) => RefreshIndicator(
+                      onRefresh: () async {
+                        ref.invalidate(patientJourneyProgressProvider);
+                        ref.invalidate(patientJourneyStepsProvider);
+                        await ref.read(patientJourneyStepsProvider.future);
+                      },
+                      child: JourneyTrail(
+                        steps: steps,
+                        onStepTap: (step) =>
+                            navigateFromJourneyStep(context, ref, step),
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 }
 
-/// Canopy de progresso da trilha: anel de avanço, saudação e a parada atual,
-/// no mesmo gradiente das home. A legenda dos estados vira um toque ("Legenda")
-/// que abre uma folha — em vez de pílulas fixas ocupando a tela.
-class _JourneyCanopyHeader extends StatelessWidget {
-  const _JourneyCanopyHeader({required this.firstName, required this.steps});
+/// Card de progresso da trilha: anel de avanço, fase atual e etapa corrente.
+/// Exibido abaixo do [PatientContextHeader] como faixa de conteúdo (sem gradiente).
+class _JourneyProgressStrip extends StatelessWidget {
+  const _JourneyProgressStrip({
+    required this.steps,
+    required this.onLegend,
+  });
 
-  final String? firstName;
   final List<JourneyStep>? steps;
+  final VoidCallback onLegend;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final topInset = MediaQuery.paddingOf(context).top;
-
+    final cs = theme.colorScheme;
     final list = steps ?? const <JourneyStep>[];
     final total = list.length;
     final done = list
@@ -95,94 +110,65 @@ class _JourneyCanopyHeader extends StatelessWidget {
         ? 'TRILHA CONCLUÍDA 🎉'
         : current == null
             ? 'SUA TRILHA TERAPÊUTICA'
-            : 'SUA TRILHA · FASE ${current.phase.stepNumber} · '
+            : 'FASE ${current.phase.stepNumber} · '
                 '${current.phase.label.toUpperCase()}';
+
+    final isDark = theme.brightness == Brightness.dark;
 
     return Container(
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.turquoise, AppColors.cyan, AppColors.blue],
-          stops: [0.0, 0.55, 1.0],
-        ),
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(26)),
+        color: cs.surfaceContainerLow,
+        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(18)),
         boxShadow: [
           BoxShadow(
-            color: AppColors.cyan.withValues(alpha: 0.3),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
+            color: AppColors.cyan.withValues(alpha: isDark ? 0.10 : 0.13),
+            blurRadius: 12,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
-      padding: EdgeInsets.fromLTRB(
+      padding: const EdgeInsets.fromLTRB(
         AppSpacing.lg,
-        topInset + AppSpacing.xs,
-        AppSpacing.lg,
-        AppSpacing.lg,
+        AppSpacing.sm,
+        AppSpacing.xs,
+        AppSpacing.md,
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Row(
-            children: [
-              _CircleButton(
-                icon: Icons.arrow_back_rounded,
-                onTap: () => Navigator.of(context).maybePop(),
-                tooltip: 'Voltar',
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  'Meu plano terapêutico',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
+          _ProgressRing(
+            fraction: fraction,
+            done: done,
+            total: total,
+            accent: AppColors.cyan,
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  eyebrow,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: AppColors.cyan,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 0.8,
                   ),
                 ),
-              ),
-              _LegendButton(),
-            ],
+                const SizedBox(height: 2),
+                _ContextLine(step: current, isComplete: isComplete),
+              ],
+            ),
           ),
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              _ProgressRing(fraction: fraction, done: done, total: total),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      eyebrow,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelSmall?.copyWith(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.6,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      firstName == null ? 'Olá!' : 'Olá, $firstName',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w800,
-                        height: 1.05,
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    _ContextLine(step: current, isComplete: isComplete),
-                  ],
-                ),
-              ),
-            ],
+          IconButton(
+            icon: const Icon(Icons.info_outline_rounded),
+            iconSize: 20,
+            tooltip: 'Legenda',
+            color: cs.onSurfaceVariant,
+            onPressed: onLegend,
           ),
         ],
       ),
@@ -200,6 +186,7 @@ class _JourneyCanopyHeader extends StatelessWidget {
   }
 }
 
+
 class _ContextLine extends StatelessWidget {
   const _ContextLine({required this.step, this.isComplete = false});
 
@@ -209,14 +196,17 @@ class _ContextLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
     final base = theme.textTheme.bodySmall?.copyWith(
-      color: Colors.white.withValues(alpha: 0.9),
+      color: cs.onSurfaceVariant,
       height: 1.35,
     );
     if (isComplete) {
       return Text(
         'Você concluiu toda a sua trilha terapêutica!',
-        style: base?.copyWith(fontWeight: FontWeight.w700),
+        style: base?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: theme.colorScheme.onSurface),
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
       );
@@ -226,14 +216,15 @@ class _ContextLine extends StatelessWidget {
     }
     return Text.rich(
       TextSpan(
-        text: 'Você parou em ',
+        text: 'Parado em ',
         style: base,
         children: [
           TextSpan(
             text: step!.title,
-            style: base?.copyWith(fontWeight: FontWeight.w700),
+            style: base?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: theme.colorScheme.onSurface),
           ),
-          const TextSpan(text: '.'),
         ],
       ),
       maxLines: 2,
@@ -247,35 +238,36 @@ class _ProgressRing extends StatelessWidget {
     required this.fraction,
     required this.done,
     required this.total,
+    this.accent,
   });
 
   final double fraction;
   final int done;
   final int total;
+  final Color? accent;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cs = theme.colorScheme;
+    final ring = accent ?? cs.primary;
+    final fg = cs.onSurface;
     return SizedBox(
-      width: 62,
-      height: 62,
+      width: 52,
+      height: 52,
       child: Stack(
         alignment: Alignment.center,
         children: [
-          SizedBox(
-            width: 62,
-            height: 62,
-            child: TweenAnimationBuilder<double>(
-              duration: const Duration(milliseconds: 700),
-              curve: Curves.easeOutCubic,
-              tween: Tween(begin: 0, end: fraction),
-              builder: (context, value, _) => CircularProgressIndicator(
-                value: value,
-                strokeWidth: 5,
-                backgroundColor: Colors.white.withValues(alpha: 0.28),
-                valueColor: const AlwaysStoppedAnimation(Colors.white),
-                strokeCap: StrokeCap.round,
-              ),
+          TweenAnimationBuilder<double>(
+            duration: const Duration(milliseconds: 700),
+            curve: Curves.easeOutCubic,
+            tween: Tween(begin: 0, end: fraction),
+            builder: (context, value, _) => CircularProgressIndicator(
+              value: value,
+              strokeWidth: 4.5,
+              backgroundColor: ring.withValues(alpha: 0.15),
+              valueColor: AlwaysStoppedAnimation(ring),
+              strokeCap: StrokeCap.round,
             ),
           ),
           Column(
@@ -283,92 +275,29 @@ class _ProgressRing extends StatelessWidget {
             children: [
               Text(
                 '$done',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: Colors.white,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  color: fg,
                   fontWeight: FontWeight.w800,
                   height: 1,
                 ),
               ),
               Container(
-                width: 16,
-                height: 1.2,
+                width: 14,
+                height: 1,
                 margin: const EdgeInsets.symmetric(vertical: 1),
-                color: Colors.white.withValues(alpha: 0.5),
+                color: fg.withValues(alpha: 0.3),
               ),
               Text(
                 '$total',
                 style: theme.textTheme.labelSmall?.copyWith(
-                  color: Colors.white.withValues(alpha: 0.85),
-                  fontWeight: FontWeight.w700,
+                  color: fg.withValues(alpha: 0.6),
+                  fontWeight: FontWeight.w600,
                   height: 1,
                 ),
               ),
             ],
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _CircleButton extends StatelessWidget {
-  const _CircleButton({
-    required this.icon,
-    required this.onTap,
-    required this.tooltip,
-  });
-
-  final IconData icon;
-  final VoidCallback onTap;
-  final String tooltip;
-
-  @override
-  Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: Material(
-        color: Colors.white.withValues(alpha: 0.16),
-        shape: const CircleBorder(),
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(8),
-            child: Icon(icon, color: Colors.white, size: 20),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _LegendButton extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white.withValues(alpha: 0.16),
-      borderRadius: BorderRadius.circular(999),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(999),
-        onTap: () => _showLegend(context),
-        child: const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 11, vertical: 6),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.info_outline_rounded, color: Colors.white, size: 14),
-              SizedBox(width: 5),
-              Text(
-                'Legenda',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 11.5,
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

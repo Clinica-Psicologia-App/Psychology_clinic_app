@@ -2,6 +2,13 @@
 
 Branch: `audit/astra`. Uma tarefa por commit; sem push/publicação.
 
+**Atualização de 2026-10-22:** após autorização específica, a migration
+`20261021100000` foi aplicada remotamente. Passaram 87 verificações HTTP e a
+conferência Android de respostas preenchidas, link Modos → Biblioteca 9,
+cartões e Diário, incluindo revogação/liberação. Conjunto descartável removido
+e ausência confirmada. Veja [homologação e limites](qa/round2-remote-smoke.md).
+A [revisão prévia](qa/round2-release-readiness.md) conserva o estado anterior.
+
 ## BUG 1 — contagem de Metas (concluído)
 
 O cabeçalho usava a quantidade de metas não arquivadas e incluía concluídas
@@ -27,8 +34,9 @@ Não foi acrescentado acesso clínico ao administrador da plataforma.
 Foi confirmado por leitura de metadados no Supabase remoto que a policy staff
 passava `profiles.id` para `user_can_access_patient`, que recebe `patients.id`.
 Com autorização explícita, a migration `20261021100000` resolve o vínculo e
-preserva a checagem canônica do responsável/clínica. Não aplicada remotamente;
-**a leitura real pelo terapeuta depende da aplicação e revisão humana dessa policy**.
+preserva a checagem canônica do responsável/clínica. Em 2026-10-21 estava apenas
+local; em 2026-10-22 foi aplicada remotamente após autorização específica, com
+leitura real pelo terapeuta e isolamento homologados conforme o relatório acima.
 Nenhuma credencial ou configuração de ambiente faz parte do commit.
 
 Validação: suíte Flutter com **504 aprovados, zero falhas** e análise com
@@ -86,17 +94,18 @@ dos atalhos no catálogo staff. Suíte completa: **516 aprovados, zero falhas**.
 Análise final: exit 1, **0 errors, 12 warnings e 132 infos** preexistentes,
 sem novas ocorrências.
 
-## Limites de entrega
+## Limites da entrega inicial (2026-10-21)
 
 As quatro tarefas têm implementação local e commits separados. Sem push,
 publicação ou aplicação de migration remota. Os testes foram executados na
 árvore de trabalho atual, preservando as alterações preexistentes sem incluí-las
 nos commits desta rodada. Não se afirma validação de um checkout limpo.
 
-A tela staff de exercícios exige revisão humana e aplicação posterior da
-migration autorizada. A rodada não realizou homologação em Android/iOS/web nem
-fluxo remoto autenticado dos novos recursos. Os testes de cartões usam dados
-sintéticos locais e contratos existentes; não substituem homologação clínica.
+Na entrega inicial, a tela staff ainda dependia de revisão humana e aplicação
+da migration, e não havia homologação em dispositivo ou fluxo remoto dos novos
+recursos. Essas etapas foram realizadas em 2026-10-22 no escopo descrito no
+[relatório de homologação](qa/round2-remote-smoke.md). iOS/web e revisão clínica
+dos modelos de reflexão não fazem parte dessa homologação.
 
 Ao encerrar o ambiente descartável, `supabase stop` não encontrou o pipe
 `dockerDesktopLinuxEngine`: o engine Docker estava indisponível. O reset e os

@@ -60,7 +60,7 @@ abstract final class AppColors {
   static const Color moduleCheckIn = turquoise;
   static const Color moduleTimeline = cyan;
   static const Color moduleGoals = turquoise;
-  static const Color moduleProblems = warning;
+  static const Color moduleProblems = purple;
   static const Color moduleResources = purple;
   static const Color moduleDashboard = navy;
   static const Color moduleMonitor = cyan;

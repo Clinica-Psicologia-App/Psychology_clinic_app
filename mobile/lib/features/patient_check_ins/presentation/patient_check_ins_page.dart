@@ -8,6 +8,9 @@ import '../../../shared/widgets/app_page_header.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
+import '../../../shared/widgets/brand_loading.dart';
+import '../../daily_monitors/providers/daily_monitors_providers.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/check_in_diary_stats.dart';
 import '../domain/patient_check_in.dart';
@@ -22,60 +25,73 @@ class PatientCheckInsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final listAsync = ref.watch(myPatientCheckInsProvider);
     final todayAsync = ref.watch(todayCheckInProvider);
+    final patientIdAsync = ref.watch(myPatientIdProvider);
 
-    return AppScaffold(
-      title: 'Check-in',
-      accent: AppColors.turquoise,
-      // Sem check-in hoje, quem convida é a "página em branco" no topo do
-      // caderno — um FAB ao lado dela seria o mesmo pedido duas vezes.
-      floatingActionButton: todayAsync.valueOrNull == null
-          ? null
-          : FloatingActionButton.extended(
-              onPressed: () async {
-                await context.push(
-                  PatientCheckInRoutes.patientEdit(
-                    todayAsync.requireValue!.id,
-                  ),
-                );
-                ref.read(myPatientCheckInsProvider.notifier).refresh();
-                ref.invalidate(todayCheckInProvider);
-              },
-              icon: const Icon(Icons.edit),
-              label: const Text('Editar a página de hoje'),
-            ),
-      actions: [
-        IconButton(
-          tooltip: 'Atualizar',
-          onPressed: () {
+    final body = AsyncStateBody<List<PatientCheckIn>>(
+      asyncValue: listAsync,
+      onRetry: () {
+        ref.read(myPatientCheckInsProvider.notifier).refresh();
+        ref.invalidate(todayCheckInProvider);
+      },
+      emptyMessage: 'Seu diário ainda está em branco. '
+          'A primeira página é a de hoje.',
+      emptyIcon: Icons.menu_book_outlined,
+      dataBuilder: (items) => RefreshIndicator(
+        onRefresh: () async {
+          await ref.read(myPatientCheckInsProvider.notifier).refresh();
+          ref.invalidate(todayCheckInProvider);
+        },
+        child: _CheckInsList(
+          items: items,
+          onWriteToday: () => _openCreate(context, ref),
+          onTap: (c) async {
+            await context.push(PatientCheckInRoutes.patientDetail(c.id));
             ref.read(myPatientCheckInsProvider.notifier).refresh();
             ref.invalidate(todayCheckInProvider);
           },
-          icon: const Icon(Icons.refresh),
         ),
-      ],
-      body: AsyncStateBody<List<PatientCheckIn>>(
-        asyncValue: listAsync,
-        onRetry: () {
-          ref.read(myPatientCheckInsProvider.notifier).refresh();
-          ref.invalidate(todayCheckInProvider);
-        },
-        emptyMessage: 'Seu diário ainda está em branco. '
-            'A primeira página é a de hoje.',
-        emptyIcon: Icons.menu_book_outlined,
-        dataBuilder: (items) => RefreshIndicator(
-          onRefresh: () async {
-            await ref.read(myPatientCheckInsProvider.notifier).refresh();
-            ref.invalidate(todayCheckInProvider);
-          },
-          child: _CheckInsList(
-            items: items,
-            onWriteToday: () => _openCreate(context, ref),
-            onTap: (c) async {
-              await context.push(PatientCheckInRoutes.patientDetail(c.id));
-              ref.read(myPatientCheckInsProvider.notifier).refresh();
-              ref.invalidate(todayCheckInProvider);
-            },
-          ),
+      ),
+    );
+
+    return patientIdAsync.when(
+      loading: () => const AppCanopyScaffold(
+        body: Center(child: BrandLoader()),
+      ),
+      error: (_, __) => AppScaffold(
+        title: 'Check-ins',
+        accent: AppColors.turquoise,
+        body: const Center(child: Text('Erro ao identificar paciente.')),
+      ),
+      data: (patientId) => AppCanopyScaffold(
+        // Sem check-in hoje, quem convida é a "página em branco" no topo do
+        // caderno — um FAB ao lado dela seria o mesmo pedido duas vezes.
+        floatingActionButton: todayAsync.valueOrNull == null
+            ? null
+            : FloatingActionButton.extended(
+                onPressed: () async {
+                  await context.push(
+                    PatientCheckInRoutes.patientEdit(
+                      todayAsync.requireValue!.id,
+                    ),
+                  );
+                  ref.read(myPatientCheckInsProvider.notifier).refresh();
+                  ref.invalidate(todayCheckInProvider);
+                },
+                icon: const Icon(Icons.edit),
+                label: const Text('Editar a página de hoje'),
+              ),
+        body: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              child: PatientContextHeader(
+                patientId: patientId,
+                pageTitle: 'CHECK-INS',
+                role: ProfileRole.patient,
+                accentColor: AppColors.turquoise,
+              ),
+            ),
+            SliverFillRemaining(hasScrollBody: true, child: body),
+          ],
         ),
       ),
     );
@@ -106,38 +122,44 @@ class StaffPatientCheckInsPage extends ConsumerWidget {
     final ctx = StaffCheckInsContext(role: role, patientId: patientId);
     final listAsync = ref.watch(staffPatientCheckInsProvider(ctx));
 
-    return AppScaffold(
-      title: 'Check-ins',
-      accent: AppColors.turquoise,
-      actions: [
-        IconButton(
-          tooltip: 'Atualizar',
-          onPressed: () => ref.invalidate(staffPatientCheckInsProvider(ctx)),
-          icon: const Icon(Icons.refresh),
-        ),
-      ],
-      body: AsyncStateBody<List<PatientCheckIn>>(
-        asyncValue: listAsync,
-        onRetry: () => ref.invalidate(staffPatientCheckInsProvider(ctx)),
-        emptyMessage: 'Nenhum check-in registrado pelo paciente.',
-        emptyIcon: Icons.menu_book_outlined,
-        dataBuilder: (items) => RefreshIndicator(
-          onRefresh: () async {
-            ref.invalidate(staffPatientCheckInsProvider(ctx));
-            await ref.read(staffPatientCheckInsProvider(ctx).future);
-          },
-          child: _CheckInsList(
-            items: items,
-            readOnly: true,
-            onTap: (c) => context.push(
-              PatientCheckInRoutes.staffDetail(
-                role: role,
-                patientId: patientId,
-                checkInId: c.id,
+    return AppCanopyScaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: PatientContextHeader(
+              patientId: patientId,
+              pageTitle: 'CHECK-INS',
+              role: role,
+              accentColor: AppColors.turquoise,
+            ),
+          ),
+          SliverFillRemaining(
+            hasScrollBody: true,
+            child: AsyncStateBody<List<PatientCheckIn>>(
+              asyncValue: listAsync,
+              onRetry: () => ref.invalidate(staffPatientCheckInsProvider(ctx)),
+              emptyMessage: 'Nenhum check-in registrado pelo paciente.',
+              emptyIcon: Icons.menu_book_outlined,
+              dataBuilder: (items) => RefreshIndicator(
+                onRefresh: () async {
+                  ref.invalidate(staffPatientCheckInsProvider(ctx));
+                  await ref.read(staffPatientCheckInsProvider(ctx).future);
+                },
+                child: _CheckInsList(
+                  items: items,
+                  readOnly: true,
+                  onTap: (c) => context.push(
+                    PatientCheckInRoutes.staffDetail(
+                      role: role,
+                      patientId: patientId,
+                      checkInId: c.id,
+                    ),
+                  ),
+                ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }

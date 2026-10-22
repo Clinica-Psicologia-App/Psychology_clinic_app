@@ -65,13 +65,16 @@ class _PatientCheckInFormPageState
     _stress = checkIn.stressScore ?? 5;
     _selectedModes = List.of(checkIn.effectiveModes);
     for (final mode in _selectedModes) {
-      final key = _modeKey(mode.family, mode.clinicalName);
+      final key = _modeKey(mode.family, mode.clinicalName, mode.patientLabel);
       _nicknameControllers[key] = TextEditingController(text: mode.nickname ?? '');
     }
     _notesController.text = checkIn.notes ?? '';
   }
 
-  String _modeKey(String family, String clinicalName) => '${family}_$clinicalName';
+  // Inclui patientLabel para distinguir submodos com mesmo clinicalName
+  // (ex.: todos os submodos "Adulto Saudável" têm clinicalName idêntico).
+  String _modeKey(String family, String clinicalName, String patientLabel) =>
+      '${family}_${clinicalName}_$patientLabel';
 
   void _onMoodChanged(int value) {
     setState(() {
@@ -82,9 +85,12 @@ class _PatientCheckInFormPageState
 
   void _toggleMode(String family, ModeOption option) {
     setState(() {
-      final key = _modeKey(family, option.clinicalName);
+      final key = _modeKey(family, option.clinicalName, option.patientLabel);
       final idx = _selectedModes.indexWhere(
-        (m) => m.family == family && m.clinicalName == option.clinicalName,
+        (m) =>
+            m.family == family &&
+            m.clinicalName == option.clinicalName &&
+            m.patientLabel == option.patientLabel,
       );
       if (idx >= 0) {
         _selectedModes.removeAt(idx);
@@ -100,15 +106,18 @@ class _PatientCheckInFormPageState
     });
   }
 
-  bool _isModeSelected(String family, String clinicalName) {
+  bool _isModeSelected(String family, String clinicalName, String patientLabel) {
     return _selectedModes.any(
-      (m) => m.family == family && m.clinicalName == clinicalName,
+      (m) =>
+          m.family == family &&
+          m.clinicalName == clinicalName &&
+          m.patientLabel == patientLabel,
     );
   }
 
   PatientCheckInInput _buildInput() {
     final modes = _selectedModes.map((m) {
-      final key = _modeKey(m.family, m.clinicalName);
+      final key = _modeKey(m.family, m.clinicalName, m.patientLabel);
       final nick = _nicknameControllers[key]?.text.trim();
       return CheckInMode(
         family: m.family,
@@ -670,7 +679,7 @@ class _PatientCheckInFormPageState
           ),
           const SizedBox(height: 12),
           ..._selectedModes.map((mode) {
-            final key = _modeKey(mode.family, mode.clinicalName);
+            final key = _modeKey(mode.family, mode.clinicalName, mode.patientLabel);
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: TextField(
@@ -755,7 +764,7 @@ class _PatientCheckInFormPageState
                   final i = entry.key;
                   final option = entry.value;
                   final isSelected =
-                      _isModeSelected(family.id, option.clinicalName);
+                      _isModeSelected(family.id, option.clinicalName, option.patientLabel);
 
                   return InkWell(
                     onTap: () => _toggleMode(family.id, option),

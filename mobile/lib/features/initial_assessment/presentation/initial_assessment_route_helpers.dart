@@ -12,6 +12,7 @@ import 'initial_assessment_family_page.dart';
 import 'initial_assessment_history_page.dart';
 import 'initial_assessment_history_therapist_page.dart';
 import 'initial_assessment_patient_page.dart';
+import 'initial_assessment_context_page.dart';
 import 'initial_assessment_therapist_page.dart';
 import '../../../shared/widgets/brand_loading.dart';
 
@@ -45,6 +46,13 @@ List<RouteBase> staffPatientInitialAssessmentRoutes({
         patientId: state.pathParameters['patientId']!,
       ),
       routes: [
+        GoRoute(
+          path: 'context',
+          builder: (context, state) => InitialAssessmentContextPage(
+            role: role,
+            patientId: state.pathParameters['patientId']!,
+          ),
+        ),
         GoRoute(
           path: 'history',
           builder: (context, state) => InitialAssessmentHistoryTherapistPage(

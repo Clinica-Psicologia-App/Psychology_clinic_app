@@ -16,6 +16,12 @@ abstract final class InitialAssessmentRoutes {
   }) =>
       _staffBase(role: role, patientId: patientId);
 
+  static String staffContext({
+    required ProfileRole role,
+    required String patientId,
+  }) =>
+      '${_staffBase(role: role, patientId: patientId)}/context';
+
   static String staffHistory({
     required ProfileRole role,
     required String patientId,

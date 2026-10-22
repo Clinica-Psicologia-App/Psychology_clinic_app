@@ -124,12 +124,17 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
               InitialAssessmentRoutes.staff(role: role, patientId: patientId),
             ),
           ),
-          const _ModuleSpec(
+          _ModuleSpec(
             icon: Icons.donut_large_outlined,
             title: 'Contexto de Vida',
-            subtitle: 'Em breve',
+            subtitle: 'Mapa da Vida e funcionamento atual.',
             accentColor: AppColors.cyan,
-            onTap: null,
+            onTap: () => _push(
+              InitialAssessmentRoutes.staffContext(
+                role: role,
+                patientId: patientId,
+              ),
+            ),
           ),
           _ModuleSpec(
             icon: Icons.timeline_outlined,

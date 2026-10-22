@@ -11,13 +11,12 @@ import 'initial_assessment_routes.dart';
 import '../../life_story/presentation/life_story_routes.dart';
 import '../domain/functioning_level.dart';
 import '../domain/initial_assessment.dart';
-import '../domain/life_area.dart';
 import '../domain/patient_basics.dart';
 import '../providers/initial_assessment_providers.dart';
+import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../profile/domain/profile_role.dart' show ProfileRole;
 import '../../profile/presentation/widgets/user_avatar.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
-import 'widgets/life_area_wheel_chart.dart';
 
 /// Tela 1 do fluxo Conhecer na lente do terapeuta — leitura das respostas do
 /// paciente + campos clínicos (Bloco 1 privado, Bloco 2 clínico, comentários
@@ -47,9 +46,6 @@ class _InitialAssessmentTherapistPageState
   final _goals = TextEditingController();
   final _motivation = TextEditingController();
   final _initialHypotheses = TextEditingController();
-
-  // Bloco 3 — comentário clínico por área
-  final Map<LifeArea, TextEditingController> _comments = {};
 
   // Bloco 4 — impressões
   final _temperament = TextEditingController();
@@ -95,7 +91,6 @@ class _InitialAssessmentTherapistPageState
       _schemaHypothesesText,
       _modeHypothesesText,
       _emotionalNeedsText,
-      ..._comments.values,
     ]) {
       c.dispose();
     }
@@ -112,11 +107,6 @@ class _InitialAssessmentTherapistPageState
     _goals.text = ci?.patientGoals ?? '';
     _motivation.text = ci?.motivation ?? '';
     _initialHypotheses.text = ci?.initialHypotheses ?? '';
-
-    for (final area in kLifeAreasInOrder) {
-      _comments[area] = TextEditingController(
-          text: data.lifeAreaFor(area).clinicalComment ?? '');
-    }
 
     final imp = data.clinicalImpressions;
     _temperament.text = imp?.observedTemperament ?? '';
@@ -155,12 +145,6 @@ class _InitialAssessmentTherapistPageState
         motivation: _nullIfEmpty(_motivation.text),
         initialHypotheses: _nullIfEmpty(_initialHypotheses.text),
       );
-      await repo.saveLifeAreaNotesBulk(
-        patientId: pid,
-        notes: {
-          for (final area in kLifeAreasInOrder) area: _comments[area]?.text,
-        },
-      );
       await repo.saveClinicalImpressions(
         patientId: pid,
         observedTemperament: _nullIfEmpty(_temperament.text),
@@ -194,10 +178,20 @@ class _InitialAssessmentTherapistPageState
   Widget build(BuildContext context) {
     final async = ref.watch(initialAssessmentProvider(_ctx));
 
-    return AppScaffold(
-      title: 'Conceitualização inicial',
-      accent: AppColors.turquoise,
-      body: AsyncStateBody<InitialAssessment>(
+    return AppCanopyScaffold(
+      body: CustomScrollView(
+        slivers: [
+          SliverToBoxAdapter(
+            child: PatientContextHeader(
+              patientId: widget.patientId,
+              pageTitle: 'AVALIAÇÃO INICIAL',
+              role: widget.role,
+              accentColor: AppColors.cyan,
+            ),
+          ),
+          SliverFillRemaining(
+            hasScrollBody: true,
+            child: AsyncStateBody<InitialAssessment>(
         asyncValue: async,
         onRetry: () => ref.invalidate(initialAssessmentProvider(_ctx)),
         dataBuilder: (data) {
@@ -253,43 +247,6 @@ class _InitialAssessmentTherapistPageState
                       _field(context, _initialHypotheses, 'Hipóteses iniciais'),
                     ],
                   ),
-
-                  // ── Bloco 3 — Funcionamento Atual ────────────────────────
-                  _sectionHeader(
-                    context,
-                    step: 'Bloco 3',
-                    title: 'Funcionamento Atual',
-                    icon: Icons.tune_outlined,
-                    accent: AppColors.turquoise,
-                    subtitle: 'Satisfação e sofrimento por área da vida.',
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.navy.withValues(alpha: 0.07),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: LifeAreaWheelChart(
-                          scores: {
-                            for (final area in kLifeAreasInOrder)
-                              area: data.lifeAreaFor(area).score,
-                          },
-                        ),
-                      ),
-                    ),
-                  ),
-                  for (final group in FunctioningGroup.values)
-                    _functioningGroup(context, data, group),
 
                   // ── Bloco 4 — Primeiras Impressões Clínicas ──────────────
                   _sectionHeader(
@@ -421,103 +378,9 @@ class _InitialAssessmentTherapistPageState
           );
         },
       ),
-    );
-  }
-
-  Widget _functioningGroup(
-    BuildContext context,
-    InitialAssessment data,
-    FunctioningGroup group,
-  ) {
-    final areas = kLifeAreasInOrder.where((a) => a.group == group).toList();
-    final theme = Theme.of(context);
-    return ClayCard(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 14, 14, 6),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.category_outlined,
-                    size: 16, color: AppColors.turquoise),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(group.label,
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                        color: theme.colorScheme.onSurface,
-                      )),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            for (var i = 0; i < areas.length; i++) ...[
-              if (i > 0)
-                Divider(height: 20, color: theme.colorScheme.outline),
-              _areaRow(context, data, areas[i]),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _areaRow(
-    BuildContext context,
-    InitialAssessment data,
-    LifeArea area,
-  ) {
-    final a = data.lifeAreaFor(area);
-    final theme = Theme.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Expanded(
-              child: Text(area.label,
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w600)),
-            ),
-            if (a.score != null)
-              _scorePill('Satisfação', a.score!, AppColors.turquoise),
-            if (a.suffering != null) ...[
-              const SizedBox(width: 6),
-              _scorePill('Sofrimento', a.suffering!, AppColors.warning),
-            ],
-          ],
-        ),
-        if ((a.guidedAnswer ?? '').isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(10),
-                border: const Border(
-                  left: BorderSide(color: AppColors.cyan, width: 2.5),
-                ),
-              ),
-              child: Text('"${a.guidedAnswer}"',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurfaceVariant,
-                      fontStyle: FontStyle.italic,
-                      height: 1.4)),
-            ),
           ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: _comments[area],
-          minLines: 1,
-          maxLines: 3,
-          decoration: _fieldDecoration(context, 'Comentário clínico'),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

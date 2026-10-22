@@ -1785,19 +1785,7 @@ class ConsolidatedSchemaProfileCard extends ConsumerWidget {
 
 // ── Bloco de domínio ────────────────────────────────────────────────────────
 
-/// Cores dos cabeçalhos de domínio. Nas barras individuais, a ativação é
-/// sempre lilás e a ausência de ativação é cinza.
-const List<Color> _kDomainColors = [
-  Color(0xFF7C6A9C), // I  — Desconexão e rejeição
-  Color(0xFF2E7D6B), // II — Autonomia e desempenho prejudicados
-  Color(0xFFA6743C), // III — Limites prejudicados
-  Color(0xFF4A6FA5), // IV — Orientação para o outro
-  Color(0xFF9C5A6B), // V  — Hipervigilância e inibição
-];
-
-Color _domainColor(int order) =>
-    _kDomainColors[order.clamp(0, _kDomainColors.length - 1)];
-
+// Ativação é sempre lilás e ausência de ativação é cinza, em todos os domínios.
 class _DomainSection extends StatelessWidget {
   const _DomainSection({
     required this.domain,
@@ -1812,7 +1800,8 @@ class _DomainSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = _domainColor(domain.order);
+    final color =
+        domain.hasActivated ? AppColors.purple : AppColors.disabled;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),

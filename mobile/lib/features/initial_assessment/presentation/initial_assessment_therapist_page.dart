@@ -19,8 +19,8 @@ import '../../profile/presentation/widgets/user_avatar.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 /// Tela 1 do fluxo Conhecer na lente do terapeuta — leitura das respostas do
-/// paciente + campos clínicos (Bloco 1 privado, Bloco 2 clínico, comentários
-/// do Bloco 3) + Bloco 4 (Primeiras Impressões Clínicas).
+/// paciente + campos clínicos (Bloco 1 privado, Bloco 2 clínico) + Bloco 3
+/// (Primeiras Impressões Clínicas). Bloco de Contexto de Vida é tela separada.
 class InitialAssessmentTherapistPage extends ConsumerStatefulWidget {
   const InitialAssessmentTherapistPage({
     super.key,
@@ -47,7 +47,7 @@ class _InitialAssessmentTherapistPageState
   final _motivation = TextEditingController();
   final _initialHypotheses = TextEditingController();
 
-  // Bloco 4 — impressões
+  // Bloco 3 — impressões clínicas
   final _temperament = TextEditingController();
   final _bond = TextEditingController();
   final _resources = TextEditingController();
@@ -248,10 +248,10 @@ class _InitialAssessmentTherapistPageState
                     ],
                   ),
 
-                  // ── Bloco 4 — Primeiras Impressões Clínicas ──────────────
+                  // ── Bloco 3 — Primeiras Impressões Clínicas ──────────────
                   _sectionHeader(
                     context,
-                    step: 'Bloco 4',
+                    step: 'Bloco 3',
                     title: 'Primeiras Impressões Clínicas',
                     icon: Icons.psychology_alt_outlined,
                     accent: AppColors.purple,

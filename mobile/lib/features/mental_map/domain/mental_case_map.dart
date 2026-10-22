@@ -32,7 +32,7 @@ class MentalCaseMapCenter {
 
   static const empty = MentalCaseMapCenter(
     patientName: 'Paciente',
-    activeProblemsLabel: 'Sem problemas ativos',
+    activeProblemsLabel: 'Sem demandas ativas',
     activeGoalsLabel: 'Sem objetivos ativos',
     lastCheckInLabel: 'Sem check-in',
   );

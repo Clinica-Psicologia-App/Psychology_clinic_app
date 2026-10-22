@@ -199,6 +199,7 @@ class InfographicItem {
   const InfographicItem({
     required this.title,
     this.description,
+    this.badge,
     this.bullets = const [],
     this.icon = Icons.circle,
     this.accent,
@@ -206,6 +207,9 @@ class InfographicItem {
 
   final String title;
   final String? description;
+
+  /// Pontuação/nível mostrado ao lado do título (ex.: "Média 4,3").
+  final String? badge;
 
   /// Sub-pontos (bullets) — usado nos modos ativos, como na referência.
   final List<String> bullets;

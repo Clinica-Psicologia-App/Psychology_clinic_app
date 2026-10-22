@@ -63,7 +63,8 @@ class _GenogramDiagramPageState extends ConsumerState<GenogramDiagramPage> {
     // Durante reload (após edição), mostra loader em vez do dado antigo.
     if (gdataAsync.isLoading) return const BrandLoader();
 
-    final gdata = gdataAsync.valueOrNull;
+    final raw = gdataAsync.valueOrNull;
+    final gdata = raw == null ? null : withInferredStructure(raw);
     if (gdata != null && MotorGenogramDiagram.hasStructure(gdata)) {
       final bondCount = emotionalRelations(gdata.relationships).length;
       return Column(

@@ -41,13 +41,28 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
-  testWidgets('unpublished/missing module 9 does not create broken link', (tester) async {
+  testWidgets('missing module 9 falls back to the general library', (tester) async {
     await tester.pumpWidget(ProviderScope(overrides: [
       psychoeducationJourneyProvider.overrideWith((ref) async => []),
     ], child: const MaterialApp(home: Scaffold(body: SingleChildScrollView(
       child: MentalMapClinicalCoreSection(core: core, role: ProfileRole.psychologist, patientId: 'test'))))));
     await tester.pumpAndSettle();
     expect(find.text('Ver Biblioteca Transformar'), findsNothing);
+    expect(find.text('Abrir bibliotecas'), findsNWidgets(2));
+  });
+
+  testWidgets('library links stay visible for psychologist when the core is empty', (tester) async {
+    await tester.pumpWidget(ProviderScope(overrides: [
+      psychoeducationJourneyProvider.overrideWith((ref) async => [
+        const PsychoeducationModule(id: 'm8', number: 8, stage: 'Compreender', title: 'Biblioteca 8'),
+        const PsychoeducationModule(id: 'm9', number: 9, stage: 'Transformar', title: 'Biblioteca 9'),
+      ]),
+    ], child: const MaterialApp(home: Scaffold(body: SingleChildScrollView(
+      child: MentalMapClinicalCoreSection(core: MentalMapClinicalCore.empty, role: ProfileRole.psychologist, patientId: 'test'))))));
+    await tester.pumpAndSettle();
+    expect(find.text('Núcleo clínico vazio'), findsOneWidget);
+    expect(find.text('Ver Biblioteca Compreender'), findsOneWidget);
+    expect(find.text('Ver Biblioteca Transformar'), findsOneWidget);
   });
 
   for (final role in [ProfileRole.psychologist, ProfileRole.patient]) {
@@ -78,7 +93,7 @@ void main() {
       expect(tester.takeException(), isNull);
     });
   }
-  testWidgets('unpublished module 8 does not create broken Esquemas link', (tester) async {
+  testWidgets('unpublished module 8 falls back without breaking the Esquemas link', (tester) async {
     await tester.pumpWidget(ProviderScope(overrides: [
       psychoeducationJourneyProvider.overrideWith((ref) async => [
         const PsychoeducationModule(id: 'm9', number: 9, stage: 'Transformar', title: 'Biblioteca 9'),
@@ -87,6 +102,7 @@ void main() {
       child: MentalMapClinicalCoreSection(core: core, role: ProfileRole.psychologist, patientId: 'test'))))));
     await tester.pumpAndSettle();
     expect(find.text('Ver Biblioteca Compreender'), findsNothing);
+    expect(find.text('Abrir bibliotecas'), findsOneWidget);
     expect(find.text('Ver Biblioteca Transformar'), findsOneWidget);
   });
 }

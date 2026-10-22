@@ -4,10 +4,12 @@ import '../../../core/theme/app_colors.dart';
 import '../../clinical_dashboard/domain/clinical_dashboard_data.dart';
 import '../../clinical_dashboard/domain/consolidated_schema_row.dart';
 import '../../genogram/domain/genogram_data.dart';
+import '../../genogram/domain/genogram_layout_adapter.dart';
 import '../../healthy_resources/domain/healthy_resource_catalog.dart';
 import '../../healthy_resources/domain/healthy_resources.dart';
 import '../../initial_assessment/domain/initial_assessment.dart';
 import '../../initial_assessment/domain/life_area.dart';
+import '../../mental_map/domain/schema_mode_catalog.dart';
 import '../../mental_map/domain/case_conceptualization.dart';
 import '../../patient_problems/domain/patient_problem.dart';
 import '../../patient_timeline/domain/patient_timeline_event.dart';
@@ -60,7 +62,7 @@ PatientInfographicData buildPatientInfographic({
       maxSection,
     ),
     coping: _cap(_buildCoping(dashboard), maxSection),
-    attachment: _buildAttachment(attachmentStyle),
+    attachment: _buildAttachment(dashboard, attachmentStyle),
     resources: _cap(_buildResources(healthyResources), 12),
     plan: _cap(_buildPlan(dashboard.caseSummary.highlightedGoals), maxSection),
     closingLine:
@@ -173,6 +175,10 @@ List<InfographicItem> _buildSchemas(
 ) {
   final items = <InfographicItem>[];
   final seen = <String>{};
+  final scoreByName = {
+    for (final r in dashboard.activatedSchemas)
+      if (!_isMode(r)) r.name.toLowerCase(): 'Média ${_avg(r.score)}',
+  };
 
   // Prioridade: esquemas centrais da Conceitualização (mais ricos).
   if (concept != null && concept.hasCentralSchemas) {
@@ -182,6 +188,7 @@ List<InfographicItem> _buildSchemas(
       if (name.isEmpty || !seen.add(name.toLowerCase())) continue;
       items.add(InfographicItem(
         title: name,
+        badge: scoreByName[name.toLowerCase()],
         description: cs.description?.trim().isNotEmpty == true
             ? cs.description!.trim()
             : schemaDescriptionFor(name),
@@ -197,6 +204,7 @@ List<InfographicItem> _buildSchemas(
     if (_isMode(s) || !seen.add(s.name.toLowerCase())) continue;
     items.add(InfographicItem(
       title: s.name,
+      badge: 'Média ${_avg(s.score)}',
       description: schemaDescriptionFor(s.name) ?? s.severityLabel,
       icon: Icons.psychology_outlined,
       accent: AppColors.purple,
@@ -231,7 +239,9 @@ List<InfographicItem> _buildModes(
       for (final r in fromQuestionnaire)
         InfographicItem(
           title: r.name,
-          description: 'Média ${_avg(r.score)} no YAMI',
+          badge: 'Média ${_avg(r.score)}',
+          description: schemaModeInfoForCode(r.code)?.description ??
+              'Modo ativado no YAMI (média igual ou acima de 4,0).',
           icon: Icons.theater_comedy_outlined,
           accent: AppColors.turquoise,
         ),
@@ -287,16 +297,34 @@ List<InfographicItem> _conceptualizationModes(
 
 /// Estilos de enfrentamento mais altos nos questionários YCI/YRAI.
 List<InfographicItem> _buildCoping(ClinicalDashboardData dashboard) {
-  return [
-    for (final r in dashboard.caseSummary.topCoping)
-      InfographicItem(
-        title: r.name,
-        description: r.severityLabel ??
-            'Média ${_avg(r.averageScore ?? r.score)}',
-        icon: Icons.shield_outlined,
-        accent: AppColors.cyan,
-      ),
-  ];
+  // YCI e YRAI só têm a apuração geral; rotulamos pelo que cada um mede.
+  const meta = {
+    'YCI': (
+      'Compensação (YCI)',
+      'Quanto a pessoa reage aos esquemas "indo contra" eles: controlando, '
+          'competindo, agradando ou se afirmando em excesso.'
+    ),
+    'YRAI': (
+      'Evitação (YRAI)',
+      'Quanto a pessoa foge do que ativa os esquemas: evita situações, '
+          'pensamentos, emoções ou pessoas, ou se anestesia.'
+    ),
+  };
+  final items = <InfographicItem>[];
+  for (final r in dashboard.caseSummary.topCoping) {
+    final key = r.code.toUpperCase().startsWith('YRAI') ? 'YRAI' : 'YCI';
+    final (title, text) = meta[key]!;
+    final media = 'Média ${_avg(r.averageScore ?? r.score)}';
+    final level = r.severityLabel?.trim();
+    items.add(InfographicItem(
+      title: title,
+      badge: (level == null || level.isEmpty) ? media : '$level · $media',
+      description: text,
+      icon: Icons.shield_outlined,
+      accent: AppColors.cyan,
+    ));
+  }
+  return items;
 }
 
 // ── Demandas, contexto de vida, apego, recursos e plano ────────────────────
@@ -325,16 +353,39 @@ Map<LifeArea, int> _buildLifeWheel(InitialAssessment? assessment) {
   };
 }
 
-InfographicItem? _buildAttachment(String? style) {
-  final s = style?.trim();
-  if (s == null || s.isEmpty) return null;
+/// Estilo dominante = maior média entre Ansioso, Seguro e Evitante do
+/// questionário de apego; sem resultado, cai no rótulo vindo do Mapa Mental.
+InfographicItem? _buildAttachment(
+  ClinicalDashboardData dashboard,
+  String? fallbackStyle,
+) {
+  late final String style;
+  String? badge;
+  final rows = [
+    for (final r in dashboard.attachment?.allScores ?? const [])
+      if (r.code.toUpperCase().startsWith('ATTACHMENT_')) r,
+  ]..sort((a, b) => b.score.compareTo(a.score));
+  if (rows.isNotEmpty) {
+    style = rows.first.name;
+    badge = 'Média ${_avg(rows.first.averageScore ?? rows.first.score)}';
+  } else {
+    // O rótulo do Mapa vem como "Nome 3,2": separa o nome da pontuação.
+    final raw = fallbackStyle?.trim();
+    if (raw == null || raw.isEmpty) return null;
+    final m = RegExp(r'^(\D+?)\s+[\d.,]+%?$').firstMatch(raw);
+    style = (m?.group(1) ?? raw).trim();
+  }
+  if (_normalizeKey(style).contains('geral')) return null;
   return InfographicItem(
-    title: attachmentTitleFor(s),
-    description: attachmentDescriptionFor(s),
+    title: attachmentTitleFor(style),
+    badge: badge,
+    description: attachmentDescriptionFor(style),
     icon: Icons.link_outlined,
     accent: AppColors.purple,
   );
 }
+
+String _normalizeKey(String s) => s.toLowerCase();
 
 List<InfographicItem> _buildResources(HealthyResources? resources) {
   if (resources == null || resources.isEmpty) return const [];
@@ -379,15 +430,18 @@ List<InfographicItem> _buildPlan(List<TherapyGoal> goals) {
 /// Mesmo genograma, sem pessoas sensíveis e sem relações que as envolvam.
 GenogramData? _withoutSensitive(GenogramData? data) {
   if (data == null || data.people.isEmpty) return null;
-  final people = [for (final p in data.people) if (!p.isSensitive) p];
+  final people = [
+    for (final p in data.people)
+      if (!p.isSensitive) p
+  ];
   final ids = {for (final p in people) p.id};
-  return GenogramData(
+  return withInferredStructure(GenogramData(
     people: people,
     relationships: [
       for (final r in data.relationships)
         if (ids.contains(r.personAId) && ids.contains(r.personBId)) r,
     ],
-  );
+  ));
 }
 
 List<InfographicGenogramMember> _buildGenogramMembers(GenogramData? data) {

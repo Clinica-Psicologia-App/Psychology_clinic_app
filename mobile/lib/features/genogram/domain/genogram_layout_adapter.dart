@@ -8,6 +8,7 @@
 library;
 
 import 'genogram_bootstrap.dart';
+import 'genogram_data.dart';
 import 'genogram_gender.dart';
 import 'genogram_layout.dart';
 import 'genogram_person.dart';
@@ -107,6 +108,46 @@ GSidePlan grandparentsNeedingSideFor({
   return grandparentsNeedingSide(
     people: _bootstrapPeople(people),
     existing: structuralEdges(relationships),
+  );
+}
+
+/// Mesmo genograma, com os vínculos estruturais que faltam INFERIDOS dos papéis
+/// (pai/mãe → paciente, casal etc.), só para desenhar. Nada é gravado: o que o
+/// terapeuta já cadastrou prevalece e nunca é duplicado.
+GenogramData withInferredStructure(GenogramData data) {
+  if (data.people.isEmpty) return data;
+  final proposals = proposeBootstrap(
+    people: data.people,
+    relationships: data.relationships,
+  );
+  if (proposals.isEmpty) return data;
+
+  final ref = data.people.first;
+  final now = DateTime.now();
+  GenogramRelationshipType typeOf(GEdgeType t) => switch (t) {
+        GEdgeType.parentChild => GenogramRelationshipType.parentChild,
+        GEdgeType.spouse => GenogramRelationshipType.spouse,
+        GEdgeType.exSpouse => GenogramRelationshipType.exSpouse,
+        GEdgeType.separation => GenogramRelationshipType.separation,
+      };
+  return GenogramData(
+    people: data.people,
+    relationships: [
+      ...data.relationships,
+      for (var i = 0; i < proposals.length; i++)
+        GenogramRelationship(
+          id: 'inferred_$i',
+          clinicId: ref.clinicId,
+          patientId: ref.patientId,
+          personAId: proposals[i].edge.a,
+          personBId: proposals[i].edge.b,
+          relationshipType: typeOf(proposals[i].edge.type),
+          isAdoptive: proposals[i].edge.adopted,
+          isSensitive: false,
+          createdAt: now,
+          updatedAt: now,
+        ),
+    ],
   );
 }
 

@@ -114,8 +114,9 @@ Future<void> _pumpScreen(
   WidgetTester tester,
   Widget child, {
   List<Override> overrides = const [],
+  double height = 844,
 }) async {
-  tester.view.physicalSize = const Size(390 * 3, 844 * 3);
+  tester.view.physicalSize = Size(390 * 3, height * 3);
   tester.view.devicePixelRatio = 3.0;
   addTearDown(tester.view.reset);
 
@@ -172,6 +173,29 @@ void main() {
       ),
     );
     await _capture(tester, 'modulos');
+  });
+
+  testWidgets('módulos do paciente (lista completa)', (tester) async {
+    await _pumpScreen(
+      tester,
+      Scaffold(
+        body: SingleChildScrollView(
+          child: Column(
+            children: const [
+              Padding(
+                padding: EdgeInsets.all(16),
+                child: FutureModulesSection(
+                  role: ProfileRole.psychologist,
+                  patientId: _pid,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+      height: 2300,
+    );
+    await _capture(tester, 'modulos-completo');
   });
 
   testWidgets('demandas terapêuticas', (tester) async {

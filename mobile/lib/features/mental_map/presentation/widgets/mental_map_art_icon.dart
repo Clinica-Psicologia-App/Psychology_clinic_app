@@ -217,16 +217,15 @@ class _MentalMapArtPainter extends CustomPainter {
   }
 
   void _paintProblems(Canvas canvas) {
-    // Triângulo de alerta. É o único do conjunto propositalmente "quente":
-    // problema pede atenção. Cantos levemente arredondados para não parecer
-    // agressivo demais na tela do paciente.
+    // Triângulo de atenção em azul da marca; cantos levemente arredondados
+    // para não parecer agressivo na tela do paciente.
     final triangle = Path()
       ..moveTo(12, 4.2)
       ..lineTo(20.4, 18.6)
       ..lineTo(3.6, 18.6)
       ..close();
 
-    _paintSplit(canvas, triangle, AppColors.warning, AppColors.error);
+    _paintSplit(canvas, triangle, AppColors.cyan, AppColors.blue);
 
     // Exclamação branca sólida (não stroke): a haste e o ponto.
     _paintFill(

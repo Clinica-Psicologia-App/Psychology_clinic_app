@@ -370,11 +370,34 @@ class PatientInfographicPoster extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(item.title,
-                  style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: accent,
-                      fontSize: 13)),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(item.title,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: accent,
+                            fontSize: 13)),
+                  ),
+                  if (item.badge != null) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: accent.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(item.badge!,
+                          style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: accent,
+                              fontSize: 11)),
+                    ),
+                  ],
+                ],
+              ),
               if (item.description != null) ...[
                 const SizedBox(height: 2),
                 Text(item.description!,
@@ -486,8 +509,7 @@ class PatientInfographicPoster extends StatelessWidget {
                 Flexible(
                   child: Text(r.title,
                       style: const TextStyle(
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.navy)),
+                          fontWeight: FontWeight.w600, color: AppColors.navy)),
                 ),
               ],
             ),

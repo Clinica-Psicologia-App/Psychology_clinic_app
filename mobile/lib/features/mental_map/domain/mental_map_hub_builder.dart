@@ -97,7 +97,7 @@ _NodeRoutes _routesForNode({
       );
     case 'problems':
       return _NodeRoutes(
-        primaryLabel: 'Abrir problemas',
+        primaryLabel: 'Abrir demandas terapêuticas',
         primaryRoute: MentalMapNavigationTargets.problems(
           role: role,
           patientId: patientId,

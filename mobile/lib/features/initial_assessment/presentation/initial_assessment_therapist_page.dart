@@ -9,7 +9,6 @@ import '../../../shared/widgets/error_banner.dart';
 import '../../profile/domain/profile_role.dart';
 import 'initial_assessment_routes.dart';
 import '../../life_story/presentation/life_story_routes.dart';
-import '../domain/functioning_level.dart';
 import '../domain/initial_assessment.dart';
 import '../domain/patient_basics.dart';
 import '../providers/initial_assessment_providers.dart';
@@ -19,8 +18,9 @@ import '../../profile/presentation/widgets/user_avatar.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 /// Tela 1 do fluxo Conhecer na lente do terapeuta — leitura das respostas do
-/// paciente + campos clínicos (Bloco 1 privado, Bloco 2 clínico) + Bloco 3
-/// (Primeiras Impressões Clínicas). Bloco de Contexto de Vida é tela separada.
+/// paciente + campos clínicos (Bloco 1 privado, Bloco 2 clínico). Contexto de
+/// Vida, Demandas Terapêuticas (motivos, impressões e diagnóstico), Linha do
+/// Tempo e Genograma são telas separadas.
 class InitialAssessmentTherapistPage extends ConsumerStatefulWidget {
   const InitialAssessmentTherapistPage({
     super.key,
@@ -47,21 +47,6 @@ class _InitialAssessmentTherapistPageState
   final _motivation = TextEditingController();
   final _initialHypotheses = TextEditingController();
 
-  // Bloco 3 — impressões clínicas
-  final _temperament = TextEditingController();
-  final _bond = TextEditingController();
-  final _resources = TextEditingController();
-  final _vulnerabilities = TextEditingController();
-  final _dxHypotheses = TextEditingController();
-  final _prevDx = TextEditingController();
-  final _diffDx = TextEditingController();
-  final _priorities = TextEditingController();
-  FunctioningLevel? _level;
-
-  final _schemaHypothesesText = TextEditingController();
-  final _modeHypothesesText = TextEditingController();
-  final _emotionalNeedsText = TextEditingController();
-
   bool _initialized = false;
   bool _saving = false;
 
@@ -80,17 +65,6 @@ class _InitialAssessmentTherapistPageState
       _goals,
       _motivation,
       _initialHypotheses,
-      _temperament,
-      _bond,
-      _resources,
-      _vulnerabilities,
-      _dxHypotheses,
-      _prevDx,
-      _diffDx,
-      _priorities,
-      _schemaHypothesesText,
-      _modeHypothesesText,
-      _emotionalNeedsText,
     ]) {
       c.dispose();
     }
@@ -107,20 +81,6 @@ class _InitialAssessmentTherapistPageState
     _goals.text = ci?.patientGoals ?? '';
     _motivation.text = ci?.motivation ?? '';
     _initialHypotheses.text = ci?.initialHypotheses ?? '';
-
-    final imp = data.clinicalImpressions;
-    _temperament.text = imp?.observedTemperament ?? '';
-    _bond.text = imp?.therapeuticBond ?? '';
-    _resources.text = imp?.resources ?? '';
-    _vulnerabilities.text = imp?.vulnerabilities ?? '';
-    _dxHypotheses.text = imp?.hypotheses ?? '';
-    _prevDx.text = imp?.previousDiagnoses ?? '';
-    _diffDx.text = imp?.differentialDiagnosis ?? '';
-    _priorities.text = imp?.therapeuticPriorities ?? '';
-    _level = imp?.functioningLevel;
-    _schemaHypothesesText.text = imp?.schemaHypothesesText ?? '';
-    _modeHypothesesText.text = imp?.modeHypothesesText ?? '';
-    _emotionalNeedsText.text = imp?.emotionalNeedsText ?? '';
 
     _initialized = true;
   }
@@ -144,21 +104,6 @@ class _InitialAssessmentTherapistPageState
         patientGoals: _nullIfEmpty(_goals.text),
         motivation: _nullIfEmpty(_motivation.text),
         initialHypotheses: _nullIfEmpty(_initialHypotheses.text),
-      );
-      await repo.saveClinicalImpressions(
-        patientId: pid,
-        observedTemperament: _nullIfEmpty(_temperament.text),
-        therapeuticBond: _nullIfEmpty(_bond.text),
-        resources: _nullIfEmpty(_resources.text),
-        vulnerabilities: _nullIfEmpty(_vulnerabilities.text),
-        hypotheses: _nullIfEmpty(_dxHypotheses.text),
-        previousDiagnoses: _nullIfEmpty(_prevDx.text),
-        differentialDiagnosis: _nullIfEmpty(_diffDx.text),
-        functioningLevel: _level,
-        therapeuticPriorities: _nullIfEmpty(_priorities.text),
-        schemaHypothesesText: _nullIfEmpty(_schemaHypothesesText.text),
-        modeHypothesesText: _nullIfEmpty(_modeHypothesesText.text),
-        emotionalNeedsText: _nullIfEmpty(_emotionalNeedsText.text),
       );
 
       ref.invalidate(initialAssessmentProvider(_ctx));
@@ -248,62 +193,6 @@ class _InitialAssessmentTherapistPageState
                     ],
                   ),
 
-                  // ── Bloco 3 — Primeiras Impressões Clínicas ──────────────
-                  _sectionHeader(
-                    context,
-                    step: 'Bloco 3',
-                    title: 'Primeiras Impressões Clínicas',
-                    icon: Icons.psychology_alt_outlined,
-                    accent: AppColors.purple,
-                    subtitle: 'Sua síntese após o primeiro contato.',
-                  ),
-                  _group(
-                    context,
-                    title: 'Impressão geral',
-                    icon: Icons.visibility_outlined,
-                    children: [
-                      _field(context, _temperament, 'Temperamento observado'),
-                      _field(context, _bond, 'Vínculo terapêutico'),
-                      _field(context, _resources, 'Recursos'),
-                      _field(context, _vulnerabilities, 'Vulnerabilidades'),
-                    ],
-                  ),
-                  _group(
-                    context,
-                    title: 'Perspectiva diagnóstica',
-                    icon: Icons.biotech_outlined,
-                    children: [
-                      _field(context, _dxHypotheses, 'Hipóteses'),
-                      _field(context, _prevDx, 'Diagnósticos prévios'),
-                      _field(context, _diffDx, 'Diagnóstico diferencial'),
-                    ],
-                  ),
-                  _group(
-                    context,
-                    title: 'Nível atual de funcionamento',
-                    icon: Icons.speed_outlined,
-                    children: [_functioningLevelSelector(context)],
-                  ),
-                  _group(
-                    context,
-                    title: 'Hipóteses de esquemas',
-                    icon: Icons.schema_outlined,
-                    children: [
-                      _field(context, _schemaHypothesesText, 'Hipóteses de esquemas'),
-                      _field(context, _modeHypothesesText, 'Hipóteses de modos'),
-                      _field(context, _emotionalNeedsText,
-                          'Necessidades emocionais percebidas'),
-                    ],
-                  ),
-                  _group(
-                    context,
-                    title: 'Prioridades terapêuticas',
-                    icon: Icons.flag_outlined,
-                    children: [
-                      _field(context, _priorities, 'Prioridades terapêuticas'),
-                    ],
-                  ),
-
                   // ── Aprofundar ───────────────────────────────────────────
                   _sectionHeader(
                     context,
@@ -381,56 +270,6 @@ class _InitialAssessmentTherapistPageState
           ),
         ],
       ),
-    );
-  }
-
-  /// Selo compacto de nota (0–10) com cor de acento.
-  Widget _scorePill(String label, int value, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(label,
-              style: TextStyle(
-                fontSize: 9.5,
-                fontWeight: FontWeight.w600,
-                color: color,
-              )),
-          const SizedBox(width: 4),
-          Text('$value',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                color: color,
-              )),
-          Text('/10',
-              style: TextStyle(
-                fontSize: 9,
-                fontWeight: FontWeight.w600,
-                color: color.withValues(alpha: 0.7),
-              )),
-        ],
-      ),
-    );
-  }
-
-  Widget _functioningLevelSelector(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: [
-        for (final level in FunctioningLevel.values)
-          ChoiceChip(
-            label: Text(level.label),
-            selected: _level == level,
-            onSelected: (sel) => setState(() => _level = sel ? level : null),
-          ),
-      ],
     );
   }
 

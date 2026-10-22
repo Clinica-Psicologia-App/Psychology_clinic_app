@@ -169,7 +169,8 @@ void main() {
       );
       expect(data.modes.map((m) => m.title),
           ['Criança Vulnerável', 'Pai Punitivo']);
-      expect(data.modes.first.description, 'Média 4,8 no YAMI');
+      expect(data.modes.first.badge, 'Média 4,8');
+      expect(data.modes.first.description, isNotEmpty);
     });
 
     test('sem YAMI ativado, modos caem para as hipóteses em texto', () {
@@ -185,21 +186,28 @@ void main() {
       expect(data.modes.single.description, 'evita conflito');
     });
 
-    test('enfrentamento vem dos questionários YCI/YRAI', () {
+    test('enfrentamento: YCI = Compensação e YRAI = Evitação, com pontuação',
+        () {
       final data = build(
         dashboard: _dashboardWith(const [], coping: const [
           ClinicalDashboardScoreRow(
-              name: 'Resignação', code: 'YCI_X', score: 4.1, averageScore: 4.1),
+              name: 'YCI Geral',
+              code: 'YCI_TOTAL',
+              score: 4.1,
+              averageScore: 4.1),
           ClinicalDashboardScoreRow(
-              name: 'Evitação',
-              code: 'YCI_Y',
+              name: 'YRAI Geral',
+              code: 'YRAI_TOTAL',
               score: 3.0,
               severityLabel: 'Moderado'),
         ]),
       );
-      expect(data.coping.map((c) => c.title), ['Resignação', 'Evitação']);
-      expect(data.coping.first.description, 'Média 4,1');
-      expect(data.coping.last.description, 'Moderado');
+      expect(data.coping.map((c) => c.title),
+          ['Compensação (YCI)', 'Evitação (YRAI)']);
+      expect(data.coping.first.badge, 'Média 4,1');
+      expect(data.coping.last.badge, 'Moderado · Média 3,0');
+      expect(data.coping.every((c) => (c.description ?? '').isNotEmpty),
+          isTrue);
     });
   });
 

@@ -226,13 +226,34 @@ class MentalMapClinicalCoreSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final libraries = role == ProfileRole.psychologist
+        ? const Padding(
+            padding: EdgeInsets.only(bottom: 12),
+            child: Wrap(
+              key: ValueKey('mental-map-library-links'),
+              spacing: 8,
+              children: [
+                CompreenderLibraryLink(),
+                TransformarLibraryLink(),
+              ],
+            ),
+          )
+        : const SizedBox.shrink();
+
     if (!core.hasContent) {
-      return const HomologationEmptyPanel(
-        icon: Icons.psychology_outlined,
-        title: 'Núcleo clínico vazio',
-        message:
-            'Conclua YSQ/YAMI e registre problemas para preencher esta camada.',
-        hint: 'Os dados exibidos vêm dos instrumentos e registros existentes.',
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          libraries,
+          const HomologationEmptyPanel(
+            icon: Icons.psychology_outlined,
+            title: 'Núcleo clínico vazio',
+            message:
+                'Conclua YSQ/YAMI e registre demandas terapêuticas para preencher esta camada.',
+            hint:
+                'Os dados exibidos vêm dos instrumentos e registros existentes.',
+          ),
+        ],
       );
     }
 
@@ -241,18 +262,12 @@ class MentalMapClinicalCoreSection extends StatelessWidget {
         final useTwoColumns = constraints.maxWidth >= 640;
         final schemaPanel = _InstrumentScorePanel(
           title: 'Esquemas (YSQ)',
-          titleAction: role == ProfileRole.psychologist
-              ? const CompreenderLibraryLink()
-              : null,
           completedAt: core.ysqCompletedAt,
           highlights: core.topSchemas,
           emptyMessage: 'Nenhum resultado YSQ disponível.',
         );
         final modePanel = _InstrumentScorePanel(
           title: 'Modos (YAMI)',
-          titleAction: role == ProfileRole.psychologist
-              ? const TransformarLibraryLink()
-              : null,
           completedAt: core.yamiCompletedAt,
           highlights: core.topModes,
           emptyMessage: 'Nenhum resultado YAMI disponível.',
@@ -261,6 +276,7 @@ class MentalMapClinicalCoreSection extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            libraries,
             if (useTwoColumns)
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -300,8 +316,8 @@ class MentalMapClinicalCoreSection extends StatelessWidget {
             ],
             const SizedBox(height: 12),
             Text(
-              'Esquemas e modos provêm de instrumentos; problemas são '
-              'registrados pelo paciente/equipe. Sem relações inferidas.',
+              'Esquemas e modos provêm de instrumentos; demandas terapêuticas são '
+              'registradas pelo paciente/equipe. Sem relações inferidas.',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
@@ -335,7 +351,6 @@ class _InstrumentScorePanel extends StatelessWidget {
     required this.emptyMessage,
     this.completedAt,
     this.compact = false,
-    this.titleAction,
   });
 
   final String title;
@@ -343,7 +358,6 @@ class _InstrumentScorePanel extends StatelessWidget {
   final String emptyMessage;
   final DateTime? completedAt;
   final bool compact;
-  final Widget? titleAction;
 
   @override
   Widget build(BuildContext context) {
@@ -389,7 +403,6 @@ class _InstrumentScorePanel extends StatelessWidget {
                         fontWeight: FontWeight.w700,
                       ),
                 ),
-                if (titleAction != null) titleAction!,
               ],
             ),
             if (completedAt != null)
@@ -511,7 +524,7 @@ class _ActiveProblemsPanel extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context)
             .colorScheme
-            .errorContainer
+            .primaryContainer
             .withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(16),
       ),
@@ -521,7 +534,7 @@ class _ActiveProblemsPanel extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Problemas ativos (por intensidade)',
+              'Demandas terapêuticas ativas (por intensidade)',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
@@ -529,7 +542,7 @@ class _ActiveProblemsPanel extends StatelessWidget {
             const SizedBox(height: 8),
             if (problems.isEmpty)
               Text(
-                'Nenhum problema ativo registrado.',
+                'Nenhuma demanda terapêutica ativa registrada.',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -864,7 +877,7 @@ class MentalMapTherapyPlanSection extends StatelessWidget {
             title: 'Plano terapêutico vazio',
             message:
                 'Defina objetivos e faça check-ins para acompanhar o plano.',
-            hint: 'Objetivos e problemas aparecem lado a lado, sem inferência.',
+            hint: 'Objetivos e demandas terapêuticas aparecem lado a lado, sem inferência.',
           ),
           if (_route(
             MentalMapNavigationTargets.therapyGoals(
@@ -938,7 +951,7 @@ class MentalMapTherapyPlanSection extends StatelessWidget {
         ],
         const SizedBox(height: 8),
         Text(
-          'Objetivos e problemas são exibidos por proximidade visual, '
+          'Objetivos e demandas terapêuticas são exibidos por proximidade visual, '
           'sem relação causal inferida.',
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -990,8 +1003,8 @@ class _PlanProblemsPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _LayerPanel(
-      title: 'Problemas ativos',
-      emptyMessage: 'Nenhum problema ativo.',
+      title: 'Demandas terapêuticas',
+      emptyMessage: 'Nenhuma demanda terapêutica ativa.',
       child: problems.isEmpty
           ? null
           : Column(
@@ -1000,8 +1013,8 @@ class _PlanProblemsPanel extends StatelessWidget {
                     (problem) => ListTile(
                       contentPadding: EdgeInsets.zero,
                       leading: Icon(
-                        Icons.report_problem_outlined,
-                        color: Theme.of(context).colorScheme.error,
+                        Icons.assignment_late_outlined,
+                        color: AppColors.blue,
                       ),
                       title: Text(problem.title),
                       subtitle: Text(problem.statusLabel),

@@ -12,14 +12,14 @@ import 'package:share_plus/share_plus.dart';
 /// Captura + exportação do pôster do infográfico.
 ///
 /// O PNG é capturado nativamente do [RepaintBoundary]; o PDF embute esse mesmo
-/// PNG numa página A4, então imagem e documento saem do mesmo layout.
+/// PNG numa única página, então imagem e documento saem do mesmo layout.
 class InfographicExport {
   const InfographicExport._();
 
   /// Captura o widget referenciado por [boundaryKey] como PNG de alta resolução.
   static Future<Uint8List> capturePng(
     GlobalKey boundaryKey, {
-    double pixelRatio = 3,
+    double pixelRatio = 2,
   }) async {
     final boundary =
         boundaryKey.currentContext!.findRenderObject() as RenderRepaintBoundary;
@@ -28,17 +28,26 @@ class InfographicExport {
     return bytes!.buffer.asUint8List();
   }
 
-  /// Monta um PDF A4 com o PNG ocupando a largura da página.
+  /// Monta um PDF de uma página só, com o tamanho do próprio pôster: nada é
+  /// cortado nem fatiado, e o texto continua legível ao ampliar (um A4 fixo
+  /// encolheria o pôster, que é bem mais comprido que largo).
   static Future<Uint8List> buildPdf(Uint8List png) async {
+    final codec = await ui.instantiateImageCodec(png);
+    final frame = await codec.getNextFrame();
+    final w = frame.image.width.toDouble();
+    final h = frame.image.height.toDouble();
+    frame.image.dispose();
+
+    // Largura de 595 pt (A4); a altura segue a proporção do pôster.
+    const pageWidth = 595.0;
+    final pageHeight = pageWidth * h / w;
     final doc = pw.Document();
     final image = pw.MemoryImage(png);
     doc.addPage(
       pw.Page(
-        pageFormat: PdfPageFormat.a4,
-        margin: const pw.EdgeInsets.all(16),
-        build: (_) => pw.Center(
-          child: pw.Image(image, fit: pw.BoxFit.contain),
-        ),
+        pageFormat: PdfPageFormat(pageWidth, pageHeight),
+        margin: pw.EdgeInsets.zero,
+        build: (_) => pw.Image(image, fit: pw.BoxFit.fill),
       ),
     );
     return doc.save();

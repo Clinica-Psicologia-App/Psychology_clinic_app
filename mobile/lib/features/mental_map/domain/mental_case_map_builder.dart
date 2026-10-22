@@ -131,7 +131,7 @@ MentalCaseMapNode _buildProblemsNode(
 
   return MentalCaseMapNode(
     id: 'problems',
-    title: 'Problemas',
+    title: 'Demandas',
     shortLabel: _buildCountLabel(
       activeProblems.length,
       singular: 'ativo',
@@ -139,7 +139,7 @@ MentalCaseMapNode _buildProblemsNode(
     ),
     items: items,
     emptyLabel: 'Pendente',
-    dataSource: 'Problemas registrados pelo paciente/equipe',
+    dataSource: 'Demandas terapêuticas registradas pelo paciente/equipe',
     aggregateSeverityColorKey: _problemsSeverityKey(activeProblems),
   );
 }
@@ -419,9 +419,9 @@ String? _severityLabel(String? colorKey) => switch (colorKey) {
     };
 
 String _buildProblemsLabel(int count) {
-  if (count == 0) return 'Sem problemas ativos';
-  if (count == 1) return '1 problema ativo';
-  return '$count problemas ativos';
+  if (count == 0) return 'Sem demandas ativas';
+  if (count == 1) return '1 demanda ativa';
+  return '$count demandas ativas';
 }
 
 String _buildGoalsLabel(int count) {

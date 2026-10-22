@@ -612,7 +612,7 @@ void main() {
       genogramData: const GenogramData(people: [], relationships: []),
     );
 
-    expect(caseMap.center.activeProblemsLabel, '1 problema ativo');
+    expect(caseMap.center.activeProblemsLabel, '1 demanda ativa');
     expect(caseMap.center.activeGoalsLabel, '1 objetivo ativo');
     expect(caseMap.center.lastCheckInLabel, 'Humor 4 · Ans. 8');
     expect(caseMap.primaryNodes[2].items.single, 'Ansiedade social');

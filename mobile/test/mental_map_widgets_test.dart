@@ -256,13 +256,8 @@ void main() {
       final card = find.byKey(const ValueKey('mental-map-personality'));
       await tester.ensureVisible(card);
       await tester.pump(const Duration(milliseconds: 300));
-      for (final entry in {
-        items[0]: AppColors.error,
-        items[1]: AppColors.warning,
-        items[2]: AppColors.success,
-      }.entries) {
-        expect(tester.widget<Text>(find.text(entry.key)).style?.color,
-            entry.value);
+      for (final item in items) {
+        expect(find.text(item), findsNothing);
       }
       await tester.tap(card);
       await tester.pump(const Duration(milliseconds: 300));
@@ -278,6 +273,44 @@ void main() {
               find.descendant(of: sheet, matching: find.byIcon(Icons.circle)))
           .map((icon) => icon.color);
       expect(dots, [AppColors.error, AppColors.warning, AppColors.success]);
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  for (final width in [360.0, 900.0]) {
+    testWidgets('Personalidade é uma bolinha do hub em largura $width',
+        (tester) async {
+      tester.view.physicalSize = Size(width, 1000);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      await tester.pumpWidget(MaterialApp(
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: MentalMapVisualHub(
+              caseMap: MentalCaseMap.empty,
+              nodes: [
+                for (final id in const ['schemas', 'problems', 'personality'])
+                  MentalMapHubNodeData(
+                    id: id,
+                    title: id == 'problems' ? 'Demandas' : id,
+                    subtitle: 'Pendente',
+                    items: const [],
+                    emptyLabel: 'Pendente',
+                    icon: Icons.hub_outlined,
+                    accentColor: AppColors.blue,
+                    isFilled: false,
+                    visualState: MentalMapNodeVisualState.pending,
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ));
+      final bubble = find.byKey(const ValueKey('mental-map-personality'));
+      expect(bubble, findsOneWidget);
+      expect(find.byType(MentalMapHubNode), findsNothing);
+      expect(find.text('Demandas'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }

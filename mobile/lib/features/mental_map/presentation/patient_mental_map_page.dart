@@ -17,6 +17,7 @@ import '../../../shared/widgets/homologation_ui.dart';
 import '../domain/mental_map_check_in_summary.dart';
 import '../domain/mental_map_data.dart';
 import '../domain/mental_map_hub_builder.dart';
+import '../../psychoeducation/presentation/transformar_library_link.dart';
 import '../providers/mental_map_providers.dart';
 import 'mental_map_navigation_targets.dart';
 import 'mental_map_node_state.dart';
@@ -36,7 +37,7 @@ class PatientMentalMapPage extends ConsumerWidget {
       onRetry: () => ref.read(myMentalMapProvider.notifier).refresh(),
       emptyMessage:
           'Ainda não há dados clínicos suficientes para montar o mapa mental. '
-          'Conforme você registra questionários, problemas, objetivos e outros '
+          'Conforme você registra questionários, demandas terapêuticas, objetivos e outros '
           'módulos, as seções aparecerão aqui.',
       emptyIcon: Icons.hub_outlined,
       dataBuilder: (data) => RefreshIndicator(
@@ -276,11 +277,11 @@ class _MentalMapBody extends StatelessWidget {
           ),
         ),
         MentalMapSectionCard(
-          title: 'Problemas ativos',
-          icon: Icons.report_problem_outlined,
+          title: 'Demandas terapêuticas',
+          icon: Icons.assignment_late_outlined,
           isEmpty: data.activeProblems.isEmpty,
-          emptyMessage: 'Nenhum problema em acompanhamento.',
-          emptyHint: 'Registre problemas na trilha.',
+          emptyMessage: 'Nenhuma demanda terapêutica em acompanhamento.',
+          emptyHint: 'Registre demandas terapêuticas na trilha.',
           onViewDetails: _route(
             MentalMapNavigationTargets.problems(
               role: role,
@@ -487,7 +488,8 @@ class _MentalMapBody extends StatelessWidget {
       final icon = switch (node.id) {
         'schemas' => Icons.psychology_outlined,
         'modes' => Icons.self_improvement_outlined,
-        'problems' => Icons.report_problem_outlined,
+        'problems' => Icons.assignment_late_outlined,
+        'personality' => Icons.psychology_alt_outlined,
         'attachment' => Icons.favorite_border,
         'coping' => Icons.shield_outlined,
         'parental' => Icons.family_restroom_outlined,
@@ -499,7 +501,8 @@ class _MentalMapBody extends StatelessWidget {
       final accentColor = switch (node.id) {
         'schemas' => colors.primary,
         'modes' => colors.tertiary,
-        'problems' => colors.error,
+        'problems' => AppColors.blue,
+        'personality' => AppColors.purple,
         'attachment' => colors.primary,
         'coping' => colors.secondary,
         'parental' => colors.tertiary,
@@ -509,7 +512,9 @@ class _MentalMapBody extends StatelessWidget {
       };
 
       // Severity color: only meaningful when the node has data.
-      final severityColor = node.isFilled
+      final severityColor = node.isFilled &&
+              node.id != 'problems' &&
+              node.id != 'personality'
           ? _severityColor(node.aggregateSeverityColorKey, accentColor)
           : null;
 
@@ -541,6 +546,13 @@ class _MentalMapBody extends StatelessWidget {
             detail: detail,
             onPrimaryTap: _route(primaryRoute, context),
             onSecondaryTap: _route(secondaryRoute, context),
+            libraryLink: role == ProfileRole.psychologist
+                ? switch (node.id) {
+                    'schemas' => const CompreenderLibraryLink(closeSheet: true),
+                    'modes' => const TransformarLibraryLink(closeSheet: true),
+                    _ => null,
+                  }
+                : null,
           );
         },
       );
@@ -563,7 +575,7 @@ class _CheckInScores extends StatelessWidget {
         if (c.anxietyScore != null) Text('Ansiedade: ${c.anxietyScore}/10'),
         if (c.energyScore != null) Text('Energia: ${c.energyScore}/10'),
         if (c.problemIntensityScore != null)
-          Text('Intensidade dos problemas: ${c.problemIntensityScore}/10'),
+          Text('Intensidade das demandas: ${c.problemIntensityScore}/10'),
       ],
     );
   }

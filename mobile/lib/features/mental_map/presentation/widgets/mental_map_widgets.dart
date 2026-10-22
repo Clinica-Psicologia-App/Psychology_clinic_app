@@ -307,22 +307,6 @@ class MentalMapVisualHub extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hubNodes = [
-      ...nodes,
-      if (!nodes.any((node) => node.id == 'personality'))
-        const MentalMapHubNodeData(
-          id: 'personality',
-          title: 'Personalidade',
-          subtitle: 'Versão futura',
-          items: [],
-          emptyLabel: 'Placeholder clínico',
-          icon: Icons.psychology_alt_outlined,
-          accentColor: AppColors.purple,
-          isFilled: false,
-          visualState: MentalMapNodeVisualState.blocked,
-        ),
-    ];
-
     return ClayCard(
       margin: const EdgeInsets.only(bottom: 16),
       child: Padding(
@@ -338,21 +322,8 @@ class MentalMapVisualHub extends StatelessWidget {
             const SizedBox(height: 16),
             MentalMapRadialHub(
               center: caseMap.center,
-              nodes: hubNodes,
+              nodes: nodes,
             ),
-            // Personalidade já tem resumo e detalhe, mas não ocupa uma
-            // posição na órbita. Reutiliza o cartão sem mover os demais nós.
-            for (final node in nodes.where((node) => node.id == 'personality'))
-              Padding(
-                padding: const EdgeInsets.only(top: 16),
-                child: SizedBox(
-                  height: MediaQuery.textScalerOf(context).scale(180),
-                  child: MentalMapHubNode(
-                    key: const ValueKey('mental-map-personality'),
-                    data: node,
-                  ),
-                ),
-              ),
           ],
         ),
       ),
@@ -410,6 +381,8 @@ class MentalMapRadialHub extends StatelessWidget {
               Rect.fromLTWH(leftX, hubHeight * 0.36, nodeWidth, nodeHeight),
           'parental': Rect.fromLTWH(leftX, lowerY, nodeWidth, nodeHeight),
           'history': Rect.fromLTWH(leftX, bottomY, nodeWidth, nodeHeight),
+          'personality':
+              Rect.fromLTWH(rightX, bottomY, nodeWidth, nodeHeight),
         };
 
         return SizedBox(
@@ -771,13 +744,18 @@ class _MentalMapMobileOrbitState extends State<_MentalMapMobileOrbit>
     // que havia antes deixava os de cima e os de baixo a distâncias
     // diferentes (o rótulo sob o círculo desloca a âncora para cima), e as
     // fibras acabavam com 0 a 8px — sem percurso para o fluxo correr.
-    const slots = <({String id, double angleDeg})>[
-      (id: 'schemas', angleDeg: -90),
-      (id: 'modes', angleDeg: -30),
-      (id: 'problems', angleDeg: 30),
-      (id: 'attachment', angleDeg: 90),
-      (id: 'goals', angleDeg: 150),
-      (id: 'coping', angleDeg: 210),
+    const slotIds = [
+      'schemas',
+      'modes',
+      'problems',
+      'personality',
+      'attachment',
+      'goals',
+      'coping',
+    ];
+    final slots = [
+      for (var i = 0; i < slotIds.length; i++)
+        (id: slotIds[i], angleDeg: -90 + i * 360 / slotIds.length),
     ];
 
     const nodeWidth = 84.0;
@@ -816,7 +794,11 @@ class _MentalMapMobileOrbitState extends State<_MentalMapMobileOrbit>
           103.0,
           math.min(
             boxHeight / 2 - (nodeHeight - circleAnchor) - floatAmplitude,
-            (width / 2 - nodeWidth / 2) / math.cos(30 * math.pi / 180),
+            (width / 2 - nodeWidth / 2) /
+                slots
+                    .map((slot) =>
+                        math.cos(slot.angleDeg * math.pi / 180).abs())
+                    .reduce(math.max),
           ),
         );
 
@@ -1028,6 +1010,7 @@ class _MentalMapOrbitNode extends StatelessWidget {
     );
 
     return InkWell(
+      key: ValueKey('mental-map-${data.id}'),
       onTap: data.onTap,
       borderRadius: BorderRadius.circular(22),
       child: Column(
@@ -1390,6 +1373,7 @@ Future<void> showMentalMapNodeDetailSheet({
   required MentalMapNodeDetail detail,
   required VoidCallback? onPrimaryTap,
   VoidCallback? onSecondaryTap,
+  Widget? libraryLink,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -1399,6 +1383,7 @@ Future<void> showMentalMapNodeDetailSheet({
       detail: detail,
       onPrimaryTap: onPrimaryTap,
       onSecondaryTap: onSecondaryTap,
+      libraryLink: libraryLink,
     ),
   );
 }
@@ -1409,11 +1394,13 @@ class MentalMapNodeDetailSheet extends StatelessWidget {
     required this.detail,
     required this.onPrimaryTap,
     this.onSecondaryTap,
+    this.libraryLink,
   });
 
   final MentalMapNodeDetail detail;
   final VoidCallback? onPrimaryTap;
   final VoidCallback? onSecondaryTap;
+  final Widget? libraryLink;
 
   @override
   Widget build(BuildContext context) {
@@ -1530,6 +1517,10 @@ class MentalMapNodeDetailSheet extends StatelessWidget {
                   label: Text(detail.secondaryCtaLabel!),
                 ),
               ),
+            ],
+            if (libraryLink != null) ...[
+              const SizedBox(height: 8),
+              Align(alignment: Alignment.center, child: libraryLink),
             ],
           ],
         ),

@@ -189,7 +189,7 @@ class _QuestionnaireAnswerPageState
                   Text(
                     _isParentalFlow
                         ? 'Respondendo sobre: ${_currentContext?.label ?? 'Figura parental'}'
-                        : 'Pergunta ${question.code}',
+                        : 'Pergunta ${_currentIndex + 1}',
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
                           color: Theme.of(context).colorScheme.primary,
                         ),
@@ -257,7 +257,7 @@ class _QuestionnaireAnswerPageState
                           AppInfoCard(
                             title: _isParentalFlow
                                 ? 'Pergunta sobre ${_currentContext?.label ?? 'figura parental'}'
-                                : 'Pergunta ${question.code}',
+                                : 'Pergunta ${_currentIndex + 1}',
                             body: _isParentalFlow
                                 ? normalizeParentalQuestionText(question.text)
                                 : question.text,

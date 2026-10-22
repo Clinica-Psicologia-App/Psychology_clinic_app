@@ -908,16 +908,6 @@ class ClinicalPriorityGrid extends StatelessWidget {
                 emptyMessage: 'Sem médias YSQ disponíveis',
               ),
               _PriorityMiniCard(
-                title: 'Top modos YAMI',
-                subtitle: 'Modos esquemáticos',
-                icon: Icons.psychology_outlined,
-                accentColor: AppColors.purple,
-                rows: summary.topModes,
-                limit: 5,
-                showCode: false,
-                emptyMessage: 'Sem médias YAMI disponíveis',
-              ),
-              _PriorityMiniCard(
                 title: 'Estilos de apego',
                 subtitle: 'Padrões de vínculo afetivo',
                 icon: Icons.favorite_border,

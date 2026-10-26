@@ -1,4 +1,6 @@
-﻿import 'genogram_gender.dart';
+﻿import '../../life_story/domain/life_story_enums.dart'
+    show relationshipRoleDisplay;
+import 'genogram_gender.dart';
 
 class GenogramPerson {
   const GenogramPerson({
@@ -61,6 +63,9 @@ class GenogramPerson {
   String get displayName {
     return fullName.trim();
   }
+
+  /// Parentesco em português (a chave gravada, como `mother`, nunca aparece).
+  String? get relationshipLabel => relationshipRoleDisplay(relationshipToPatient);
 
   String? get lifeSpanLabel {
     if (birthYear == null && deathYear == null) return null;

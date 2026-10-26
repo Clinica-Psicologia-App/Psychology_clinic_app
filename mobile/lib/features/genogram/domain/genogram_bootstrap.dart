@@ -40,7 +40,17 @@ String normalizeRole(String? s) {
   return sb.toString();
 }
 
-enum _Kind { patient, mother, father, sibling, grandparent, child, partner, unknown }
+enum _Kind {
+  patient,
+  mother,
+  father,
+  sibling,
+  grandparent,
+  child,
+  partner,
+  exPartner,
+  unknown
+}
 enum _Side { paternal, maternal, none }
 
 /// Classifica o papel. Reconhece tanto as CHAVES do enum (em inglês, como são
@@ -57,6 +67,28 @@ enum _Side { paternal, maternal, none }
   // Avós antes de mãe/pai (grandmother contém "mother").
   if (r.contains('grand') || r.contains('avo') || r.contains('avob')) {
     return (kind: _Kind.grandparent, side: side);
+  }
+  // Parentescos que NÃO são filho(a)/irmão(ã) "inteiros" do casal: ficam de
+  // fora da inferência (o terapeuta liga à mão) em vez de desenhar errado.
+  if (r.contains('meio') ||
+      r.contains('meia') ||
+      r.contains('half') ||
+      r.contains('afilh') ||
+      r.contains('entead') ||
+      r.contains('step')) {
+    return (kind: _Kind.unknown, side: side);
+  }
+  // Ex-companheiro(a): `ex_partner` (chave) ou "Ex-marido", "Ex-esposa"…
+  if (r == 'ex_partner' ||
+      ((r.startsWith('ex-') || r.startsWith('ex ') || r.startsWith('ex_')) &&
+          (r.contains('conjuge') ||
+              r.contains('esposa') ||
+              r.contains('esposo') ||
+              r.contains('marido') ||
+              r.contains('companheir') ||
+              r.contains('parceir') ||
+              r.contains('partner')))) {
+    return (kind: _Kind.exPartner, side: _Side.none);
   }
   if (r == 'mother' || r.contains('mae')) {
     return (kind: _Kind.mother, side: _Side.none);
@@ -137,6 +169,7 @@ GSidePlan grandparentsNeedingSide({
             _Kind.sibling ||
             _Kind.child ||
             _Kind.partner ||
+            _Kind.exPartner ||
             _Kind.unknown:
         break;
     }
@@ -207,6 +240,7 @@ List<GEdgeProposal> proposeStructure({
   final siblings = <String>[];
   final children = <String>[];
   final partners = <String>[];
+  final exPartners = <String>[];
   final gpPat = <String>[];
   final gpMat = <String>[];
 
@@ -225,6 +259,8 @@ List<GEdgeProposal> proposeStructure({
         children.add(p.id);
       case _Kind.partner:
         partners.add(p.id);
+      case _Kind.exPartner:
+        exPartners.add(p.id);
       case _Kind.grandparent:
         if (c.side == _Side.paternal) gpPat.add(p.id);
         if (c.side == _Side.maternal) gpMat.add(p.id);
@@ -272,6 +308,15 @@ List<GEdgeProposal> proposeStructure({
   for (final partner in partners) {
     proposeSpouse(
         patient, partner, '${name(patient)} e ${name(partner)} — casal');
+  }
+
+  for (final ex in exPartners) {
+    if (ex == patient || existingCouples.contains(_coupleKey(patient, ex))) {
+      continue;
+    }
+    out.add(GEdgeProposal(GEdge(patient, ex, GEdgeType.exSpouse),
+        '${name(patient)} e ${name(ex)} — ex-casal'));
+    existingCouples.add(_coupleKey(patient, ex));
   }
 
   // Avós: só quando o lado é explícito e o pai/mãe correspondente existe.

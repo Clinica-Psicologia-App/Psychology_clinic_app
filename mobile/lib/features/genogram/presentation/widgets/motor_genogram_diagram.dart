@@ -271,6 +271,16 @@ class _MotorGenogramPainter extends CustomPainter {
       canvas.restore();
       canvas.restore();
     }
+
+    // Pessoas que o motor não conseguiu ligar à família ficam numa fileira
+    // solta: avisa o que ela significa.
+    final loose = diagram.nodes.where((n) => !n.connected).toList();
+    if (loose.isNotEmpty && diagram.nodes.any((n) => n.connected)) {
+      final cx = loose.map((n) => n.x).reduce((a, b) => a + b) / loose.length;
+      _text(canvas, 'Sem vínculo definido',
+          Offset(cx, loose.first.y - _r - 30),
+          size: 11, weight: FontWeight.w600, color: _muted, center: true);
+    }
   }
 
   /// Halo que "respira" no paciente — só aparece com a entrada concluída e
@@ -546,6 +556,8 @@ class _MotorGenogramPainter extends CustomPainter {
 
   int? _age(GenogramPerson p) {
     if (p.birthYear == null) return null;
+    // Falecido sem ano de morte: a idade de hoje seria enganosa.
+    if (p.isDeceased && p.deathYear == null) return null;
     final end = p.deathYear ?? DateTime.now().year;
     final a = end - p.birthYear!;
     return a >= 0 && a < 130 ? a : null;
@@ -743,9 +755,9 @@ class _MotorGenogramPainter extends CustomPainter {
                 : _navy;
     _text(canvas, name, Offset(c.dx, c.dy + _r + 14),
         size: 12, weight: FontWeight.w700, color: nameColor, center: true);
-    final role = person?.relationshipToPatient;
-    if (role != null && role.trim().isNotEmpty && !isIndex) {
-      _text(canvas, role.trim(), Offset(c.dx, c.dy + _r + 30),
+    final role = person?.relationshipLabel;
+    if (role != null && !isIndex) {
+      _text(canvas, role, Offset(c.dx, c.dy + _r + 30),
           size: 10, weight: FontWeight.w400, color: _muted, center: true);
     }
   }

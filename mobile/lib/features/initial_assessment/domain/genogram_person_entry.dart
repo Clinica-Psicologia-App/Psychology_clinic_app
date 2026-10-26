@@ -1,4 +1,6 @@
 import 'genogram_enums.dart';
+import '../../life_story/domain/life_story_enums.dart'
+    show relationshipRoleDisplay;
 
 /// Uma pessoa do genograma na visão da Tela 3 (Minha Família), com a camada
 /// emocional. Lê `genogram_people`; o `clinicalComment` (staff-only) vem
@@ -55,8 +57,8 @@ class GenogramPersonEntry {
 
   /// Rótulo curto "Nome (Parentesco)".
   String get displayLabel {
-    final rel = relationshipToPatient?.trim();
-    if (rel != null && rel.isNotEmpty) return '$fullName ($rel)';
+    final rel = relationshipRoleDisplay(relationshipToPatient);
+    if (rel != null) return '$fullName ($rel)';
     return fullName;
   }
 

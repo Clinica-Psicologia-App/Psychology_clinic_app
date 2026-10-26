@@ -177,9 +177,8 @@ class _PersonDetailBodyState extends ConsumerState<_PersonDetailBody> {
                   title: person.displayName,
                   subtitle: 'Pessoa no genograma',
                   metadata: [
-                    if (person.relationshipToPatient != null &&
-                        person.relationshipToPatient!.trim().isNotEmpty)
-                      _TagChip(person.relationshipToPatient!.trim()),
+                    if (person.relationshipLabel != null)
+                      _TagChip(person.relationshipLabel!),
                     if (person.gender != null)
                       _TagChip(person.gender!.label),
                     if (person.lifeSpanLabel != null)
@@ -430,9 +429,8 @@ class _PersonHeroHeader extends StatelessWidget {
                         spacing: 6,
                         runSpacing: 4,
                         children: [
-                          if (person.relationshipToPatient != null &&
-                              person.relationshipToPatient!.trim().isNotEmpty)
-                            _HeroChip(person.relationshipToPatient!.trim()),
+                          if (person.relationshipLabel != null)
+                            _HeroChip(person.relationshipLabel!),
                           if (person.gender != null)
                             _HeroChip(person.gender!.label),
                           if (person.lifeSpanLabel != null)

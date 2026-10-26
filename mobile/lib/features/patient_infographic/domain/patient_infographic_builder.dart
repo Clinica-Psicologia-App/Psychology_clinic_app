@@ -450,7 +450,7 @@ List<InfographicGenogramMember> _buildGenogramMembers(GenogramData? data) {
       .where((p) => !p.isSensitive)
       .map((p) => InfographicGenogramMember(
             name: p.fullName,
-            relationship: p.relationshipToPatient,
+            relationship: p.relationshipLabel,
             isDeceased: p.isDeceased,
           ))
       .toList();

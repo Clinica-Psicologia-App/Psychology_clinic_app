@@ -219,3 +219,12 @@ RelationshipRole? relationshipRoleFromKey(String? key) {
   }
   return null;
 }
+
+/// Texto do parentesco para EXIBIR. O campo `relationship_to_patient` guarda a
+/// CHAVE do papel (`mother`, `ex_partner`…) quando vem do formulário; dados
+/// antigos podem ter texto livre em português, que passa como está.
+String? relationshipRoleDisplay(String? raw) {
+  final t = raw?.trim();
+  if (t == null || t.isEmpty) return null;
+  return relationshipRoleFromKey(t)?.label ?? t;
+}

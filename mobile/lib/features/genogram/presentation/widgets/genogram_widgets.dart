@@ -642,10 +642,9 @@ class GenogramPersonTile extends StatelessWidget {
                         style: theme.textTheme.bodySmall,
                       )
                     else ...[
-                      if (person.relationshipToPatient != null &&
-                          person.relationshipToPatient!.trim().isNotEmpty)
+                      if (person.relationshipLabel != null)
                         Text(
-                          person.relationshipToPatient!.trim(),
+                          person.relationshipLabel!,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurfaceVariant,
                           ),

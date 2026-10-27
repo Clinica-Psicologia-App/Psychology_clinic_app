@@ -1,4 +1,5 @@
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -12,8 +13,11 @@ Future<void> main() async {
 
   GoogleFonts.config.allowRuntimeFetching = false;
 
-  await Firebase.initializeApp();
-  await NotificationService.initialize();
+  // No navegador não há configuração do Firebase (push só existe no celular).
+  if (!kIsWeb) {
+    await Firebase.initializeApp();
+    await NotificationService.initialize();
+  }
 
   try {
     await SupabaseBootstrap.initialize();

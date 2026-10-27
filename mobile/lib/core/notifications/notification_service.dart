@@ -1,4 +1,5 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart' show Color;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
@@ -24,9 +25,10 @@ abstract final class NotificationService {
   );
 
   static Stream<String> get tokenStream =>
-      FirebaseMessaging.instance.onTokenRefresh;
+      kIsWeb ? const Stream<String>.empty() : FirebaseMessaging.instance.onTokenRefresh;
 
   static Future<void> initialize() async {
+    if (kIsWeb) return;
     // Registra o handler de background antes de qualquer outra coisa.
     FirebaseMessaging.onBackgroundMessage(_backgroundMessageHandler);
 
@@ -37,8 +39,14 @@ abstract final class NotificationService {
         ?.createNotificationChannel(_androidChannel);
 
     // Inicializa flutter_local_notifications.
+    // No iOS a permissão é pedida pelo FirebaseMessaging (abaixo).
     const initSettings = InitializationSettings(
       android: AndroidInitializationSettings('ic_notification'),
+      iOS: DarwinInitializationSettings(
+        requestAlertPermission: false,
+        requestBadgePermission: false,
+        requestSoundPermission: false,
+      ),
     );
     await _localNotifications.initialize(initSettings);
 
@@ -53,11 +61,13 @@ abstract final class NotificationService {
     FirebaseMessaging.onMessage.listen(_showForegroundNotification);
   }
 
-  static Future<String?> getToken() =>
-      FirebaseMessaging.instance.getToken();
+  static Future<String?> getToken() async =>
+      kIsWeb ? null : FirebaseMessaging.instance.getToken();
 
-  static Future<void> deleteToken() =>
-      FirebaseMessaging.instance.deleteToken();
+  static Future<void> deleteToken() async {
+    if (kIsWeb) return;
+    await FirebaseMessaging.instance.deleteToken();
+  }
 
   static void _showForegroundNotification(RemoteMessage message) {
     final n = message.notification;

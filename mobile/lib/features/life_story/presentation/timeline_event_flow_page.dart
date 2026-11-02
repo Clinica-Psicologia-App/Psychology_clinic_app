@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../domain/life_story_enums.dart';
+import '../domain/life_timeline_age.dart';
 import '../domain/life_timeline_event.dart';
 import '../domain/timeline_person.dart';
 import '../providers/life_story_providers.dart';
@@ -38,7 +39,18 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
   // Etapa 1 — quando
   LifeChapter? _chapter;
   final _ageController = TextEditingController();
+  final _ageEndController = TextEditingController();
   bool _dontRememberAge = false;
+
+  int? get _ageStart => int.tryParse(_ageController.text.trim());
+  int? get _ageEnd => int.tryParse(_ageEndController.text.trim());
+
+  /// Hoje e "não consigo localizar" não têm idade a informar.
+  bool get _chapterNeedsAge =>
+      _chapter != LifeChapter.today && _chapter != LifeChapter.cannotLocate;
+
+  String? get _ageError =>
+      LifeAgeSpan.validate(start: _ageStart, end: _ageEnd);
 
   // Etapa 2 — o quê
   final _descriptionController = TextEditingController();
@@ -60,8 +72,10 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
     if (e == null) return;
     _chapter = e.lifeChapter;
     _dontRememberAge = e.agePrecision == AgePrecision.approximate;
-    if (!_dontRememberAge && e.ageAtEvent != null) {
-      _ageController.text = e.ageAtEvent.toString();
+    if (!_dontRememberAge) {
+      final start = e.ageFrom ?? e.ageAtEvent;
+      if (start != null) _ageController.text = start.toString();
+      if (e.ageTo != null) _ageEndController.text = e.ageTo.toString();
     }
     _titleController.text = e.title;
     _descriptionController.text = e.description ?? '';
@@ -77,6 +91,7 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
   @override
   void dispose() {
     _ageController.dispose();
+    _ageEndController.dispose();
     _descriptionController.dispose();
     _titleController.dispose();
     _emotionOtherController.dispose();
@@ -86,9 +101,13 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
   bool get _canAdvance {
     switch (_step) {
       case 0:
-        return _chapter != null ||
-            _dontRememberAge ||
-            _ageController.text.trim().isNotEmpty;
+        // Idade inicial obrigatória, salvo "não lembro exatamente" ou um
+        // período sem idade (hoje / não consigo localizar).
+        if (_ageError != null) return false;
+        final needsAge = _chapterNeedsAge && !_dontRememberAge;
+        return needsAge
+            ? _ageStart != null
+            : (_chapter != null || _dontRememberAge);
       case 1:
         return _titleController.text.trim().isNotEmpty;
       default:
@@ -107,7 +126,9 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
   Future<void> _save() async {
     if (_busy) return;
     setState(() => _busy = true);
-    final age = int.tryParse(_ageController.text.trim());
+    final hasAge = !_dontRememberAge && _chapterNeedsAge;
+    final age = hasAge ? _ageStart : null;
+    final span = LifeAgeSpan(start: age, end: hasAge ? _ageEnd : null);
     final orig = widget.event;
     final updated = LifeTimelineEvent(
       id: orig?.id ?? '',
@@ -117,10 +138,13 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
           ? null
           : _descriptionController.text.trim(),
       lifeChapter: _chapter,
-      ageAtEvent: _dontRememberAge ? null : age,
+      ageAtEvent: age,
       agePrecision: _dontRememberAge
           ? AgePrecision.approximate
           : (age != null ? AgePrecision.exact : null),
+      // Faixa só quando a idade final é maior que a inicial; senão é ponto.
+      ageFrom: span.isRange ? age : null,
+      ageTo: span.isRange ? span.end : null,
       emotions: _emotions.toList(),
       emotionOther:
           _emotionOtherOn && _emotionOtherController.text.trim().isNotEmpty
@@ -129,8 +153,6 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
       emotionalImpact: _impact.round(),
       // campos de "aprofundar" preservados no modo de edição
       eventRecurrence: orig?.eventRecurrence,
-      ageFrom: orig?.ageFrom,
-      ageTo: orig?.ageTo,
       categories: orig?.categories ?? const [],
       needs: orig?.needs ?? const [],
       needOther: orig?.needOther,
@@ -260,6 +282,7 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        if (_chapterNeedsAge) _ageSection(),
         _question('Em qual período da sua vida aconteceu?'),
         _hint('Comece pela lembrança que vier primeiro.'),
         // Card largo para Nascimento
@@ -285,64 +308,76 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
         _phaseCardWide(LifeChapter.today),
         const SizedBox(height: 6),
         _phaseCardWide(LifeChapter.cannotLocate),
-        const SizedBox(height: 24),
-        // Campo de idade — só aparece quando um capítulo foi selecionado
-        // e não é "Não consigo localizar" ou "Momento atual"
-        if (_chapter != null &&
-            _chapter != LifeChapter.cannotLocate &&
-            _chapter != LifeChapter.today) ...[
-          _label('Quantos anos você tinha?'),
-          const SizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+      ],
+    );
+  }
+
+  /// Idade no topo da etapa: inicial (obrigatória) e final (opcional). Sem
+  /// campo de meses — durações menores que um ano vão na descrição.
+  Widget _ageSection() {
+    final error = _ageError;
+    Widget field(TextEditingController c, String hint) => Expanded(
+          child: TextField(
+            controller: c,
+            enabled: !_dontRememberAge,
+            keyboardType: TextInputType.number,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(3),
+            ],
+            onChanged: (_) => setState(() {}),
+            decoration: _fieldDecoration(hint: hint),
+          ),
+        );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _question('Com que idade isso aconteceu?'),
+        _hint('Se durou mais de um ano, informe também a idade final. '
+            'Se durou menos de um ano, conte na descrição.'),
+        Opacity(
+          opacity: _dontRememberAge ? 0.4 : 1,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Opacity(
-                  opacity: _dontRememberAge ? 0.4 : 1,
-                  child: TextField(
-                    controller: _ageController,
-                    enabled: !_dontRememberAge,
-                    keyboardType: TextInputType.number,
-                    inputFormatters: [
-                      FilteringTextInputFormatter.digitsOnly,
-                      LengthLimitingTextInputFormatter(3),
-                    ],
-                    onChanged: (_) => setState(() {}),
-                    decoration: _fieldDecoration(hint: 'Ex: 15'),
-                  ),
-                ),
-              ),
+              field(_ageController, 'Idade inicial'),
               const SizedBox(width: 10),
-              const Text('anos',
-                  style: TextStyle(
-                      fontSize: 14, color: AppColors.textSecondary)),
+              field(_ageEndController, 'Idade final (opcional)'),
             ],
           ),
-          const SizedBox(height: 10),
-          GestureDetector(
-            onTap: () => setState(() {
-              _dontRememberAge = !_dontRememberAge;
-              if (_dontRememberAge) _ageController.clear();
-            }),
-            child: Row(
-              children: [
-                Icon(
-                  _dontRememberAge
-                      ? Icons.check_circle
-                      : Icons.radio_button_unchecked,
-                  size: 18,
-                  color: _dontRememberAge
-                      ? AppColors.turquoise
-                      : AppColors.textMuted,
-                ),
-                const SizedBox(width: 7),
-                const Text('Não lembro exatamente',
-                    style: TextStyle(
-                        fontSize: 13, color: AppColors.textSecondary)),
-              ],
-            ),
-          ),
+        ),
+        if (error != null) ...[
+          const SizedBox(height: 6),
+          Text(error,
+              style: const TextStyle(fontSize: 12.5, color: AppColors.error)),
         ],
+        const SizedBox(height: 10),
+        GestureDetector(
+          onTap: () => setState(() {
+            _dontRememberAge = !_dontRememberAge;
+            if (_dontRememberAge) {
+              _ageController.clear();
+              _ageEndController.clear();
+            }
+          }),
+          child: Row(
+            children: [
+              Icon(
+                _dontRememberAge
+                    ? Icons.check_circle
+                    : Icons.radio_button_unchecked,
+                size: 18,
+                color:
+                    _dontRememberAge ? AppColors.turquoise : AppColors.textMuted,
+              ),
+              const SizedBox(width: 7),
+              const Text('Não lembro exatamente',
+                  style:
+                      TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
       ],
     );
   }
@@ -354,8 +389,6 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
     return GestureDetector(
       onTap: () => setState(() {
         _chapter = _chapter == chapter ? null : chapter;
-        _dontRememberAge = false;
-        _ageController.clear();
       }),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 140),
@@ -399,8 +432,6 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
     return GestureDetector(
       onTap: () => setState(() {
         _chapter = _chapter == chapter ? null : chapter;
-        _dontRememberAge = false;
-        _ageController.clear();
       }),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 140),
@@ -787,9 +818,11 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
 
     final ageText = _dontRememberAge
         ? 'Idade aproximada'
-        : (_ageController.text.trim().isEmpty
-            ? (_chapter?.label ?? '')
-            : '${_ageController.text.trim()} anos');
+        : (!_chapterNeedsAge
+            ? ''
+            : (LifeAgeSpan(start: _ageStart, end: _ageEnd).label ??
+                _chapter?.label ??
+                ''));
     final chapterLabel = _chapter?.label ?? '';
     final headerLabel = [
       if (chapterLabel.isNotEmpty) chapterLabel,

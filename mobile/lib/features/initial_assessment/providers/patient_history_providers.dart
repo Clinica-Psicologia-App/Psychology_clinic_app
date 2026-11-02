@@ -67,6 +67,7 @@ class PatientHistoryMutationNotifier
     List<TimelineBelief> beliefs = const [],
     String? beliefOther,
     bool isSensitive = false,
+    bool? sharedWithPatient,
   }) {
     return _run(() => _repo.createEntry(
           patientId: arg.patientId,
@@ -79,6 +80,7 @@ class PatientHistoryMutationNotifier
           beliefs: beliefs,
           beliefOther: beliefOther,
           isSensitive: isSensitive,
+          sharedWithPatient: sharedWithPatient,
         ));
   }
 
@@ -92,6 +94,7 @@ class PatientHistoryMutationNotifier
     List<TimelineBelief> beliefs = const [],
     String? beliefOther,
     bool isSensitive = false,
+    bool? sharedWithPatient,
   }) {
     return _run(() => _repo.updateEntry(
           eventId: eventId,
@@ -104,6 +107,7 @@ class PatientHistoryMutationNotifier
           beliefs: beliefs,
           beliefOther: beliefOther,
           isSensitive: isSensitive,
+          sharedWithPatient: sharedWithPatient,
         ));
   }
 

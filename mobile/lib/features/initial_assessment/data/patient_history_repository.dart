@@ -20,7 +20,7 @@ class PatientHistoryRepository {
   static const _select =
       'id, clinic_id, patient_id, created_by, title, description, event_date, '
       'life_chapter, age_at_event, emotional_impact, belief_keys, belief_other, '
-      'is_sensitive, filled_by_role, created_at, updated_at';
+      'is_sensitive, shared_with_patient, filled_by_role, created_at, updated_at';
 
   String? get _currentProfileId => _client.auth.currentUser?.id;
 
@@ -117,6 +117,7 @@ class PatientHistoryRepository {
     List<TimelineBelief> beliefs = const [],
     String? beliefOther,
     bool isSensitive = false,
+    bool? sharedWithPatient,
     required String filledByRole,
   }) {
     return {
@@ -128,6 +129,8 @@ class PatientHistoryRepository {
       'belief_keys': beliefs.isEmpty ? null : [for (final b in beliefs) b.key],
       'belief_other': beliefOther,
       'is_sensitive': isSensitive,
+      // Só a equipe envia; para o paciente a coluna é protegida no banco.
+      if (sharedWithPatient != null) 'shared_with_patient': sharedWithPatient,
       'filled_by_profile_id': _currentProfileId,
       'filled_by_role': filledByRole,
     };
@@ -144,6 +147,7 @@ class PatientHistoryRepository {
     List<TimelineBelief> beliefs = const [],
     String? beliefOther,
     bool isSensitive = false,
+    bool? sharedWithPatient,
   }) async {
     if (title.trim().isEmpty) {
       throw AppException(
@@ -168,6 +172,7 @@ class PatientHistoryRepository {
               beliefs: beliefs,
               beliefOther: beliefOther,
               isSensitive: isSensitive,
+              sharedWithPatient: sharedWithPatient,
               filledByRole: filledByRole,
             ),
           })
@@ -190,6 +195,7 @@ class PatientHistoryRepository {
     List<TimelineBelief> beliefs = const [],
     String? beliefOther,
     bool isSensitive = false,
+    bool? sharedWithPatient,
   }) async {
     if (title.trim().isEmpty) {
       throw AppException(
@@ -209,6 +215,7 @@ class PatientHistoryRepository {
             beliefs: beliefs,
             beliefOther: beliefOther,
             isSensitive: isSensitive,
+            sharedWithPatient: sharedWithPatient,
             filledByRole: filledByRole,
           ))
           .eq('id', eventId)

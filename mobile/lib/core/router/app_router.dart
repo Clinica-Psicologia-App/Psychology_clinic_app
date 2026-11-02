@@ -36,6 +36,7 @@ import '../../features/clinics/presentation/clinics_page.dart';
 import '../../features/initial_assessment/presentation/initial_assessment_route_helpers.dart';
 import '../../features/therapy_demands/presentation/therapy_demands_routes.dart';
 import '../../features/mental_map/presentation/mental_map_route_helpers.dart';
+import '../../features/patient_infographic/presentation/own_infographic_page.dart';
 import '../../features/patient_infographic/presentation/patient_infographic_route_helpers.dart';
 import '../../features/patient_check_ins/presentation/patient_check_in_route_helpers.dart';
 import '../../features/patient_timeline/presentation/patient_timeline_event_detail_page.dart';
@@ -229,6 +230,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: LifeStoryRoutes.myHistory,
         builder: (_, __) => const MyTimelinePage(),
+      ),
+      GoRoute(
+        path: LifeStoryRoutes.myInfographic,
+        builder: (_, __) => const OwnInfographicPage(),
       ),
       GoRoute(
         path: LifeStoryRoutes.newEvent,

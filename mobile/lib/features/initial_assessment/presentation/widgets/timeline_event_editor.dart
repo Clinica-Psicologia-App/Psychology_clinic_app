@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/error_banner.dart';
+import '../../../profile/domain/profile_role.dart';
 import '../../domain/life_chapter.dart';
 import '../../domain/timeline_belief.dart';
 import '../../domain/timeline_entry.dart';
@@ -61,9 +62,13 @@ class _TimelineEventEditorState extends ConsumerState<_TimelineEventEditor> {
   int? _impact;
   final Set<TimelineBelief> _beliefs = {};
   bool _isSensitive = false;
+  bool _sharedWithPatient = false;
   bool _saving = false;
 
   bool get _isEditing => widget.entry != null;
+
+  /// Só a equipe decide o que aparece no infográfico do paciente.
+  bool get _isStaff => widget.ctx.role != ProfileRole.patient;
 
   @override
   void initState() {
@@ -77,6 +82,7 @@ class _TimelineEventEditorState extends ConsumerState<_TimelineEventEditor> {
     _impact = e?.emotionalImpact;
     _beliefs.addAll(e?.beliefs ?? const []);
     _isSensitive = e?.isSensitive ?? false;
+    _sharedWithPatient = e?.sharedWithPatient ?? false;
   }
 
   @override
@@ -110,6 +116,7 @@ class _TimelineEventEditorState extends ConsumerState<_TimelineEventEditor> {
           beliefs: _beliefs.toList(),
           beliefOther: beliefOther.isEmpty ? null : beliefOther,
           isSensitive: _isSensitive,
+          sharedWithPatient: _isStaff ? _sharedWithPatient : null,
         );
       } else {
         await notifier.createEntry(
@@ -121,6 +128,7 @@ class _TimelineEventEditorState extends ConsumerState<_TimelineEventEditor> {
           beliefs: _beliefs.toList(),
           beliefOther: beliefOther.isEmpty ? null : beliefOther,
           isSensitive: _isSensitive,
+          sharedWithPatient: _isStaff ? _sharedWithPatient : null,
         );
       }
       if (mounted) {
@@ -277,6 +285,18 @@ class _TimelineEventEditorState extends ConsumerState<_TimelineEventEditor> {
                 contentPadding: EdgeInsets.zero,
                 dense: true,
               ),
+              if (_isStaff)
+                SwitchListTile(
+                  value: _sharedWithPatient,
+                  onChanged: (v) => setState(() => _sharedWithPatient = v),
+                  title: const Text('Mostrar ao paciente'),
+                  subtitle: const Text(
+                    'Autoriza este acontecimento a aparecer no infográfico do paciente. Desligado por padrão.',
+                  ),
+                  secondary: const Icon(Icons.visibility_outlined),
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                ),
               const SizedBox(height: 12),
               Row(
                 children: [

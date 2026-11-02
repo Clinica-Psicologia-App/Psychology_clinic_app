@@ -697,22 +697,14 @@ class QuestionnairesRepository {
           .eq('patient_id', patientId)
           .inFilter('status', ['draft', 'completed']);
 
-      final result = <String, QuestionnairePatientStatus>{};
-      for (final row in rows as List) {
-        final qId = row['questionnaire_id'] as String?;
-        final statusStr = row['status'] as String?;
-        if (qId == null || statusStr == null) continue;
-
-        final status = statusStr == 'completed'
-            ? QuestionnairePatientStatus.completed
-            : QuestionnairePatientStatus.draft;
-
-        if (status == QuestionnairePatientStatus.draft ||
-            !result.containsKey(qId)) {
-          result[qId] = status;
-        }
-      }
-      return result;
+      return consolidatePatientResponseStatuses([
+        for (final row in rows as List)
+          if (row['questionnaire_id'] is String && row['status'] is String)
+            (
+              questionnaireId: row['questionnaire_id'] as String,
+              status: row['status'] as String,
+            ),
+      ]);
     } on PostgrestException catch (e) {
       throw mapToAppException(e);
     } catch (e) {

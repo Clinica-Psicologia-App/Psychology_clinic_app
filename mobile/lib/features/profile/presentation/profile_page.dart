@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../../core/config/env_config.dart';
 import '../../../core/router/app_router.dart';
 import '../../../core/theme/app_breakpoints.dart';
 import '../../../core/theme/app_colors.dart';
@@ -312,6 +313,16 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                   onPressed: _confirmSignOut,
                   icon: const Icon(Icons.logout, size: 18),
                   label: const Text('Sair da conta'),
+                ),
+                const SizedBox(height: 16),
+                Center(
+                  child: SelectableText(
+                    EnvConfig.versionLabel,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppColors.textMuted,
+                        ),
+                  ),
                 ),
               ],
             ),

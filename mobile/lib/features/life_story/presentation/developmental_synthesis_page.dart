@@ -13,6 +13,7 @@ import '../domain/family_person.dart';
 import '../domain/genogram_relationship_enums.dart';
 import '../domain/life_story_deepen_enums.dart';
 import '../domain/life_story_enums.dart';
+import '../domain/life_timeline_age.dart';
 import '../domain/life_timeline_event.dart';
 import '../providers/life_story_providers.dart';
 import 'life_story_routes.dart';
@@ -440,11 +441,10 @@ class _EventLine extends StatelessWidget {
   final LifeTimelineEvent event;
 
   String get _age {
-    if (event.ageFrom != null && event.ageTo != null) {
-      return '${event.ageFrom}–${event.ageTo} anos';
-    }
-    if (event.ageAtEvent != null) return '${event.ageAtEvent} anos';
-    return event.lifeChapter?.label ?? '';
+    final start = event.ageFrom ?? event.ageAtEvent;
+    return LifeAgeSpan(start: start, end: event.ageTo).label ??
+        event.lifeChapter?.label ??
+        '';
   }
 
   @override

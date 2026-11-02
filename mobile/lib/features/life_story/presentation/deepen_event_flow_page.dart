@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -29,8 +28,6 @@ class _DeepenEventFlowPageState extends ConsumerState<DeepenEventFlowPage> {
 
   // Etapa 3 — evento ou período
   EventRecurrence? _recurrence;
-  final _ageFromController = TextEditingController();
-  final _ageToController = TextEditingController();
 
   // Etapa 4 — área da vida (até 2)
   final Set<LifeCategory> _categories = {};
@@ -54,8 +51,6 @@ class _DeepenEventFlowPageState extends ConsumerState<DeepenEventFlowPage> {
     super.initState();
     final e = widget.event;
     _recurrence = e.eventRecurrence;
-    _ageFromController.text = e.ageFrom?.toString() ?? '';
-    _ageToController.text = e.ageTo?.toString() ?? '';
     _categories.addAll(e.categories);
     _needs.addAll(e.needs);
     _needOtherOn = (e.needOther ?? '').trim().isNotEmpty;
@@ -69,8 +64,6 @@ class _DeepenEventFlowPageState extends ConsumerState<DeepenEventFlowPage> {
 
   @override
   void dispose() {
-    _ageFromController.dispose();
-    _ageToController.dispose();
     _needOtherController.dispose();
     _meaningController.dispose();
     super.dispose();
@@ -104,12 +97,9 @@ class _DeepenEventFlowPageState extends ConsumerState<DeepenEventFlowPage> {
       peopleIds: e.peopleIds,
       // aprofundar
       eventRecurrence: _recurrence,
-      ageFrom: _recurrence == EventRecurrence.prolonged
-          ? int.tryParse(_ageFromController.text.trim())
-          : null,
-      ageTo: _recurrence == EventRecurrence.prolonged
-          ? int.tryParse(_ageToController.text.trim())
-          : null,
+      // a faixa de idade é definida na tela da história
+      ageFrom: e.ageFrom,
+      ageTo: e.ageTo,
       categories: _categories.toList(),
       needs: _needs.toList(),
       needOther: _needOtherOn && _needOtherController.text.trim().isNotEmpty
@@ -171,7 +161,6 @@ class _DeepenEventFlowPageState extends ConsumerState<DeepenEventFlowPage> {
 
   // ── Etapa 3 · Evento ou período (§6) ─────────────────────────────────────
   Widget _stepRecurrence() {
-    final prolonged = _recurrence == EventRecurrence.prolonged;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -184,32 +173,6 @@ class _DeepenEventFlowPageState extends ConsumerState<DeepenEventFlowPage> {
           onTap: (r) =>
               setState(() => _recurrence = _recurrence == r ? null : r),
         ),
-        if (prolonged) ...[
-          const SizedBox(height: 22),
-          flowLabel('Aproximadamente de que idade até que idade?'),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _ageFromController,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  decoration: flowFieldDecoration('De ___ anos'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextField(
-                  controller: _ageToController,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  decoration: flowFieldDecoration('Até ___ anos'),
-                ),
-              ),
-            ],
-          ),
-        ],
       ],
     );
   }

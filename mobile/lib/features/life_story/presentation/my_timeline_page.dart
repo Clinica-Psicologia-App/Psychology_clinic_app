@@ -14,6 +14,7 @@ import '../../profile/domain/profile_role.dart';
 import '../domain/family_person.dart';
 import '../domain/life_story_deepen_enums.dart';
 import '../domain/life_story_enums.dart';
+import '../domain/life_timeline_age.dart';
 import '../domain/life_timeline_event.dart';
 import '../providers/life_story_providers.dart';
 import 'life_story_routes.dart';
@@ -312,8 +313,9 @@ String _shortAgeLabel(LifeTimelineEvent event) {
   if (event.agePrecision?.name == 'approximate') {
     return event.lifeChapter?.label ?? '';
   }
-  if (event.ageAtEvent != null) return '${event.ageAtEvent}a';
-  return event.lifeChapter?.label ?? '';
+  return LifeAgeSpan(start: event.ageAtEvent, end: event.ageTo).shortLabel ??
+      event.lifeChapter?.label ??
+      '';
 }
 
 /// Cabeçalho de capítulo: marcador com emoji na espinha cinza + nome em cinza.
@@ -655,9 +657,9 @@ void _showEventDetail(BuildContext context, LifeTimelineEvent event) {
 
   final ageLabel = event.agePrecision?.name == 'approximate'
       ? (chapter?.label ?? 'Idade aproximada')
-      : (event.ageAtEvent != null
-          ? '${event.ageAtEvent} anos'
-          : (chapter?.label ?? ''));
+      : (LifeAgeSpan(start: event.ageAtEvent, end: event.ageTo).label ??
+          chapter?.label ??
+          '');
 
   final periodLabel = [
     if (chapter != null) chapter.label,

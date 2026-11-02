@@ -1,4 +1,6 @@
-﻿class PatientTimelineEvent {
+﻿import '../../life_story/domain/life_timeline_age.dart';
+
+class PatientTimelineEvent {
   const PatientTimelineEvent({
     required this.id,
     required this.clinicId,
@@ -10,6 +12,7 @@
     this.periodLabel,
     this.lifeChapter,
     this.ageAtEvent,
+    this.ageTo,
     this.category,
     this.emotionalImpact,
     this.emotionalNeedKeys = const [],
@@ -42,6 +45,9 @@
   /// `maturity`, `today`) e idade na época — preenchidos pela tela História.
   final String? lifeChapter;
   final int? ageAtEvent;
+
+  /// Idade final, quando o acontecimento é uma faixa (opcional).
+  final int? ageTo;
   final String? category;
   final int? emotionalImpact;
   final List<String> emotionalNeedKeys;
@@ -74,9 +80,8 @@
     if (periodLabel != null && periodLabel!.trim().isNotEmpty) {
       return periodLabel!.trim();
     }
-    if (ageAtEvent != null) {
-      return ageAtEvent == 1 ? '1 ano' : '$ageAtEvent anos';
-    }
+    final age = LifeAgeSpan(start: ageAtEvent, end: ageTo).label;
+    if (age != null) return age;
     final chapter = _chapterLabels[lifeChapter];
     if (chapter != null) return chapter;
     return 'Data não informada';
@@ -126,6 +131,7 @@
       periodLabel: json['period_label'] as String?,
       lifeChapter: json['life_chapter'] as String?,
       ageAtEvent: (json['age_at_event'] as num?)?.toInt(),
+      ageTo: (json['age_to'] as num?)?.toInt(),
       category: json['category'] as String?,
       emotionalImpact: json['emotional_impact'] as int?,
       emotionalNeedKeys: _parseStringList(json['emotional_need_keys']),

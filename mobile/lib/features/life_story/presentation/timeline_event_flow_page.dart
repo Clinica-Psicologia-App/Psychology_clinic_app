@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/error_banner.dart';
+import '../../../shared/widgets/relationship_role_picker.dart';
 import '../domain/life_story_enums.dart';
 import '../domain/life_timeline_age.dart';
 import '../domain/life_timeline_event.dart';
@@ -1156,39 +1157,10 @@ class _AddPersonSheetState extends ConsumerState<_AddPersonSheet> {
           const Text('Essa pessoa é seu/sua...',
               style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
           const SizedBox(height: 8),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              for (final r in kRelationshipRolesInOrder)
-                InkWell(
-                  onTap: () => setState(() => _role = _role == r ? null : r),
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-                    decoration: BoxDecoration(
-                      color: _role == r
-                          ? const Color(0xFFE0F2F1)
-                          : const Color(0xFFF7F9FC),
-                      border: Border.all(
-                          color: _role == r
-                              ? AppColors.turquoise
-                              : AppColors.border),
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Text(r.label,
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          color: _role == r
-                              ? const Color(0xFF0F766E)
-                              : AppColors.textPrimary,
-                          fontWeight:
-                              _role == r ? FontWeight.w600 : FontWeight.w400,
-                        )),
-                  ),
-                ),
-            ],
+          // Mesmo seletor agrupado de "Minha Família" e do genograma.
+          RelationshipRolePicker(
+            selected: _role,
+            onChanged: (r) => setState(() => _role = r),
           ),
           const SizedBox(height: 20),
           FilledButton(

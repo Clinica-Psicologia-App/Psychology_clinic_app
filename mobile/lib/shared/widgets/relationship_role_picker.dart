@@ -87,43 +87,39 @@ class _RelationshipRolePickerState extends State<RelationshipRolePicker> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // ── linha 1: categorias ──────────────────────────────────────────
-        SizedBox(
-          height: 32,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: _groups.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 6),
-            itemBuilder: (_, i) {
-              final active = i == _activeGroup;
-              return GestureDetector(
+        // ── linha 1: categorias (todas visíveis, sem rolagem lateral) ─────
+        Wrap(
+          spacing: 6,
+          runSpacing: 6,
+          children: [
+            for (var i = 0; i < _groups.length; i++)
+              GestureDetector(
                 onTap: () => setState(() => _activeGroup = i),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 140),
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
                   decoration: BoxDecoration(
-                    color: active
+                    color: i == _activeGroup
                         ? theme.colorScheme.primary
                         : theme.colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(99),
                   ),
-                  alignment: Alignment.center,
                   child: Text(
                     _groups[i].label,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: active
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: i == _activeGroup
                           ? theme.colorScheme.onPrimary
                           : theme.colorScheme.onSurfaceVariant,
                       fontWeight:
-                          active ? FontWeight.w700 : FontWeight.w500,
+                          i == _activeGroup ? FontWeight.w700 : FontWeight.w500,
                     ),
                   ),
                 ),
-              );
-            },
-          ),
+              ),
+          ],
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 10),
         // ── linha 2: chips da categoria ─────────────────────────────────
         Wrap(
           spacing: 7,

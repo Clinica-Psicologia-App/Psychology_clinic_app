@@ -97,6 +97,19 @@ class QuestionnairesRepository {
           .map((row) => Questionnaire.fromJson(Map<String, dynamic>.from(row)))
           .toList();
     } on PostgrestException catch (e) {
+      if (_isMissingPatientContentColumn(e)) {
+        final rows = await _fetchQuestionnaireCatalogRows(
+          onlyActive: false,
+          withReferencePeriod: true,
+          withCatalogMetadata: true,
+          withPatientContent: false,
+        );
+        return rows
+            .map(
+              (row) => Questionnaire.fromJson(Map<String, dynamic>.from(row)),
+            )
+            .toList();
+      }
       if (_isMissingCatalogMetadataError(e) ||
           _isMissingReferencePeriodColumn(e)) {
         final rows = await _fetchQuestionnaireCatalogRows(
@@ -344,6 +357,14 @@ class QuestionnairesRepository {
         withCatalogMetadata: true,
       );
     } on PostgrestException catch (e) {
+      if (_isMissingPatientContentColumn(e)) {
+        return await _fetchQuestionnaireCatalogRows(
+          onlyActive: true,
+          withReferencePeriod: true,
+          withCatalogMetadata: true,
+          withPatientContent: false,
+        );
+      }
       if (_isMissingCatalogMetadataError(e)) {
         try {
           return await _fetchQuestionnaireCatalogRows(
@@ -378,6 +399,7 @@ class QuestionnairesRepository {
     required bool onlyActive,
     required bool withReferencePeriod,
     required bool withCatalogMetadata,
+    bool withPatientContent = true,
   }) async {
     final fields = <String>[
       'id',
@@ -391,7 +413,7 @@ class QuestionnairesRepository {
         'citation',
         'license_notes',
         'clinical_status',
-        'patient_content',
+        if (withPatientContent) 'patient_content',
       ],
     ];
 
@@ -476,8 +498,15 @@ class QuestionnairesRepository {
         message.contains('instrument_version') ||
         message.contains('citation') ||
         message.contains('license_notes') ||
-        message.contains('clinical_status') ||
-        message.contains('patient_content');
+        message.contains('clinical_status');
+  }
+
+  /// `patient_content` chegou depois dos demais metadados: se só ela faltar
+  /// (banco sem a migração 20261102100000), o catálogo mantém `clinical_status`
+  /// e o restante. Sem isso o app trata todo instrumento como "em homologação".
+  bool _isMissingPatientContentColumn(PostgrestException e) {
+    final message = '${e.message} ${e.details} ${e.hint}'.toLowerCase();
+    return message.contains('patient_content');
   }
 
   bool _isMissingQuestionnaireAccessSchemaError(PostgrestException e) {

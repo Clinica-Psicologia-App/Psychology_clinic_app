@@ -413,10 +413,15 @@ class CheckInDiaryEntry extends StatelessWidget {
     required this.onTap,
     this.isToday = false,
     this.isLast = false,
+    this.showScores = true,
   });
 
   final PatientCheckIn checkIn;
   final VoidCallback onTap;
+
+  /// Os 5 indicadores (Hum, Ans, Ene, Son, Est) na linha do registro. A visão
+  /// do psicólogo os deixa para o detalhe, mantendo a lista compacta.
+  final bool showScores;
 
   /// Página de hoje: ganha borda turquesa e o selo "hoje".
   final bool isToday;
@@ -519,28 +524,30 @@ class CheckInDiaryEntry extends StatelessWidget {
                               const _TodayTag(),
                             ],
                             const Spacer(),
-                            _MiniScore(
-                              label: 'Hum',
-                              value: checkIn.moodScore,
-                            ),
-                            _MiniScore(
-                              label: 'Ans',
-                              value: checkIn.anxietyScore,
-                              inverse: true,
-                            ),
-                            _MiniScore(
-                              label: 'Ene',
-                              value: checkIn.energyScore,
-                            ),
-                            _MiniScore(
-                              label: 'Son',
-                              value: checkIn.sleepScore,
-                            ),
-                            _MiniScore(
-                              label: 'Est',
-                              value: checkIn.stressScore,
-                              inverse: true,
-                            ),
+                            if (showScores) ...[
+                              _MiniScore(
+                                label: 'Hum',
+                                value: checkIn.moodScore,
+                              ),
+                              _MiniScore(
+                                label: 'Ans',
+                                value: checkIn.anxietyScore,
+                                inverse: true,
+                              ),
+                              _MiniScore(
+                                label: 'Ene',
+                                value: checkIn.energyScore,
+                              ),
+                              _MiniScore(
+                                label: 'Son',
+                                value: checkIn.sleepScore,
+                              ),
+                              _MiniScore(
+                                label: 'Est',
+                                value: checkIn.stressScore,
+                                inverse: true,
+                              ),
+                            ],
                           ],
                         ),
                         if (notes.isNotEmpty) ...[
@@ -559,7 +566,7 @@ class CheckInDiaryEntry extends StatelessWidget {
                             ),
                             child: Text(
                               notes,
-                              maxLines: 4,
+                              maxLines: 3,
                               overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.bodyMedium?.copyWith(
                                 fontSize: 13,
@@ -582,8 +589,7 @@ class CheckInDiaryEntry extends StatelessWidget {
     );
   }
 
-  static String _hhmm(DateTime d) =>
-      '${d.hour.toString().padLeft(2, '0')}:'
+  static String _hhmm(DateTime d) => '${d.hour.toString().padLeft(2, '0')}:'
       '${d.minute.toString().padLeft(2, '0')}';
 }
 

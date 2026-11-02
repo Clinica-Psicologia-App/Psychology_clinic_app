@@ -202,12 +202,17 @@ class _CheckInsList extends StatelessWidget {
       blocks.add(
         AppPageHeader(
           title: 'Diário do paciente',
-          subtitle: 'O que ele registrou entre as sessões, na ordem em que '
-              'escreveu.',
+          subtitle: 'Registros compartilhados pelo paciente ao longo do '
+              'processo terapêutico, organizados do mais recente para o mais '
+              'antigo.',
           icon: Icons.menu_book_outlined,
           metadata: [
             if (hasToday) const Chip(label: Text('Escreveu hoje')),
-            Chip(label: Text('${items.length} páginas')),
+            Chip(
+              label: Text(
+                items.length == 1 ? '1 registro' : '${items.length} registros',
+              ),
+            ),
           ],
         ),
       );
@@ -232,6 +237,7 @@ class _CheckInsList extends StatelessWidget {
           isToday: c.isToday,
           // O fio para no fim de cada capítulo, senão atravessa o divisor.
           isLast: nextIsNewMonth,
+          showScores: !readOnly,
           onTap: () => onTap(c),
         ),
       );

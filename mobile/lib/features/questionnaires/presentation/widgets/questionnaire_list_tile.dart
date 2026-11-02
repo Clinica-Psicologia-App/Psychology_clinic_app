@@ -199,8 +199,6 @@ class QuestionnaireListTile extends StatelessWidget {
                           color: colors.onSurfaceVariant,
                           height: 1.5,
                         ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
                       ),
                       if (chips.isNotEmpty || hasLicenseNote)
                         const SizedBox(height: 8),

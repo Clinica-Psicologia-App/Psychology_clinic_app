@@ -554,7 +554,7 @@ class _QuestionnairesHeader extends StatelessWidget {
       return AppPageHeader(
         title: 'Questionários',
         subtitle:
-            'Instrumentos liberados pelo profissional para apoiar a avaliação e o acompanhamento clínico.',
+            'Aqui você encontra os questionários disponibilizados pelo seu psicólogo. Suas respostas ajudam a compreender melhor suas experiências e contribuem para o acompanhamento do seu processo terapêutico.',
         icon: Icons.assignment_outlined,
         metadata: [
           Chip(label: Text('$availableCount disponíveis')),

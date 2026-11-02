@@ -67,14 +67,6 @@ class _QuestionnaireAnswerPageState
     });
   }
 
-  /// Frase gentil que acompanha o progresso (acolhe o respondente).
-  String _encouragement(double progress) {
-    if (progress >= 0.99) return 'Última pergunta — quase lá!';
-    if (progress >= 0.75) return 'Reta final, continue assim.';
-    if (progress >= 0.4) return 'Você está indo muito bem.';
-    return 'Sem pressa — uma de cada vez.';
-  }
-
   /// Direção da transição entre perguntas: 1 = avançando (entra da direita),
   /// -1 = voltando (entra da esquerda).
   int _direction = 1;
@@ -185,29 +177,25 @@ class _QuestionnaireAnswerPageState
                       ),
                     ],
                   ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    _isParentalFlow
-                        ? 'Respondendo sobre: ${_currentContext?.label ?? 'Figura parental'}'
-                        : 'Pergunta ${_currentIndex + 1}',
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                        ),
-                  ),
-                  const SizedBox(height: 2),
-                  Row(
-                    children: [
-                      const Icon(Icons.spa_outlined,
-                          size: 13, color: AppColors.textMuted),
-                      const SizedBox(width: 5),
-                      Text(
-                        _encouragement(progress),
-                        style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                              color: AppColors.textMuted,
-                            ),
-                      ),
-                    ],
-                  ),
+                  if (session.questionnaire.patientContent.fixedQuestion
+                      case final fixedQuestion?) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      fixedQuestion,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                  ],
+                  if (_isParentalFlow) ...[
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      'Respondendo sobre: ${_currentContext?.label ?? 'Figura parental'}',
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -256,17 +244,16 @@ class _QuestionnaireAnswerPageState
                         children: [
                           AppInfoCard(
                             title: _isParentalFlow
-                                ? 'Pergunta sobre ${_currentContext?.label ?? 'figura parental'}'
-                                : 'Pergunta ${_currentIndex + 1}',
-                            body: _isParentalFlow
                                 ? normalizeParentalQuestionText(question.text)
                                 : question.text,
                             icon: Icons.help_outline,
                           ),
-                          const SizedBox(height: AppSpacing.xl),
+                          const SizedBox(height: AppSpacing.lg),
                           QuestionInputWidget(
                             question: question,
                             questionnaireCode: session.questionnaire.code,
+                            scaleLabels: session
+                                .questionnaire.patientContent.scaleLabels,
                             value: _answers[_currentAnswerKey],
                             errorText: _fieldError,
                             onChanged: (v) {
@@ -502,7 +489,9 @@ class _QuestionnaireAnswerPageState
           role: widget.role,
           patientId: widget.patientId,
         ),
-        extra: result,
+        extra: result.withFollowUp(
+          session.questionnaire.patientContent.followUp,
+        ),
       );
     } catch (e) {
       if (mounted) showErrorBanner(context, e);

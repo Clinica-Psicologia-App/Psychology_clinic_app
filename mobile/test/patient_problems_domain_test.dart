@@ -56,7 +56,7 @@ void main() {
     );
   });
 
-  test('journey problems inProgress when open problems exist', () {
+  test('journey problems completed once any problem is registered', () {
     const progress = PatientJourneyProgress(
       activeQuestionnaireCount: 0,
       completedQuestionnaireCount: 0,
@@ -79,7 +79,7 @@ void main() {
 
     final steps = buildPatientJourneySteps(progress);
     final problems = steps.firstWhere((s) => s.id == JourneyStepId.problems);
-    expect(problems.availability, JourneyStepAvailability.inProgress);
+    expect(problems.availability, JourneyStepAvailability.completed);
   });
 
   test('journey problems completed when all closed', () {

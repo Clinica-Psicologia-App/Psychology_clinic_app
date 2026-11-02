@@ -71,7 +71,7 @@ String? validateParentalContextSelection({
 
   for (final (i, c) in enabled) {
     if (c.role == null) {
-      return 'Selecione o tipo do Cuidador(a) ${i + 1}.';
+      return 'Escolha quem é o Cuidador(a) ${i + 1} ou desative-o.';
     }
     if (c.role == 'outro') {
       final t1 = c.otherText1?.trim() ?? '';

@@ -18,6 +18,17 @@ class QuestionnaireSession {
   final List<QuestionnaireQuestion> questions;
   final List<QuestionnaireResponseContext> contexts;
 
+  /// Mesma sessão com o questionário do catálogo (que traz os textos do
+  /// paciente, ausentes na resposta da função de início).
+  QuestionnaireSession withQuestionnaire(Questionnaire catalog) =>
+      QuestionnaireSession(
+        responseId: responseId,
+        patientId: patientId,
+        questionnaire: catalog,
+        questions: questions,
+        contexts: contexts,
+      );
+
   factory QuestionnaireSession.fromStartResponse(
     Map<String, dynamic> data,
     String patientId,

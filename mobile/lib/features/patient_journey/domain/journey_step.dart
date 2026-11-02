@@ -179,9 +179,8 @@ List<JourneyStep> buildPatientJourneySteps(
     if (p.totalProblemCount == 0) {
       return JourneyStepAvailability.available;
     }
-    if (p.openProblemCount > 0) {
-      return JourneyStepAvailability.inProgress;
-    }
+    // Registrar ao menos um problema já conclui a etapa; o acompanhamento
+    // de cada um segue na própria tela.
     return JourneyStepAvailability.completed;
   }
 
@@ -193,7 +192,7 @@ List<JourneyStep> buildPatientJourneySteps(
     if (p.openProblemCount > 0) {
       return '${p.openProblemCount} problema(s) em acompanhamento.';
     }
-    return 'Todos os problemas estão resolvidos ou arquivados.';
+    return 'Nenhum problema em acompanhamento no momento.';
   }
 
   // "Conhecendo você" tem um total real e fechado (24 campos nos Blocos
@@ -320,7 +319,7 @@ List<JourneyStep> buildPatientJourneySteps(
 
   double? problemsFraction() {
     if (p == null || p.totalProblemCount == 0) return 0.0;
-    return (p.totalProblemCount - p.openProblemCount) / p.totalProblemCount;
+    return 1.0;
   }
 
   double? libraryFraction() {

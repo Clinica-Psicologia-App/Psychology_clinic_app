@@ -391,6 +391,7 @@ class QuestionnairesRepository {
         'citation',
         'license_notes',
         'clinical_status',
+        'patient_content',
       ],
     ];
 
@@ -475,7 +476,8 @@ class QuestionnairesRepository {
         message.contains('instrument_version') ||
         message.contains('citation') ||
         message.contains('license_notes') ||
-        message.contains('clinical_status');
+        message.contains('clinical_status') ||
+        message.contains('patient_content');
   }
 
   bool _isMissingQuestionnaireAccessSchemaError(PostgrestException e) {
@@ -683,7 +685,8 @@ class QuestionnairesRepository {
   }
 
   /// Retorna o melhor status de resposta por questionário para o paciente.
-  /// Prioridade: completed > draft.
+  /// Prioridade: draft > completed — se o paciente está refazendo um
+  /// questionário já concluído, a lista mostra "Em andamento".
   Future<Map<String, QuestionnairePatientStatus>> getPatientResponseStatuses(
     String patientId,
   ) async {
@@ -704,7 +707,7 @@ class QuestionnairesRepository {
             ? QuestionnairePatientStatus.completed
             : QuestionnairePatientStatus.draft;
 
-        if (status == QuestionnairePatientStatus.completed ||
+        if (status == QuestionnairePatientStatus.draft ||
             !result.containsKey(qId)) {
           result[qId] = status;
         }

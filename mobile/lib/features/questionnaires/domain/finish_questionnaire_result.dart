@@ -4,7 +4,20 @@ class FinishQuestionnaireResult {
     required this.questionnaireName,
     this.completedAt,
     required this.resultsCount,
+    this.followUpText,
   });
+
+  /// Texto do cartão "Para seu acompanhamento" específico do instrumento.
+  final String? followUpText;
+
+  FinishQuestionnaireResult withFollowUp(String? text) =>
+      FinishQuestionnaireResult(
+        responseId: responseId,
+        questionnaireName: questionnaireName,
+        completedAt: completedAt,
+        resultsCount: resultsCount,
+        followUpText: text,
+      );
 
   final String responseId;
   final String questionnaireName;

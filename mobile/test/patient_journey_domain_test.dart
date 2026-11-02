@@ -302,12 +302,13 @@ void main() {
       expect(step.progressFraction, closeTo(0.9, 1e-9));
     });
 
-    test('problemas: fração bate com resolvido/total', () {
+    test('problemas: registrar ao menos um conclui a etapa', () {
       final step = buildPatientJourneySteps(_progress(
         totalProblemCount: 5,
         openProblemCount: 2,
       )).firstWhere((s) => s.id == JourneyStepId.problems);
-      expect(step.progressFraction, closeTo(0.6, 1e-9));
+      expect(step.availability, JourneyStepAvailability.completed);
+      expect(step.progressFraction, closeTo(1.0, 1e-9));
     });
 
     test(

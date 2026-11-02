@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/config/env_config.dart';
+import '../../../core/errors/app_exception.dart';
 import '../../../core/theme/app_animations.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
@@ -134,35 +135,49 @@ class _QuestionnaireIntroPageState
                           child: Column(
                             children: _roleEntries.map((entry) {
                               final (key, label) = entry;
-                              return RadioListTile<String>(
+                              final tile = RadioListTile<String>(
                                 value: key,
                                 title: Text(label),
                                 contentPadding: EdgeInsets.zero,
                                 dense: true,
                               );
+                              // Os campos de "Outro" ficam logo abaixo da
+                              // opção, onde a pessoa acabou de tocar.
+                              if (key != 'outro' || selectedRole != 'outro') {
+                                return tile;
+                              }
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  tile,
+                                  const SizedBox(height: 4),
+                                  TextField(
+                                    controller:
+                                        _caregiverOtherController1[index],
+                                    decoration: const InputDecoration(
+                                      labelText: 'Quem é essa pessoa? (nome)',
+                                      border: OutlineInputBorder(),
+                                    ),
+                                    textCapitalization:
+                                        TextCapitalization.words,
+                                  ),
+                                  const SizedBox(height: 8),
+                                  TextField(
+                                    controller:
+                                        _caregiverOtherController2[index],
+                                    decoration: const InputDecoration(
+                                      labelText: 'Relação com o paciente',
+                                      border: OutlineInputBorder(),
+                                    ),
+                                    textCapitalization:
+                                        TextCapitalization.words,
+                                  ),
+                                  const SizedBox(height: 8),
+                                ],
+                              );
                             }).toList(),
                           ),
                         ),
-                        if (selectedRole == 'outro') ...[
-                          const SizedBox(height: 12),
-                          TextField(
-                            controller: _caregiverOtherController1[index],
-                            decoration: const InputDecoration(
-                              labelText: 'Nome',
-                              border: OutlineInputBorder(),
-                            ),
-                            textCapitalization: TextCapitalization.words,
-                          ),
-                          const SizedBox(height: 8),
-                          TextField(
-                            controller: _caregiverOtherController2[index],
-                            decoration: const InputDecoration(
-                              labelText: 'Relação com o paciente',
-                              border: OutlineInputBorder(),
-                            ),
-                            textCapitalization: TextCapitalization.words,
-                          ),
-                        ],
                       ],
                     ),
             ),
@@ -174,7 +189,8 @@ class _QuestionnaireIntroPageState
 
   @override
   Widget build(BuildContext context) {
-    final orientation =
+    final content = widget.questionnaire.patientContent;
+    final orientation = content.referencePeriodText ??
         widget.questionnaire.referencePeriod.patientOrientationMessage;
     final canStart = widget.questionnaire.canStart(
       allowUnvalidated: EnvConfig.allowsUnvalidatedInstruments,
@@ -202,8 +218,8 @@ class _QuestionnaireIntroPageState
                     MotionReveal(
                       child: AppPageHeader(
                         title: widget.questionnaire.name,
-                        subtitle:
-                            'Revise as orientações antes de iniciar. Suas respostas ficam registradas para análise clínica do profissional responsável.',
+                        subtitle: content.intro ??
+                            'Antes de começar, leia as orientações com atenção. Suas respostas ajudarão você e seu psicólogo a compreender melhor suas experiências.',
                         icon: Icons.assignment_outlined,
                         metadata: [
                           if (widget.questionnaire.referencePeriod !=
@@ -257,7 +273,7 @@ class _QuestionnaireIntroPageState
                             null) ...[
                       const SizedBox(height: AppSpacing.lg),
                       AppInfoCard(
-                        title: 'Orientação para resposta',
+                        title: content.howToRespondTitle ?? 'Como responder',
                         body: widget.questionnaire.patientSpecificGuidance!,
                         icon: Icons.tips_and_updates_outlined,
                         tone: AppInfoCardTone.info,
@@ -318,7 +334,10 @@ class _QuestionnaireIntroPageState
       final inputs = _buildCaregiverInputs();
       final error = validateParentalContextSelection(caregivers: inputs);
       if (error != null) {
-        showErrorBanner(context, Exception(error));
+        showErrorBanner(
+          context,
+          AppException(code: AppExceptionCodes.validation, message: error),
+        );
         return;
       }
     }
@@ -348,7 +367,7 @@ class _QuestionnaireIntroPageState
           role: widget.role,
           patientId: widget.staffPatientId,
         ),
-        extra: session,
+        extra: session.withQuestionnaire(widget.questionnaire),
       );
     } catch (e) {
       if (mounted) showErrorBanner(context, e);

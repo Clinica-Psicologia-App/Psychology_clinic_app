@@ -80,81 +80,117 @@ class _QuestionnaireSuccessPageState extends State<QuestionnaireSuccessPage>
     return AppScaffold(
       title: 'Concluído',
       accent: AppColors.blue,
-      body: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
+      body: SafeArea(
         child: Column(
           children: [
-            AppPageHeader(
-              title: isPatient
-                  ? 'Pronto! Respostas enviadas'
-                  : 'Questionário enviado',
-              subtitle: isPatient
-                  ? 'Obrigado por dedicar esse tempo. Suas respostas ajudam seu psicólogo a acompanhar você de perto.'
-                  : 'As respostas foram registradas e ficarão disponíveis para revisão clínica do profissional responsável.',
-              icon: Icons.check_circle_outline,
-              metadata: [
-                if (dateLabel != null) Chip(label: Text(dateLabel)),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            _SuccessBadge(
-              badgeScale:
-                  animate ? _badgeScale : const AlwaysStoppedAnimation(1),
-              ring: animate ? _ring : const AlwaysStoppedAnimation(1),
-              check: animate ? _check : const AlwaysStoppedAnimation(1),
-            ),
-            const SizedBox(height: 28),
-            MotionReveal(
-              delay: const Duration(milliseconds: 240),
-              child: Column(
-                children: [
-                  Text(
-                    widget.result.questionnaireName,
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
+            // Conteúdo rolável: em telas baixas nada fica cortado e os
+            // botões abaixo continuam sempre visíveis.
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Column(
+                  children: [
+                    AppPageHeader(
+                      title: isPatient
+                          ? 'Respostas enviadas com sucesso!'
+                          : 'Questionário enviado',
+                      subtitle: isPatient
+                          ? 'Obrigado por dedicar esse tempo a olhar para suas experiências. Suas respostas contribuirão para a compreensão do seu processo terapêutico.'
+                          : 'As respostas foram registradas e ficarão disponíveis para revisão clínica do profissional responsável.',
+                      icon: Icons.check_circle_outline,
                     ),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+                    const SizedBox(height: AppSpacing.md),
+                    MotionReveal(
+                      delay: const Duration(milliseconds: 340),
+                      child: AppInfoCard(
+                        title: isPatient
+                            ? 'Para seu acompanhamento'
+                            : 'Revisão clínica',
+                        body: isPatient
+                            ? widget.result.followUpText ??
+                                'Suas respostas ficarão disponíveis para seu psicólogo e poderão contribuir para a compreensão do seu processo terapêutico.'
+                            : 'A interpretação clínica será revisada pelo profissional responsável. Não há resultado automático nesta versão.',
+                        icon: Icons.shield_outlined,
+                        tone: AppInfoCardTone.success,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    _SuccessBadge(
+                      badgeScale: animate
+                          ? _badgeScale
+                          : const AlwaysStoppedAnimation(1),
+                      ring: animate ? _ring : const AlwaysStoppedAnimation(1),
+                      check:
+                          animate ? _check : const AlwaysStoppedAnimation(1),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    MotionReveal(
+                      delay: const Duration(milliseconds: 240),
+                      child: Column(
+                        children: [
+                          Text(
+                            widget.result.questionnaireName,
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          if (dateLabel != null) ...[
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              dateLabel,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: AppSpacing.xl),
-            MotionReveal(
-              delay: const Duration(milliseconds: 340),
-              child: AppInfoCard(
-                title: 'Revisão clínica',
-                body: isPatient
-                    ? 'Seu psicólogo vai revisar as respostas com calma. Não existe resposta certa ou errada — o que importa é o seu momento.'
-                    : 'A interpretação clínica será revisada pelo profissional responsável. Não há resultado automático nesta versão.',
-                icon: Icons.shield_outlined,
-                tone: AppInfoCardTone.success,
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.xs,
+                AppSpacing.md,
+                AppSpacing.md,
               ),
-            ),
-            const Spacer(),
-            MotionReveal(
-              delay: const Duration(milliseconds: 420),
               child: Column(
                 children: [
                   SizedBox(
                     width: double.infinity,
                     child: FilledButton(
+                      onPressed: () => isPatient
+                          ? context.go('/patient')
+                          : context.go(
+                              QuestionnaireRoutes.list(
+                                role: widget.role,
+                                patientId: widget.patientId,
+                              ),
+                            ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Text(
+                          isPatient
+                              ? 'Voltar ao meu espaço'
+                              : 'Voltar aos questionários',
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (isPatient)
+                    TextButton(
                       onPressed: () => context.go(
                         QuestionnaireRoutes.list(
                           role: widget.role,
                           patientId: widget.patientId,
                         ),
                       ),
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 12),
-                        child: Text('Voltar aos questionários'),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  if (widget.role == ProfileRole.patient)
-                    TextButton(
-                      onPressed: () => context.go('/patient'),
-                      child: const Text('Ir para início'),
+                      child: const Text('Voltar aos questionários'),
                     ),
                 ],
               ),

@@ -15,6 +15,7 @@ class QuestionInputWidget extends StatelessWidget {
     required this.onChanged,
     this.errorText,
     this.questionnaireCode,
+    this.scaleLabels = const [],
   });
 
   final QuestionnaireQuestion question;
@@ -22,6 +23,10 @@ class QuestionInputWidget extends StatelessWidget {
   final ValueChanged<int> onChanged;
   final String? errorText;
   final String? questionnaireCode;
+
+  /// Rótulo de cada valor da escala (na ordem); o da opção marcada aparece
+  /// logo abaixo da escala.
+  final List<String> scaleLabels;
 
   @override
   Widget build(BuildContext context) {
@@ -59,6 +64,7 @@ class QuestionInputWidget extends StatelessWidget {
             value: value,
             onChanged: onChanged,
             questionnaireCode: questionnaireCode,
+            scaleLabels: scaleLabels,
           )
         else
           _SliderScale(
@@ -106,12 +112,26 @@ class _SegmentedScale extends StatelessWidget {
     required this.value,
     required this.onChanged,
     this.questionnaireCode,
+    this.scaleLabels = const [],
   });
 
   final List<int> values;
   final int? value;
   final ValueChanged<int> onChanged;
   final String? questionnaireCode;
+  final List<String> scaleLabels;
+
+  /// Rótulo da opção marcada, quando a escala traz um por valor.
+  String? get _selectedLabel {
+    final v = value;
+    if (v == null || scaleLabels.length != values.length) return null;
+    final index = values.indexOf(v);
+    return index < 0 ? null : scaleLabels[index];
+  }
+
+  /// Parte curta do rótulo ("Completamente falso, isto é, …" → "Completamente
+  /// falso"), usada nas pontas da escala.
+  static String _short(String label) => label.split(', isto é').first;
 
   // Largura fixa de cada parada — mantém os centros estáveis (a pílula cresce
   // dentro do slot), o que alinha o trilho com as pontas.
@@ -123,16 +143,22 @@ class _SegmentedScale extends StatelessWidget {
     final scheme = theme.colorScheme;
     final code = questionnaireCode?.toUpperCase() ?? '';
     final isSixPoint = values.first == 1 && values.last == 6;
-    final lower = isSixPoint && code.contains('YSQ')
-        ? '1 = Completamente falso'
-        : isSixPoint && code.contains('YAMI')
-            ? '1 = Nunca ou quase nunca'
-            : 'Menos';
-    final upper = isSixPoint && code.contains('YSQ')
-        ? '6 = Descreve-me perfeitamente'
-        : isSixPoint && code.contains('YAMI')
-            ? '6 = Quase o tempo todo'
-            : 'Mais';
+    final hasLabels = scaleLabels.length == values.length;
+    final lower = hasLabels
+        ? '${values.first} = ${_short(scaleLabels.first)}'
+        : isSixPoint && code.contains('YSQ')
+            ? '1 = Completamente falso'
+            : isSixPoint && code.contains('YAMI')
+                ? '1 = Nunca ou quase nunca'
+                : 'Menos';
+    final upper = hasLabels
+        ? '${values.last} = ${_short(scaleLabels.last)}'
+        : isSixPoint && code.contains('YSQ')
+            ? '6 = Descreve-me perfeitamente'
+            : isSixPoint && code.contains('YAMI')
+                ? '6 = Quase o tempo todo'
+                : 'Mais';
+    final selectedLabel = _selectedLabel;
 
     return Column(
       children: [
@@ -184,6 +210,34 @@ class _SegmentedScale extends StatelessWidget {
               ),
             ),
           ],
+        ),
+        AnimatedSize(
+          duration: AppAnimations.resolve(context, AppAnimations.fast),
+          curve: AppAnimations.standardCurve,
+          child: selectedLabel == null
+              ? const SizedBox(width: double.infinity)
+              : Padding(
+                  padding: const EdgeInsets.only(top: 14),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: scheme.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${value!} = $selectedLabel',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: scheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
         ),
       ],
     );

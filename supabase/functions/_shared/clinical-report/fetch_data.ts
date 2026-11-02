@@ -390,6 +390,7 @@ async function fetchGenogramPeople(
     .select("id, full_name, nickname, gender, birth_year")
     .eq("patient_id", patientId)
     .eq("clinic_id", clinicId)
+    .is("deleted_at", null)
     .order("full_name");
 
   if (error) {
@@ -430,11 +431,31 @@ async function fetchGenogramRelationships(
     );
   }
 
-  return (data ?? []).map((r) => ({
-    personAId: String(r.person_a_id),
-    personBId: String(r.person_b_id),
-    type: String(r.relationship_type ?? ""),
-  }));
+  // O client de serviço ignora a RLS: relações de pessoas excluídas
+  // (exclusão lógica) precisam ser descartadas aqui.
+  const { data: active, error: activeError } = await service
+    .from("genogram_people")
+    .select("id")
+    .eq("patient_id", patientId)
+    .eq("clinic_id", clinicId)
+    .is("deleted_at", null);
+
+  if (activeError) {
+    throw new AppError("INTERNAL_ERROR", "Failed to load genogram people", 500);
+  }
+
+  const activeIds = new Set((active ?? []).map((p) => String(p.id)));
+
+  return (data ?? [])
+    .filter((r) =>
+      activeIds.has(String(r.person_a_id)) &&
+      activeIds.has(String(r.person_b_id))
+    )
+    .map((r) => ({
+      personAId: String(r.person_a_id),
+      personBId: String(r.person_b_id),
+      type: String(r.relationship_type ?? ""),
+    }));
 }
 
 async function fetchTherapyResources(

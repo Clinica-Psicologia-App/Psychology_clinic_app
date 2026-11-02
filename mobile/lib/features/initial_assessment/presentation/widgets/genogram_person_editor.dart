@@ -161,7 +161,11 @@ class _GenogramPersonEditorState extends ConsumerState<_GenogramPersonEditor> {
       context: context,
       builder: (dialogCtx) => AlertDialog(
         title: const Text('Excluir pessoa?'),
-        content: const Text('Esta ação não pode ser desfeita.'),
+        content: const Text(
+          'A pessoa deixará de aparecer no genograma, junto com as relações '
+          'dela e a ligação com os momentos da sua história. Não será '
+          'possível desfazer por aqui.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogCtx).pop(false),

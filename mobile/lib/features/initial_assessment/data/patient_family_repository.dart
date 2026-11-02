@@ -283,7 +283,9 @@ class PatientFamilyRepository {
 
   Future<void> deletePerson(String personId) async {
     try {
-      await _client.from('genogram_people').delete().eq('id', personId);
+      // Exclusão lógica no banco (a pessoa some, o histórico fica auditado).
+      await _client
+          .rpc('delete_genogram_person', params: {'p_person_id': personId});
     } catch (e) {
       throw mapToAppException(e);
     }

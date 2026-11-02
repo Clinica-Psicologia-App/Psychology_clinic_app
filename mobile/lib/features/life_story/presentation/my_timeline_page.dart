@@ -152,6 +152,12 @@ class _MyTimelinePageState extends ConsumerState<MyTimelinePage> {
                     ? null
                     : [
                         PatientHeaderActionBtn(
+                          icon: Icons.insights_outlined,
+                          label: 'Infográfico',
+                          onTap: () =>
+                              context.push(LifeStoryRoutes.myInfographic),
+                        ),
+                        PatientHeaderActionBtn(
                           icon: Icons.help_outline_rounded,
                           label: 'Tutorial',
                           onTap: () => _startTour(force: true),

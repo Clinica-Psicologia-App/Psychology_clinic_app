@@ -5,6 +5,9 @@ abstract final class LifeStoryRoutes {
   /// A trilha do paciente (resultado visual) e ponto de entrada.
   static const myHistory = '/patient/my-history';
 
+  /// Infográfico do paciente: só o que o psicólogo autorizou.
+  static const myInfographic = '/patient/my-infographic';
+
   /// O fluxo em etapas para registrar um novo acontecimento.
   static const newEvent = '/patient/my-history/new';
 

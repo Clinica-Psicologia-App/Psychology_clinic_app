@@ -16,6 +16,7 @@ class TimelineEntry {
     this.beliefs = const [],
     this.beliefOther,
     this.isSensitive = false,
+    this.sharedWithPatient = false,
     this.clinicalComment,
     this.filledByRole,
     this.createdAt,
@@ -31,6 +32,9 @@ class TimelineEntry {
   final List<TimelineBelief> beliefs;
   final String? beliefOther;
   final bool isSensitive;
+
+  /// Autorizado pelo psicólogo para o infográfico do paciente. Nasce `false`.
+  final bool sharedWithPatient;
 
   /// Comentário clínico do terapeuta (staff-only).
   final String? clinicalComment;
@@ -49,6 +53,7 @@ class TimelineEntry {
       beliefs: timelineBeliefsFromKeys(json['belief_keys']),
       beliefOther: json['belief_other'] as String?,
       isSensitive: json['is_sensitive'] as bool? ?? false,
+      sharedWithPatient: json['shared_with_patient'] as bool? ?? false,
       filledByRole: json['filled_by_role'] as String?,
       createdAt: _parse(json['created_at']),
     );
@@ -66,6 +71,7 @@ class TimelineEntry {
       beliefs: beliefs,
       beliefOther: beliefOther,
       isSensitive: isSensitive,
+      sharedWithPatient: sharedWithPatient,
       clinicalComment: clinicalComment ?? this.clinicalComment,
       filledByRole: filledByRole,
       createdAt: createdAt,

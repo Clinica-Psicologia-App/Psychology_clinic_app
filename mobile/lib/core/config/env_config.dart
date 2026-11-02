@@ -15,6 +15,25 @@ abstract final class EnvConfig {
   static const String _passwordResetRedirectDefine =
       String.fromEnvironment('PASSWORD_RESET_REDIRECT_URL');
 
+  /// Versão e data do build, informadas por `scripts/build-apk-validacao.ps1`.
+  /// Em `flutter run` manual ficam como "dev".
+  static const String _appVersionDefine =
+      String.fromEnvironment('APP_VERSION', defaultValue: 'dev');
+  static const String _appBuildDateDefine =
+      String.fromEnvironment('APP_BUILD_DATE');
+
+  /// Texto para a tela de perfil: "Versão 1.0.1+2 · build 02/11/2026 14:30".
+  /// Acrescenta "ambiente local" quando o backend é o de desenvolvimento, que
+  /// libera instrumentos ainda não validados.
+  static String get versionLabel {
+    final parts = [
+      'Versão $_appVersionDefine',
+      if (_appBuildDateDefine.isNotEmpty) 'build $_appBuildDateDefine',
+      if (allowsUnvalidatedInstruments) 'ambiente local',
+    ];
+    return parts.join(' · ');
+  }
+
   /// Chave anon padrão do Supabase **local** (`supabase start`). Em staging/produção
   /// use sempre `env.local.json` / CI - nunca a demo key do projeto remoto.
   static const String _defaultAnonKey =

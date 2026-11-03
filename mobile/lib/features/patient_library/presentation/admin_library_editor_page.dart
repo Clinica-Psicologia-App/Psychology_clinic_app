@@ -292,9 +292,8 @@ class _AdminLibraryEditorPageState
 
   @override
   Widget build(BuildContext context) {
-    return AppScaffold(
+    return AppSectionScaffold(
       title: _isEditing ? 'Editar obra' : 'Nova obra',
-      accent: AppColors.cyan,
       subtitle: 'Catálogo da Biblioteca',
       actions: [
         if (_isEditing)

@@ -66,9 +66,8 @@ class _QuestionnaireCatalogEditorPageState
         : ref
             .watch(questionnaireCatalogAdminDetailProvider(id))
             .whenData((v) => v);
-    return AppScaffold(
+    return AppSectionScaffold(
       title: id == null ? 'Novo questionário' : 'Editor do questionário',
-      accent: AppColors.blue,
       subtitle: 'Rascunho, perguntas e publicação',
       body: detailAsync.when(
         loading: () => const BrandLoader(),

@@ -11,7 +11,6 @@ import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/responsive_content.dart';
-import '../../../shared/widgets/status_chip.dart';
 import '../domain/clinic_summary.dart';
 import '../providers/clinics_providers.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
@@ -24,10 +23,32 @@ class ClinicsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(clinicsProvider);
 
-    return AppScaffold(
+    final clinics = state.valueOrNull ?? const <ClinicSummary>[];
+    final loaded = state.hasValue;
+    final personal = clinics.where((c) => c.isPersonal).length;
+    final institutional = clinics.length - personal;
+
+    return AppSectionScaffold(
       title: 'Clínicas',
-      accent: AppColors.blue,
       subtitle: 'Clínicas e profissionais individuais',
+      stats: [
+        AppSectionStat(
+          value: loaded ? '${clinics.length}' : '—',
+          label: 'Cadastros',
+        ),
+        AppSectionStat(
+          value: loaded ? '$institutional' : '—',
+          label: 'Clínicas',
+          accent: const Color(0xFF00D4C9),
+        ),
+        AppSectionStat(
+          value: loaded ? '$personal' : '—',
+          label: 'Individuais',
+        ),
+      ],
+      primaryActionLabel: 'Nova clínica',
+      primaryActionIcon: Icons.add_business_outlined,
+      onPrimaryAction: () => _showCreateClinicSheet(context, ref),
       actions: [
         IconButton(
           tooltip: 'Atualizar',
@@ -36,7 +57,7 @@ class ClinicsPage extends ConsumerWidget {
         ),
       ],
       body: state.when(
-        loading: () => const BrandLoader(),
+        loading: () => const Center(child: BrandLoader()),
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
@@ -52,7 +73,6 @@ class ClinicsPage extends ConsumerWidget {
           clinics: clinics,
           onToggleActive: (clinic) => _toggleActive(context, ref, clinic),
           onDelete: (clinic) => _deleteClinic(context, ref, clinic),
-          onCreate: () => _showCreateClinicSheet(context, ref),
         ),
       ),
     );
@@ -211,66 +231,18 @@ class _ClinicsList extends StatelessWidget {
     required this.clinics,
     required this.onToggleActive,
     required this.onDelete,
-    required this.onCreate,
   });
 
   final List<ClinicSummary> clinics;
   final ValueChanged<ClinicSummary> onToggleActive;
   final ValueChanged<ClinicSummary> onDelete;
-  final VoidCallback onCreate;
 
   @override
   Widget build(BuildContext context) {
-    final active = clinics.where((clinic) => clinic.isActive).length;
-    final inactive = clinics.length - active;
-    final personal = clinics.where((clinic) => clinic.isPersonal).length;
-    final institutional = clinics.length - personal;
-
     return ResponsiveContent(
       child: ListView(
         padding: const EdgeInsets.all(AppSpacing.xl),
         children: [
-          AppPageHeader(
-            icon: Icons.apartment_outlined,
-            title: 'Clínicas e consultórios',
-            subtitle:
-                'Gerencie os cadastros institucionais. A equipe e os psicólogos vinculados ficam no módulo separado de Psicólogos e administradores.',
-            metadata: [
-              StatusChip(
-                label: '${clinics.length} cadastro(s)',
-                tone: AppStatusTone.info,
-                icon: Icons.business_outlined,
-              ),
-              StatusChip(
-                label: '$institutional clínica(s)',
-                tone: AppStatusTone.success,
-                icon: Icons.apartment_outlined,
-              ),
-              if (personal > 0)
-                StatusChip(
-                  label: '$personal individual(is)',
-                  tone: AppStatusTone.neutral,
-                  icon: Icons.person_pin_circle_outlined,
-                ),
-              StatusChip(
-                label: '$active ativa(s)',
-                tone: AppStatusTone.completed,
-                icon: Icons.check_circle_outline,
-              ),
-              if (inactive > 0)
-                StatusChip(
-                  label: '$inactive inativa(s)',
-                  tone: AppStatusTone.warning,
-                  icon: Icons.pause_circle_outline,
-                ),
-            ],
-            primaryAction: FilledButton.icon(
-              onPressed: onCreate,
-              icon: const Icon(Icons.add_business_outlined),
-              label: const Text('Nova clínica'),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
           const AppSectionHeader(
             title: 'Cadastros institucionais',
             subtitle:
@@ -312,18 +284,21 @@ class _ClinicCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final accent = clinic.isPersonal ? AppColors.purple : AppColors.blue;
+    final statusColor =
+        clinic.isActive ? AppColors.success : AppColors.disabled;
 
     return MotionSurface(
       borderRadius: AppRadius.lgAll,
       child: ClayCard(
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: const EdgeInsets.all(AppSpacing.md),
           child: Row(
             children: [
               Container(
-                width: 48,
-                height: 48,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
                   color: accent.withValues(alpha: 0.12),
                   borderRadius: AppRadius.mdAll,
@@ -342,29 +317,60 @@ class _ClinicCard extends StatelessWidget {
                   children: [
                     Text(
                       clinic.name,
-                      style: Theme.of(context).textTheme.titleMedium,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Wrap(
-                      spacing: AppSpacing.xs,
-                      runSpacing: AppSpacing.xs,
+                    const SizedBox(height: 4),
+                    Row(
                       children: [
-                        _StatusChip(label: clinic.typeLabel, color: accent),
-                        _StatusChip(
-                          label: clinic.isActive ? 'Ativa' : 'Inativa',
-                          color: clinic.isActive
-                              ? AppColors.success
-                              : AppColors.disabled,
+                        Flexible(
+                          child: Text(
+                            clinic.typeLabel,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.labelMedium?.copyWith(
+                              color: accent,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
-                        _StatusChip(
-                          label: '${clinic.userCount} usuários',
-                          color: AppColors.cyan,
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.xs,
+                          ),
+                          child: Text(
+                            '·',
+                            style: TextStyle(color: theme.colorScheme.outline),
+                          ),
                         ),
-                        _StatusChip(
-                          label: '${clinic.patientCount} pacientes',
-                          color: AppColors.info,
+                        Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            color: statusColor,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                        const SizedBox(width: 5),
+                        Text(
+                          clinic.isActive ? 'Ativa' : 'Inativa',
+                          style: theme.textTheme.labelMedium?.copyWith(
+                            color: statusColor,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '${clinic.userCount} usuário${clinic.userCount == 1 ? '' : 's'} · '
+                      '${clinic.patientCount} paciente${clinic.patientCount == 1 ? '' : 's'}',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -649,23 +655,6 @@ class _CreateClinicSheetState extends State<_CreateClinicSheet> {
             ? null
             : _phoneController.text.trim(),
       ),
-    );
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.label, required this.color});
-
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Chip(
-      label: Text(label),
-      visualDensity: VisualDensity.compact,
-      backgroundColor: color.withValues(alpha: 0.10),
-      side: BorderSide(color: color.withValues(alpha: 0.18)),
     );
   }
 }

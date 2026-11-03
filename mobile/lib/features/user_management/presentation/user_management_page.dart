@@ -34,12 +34,33 @@ class UserManagementPage extends ConsumerWidget {
     final profile = ref.watch(authControllerProvider).valueOrNull;
     final isPlatformAdmin = profile?.role == ProfileRole.platformAdmin;
 
-    return AppScaffold(
-      title: 'Equipe e permissões',
-      accent: AppColors.blue,
-      subtitle: isPlatformAdmin
-          ? 'Psicólogos e administradores da plataforma'
-          : 'Gestão da equipe da clínica',
+    final users = usersState.valueOrNull ?? const <ClinicUser>[];
+    final loaded = usersState.hasValue;
+    final active = users.where((u) => u.isActive).length;
+    final personal = users.where((u) => u.isPersonalClinic).length;
+
+    return AppSectionScaffold(
+      title: 'Usuários',
+      subtitle:
+          'Quem acessa a plataforma, por clínica ou consultório individual.',
+      stats: [
+        AppSectionStat(
+          value: loaded ? '$active' : '—',
+          label: 'Ativos',
+          accent: const Color(0xFF00D4C9),
+        ),
+        AppSectionStat(
+          value: loaded ? '$personal' : '—',
+          label: 'Individuais',
+        ),
+        AppSectionStat(
+          value: loaded ? '${users.length}' : '—',
+          label: 'Total',
+        ),
+      ],
+      primaryActionLabel: 'Novo acesso',
+      primaryActionIcon: Icons.person_add_alt_1_outlined,
+      onPrimaryAction: () => _showCreateUserSheet(context, ref),
       actions: [
         IconButton(
           tooltip: 'Atualizar',
@@ -48,7 +69,7 @@ class UserManagementPage extends ConsumerWidget {
         ),
       ],
       body: usersState.when(
-        loading: () => const BrandLoader(),
+        loading: () => const Center(child: BrandLoader()),
         error: (e, _) => Center(
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
@@ -69,7 +90,6 @@ class UserManagementPage extends ConsumerWidget {
               _updatePsychologistAccess(context, ref, user),
           onChangeRole: (user) => _changeRole(context, ref, user),
           onDelete: (user) => _deleteUser(context, ref, user),
-          onCreate: () => _showCreateUserSheet(context, ref),
         ),
       ),
     );
@@ -324,7 +344,7 @@ class UserManagementPage extends ConsumerWidget {
   }
 }
 
-class _UsersList extends StatelessWidget {
+class _UsersList extends StatefulWidget {
   const _UsersList({
     required this.users,
     required this.currentProfileId,
@@ -333,7 +353,6 @@ class _UsersList extends StatelessWidget {
     required this.onUpdateAccess,
     required this.onChangeRole,
     required this.onDelete,
-    required this.onCreate,
   });
 
   final List<ClinicUser> users;
@@ -343,21 +362,38 @@ class _UsersList extends StatelessWidget {
   final ValueChanged<ClinicUser> onUpdateAccess;
   final ValueChanged<ClinicUser> onChangeRole;
   final ValueChanged<ClinicUser> onDelete;
-  final VoidCallback onCreate;
+
+  @override
+  State<_UsersList> createState() => _UsersListState();
+}
+
+enum _RoleFilter { all, psychologists, admins }
+
+class _UsersListState extends State<_UsersList> {
+  _RoleFilter _filter = _RoleFilter.all;
 
   @override
   Widget build(BuildContext context) {
-    final groups = _groupUsersByClinic(users);
-    final active = users.where((user) => user.isActive).length;
-    final inactive = users.length - active;
-    final platformAdmins = users
-        .where(
-          (user) => user.role == ProfileRole.platformAdmin && user.isActive,
-        )
-        .length;
+    final users = widget.users;
+    final currentProfileId = widget.currentProfileId;
+    final isPlatformAdmin = widget.isPlatformAdmin;
+    final onToggleActive = widget.onToggleActive;
+    final onUpdateAccess = widget.onUpdateAccess;
+    final onChangeRole = widget.onChangeRole;
+    final onDelete = widget.onDelete;
+
+    final filtered = switch (_filter) {
+      _RoleFilter.all => users,
+      _RoleFilter.psychologists =>
+        users.where((u) => u.role == ProfileRole.psychologist).toList(),
+      _RoleFilter.admins =>
+        users.where((u) => u.role == ProfileRole.platformAdmin).toList(),
+    };
+    final adminsAll =
+        users.where((u) => u.role == ProfileRole.platformAdmin).length;
+    final groups = _groupUsersByClinic(filtered);
     final psychologists =
         users.where((user) => user.role == ProfileRole.psychologist).length;
-    final personal = users.where((user) => user.isPersonalClinic).length;
 
     return ResponsiveContent(
       child: ListView(
@@ -368,56 +404,19 @@ class _UsersList extends StatelessWidget {
           AppSpacing.xxxl + 40,
         ),
         children: [
-          AppPageHeader(
-            icon: Icons.manage_accounts_outlined,
-            title: 'Psicólogos e administradores',
-            subtitle:
-                'Gerencie quem acessa a plataforma. Psicólogos ficam separados por clínica ou consultório individual; administradores aparecem com permissão global.',
-            metadata: [
-              StatusChip(
-                label: '${users.length} acesso(s)',
-                tone: AppStatusTone.info,
-                icon: Icons.badge_outlined,
-              ),
-              StatusChip(
-                label: '$psychologists psicólogo(s)',
-                tone: AppStatusTone.success,
-                icon: Icons.psychology_outlined,
-              ),
-              StatusChip(
-                label: '$platformAdmins admin(s)',
-                tone: AppStatusTone.neutral,
-                icon: Icons.admin_panel_settings_outlined,
-              ),
-              StatusChip(
-                label: '$active ativo(s)',
-                tone: AppStatusTone.completed,
-                icon: Icons.check_circle_outline,
-              ),
-              if (inactive > 0)
-                StatusChip(
-                  label: '$inactive inativo(s)',
-                  tone: AppStatusTone.warning,
-                  icon: Icons.pause_circle_outline,
-                ),
-              if (personal > 0)
-                StatusChip(
-                  label: '$personal individual(is)',
-                  tone: AppStatusTone.info,
-                  icon: Icons.person_pin_circle_outlined,
-                ),
-            ],
-            primaryAction: FilledButton.icon(
-              onPressed: onCreate,
-              icon: const Icon(Icons.person_add_alt_1_outlined),
-              label: const Text('Novo acesso'),
-            ),
+          _RoleTabs(
+            filter: _filter,
+            total: users.length,
+            psychologists: psychologists,
+            admins: adminsAll,
+            onChanged: (f) => setState(() => _filter = f),
           ),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.md),
           AppSectionHeader(
             title: 'Separação por vínculo',
             subtitle:
-                'Cada bloco representa uma clínica ou um consultório individual. Dentro dele ficam os profissionais vinculados.',
+                'Cada bloco representa uma clínica ou um consultório '
+                'individual. Dentro dele ficam os profissionais vinculados.',
             action: StatusChip(
               label: '${groups.length} grupo(s)',
               tone: AppStatusTone.neutral,
@@ -425,7 +424,7 @@ class _UsersList extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          if (users.isEmpty)
+          if (filtered.isEmpty)
             const _EmptyUsersCard()
           else
             MotionStaggered(
@@ -445,6 +444,97 @@ class _UsersList extends StatelessWidget {
                   ),
               ],
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RoleTabs extends StatelessWidget {
+  const _RoleTabs({
+    required this.filter,
+    required this.total,
+    required this.psychologists,
+    required this.admins,
+    required this.onChanged,
+  });
+
+  final _RoleFilter filter;
+  final int total;
+  final int psychologists;
+  final int admins;
+  final ValueChanged<_RoleFilter> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    Widget segment(_RoleFilter value, String label, int count) {
+      final selected = filter == value;
+      final fg = selected ? Colors.white : theme.colorScheme.onSurfaceVariant;
+      return Expanded(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => onChanged(value),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOut,
+            margin: const EdgeInsets.all(4),
+            padding: const EdgeInsets.symmetric(vertical: 9, horizontal: 8),
+            decoration: BoxDecoration(
+              color: selected ? AppColors.blue : Colors.transparent,
+              borderRadius: AppRadius.mdAll,
+              boxShadow: selected ? AppShadows.soft : null,
+            ),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: fg,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: selected
+                          ? Colors.white.withValues(alpha: 0.22)
+                          : theme.colorScheme.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(999),
+                    ),
+                    child: Text(
+                      '$count',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: fg,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+        borderRadius: AppRadius.lgAll,
+        border: Border.all(color: theme.colorScheme.outlineVariant),
+      ),
+      child: Row(
+        children: [
+          segment(_RoleFilter.all, 'Todos', total),
+          segment(_RoleFilter.psychologists, 'Psicólogos', psychologists),
+          segment(_RoleFilter.admins, 'Admins', admins),
         ],
       ),
     );
@@ -479,6 +569,7 @@ class _ClinicGroupCard extends StatelessWidget {
     return MotionSurface(
       borderRadius: AppRadius.xlAll,
       child: Container(
+        clipBehavior: Clip.antiAlias,
         decoration: BoxDecoration(
           color: theme.colorScheme.surface,
           borderRadius: AppRadius.xlAll,
@@ -591,19 +682,28 @@ class _UserRow extends StatelessWidget {
     final theme = Theme.of(context);
     final isCompact = AppBreakpoints.isCompact(context);
     final accent = switch (user.role) {
-      ProfileRole.platformAdmin => theme.colorScheme.primary,
+      ProfileRole.platformAdmin => AppColors.purple,
       ProfileRole.psychologist => AppColors.blue,
       ProfileRole.patient => AppColors.disabled,
     };
+    final statusColor =
+        user.isActive ? AppColors.success : AppColors.disabled;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
+    return IntrinsicHeight(
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // Faixa de cor por papel (roxo admin · azul psicólogo).
+          Container(width: 4, color: accent),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
           // Exibe a foto ou o avatar geométrico que a pessoa escolheu, com
           // as iniciais como fallback — o mesmo componente e as mesmas regras
           // de degradação usados no próprio perfil.
@@ -633,10 +733,6 @@ class _UserRow extends StatelessWidget {
                             ),
                       ),
                     ),
-                    if (!isCompact) ...[
-                      const SizedBox(width: AppSpacing.xs),
-                      _TinyStatusChip(label: user.role.label, color: accent),
-                    ],
                   ],
                 ),
                 const SizedBox(height: 2),
@@ -648,38 +744,59 @@ class _UserRow extends StatelessWidget {
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
                 ),
-                const SizedBox(height: AppSpacing.xxs),
-                Wrap(
-                  spacing: AppSpacing.xs,
-                  runSpacing: AppSpacing.xxs,
+                const SizedBox(height: AppSpacing.xs),
+                Row(
                   children: [
-                    if (isCompact)
-                      _TinyStatusChip(label: user.role.label, color: accent),
-                    _TinyStatusChip(
-                      label: user.isActive ? 'Ativo' : 'Inativo',
-                      color: user.isActive
-                          ? AppColors.success
-                          : AppColors.disabled,
-                    ),
-                    _TinyStatusChip(
-                      label: _formatDate(user.createdAt),
-                      color: AppColors.info,
-                    ),
-                    if (user.crp != null && user.crp!.isNotEmpty)
-                      _TinyStatusChip(
-                        label: 'CRP ${user.crp}',
-                        color: AppColors.cyan,
+                    Flexible(
+                      child: Text(
+                        user.role.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: accent,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
-                    if (user.role == ProfileRole.psychologist)
-                      _TinyStatusChip(
-                        label: user.patientAccessSummary,
-                        color: user.canReceivePatients &&
-                                !user.reachedPatientAssignmentLimit
-                            ? AppColors.success
-                            : AppColors.error,
+                    ),
+                    Padding(
+                      padding:
+                          const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                      child: Text(
+                        '·',
+                        style: TextStyle(color: theme.colorScheme.outline),
                       ),
+                    ),
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: BoxDecoration(
+                        color: statusColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 5),
+                    Text(
+                      user.isActive ? 'Ativo' : 'Inativo',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: statusColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ],
                 ),
+                if (user.role == ProfileRole.psychologist) ...[
+                  const SizedBox(height: 3),
+                  Text(
+                    user.crp != null && user.crp!.isNotEmpty
+                        ? 'CRP ${user.crp} · ${user.patientAccessSummary}'
+                        : user.patientAccessSummary,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -735,6 +852,10 @@ class _UserRow extends StatelessWidget {
                 child: const Text('Excluir'),
               ),
             ],
+          ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -1358,11 +1479,4 @@ List<_ClinicUserGroup> _groupUsersByClinic(List<ClinicUser> users) {
   });
 
   return groups;
-}
-
-String _formatDate(DateTime? date) {
-  if (date == null) return 'Sem data';
-  final day = date.day.toString().padLeft(2, '0');
-  final month = date.month.toString().padLeft(2, '0');
-  return '$day/$month/${date.year}';
 }

@@ -128,71 +128,88 @@ void main() {
   testWidgets(
       'admin sees questionnaire management page with catalog and access tabs',
       (tester) async {
+    // MediaQuery.disableAnimations = true pára o ticker infinito do
+    // NeuralHeaderBackground (didChangeDependencies chama stop() em vez de
+    // repeat()), permitindo que pumpAndSettle() estabilize normalmente.
+    // Todas as animações finitas (page transition, TabBarView) ainda correm e
+    // completam dentro do timeout padrão do pumpAndSettle.
     await tester.pumpWidget(
-      ProviderScope(
-        overrides: [
-          authControllerProvider.overrideWith(
-            (ref) => _FakeAuthController(
-              const UserProfile(
-                id: 'admin-1',
-                clinicId: 'clinic-1',
-                role: ProfileRole.platformAdmin,
-                fullName: 'Admin',
-                email: 'admin@example.com',
-                isActive: true,
+      MediaQuery(
+        data: const MediaQueryData(disableAnimations: true),
+        child: ProviderScope(
+          overrides: [
+            authControllerProvider.overrideWith(
+              (ref) => _FakeAuthController(
+                const UserProfile(
+                  id: 'admin-1',
+                  clinicId: 'clinic-1',
+                  role: ProfileRole.platformAdmin,
+                  fullName: 'Admin',
+                  email: 'admin@example.com',
+                  isActive: true,
+                ),
               ),
             ),
-          ),
-          questionnaireStaffOptionsProvider.overrideWith(
-            (ref) async => const [
-              QuestionnaireProfessionalOption(
-                id: 'pro-1',
-                fullName: 'Dra. Ana',
-                email: 'ana@example.com',
-                role: ProfileRole.psychologist,
-              ),
-            ],
-          ),
-          questionnaireAdminCatalogProvider.overrideWith(
-            (ref) async => [
-              _questionnaire(
-                'q-1',
-                'YSQ_FOUNDATION_V1',
-                licenseNotes: 'Pendente validação clínica/licenciamento.',
-              ),
-            ],
-          ),
-          questionnaireAccessManagementProvider.overrideWith(
-            (ref, professionalId) async => QuestionnaireAccessManagementData(
-              supportsAccessControl: false,
-              items: [
-                QuestionnaireAccessItem(
-                  questionnaire: _questionnaire(
-                    'q-1',
-                    'YSQ_FOUNDATION_V1',
-                    licenseNotes: 'Pendente validação clínica/licenciamento.',
-                  ),
-                  isEnabled: true,
+            questionnaireStaffOptionsProvider.overrideWith(
+              (ref) async => const [
+                QuestionnaireProfessionalOption(
+                  id: 'pro-1',
+                  fullName: 'Dra. Ana',
+                  email: 'ana@example.com',
+                  role: ProfileRole.psychologist,
                 ),
               ],
             ),
+            questionnaireAdminCatalogProvider.overrideWith(
+              (ref) async => [
+                _questionnaire(
+                  'q-1',
+                  'YSQ_FOUNDATION_V1',
+                  licenseNotes: 'Pendente validação clínica/licenciamento.',
+                ),
+              ],
+            ),
+            questionnaireAccessManagementProvider.overrideWith(
+              (ref, professionalId) async => QuestionnaireAccessManagementData(
+                supportsAccessControl: false,
+                items: [
+                  QuestionnaireAccessItem(
+                    questionnaire: _questionnaire(
+                      'q-1',
+                      'YSQ_FOUNDATION_V1',
+                      licenseNotes: 'Pendente validação clínica/licenciamento.',
+                    ),
+                    isEnabled: true,
+                  ),
+                ],
+              ),
+            ),
+          ],
+          child: const MaterialApp(
+            home: QuestionnaireAccessManagementPage(),
           ),
-        ],
-        child: const MaterialApp(
-          home: QuestionnaireAccessManagementPage(),
         ),
       ),
     );
 
+    // pumpAndSettle completa a transição de entrada da MaterialPageRoute
+    // (AbsorbPointer desativado) e resolve as Futures dos providers.
     await tester.pumpAndSettle();
     expect(find.text('Catálogo de questionários'), findsOneWidget);
     expect(find.text('YSQ_FOUNDATION_V1'), findsWidgets);
 
     await tester.tap(find.text('Permissões'));
+    // pumpAndSettle completa a animação do TabBarView (300 ms) e aguarda a
+    // resolução do staffAsync FutureProvider.
     await tester.pumpAndSettle();
     expect(find.text('Selecione um psicólogo'), findsOneWidget);
 
-    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    // O dropdown fica dentro de um ListView scrollável (_AccessTab).
+    // ensureVisible rola até o widget antes do tap.
+    final dropdownFinder = find.byType(DropdownButtonFormField<String>);
+    await tester.ensureVisible(dropdownFinder);
+    await tester.pumpAndSettle();
+    await tester.tap(dropdownFinder);
     await tester.pumpAndSettle();
     await tester.tap(find.textContaining('Dra. Ana').last);
     await tester.pumpAndSettle();

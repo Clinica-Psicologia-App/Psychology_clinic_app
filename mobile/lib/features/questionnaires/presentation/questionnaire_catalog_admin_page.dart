@@ -18,9 +18,8 @@ class QuestionnaireCatalogAdminPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final catalog = ref.watch(questionnaireCatalogAdminListProvider);
-    return AppScaffold(
+    return AppSectionScaffold(
       title: 'Catálogo de questionários',
-      accent: AppColors.blue,
       subtitle: 'Instrumentos, versões e governança clínica',
       actions: [
         IconButton(

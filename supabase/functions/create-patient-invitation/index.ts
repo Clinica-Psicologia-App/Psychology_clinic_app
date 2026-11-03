@@ -2,10 +2,10 @@ import { serve } from "https://deno.land/std@0.224.0/http/server.ts";
 import { assertEmailAvailableInClinic, assertProfileInClinic, assertPsychologistCanReceivePatient, assertUuid, getCallerProfile, requireStaff } from "../_shared/auth.ts";
 import { AppError } from "../_shared/errors.ts";
 import { handleError, handleOptions, jsonResponse, parseJsonBody, requirePost } from "../_shared/http.ts";
-import { buildInviteUrl, generateInvitationToken, hashInvitationToken, invitationExpiresAt } from "../_shared/invitations.ts";
+import { buildInviteUrl, expireStalePendingInvitations, generateInvitationToken, hashInvitationToken, invitationExpiresAt } from "../_shared/invitations.ts";
 import { logger } from "../_shared/logger.ts";
 import { buildPatientInviteEmail, sendEmail } from "../_shared/email.ts";
-import { createUserClient, getBearerToken } from "../_shared/supabase.ts";
+import { createServiceClient, createUserClient, getBearerToken } from "../_shared/supabase.ts";
 const FN = "create-patient-invitation";
 serve(async (req)=>{
   const options = handleOptions(req);
@@ -27,6 +27,7 @@ serve(async (req)=>{
     if (caller.role === "psychologist" && psychologistId !== caller.id) {
       throw new AppError("FORBIDDEN", "Psychologist can only assign themselves as responsible", 403);
     }
+    await expireStalePendingInvitations(createServiceClient(), caller.clinic_id);
     await assertProfileInClinic(userClient, psychologistId, caller.clinic_id, "responsible_psychologist_id", [
       "psychologist"
     ]);

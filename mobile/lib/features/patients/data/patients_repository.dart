@@ -131,7 +131,9 @@ access_profile:profiles!patients_profile_id_fkey(is_active, avatar_type, avatar_
       final invitationRows = await _client
           .from('patient_invitations')
           .select('responsible_psychologist_id')
-          .eq('status', 'pending');
+          .eq('status', 'pending')
+          // Convite vencido não ocupa vaga (mesma regra do servidor).
+          .gt('expires_at', DateTime.now().toUtc().toIso8601String());
       final patientsByPsychologist = _countByProfile(
         patientRows as List,
         'responsible_psychologist_id',

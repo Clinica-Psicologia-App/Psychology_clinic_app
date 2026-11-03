@@ -87,7 +87,7 @@ export async function assertPsychologistCanReceivePatient(client, psychologistId
     client.from("patient_invitations").select("id", {
       count: "exact",
       head: true
-    }).eq("clinic_id", clinicId).eq("responsible_psychologist_id", psychologistId).eq("status", "pending")
+    }).eq("clinic_id", clinicId).eq("responsible_psychologist_id", psychologistId).eq("status", "pending").gt("expires_at", new Date().toISOString())
   ]);
   if (patientsResult.error || invitationsResult.error) {
     throw new AppError("INTERNAL_ERROR", "Failed to validate psychologist patient quota", 500, {

@@ -23,6 +23,19 @@ export function invitationExpiresAt(days = DEFAULT_EXPIRY_DAYS) {
   expiresAt.setUTCDate(expiresAt.getUTCDate() + days);
   return expiresAt.toISOString();
 }
+// Marca como 'expired' os convites pendentes da clínica que já passaram do
+// prazo. Libera a vaga do psicólogo e o e-mail (índice único de pendente).
+// Usa service role porque o psicólogo não tem UPDATE em convites.
+export async function expireStalePendingInvitations(serviceClient, clinicId) {
+  const { error } = await serviceClient.from("patient_invitations").update({
+    status: "expired"
+  }).eq("clinic_id", clinicId).eq("status", "pending").lte("expires_at", new Date().toISOString());
+  if (error) {
+    throw new AppError("INTERNAL_ERROR", "Failed to expire stale invitations", 500, {
+      hint: error.message
+    });
+  }
+}
 export function buildInviteUrl(token) {
   const encodedToken = encodeURIComponent(token);
   const baseUrl = Deno.env.get("PATIENT_INVITATION_BASE_URL")?.trim();

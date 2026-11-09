@@ -66,12 +66,17 @@ class MentalCaseMapNode {
     this.lastUpdatedAt,
     this.responseId,
     this.aggregateSeverityColorKey,
+    this.itemKeys = const [],
   });
 
   final String id;
   final String title;
   final String shortLabel;
   final List<String> items;
+
+  /// Chave de cada item, na mesma ordem de [items] (ex.: código do domínio de
+  /// personalidade). Vazia quando os itens não são navegáveis.
+  final List<String> itemKeys;
   final String emptyLabel;
   final String dataSource;
   final DateTime? lastUpdatedAt;

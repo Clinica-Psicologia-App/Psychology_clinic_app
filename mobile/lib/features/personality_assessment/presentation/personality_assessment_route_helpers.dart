@@ -5,6 +5,7 @@ import 'patient_personality_page.dart';
 import 'personality_assessment_form_page.dart';
 import 'personality_assessment_list_page.dart';
 import 'personality_dashboard_page.dart';
+import 'personality_domain_facets_page.dart';
 import 'personality_synthesis_page.dart';
 
 /// Rota do paciente para ver perfis compartilhados (`/patient/personality`).
@@ -48,6 +49,15 @@ List<RouteBase> staffPersonalityAssessmentRoutes({required ProfileRole role}) {
                 role: role,
                 patientId: state.pathParameters['patientId']!,
                 assessmentId: state.pathParameters['assessmentId']!,
+              ),
+            ),
+            GoRoute(
+              path: 'domain/:domainCode',
+              builder: (context, state) => PersonalityDomainFacetsPage(
+                role: role,
+                patientId: state.pathParameters['patientId']!,
+                assessmentId: state.pathParameters['assessmentId']!,
+                domainCode: state.pathParameters['domainCode']!,
               ),
             ),
             GoRoute(

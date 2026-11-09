@@ -11,11 +11,15 @@ class MentalMapNodeDetail {
     this.secondaryCtaLabel,
     this.secondaryRoute,
     this.severityColorKey,
+    this.itemKeys = const [],
   });
 
   final String id;
   final String title;
   final List<String> items;
+
+  /// Chave de cada item (mesma ordem de [items]); ver [MentalCaseMapNode].
+  final List<String> itemKeys;
   final String dataSource;
   final String ctaLabel;
   final DateTime? lastUpdatedAt;

@@ -12,14 +12,18 @@ abstract final class PsychoeducationRoutes {
   // Paciente.
   static const patient = '/patient/psychoeducation';
   static const patientCopingCards = '/patient/psychoeducation/coping-cards';
-  static String patientModule(String id) => '/patient/psychoeducation/$id';
+  static String patientModule(String id, {int? card}) =>
+      '/patient/psychoeducation/$id${_cardQuery(card)}';
 
   // Psicólogo (leitura da referência).
   static const psychologist = '/psychologist/psychoeducation';
   static String patientExercises(String patientId) =>
       '/psychologist/patients/$patientId/psychoeducation-exercises';
-  static String psychologistModule(String id) =>
-      '/psychologist/psychoeducation/$id';
+  static String psychologistModule(String id, {int? card}) =>
+      '/psychologist/psychoeducation/$id${_cardQuery(card)}';
+
+  /// Abre o módulo direto no card indicado (1 = primeiro card).
+  static String _cardQuery(int? card) => card == null ? '' : '?card=$card';
 
   // Admin (curadoria).
   static const adminCatalog = '/platform/psychoeducation';
@@ -53,6 +57,7 @@ List<RouteBase> psychoeducationPatientRoutes() {
           path: ':moduleId',
           builder: (_, state) => PsychoeducationModulePage(
             moduleId: state.pathParameters['moduleId']!,
+            initialCard: int.tryParse(state.uri.queryParameters['card'] ?? ''),
           ),
         ),
       ],
@@ -75,6 +80,7 @@ List<RouteBase> psychoeducationPsychologistRoutes() {
           builder: (_, state) => PsychoeducationModulePage(
             moduleId: state.pathParameters['moduleId']!,
             staffView: true,
+            initialCard: int.tryParse(state.uri.queryParameters['card'] ?? ''),
           ),
         ),
       ],

@@ -17,6 +17,8 @@ import '../../../shared/widgets/homologation_ui.dart';
 import '../domain/mental_map_check_in_summary.dart';
 import '../domain/mental_map_data.dart';
 import '../domain/mental_map_hub_builder.dart';
+import '../../personality_assessment/presentation/personality_assessment_routes.dart';
+import '../../psychoeducation/presentation/schema_card_link.dart';
 import '../../psychoeducation/presentation/transformar_library_link.dart';
 import '../providers/mental_map_providers.dart';
 import 'mental_map_navigation_targets.dart';
@@ -546,9 +548,28 @@ class _MentalMapBody extends StatelessWidget {
             detail: detail,
             onPrimaryTap: _route(primaryRoute, context),
             onSecondaryTap: _route(secondaryRoute, context),
+            onItemTap: node.id == 'personality' &&
+                    role == ProfileRole.psychologist &&
+                    patientId != null &&
+                    node.responseId != null
+                ? (domainCode) => context.push(
+                      PersonalityAssessmentRoutes.staffDomain(
+                        role: role,
+                        patientId: patientId!,
+                        assessmentId: node.responseId!,
+                        domainCode: domainCode,
+                      ),
+                    )
+                : null,
+            itemTrailingBuilder: node.id == 'schemas'
+                ? (schemaCode) => SchemaCardButton(
+                      schemaCode: schemaCode,
+                      role: role,
+                      closeSheet: true,
+                    )
+                : null,
             libraryLink: role == ProfileRole.psychologist
                 ? switch (node.id) {
-                    'schemas' => const CompreenderLibraryLink(closeSheet: true),
                     'modes' => const TransformarLibraryLink(closeSheet: true),
                     _ => null,
                   }

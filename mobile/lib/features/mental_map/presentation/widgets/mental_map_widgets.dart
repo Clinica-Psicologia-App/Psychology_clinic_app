@@ -1374,6 +1374,8 @@ Future<void> showMentalMapNodeDetailSheet({
   required VoidCallback? onPrimaryTap,
   VoidCallback? onSecondaryTap,
   Widget? libraryLink,
+  void Function(String itemKey)? onItemTap,
+  Widget? Function(String itemKey)? itemTrailingBuilder,
 }) {
   return showModalBottomSheet<void>(
     context: context,
@@ -1384,6 +1386,8 @@ Future<void> showMentalMapNodeDetailSheet({
       onPrimaryTap: onPrimaryTap,
       onSecondaryTap: onSecondaryTap,
       libraryLink: libraryLink,
+      onItemTap: onItemTap,
+      itemTrailingBuilder: itemTrailingBuilder,
     ),
   );
 }
@@ -1395,12 +1399,22 @@ class MentalMapNodeDetailSheet extends StatelessWidget {
     required this.onPrimaryTap,
     this.onSecondaryTap,
     this.libraryLink,
+    this.onItemTap,
+    this.itemTrailingBuilder,
   });
 
   final MentalMapNodeDetail detail;
   final VoidCallback? onPrimaryTap;
   final VoidCallback? onSecondaryTap;
   final Widget? libraryLink;
+
+  /// Quando presente, os itens com chave em [MentalMapNodeDetail.itemKeys]
+  /// viram links (ex.: domínio de personalidade → facetas).
+  final void Function(String itemKey)? onItemTap;
+
+  /// Widget à direita de cada item com chave (ex.: botão "Ver card" do
+  /// esquema). Quando devolve nulo, o item fica sem ação à direita.
+  final Widget? Function(String itemKey)? itemTrailingBuilder;
 
   @override
   Widget build(BuildContext context) {
@@ -1470,26 +1484,61 @@ class MentalMapNodeDetailSheet extends StatelessWidget {
                 ),
               )
             else
-              ...detail.items.map(
-                (item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        Icons.circle,
-                        size: 8,
-                        color: (detail.id == 'personality'
-                            ? personalitySummaryColor(item) : null) ?? _resolveSeverityDotColor(
-                          detail.severityColorKey,
-                          theme.colorScheme.primary,
+              ...detail.items.asMap().entries.map(
+                (entry) {
+                  final item = entry.value;
+                  final key = entry.key < detail.itemKeys.length
+                      ? detail.itemKeys[entry.key]
+                      : null;
+                  final trailing = (itemTrailingBuilder != null && key != null)
+                      ? itemTrailingBuilder!(key)
+                      : null;
+                  final tap = (onItemTap != null && key != null)
+                      ? () {
+                          Navigator.of(context).pop();
+                          onItemTap!(key);
+                        }
+                      : null;
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
+                    child: InkWell(
+                      onTap: tap,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Padding(
+                        padding:
+                            EdgeInsets.symmetric(vertical: tap != null ? 6 : 0),
+                        child: Row(
+                          children: [
+                            Icon(
+                              Icons.circle,
+                              size: 8,
+                              color: (detail.id == 'personality'
+                                      ? personalitySummaryColor(item)
+                                      : null) ??
+                                  _resolveSeverityDotColor(
+                                    detail.severityColorKey,
+                                    theme.colorScheme.primary,
+                                  ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(child: Text(item)),
+                            if (trailing != null)
+                              Padding(
+                                padding: const EdgeInsets.only(left: 8),
+                                child: trailing,
+                              )
+                            else if (tap != null)
+                              Icon(
+                                Icons.chevron_right,
+                                size: 20,
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(child: Text(item)),
-                    ],
-                  ),
-                ),
+                    ),
+                  );
+                },
               ),
             const SizedBox(height: 16),
             if (onPrimaryTap != null)

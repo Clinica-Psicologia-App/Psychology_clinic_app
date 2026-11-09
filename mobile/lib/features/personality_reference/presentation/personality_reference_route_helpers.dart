@@ -10,6 +10,8 @@ List<RouteBase> staffPersonalityReferenceRoutes({required ProfileRole role}) {
       builder: (context, state) => StaffPersonalityReferencePage(
         role: role,
         patientId: state.pathParameters['patientId']!,
+        focusFactor: int.tryParse(state.uri.queryParameters['factor'] ?? ''),
+        focusFacet: int.tryParse(state.uri.queryParameters['facet'] ?? ''),
       ),
     ),
   ];

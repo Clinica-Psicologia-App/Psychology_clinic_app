@@ -26,10 +26,15 @@ class PsychoeducationModulePage extends ConsumerStatefulWidget {
     super.key,
     required this.moduleId,
     this.staffView = false,
+    this.initialCard,
   });
 
   final String moduleId;
   final bool staffView;
+
+  /// Card em que o módulo abre (1 = primeiro card). A apresentação é a página
+  /// 0, então o número do card é também o índice da página.
+  final int? initialCard;
 
   @override
   ConsumerState<PsychoeducationModulePage> createState() =>
@@ -38,8 +43,10 @@ class PsychoeducationModulePage extends ConsumerStatefulWidget {
 
 class _PsychoeducationModulePageState
     extends ConsumerState<PsychoeducationModulePage> {
-  final _controller = PageController();
-  int _page = 0;
+  late final int _initialPage =
+      (widget.initialCard ?? 0) < 0 ? 0 : (widget.initialCard ?? 0);
+  late final _controller = PageController(initialPage: _initialPage);
+  late int _page = _initialPage;
   bool _preloaded = false;
 
   @override

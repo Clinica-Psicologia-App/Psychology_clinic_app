@@ -36,6 +36,14 @@ abstract final class PersonalityAssessmentRoutes {
   }) =>
       '${_base(role, patientId)}/$assessmentId/edit';
 
+  static String staffDomain({
+    required ProfileRole role,
+    required String patientId,
+    required String assessmentId,
+    required String domainCode,
+  }) =>
+      '${_base(role, patientId)}/$assessmentId/domain/$domainCode';
+
   static String staffSynthesis({
     required ProfileRole role,
     required String patientId,

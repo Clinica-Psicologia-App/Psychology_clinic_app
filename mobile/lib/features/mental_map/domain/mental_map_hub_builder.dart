@@ -20,6 +20,7 @@ MentalMapNodeDetail buildMentalMapNodeDetail({
     id: node.id,
     title: node.title,
     items: node.items,
+    itemKeys: node.itemKeys,
     dataSource: node.dataSource,
     lastUpdatedAt: node.lastUpdatedAt,
     responseId: node.responseId,

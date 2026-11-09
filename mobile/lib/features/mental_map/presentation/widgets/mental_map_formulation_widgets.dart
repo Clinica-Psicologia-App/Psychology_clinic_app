@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../shared/widgets/homologation_ui.dart';
 import '../../../profile/domain/profile_role.dart';
+import '../../../psychoeducation/presentation/schema_card_link.dart';
 import '../../../psychoeducation/presentation/transformar_library_link.dart';
 import '../../domain/mental_map_clinical_core.dart';
 import '../../domain/mental_map_history_links.dart';
@@ -233,7 +234,6 @@ class MentalMapClinicalCoreSection extends StatelessWidget {
               key: ValueKey('mental-map-library-links'),
               spacing: 8,
               children: [
-                CompreenderLibraryLink(),
                 TransformarLibraryLink(),
               ],
             ),
@@ -265,6 +265,7 @@ class MentalMapClinicalCoreSection extends StatelessWidget {
           completedAt: core.ysqCompletedAt,
           highlights: core.topSchemas,
           emptyMessage: 'Nenhum resultado YSQ disponível.',
+          cardRole: role,
         );
         final modePanel = _InstrumentScorePanel(
           title: 'Modos (YAMI)',
@@ -351,6 +352,7 @@ class _InstrumentScorePanel extends StatelessWidget {
     required this.emptyMessage,
     this.completedAt,
     this.compact = false,
+    this.cardRole,
   });
 
   final String title;
@@ -358,6 +360,10 @@ class _InstrumentScorePanel extends StatelessWidget {
   final String emptyMessage;
   final DateTime? completedAt;
   final bool compact;
+
+  /// Quando informado (painel de esquemas), cada linha ganha o botão
+  /// "Ver card" da Biblioteca 8 para este perfil.
+  final ProfileRole? cardRole;
 
   @override
   Widget build(BuildContext context) {
@@ -429,6 +435,7 @@ class _InstrumentScorePanel extends StatelessWidget {
                       maxScore: maxScore <= 0 ? 10 : maxScore,
                       rank: compact ? null : entry.key + 1,
                       color: Theme.of(context).colorScheme.primary,
+                      cardRole: cardRole,
                     ),
                   ),
           ],
@@ -444,12 +451,14 @@ class _MentalMapProgressScoreRow extends StatelessWidget {
     required this.maxScore,
     required this.color,
     this.rank,
+    this.cardRole,
   });
 
   final MentalMapScoreHighlight highlight;
   final double maxScore;
   final Color color;
   final int? rank;
+  final ProfileRole? cardRole;
 
   @override
   Widget build(BuildContext context) {
@@ -494,6 +503,10 @@ class _MentalMapProgressScoreRow extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                     ),
               ),
+              if (cardRole != null) ...[
+                const SizedBox(width: 8),
+                SchemaCardButton(schemaCode: highlight.code, role: cardRole!),
+              ],
             ],
           ),
           const SizedBox(height: 8),

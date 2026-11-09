@@ -87,12 +87,14 @@ MentalCaseMapNode _buildSchemaNode(
   List<MentalMapQuestionnaireBlock> questionnaires,
   MentalMapQuestionnaireBlock? block,
 ) {
-  final items = _topHighlightItems(questionnaires, _ysqCodeMarker);
+  final pairs = _topHighlightPairs(questionnaires, _ysqCodeMarker);
+  final items = [for (final pair in pairs) pair.label];
   return MentalCaseMapNode(
     id: 'schemas',
     title: 'Esquemas',
     shortLabel: _buildFilledStatusLabel(items.isNotEmpty),
     items: items,
+    itemKeys: [for (final pair in pairs) pair.code],
     emptyLabel: 'Pendente',
     dataSource: 'Questionário de Esquemas (YSQ)',
     lastUpdatedAt: block?.completedAt,
@@ -267,7 +269,9 @@ MentalCaseMapNode _buildPersonalityNode(
   List<PersonalityAssessment> assessments,
 ) {
   DateTime? lastUpdated;
+  String? assessmentId;
   final items = <String>[];
+  final itemKeys = <String>[];
 
   if (assessments.isNotEmpty) {
     final candidate = assessments.firstWhere(
@@ -275,6 +279,7 @@ MentalCaseMapNode _buildPersonalityNode(
       orElse: () => assessments.first,
     );
     lastUpdated = candidate.createdAt;
+    assessmentId = candidate.id;
     final results = candidate.results;
     if (results != null && results.domains.isNotEmpty) {
       final instrument = instrumentForCode(candidate.instrument);
@@ -287,7 +292,7 @@ MentalCaseMapNode _buildPersonalityNode(
         } else {
           items.add(domainDef.label);
         }
-        if (items.length >= _nodeItemLimit) break;
+        itemKeys.add(domainDef.code);
       }
     }
   }
@@ -297,9 +302,11 @@ MentalCaseMapNode _buildPersonalityNode(
     title: 'Personalidade',
     shortLabel: _buildFilledStatusLabel(items.isNotEmpty),
     items: items,
+    itemKeys: itemKeys,
     emptyLabel: 'Pendente',
     dataSource: 'NEO PI-R - avaliação de personalidade',
     lastUpdatedAt: lastUpdated,
+    responseId: assessmentId,
   );
 }
 
@@ -346,6 +353,16 @@ String _buildFilledStatusLabel(bool filled) {
 List<String> _topHighlightItems(
   List<MentalMapQuestionnaireBlock> questionnaires,
   String marker,
+) =>
+    _topHighlightPairs(questionnaires, marker)
+        .map((pair) => pair.label)
+        .toList(growable: false);
+
+/// Rótulo e código de cada destaque, na mesma ordem e com o mesmo filtro dos
+/// itens do nó (o código permite ligar o item a algo, como o card do esquema).
+List<({String label, String code})> _topHighlightPairs(
+  List<MentalMapQuestionnaireBlock> questionnaires,
+  String marker,
 ) {
   final selected = _findQuestionnaireBlock(questionnaires, marker);
   if (selected == null) return const [];
@@ -355,11 +372,11 @@ List<String> _topHighlightItems(
       .toList(growable: false);
   final source = schemaOnly.isNotEmpty ? schemaOnly : selected.highlights;
 
-  return source
-      .take(_nodeItemLimit)
-      .map(_highlightLabel)
-      .where((item) => item.isNotEmpty)
-      .toList(growable: false);
+  return [
+    for (final highlight in source.take(_nodeItemLimit))
+      if (_highlightLabel(highlight).isNotEmpty)
+        (label: _highlightLabel(highlight), code: highlight.code),
+  ];
 }
 
 List<String> _topHighlightItemsForCode(

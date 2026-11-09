@@ -48,7 +48,7 @@ void main() {
       child: MentalMapClinicalCoreSection(core: core, role: ProfileRole.psychologist, patientId: 'test'))))));
     await tester.pumpAndSettle();
     expect(find.text('Ver Biblioteca Transformar'), findsNothing);
-    expect(find.text('Abrir bibliotecas'), findsNWidgets(2));
+    expect(find.text('Abrir bibliotecas'), findsOneWidget);
   });
 
   testWidgets('library links stay visible for psychologist when the core is empty', (tester) async {
@@ -61,17 +61,35 @@ void main() {
       child: MentalMapClinicalCoreSection(core: MentalMapClinicalCore.empty, role: ProfileRole.psychologist, patientId: 'test'))))));
     await tester.pumpAndSettle();
     expect(find.text('Núcleo clínico vazio'), findsOneWidget);
-    expect(find.text('Ver Biblioteca Compreender'), findsOneWidget);
+    // O link geral dos esquemas foi trocado por um "Ver card" em cada esquema.
+    expect(find.text('Ver Biblioteca Compreender'), findsNothing);
     expect(find.text('Ver Biblioteca Transformar'), findsOneWidget);
   });
 
+  // Cada esquema do paciente tem o próprio "Ver card", para os dois perfis.
+  const schemaCore = MentalMapClinicalCore(
+    topSchemas: [
+      MentalMapScoreHighlight(
+        name: 'Abandono/Instabilidade',
+        code: 'YSQ_SCHEMA_ABANDONMENT_INSTABILITY',
+        kind: 'schema',
+        score: 4.2,
+      ),
+    ],
+    topModes: [],
+    topProblemsByIntensity: [],
+    attachmentStyles: [],
+    copingStyles: [],
+  );
   for (final role in [ProfileRole.psychologist, ProfileRole.patient]) {
-    testWidgets('Esquemas link uses published module 8; role=${role.name}', (tester) async {
+    testWidgets('Esquema abre o card dele na biblioteca 8; role=${role.name}', (tester) async {
       final router = GoRouter(routes: [
         GoRoute(path: '/', builder: (_, __) => Scaffold(body: SingleChildScrollView(
-          child: MentalMapClinicalCoreSection(core: core, role: role, patientId: 'test')))),
+          child: MentalMapClinicalCoreSection(core: schemaCore, role: role, patientId: 'test')))),
         GoRoute(path: '/psychologist/psychoeducation/:moduleId',
-          builder: (_, state) => Text('Destino ${state.pathParameters['moduleId']}')),
+          builder: (_, state) => Text('Psicólogo ${state.pathParameters['moduleId']} card ${state.uri.queryParameters['card']}')),
+        GoRoute(path: '/patient/psychoeducation/:moduleId',
+          builder: (_, state) => Text('Paciente ${state.pathParameters['moduleId']} card ${state.uri.queryParameters['card']}')),
       ]);
       addTearDown(router.dispose);
       await tester.pumpWidget(ProviderScope(overrides: [
@@ -81,28 +99,34 @@ void main() {
         ]),
       ], child: MaterialApp.router(routerConfig: router)));
       await tester.pumpAndSettle();
-      final link = find.text('Ver Biblioteca Compreender');
-      if (role == ProfileRole.patient) {
-        expect(link, findsNothing);
-      } else {
-        expect(link, findsOneWidget);
-        await tester.tap(link);
-        await tester.pumpAndSettle();
-        expect(find.text('Destino compreender-module'), findsOneWidget);
-      }
+      expect(find.text('Ver Biblioteca Compreender'), findsNothing);
+      final link = find.text('Ver card');
+      expect(link, findsOneWidget);
+      await tester.tap(link);
+      await tester.pumpAndSettle();
+      final who = role == ProfileRole.patient ? 'Paciente' : 'Psicólogo';
+      expect(find.text('$who compreender-module card 4'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   }
-  testWidgets('unpublished module 8 falls back without breaking the Esquemas link', (tester) async {
+  testWidgets('unpublished module 8 falls back to the general library', (tester) async {
+    final router = GoRouter(routes: [
+      GoRoute(path: '/', builder: (_, __) => const Scaffold(body: SingleChildScrollView(
+        child: MentalMapClinicalCoreSection(core: schemaCore, role: ProfileRole.psychologist, patientId: 'test')))),
+      GoRoute(path: '/psychologist/psychoeducation',
+        builder: (_, __) => const Text('Biblioteca geral')),
+    ]);
+    addTearDown(router.dispose);
     await tester.pumpWidget(ProviderScope(overrides: [
       psychoeducationJourneyProvider.overrideWith((ref) async => [
         const PsychoeducationModule(id: 'm9', number: 9, stage: 'Transformar', title: 'Biblioteca 9'),
       ]),
-    ], child: const MaterialApp(home: Scaffold(body: SingleChildScrollView(
-      child: MentalMapClinicalCoreSection(core: core, role: ProfileRole.psychologist, patientId: 'test'))))));
+    ], child: MaterialApp.router(routerConfig: router)));
     await tester.pumpAndSettle();
     expect(find.text('Ver Biblioteca Compreender'), findsNothing);
-    expect(find.text('Abrir bibliotecas'), findsOneWidget);
     expect(find.text('Ver Biblioteca Transformar'), findsOneWidget);
+    await tester.tap(find.text('Ver card'));
+    await tester.pumpAndSettle();
+    expect(find.text('Biblioteca geral'), findsOneWidget);
   });
 }

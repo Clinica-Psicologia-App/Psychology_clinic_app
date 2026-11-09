@@ -7,15 +7,52 @@ import '../../profile/domain/profile_role.dart';
 import '../domain/personality_reference_content.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
-class StaffPersonalityReferencePage extends StatelessWidget {
+class StaffPersonalityReferencePage extends StatefulWidget {
   const StaffPersonalityReferencePage({
     super.key,
     required this.role,
     required this.patientId,
+    this.focusFactor,
+    this.focusFacet,
   });
 
   final ProfileRole role;
   final String patientId;
+
+  /// Fator e faceta (índices na ordem do guia) a destacar ao abrir. Vêm da
+  /// tela de facetas do Mapa Mental.
+  final int? focusFactor;
+  final int? focusFacet;
+
+  @override
+  State<StaffPersonalityReferencePage> createState() =>
+      _StaffPersonalityReferencePageState();
+}
+
+class _StaffPersonalityReferencePageState
+    extends State<StaffPersonalityReferencePage> {
+  final _focusKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.focusFactor == null || widget.focusFacet == null) return;
+    // A lista entra com animação escalonada; espera ela assentar antes de rolar.
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Dois passes: o segundo corrige o deslocamento deixado pela animação.
+      for (final wait in const [600, 900]) {
+        await Future<void>.delayed(Duration(milliseconds: wait));
+        final target = _focusKey.currentContext;
+        if (!mounted || target == null || !target.mounted) return;
+        await Scrollable.ensureVisible(
+          target,
+          alignment: 0.02,
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -97,8 +134,12 @@ class StaffPersonalityReferencePage extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              for (final factor in personalityReferenceFactors) ...[
-                _FactorCard(factor: factor),
+              for (var i = 0; i < personalityReferenceFactors.length; i++) ...[
+                _FactorCard(
+                  factor: personalityReferenceFactors[i],
+                  focusFacet: widget.focusFactor == i ? widget.focusFacet : null,
+                  focusKey: _focusKey,
+                ),
                 const SizedBox(height: 16),
               ],
               ClayCard(
@@ -120,9 +161,17 @@ class StaffPersonalityReferencePage extends StatelessWidget {
 }
 
 class _FactorCard extends StatelessWidget {
-  const _FactorCard({required this.factor});
+  const _FactorCard({
+    required this.factor,
+    this.focusFacet,
+    this.focusKey,
+  });
 
   final PersonalityReferenceFactor factor;
+
+  /// Índice da faceta destacada neste fator (nulo se nenhuma).
+  final int? focusFacet;
+  final GlobalKey? focusKey;
 
   @override
   Widget build(BuildContext context) {
@@ -153,8 +202,12 @@ class _FactorCard extends StatelessWidget {
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 16),
-                    for (final facet in factor.facets) ...[
-                      _FacetTile(facet: facet),
+                    for (var i = 0; i < factor.facets.length; i++) ...[
+                      _FacetTile(
+                        key: focusFacet == i ? focusKey : null,
+                        facet: factor.facets[i],
+                        highlighted: focusFacet == i,
+                      ),
                       const SizedBox(height: 12),
                     ],
                   ],
@@ -169,16 +222,20 @@ class _FactorCard extends StatelessWidget {
 }
 
 class _FacetTile extends StatelessWidget {
-  const _FacetTile({required this.facet});
+  const _FacetTile({super.key, required this.facet, this.highlighted = false});
 
   final PersonalityReferenceFacet facet;
+  final bool highlighted;
 
   @override
   Widget build(BuildContext context) {
     final colors = Theme.of(context).colorScheme;
     return DecoratedBox(
       decoration: BoxDecoration(
-        border: Border.all(color: colors.outlineVariant),
+        border: Border.all(
+          color: highlighted ? AppColors.purple : colors.outlineVariant,
+          width: highlighted ? 2 : 1,
+        ),
         borderRadius: BorderRadius.circular(16),
       ),
       child: Padding(

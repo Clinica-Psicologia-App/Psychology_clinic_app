@@ -111,7 +111,7 @@ MentalMapQuestionnaireBlock blockWithHighlights(
     questionnaireName: block.questionnaireName,
     completedAt: block.completedAt ?? detail.completedAt,
     requiresTherapistReview: detail.requiresTherapistReview,
-    highlights: extractScoreHighlights(detail, limit: limit),
+    highlights: extractScoreHighlights(detail, limit: limit, schemasFirst: true),
   );
 }
 
@@ -147,9 +147,15 @@ List<String> extractParentalFigureSummaries(
 }
 
 /// Principais esquemas/modos por score ponderado ou médio (ordem decrescente).
+///
+/// Com [schemasFirst], esquemas (e modos) vêm antes dos domínios e só depois
+/// entram os domínios que sobrarem no [limit]. Sem isso, a nota de domínio,
+/// em geral maior que a de cada esquema, ocupa todas as vagas e o mapa não
+/// consegue mostrar os esquemas individuais.
 List<MentalMapScoreHighlight> extractScoreHighlights(
   PatientResultDetail detail, {
   int limit = _defaultHighlightLimit,
+  bool schemasFirst = false,
 }) {
   final highlights = <MentalMapScoreHighlight>[];
 
@@ -169,8 +175,15 @@ List<MentalMapScoreHighlight> extractScoreHighlights(
     }
   }
 
-  highlights.sort(_compareHighlights);
+  highlights.sort(schemasFirst ? _compareSchemasFirst : _compareHighlights);
   return highlights.take(limit).toList();
+}
+
+int _compareSchemasFirst(MentalMapScoreHighlight a, MentalMapScoreHighlight b) {
+  final aSchema = a.kind == 'schema';
+  final bSchema = b.kind == 'schema';
+  if (aSchema != bSchema) return aSchema ? -1 : 1;
+  return _compareHighlights(a, b);
 }
 
 MentalMapScoreHighlight _fromSchema(ScoringSchemaResult schema) {

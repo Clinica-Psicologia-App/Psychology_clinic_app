@@ -17,6 +17,9 @@ const _yciCode = 'YCI_FOUNDATION_V1';
 const _yraiCode = 'YRAI_FOUNDATION_V1';
 const _nodeItemLimit = 3;
 
+/// O nó Esquemas mostra os 5 esquemas do paciente (cada um com "Ver card").
+const _schemaNodeItemLimit = 5;
+
 /// Metadados extras por questionário (ex.: figuras parentais).
 class MentalMapQuestionnaireContext {
   const MentalMapQuestionnaireContext({
@@ -87,7 +90,12 @@ MentalCaseMapNode _buildSchemaNode(
   List<MentalMapQuestionnaireBlock> questionnaires,
   MentalMapQuestionnaireBlock? block,
 ) {
-  final pairs = _topHighlightPairs(questionnaires, _ysqCodeMarker);
+  // Os 5 esquemas do paciente, cada um com o seu "Ver card".
+  final pairs = _topHighlightPairs(
+    questionnaires,
+    _ysqCodeMarker,
+    limit: _schemaNodeItemLimit,
+  );
   final items = [for (final pair in pairs) pair.label];
   return MentalCaseMapNode(
     id: 'schemas',
@@ -362,8 +370,9 @@ List<String> _topHighlightItems(
 /// itens do nó (o código permite ligar o item a algo, como o card do esquema).
 List<({String label, String code})> _topHighlightPairs(
   List<MentalMapQuestionnaireBlock> questionnaires,
-  String marker,
-) {
+  String marker, {
+  int limit = _nodeItemLimit,
+}) {
   final selected = _findQuestionnaireBlock(questionnaires, marker);
   if (selected == null) return const [];
 
@@ -373,7 +382,7 @@ List<({String label, String code})> _topHighlightPairs(
   final source = schemaOnly.isNotEmpty ? schemaOnly : selected.highlights;
 
   return [
-    for (final highlight in source.take(_nodeItemLimit))
+    for (final highlight in source.take(limit))
       if (_highlightLabel(highlight).isNotEmpty)
         (label: _highlightLabel(highlight), code: highlight.code),
   ];

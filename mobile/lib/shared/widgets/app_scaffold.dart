@@ -323,6 +323,11 @@ class _SectionBanner extends StatelessWidget {
     stops: [0.0, 0.55, 1.0],
   );
 
+  /// Altura mínima do banner no celular, sem a status bar. É a do header de
+  /// Clínicas (subtítulo + números + botão), para que todas as telas de
+  /// seção tenham o topo do mesmo tamanho.
+  static const minHeight = 280.0;
+
   @override
   Widget build(BuildContext context) {
     if (AppBreakpoints.isWide(context)) return _buildCompact(context);
@@ -340,9 +345,11 @@ class _SectionBanner extends StatelessWidget {
         child: Stack(
           children: [
             const Positioned.fill(child: NeuralHeaderBackground()),
-            Column(
+            ConstrainedBox(
+              constraints: BoxConstraints(minHeight: statusBarTop + minHeight),
+              child: IntrinsicHeight(
+                child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
               children: [
                 SizedBox(height: statusBarTop),
             Padding(
@@ -435,13 +442,17 @@ class _SectionBanner extends StatelessWidget {
                 ],
               ),
             ),
-            if (bottom != null)
+            if (bottom != null) ...[
+              const Spacer(),
               Padding(
                 padding: const EdgeInsets.only(bottom: 38),
                 child: bottom!,
               ),
+            ],
           ],
-        ),
+                ),
+              ),
+            ),
           ],
         ),
       ),

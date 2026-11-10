@@ -292,7 +292,7 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
             icon: Icons.flag_outlined,
             title: 'Plano Terapêutico',
             subtitle: 'Metas e objetivos da terapia.',
-            accentColor: AppColors.moduleGoals,
+            accentColor: AppColors.purple,
             onTap: () => _push(
               TherapyGoalRoutes.staffList(role: role, patientId: patientId),
             ),
@@ -368,7 +368,7 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
             icon: Icons.monitor_heart_outlined,
             title: 'Diário',
             subtitle: 'Acompanhamentos do paciente.',
-            accentColor: AppColors.moduleMonitor,
+            accentColor: AppColors.turquoise,
             onTap: () => _push(
               DailyMonitorRoutes.staffHistory(role: role, patientId: patientId),
             ),
@@ -381,13 +381,6 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
             onTap: gatedTap('resources', () => _push(
               PsychoeducationRoutes.patientExercises(patientId),
             )),
-          ),
-          const _ModuleSpec(
-            icon: Icons.summarize_outlined,
-            title: 'Síntese',
-            subtitle: 'Em breve',
-            accentColor: AppColors.moduleCheckIn,
-            onTap: null,
           ),
         ],
       ),

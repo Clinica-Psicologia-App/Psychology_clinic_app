@@ -121,7 +121,6 @@ class _HomeBody extends ConsumerStatefulWidget {
 }
 
 class _HomeBodyState extends ConsumerState<_HomeBody> {
-  final _headerSummaryKey = GlobalKey();
   final _patientsCardKey = GlobalKey();
   final _assessmentSectionKey = GlobalKey();
   final _patientNextStepKey = GlobalKey();
@@ -188,24 +187,23 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
     return CoachTour(
       id: 'tour_home_psicologo',
       steps: [
-        CoachStep(
+        const CoachStep(
           id: 'boas-vindas',
           text:
-              'Este resumo mostra sua carteira ativa, convites pendentes e instrumentos em uso.',
+              'Aqui no topo ficam as notificações: o que mudou com seus pacientes. Toque em uma para ir direto ao assunto.',
           pose: MascotPose.wave,
-          targetKey: _headerSummaryKey,
         ),
         CoachStep(
           id: 'pacientes',
           text:
-              'Comece por Pacientes para abrir detalhes clinicos, plano de cuidado e acompanhamento.',
+              'Em Meus pacientes ficam a carteira, os convites e o cadastro de novos pacientes, com detalhes clínicos e plano terapêutico.',
           pose: MascotPose.point,
           targetKey: _patientsCardKey,
         ),
         CoachStep(
           id: 'avaliacao-recursos',
           text:
-              'Aqui ficam questionarios, resultados e recursos terapeuticos para apoiar suas decisoes.',
+              'Em Avaliação e recursos ficam os questionários (inclusive a liberação para o paciente), os resultados e os recursos terapêuticos.',
           pose: MascotPose.celebrate,
           targetKey: _assessmentSectionKey,
         ),
@@ -255,45 +253,8 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
           )
         : _ProfileHeader(
             profile: widget.profile,
-            summaryKey: _headerSummaryKey,
             onHelpTap: _replayTour,
           );
-
-    final isWide = AppBreakpoints.isWide(context);
-
-    // Wide psychologist layout: full-bleed Row (main content + sidebar),
-    // bypassing ResponsiveContent so cards get ~850px+ of breathing room.
-    if (widget.role == ProfileRole.psychologist && isWide) {
-      return ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          header,
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.xxl,
-              AppSpacing.xl,
-              AppSpacing.xxl,
-              AppSpacing.xxl,
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: _PsychologistWorkspace(
-                    patientsCardKey: _patientsCardKey,
-                    assessmentSectionKey: _assessmentSectionKey,
-                    summaryKey: _headerSummaryKey,
-                    wideLayout: true,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.xl),
-                _WebPsychologistSidebar(summaryKey: _headerSummaryKey),
-              ],
-            ),
-          ),
-        ],
-      );
-    }
 
     return ListView(
       padding: EdgeInsets.zero,
@@ -314,7 +275,6 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                   _PsychologistWorkspace(
                     patientsCardKey: _patientsCardKey,
                     assessmentSectionKey: _assessmentSectionKey,
-                    summaryKey: _headerSummaryKey,
                   ),
                 if (widget.role == ProfileRole.patient) ...[
                   const MotionReveal(
@@ -451,197 +411,334 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
   }
 }
 
-class _PsychologistWorkspace extends ConsumerWidget {
+/// Os dois menus da home do psicólogo: Meus pacientes e Avaliação e recursos.
+/// Começam fechados; abrir um fecha o outro, para a tela caber sem rolar.
+class _PsychologistWorkspace extends ConsumerStatefulWidget {
   const _PsychologistWorkspace({
     required this.patientsCardKey,
     required this.assessmentSectionKey,
-    required this.summaryKey,
-    this.wideLayout = false,
   });
 
   final GlobalKey patientsCardKey;
   final GlobalKey assessmentSectionKey;
-  final GlobalKey summaryKey;
-  // When true, uses 2-column grids (main content is already inside a Row with sidebar).
-  final bool wideLayout;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_PsychologistWorkspace> createState() =>
+      _PsychologistWorkspaceState();
+}
+
+enum _HomeMenu { patients, assessment }
+
+class _PsychologistWorkspaceState
+    extends ConsumerState<_PsychologistWorkspace> {
+  _HomeMenu? _open;
+
+  void _toggle(_HomeMenu menu) =>
+      setState(() => _open = _open == menu ? null : menu);
+
+  static String _count(int n, String singular, String plural) =>
+      n == 1 ? '1 $singular' : '$n $plural';
+
+  @override
+  Widget build(BuildContext context) {
+    final patients = ref.watch(patientsListProvider).valueOrNull;
+    final invitations = ref.watch(patientInvitationsListProvider).valueOrNull;
+    final questionnaires =
+        ref.watch(psychologistQuestionnairesProvider).valueOrNull;
+
+    final patientsSubtitle = (patients == null || invitations == null)
+        ? 'Pacientes, convites e novo paciente'
+        : '${_count(patients.where((p) => p.isActive).length, 'paciente', 'pacientes')}'
+            ' · ${_count(invitations.where((i) => i.isPending).length, 'convite', 'convites')}';
+    final assessmentSubtitle = questionnaires == null
+        ? 'Questionários, resultados e recursos terapêuticos'
+        : questionnaires.length == 1
+            ? '1 questionário liberado'
+            : '${questionnaires.length} questionários liberados';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const _PsychologistAlertsCard(),
         KeyedSubtree(
-          key: patientsCardKey,
-          child: const AppSectionHeader(
-            title: 'Carteira de pacientes',
-            subtitle: 'Cadastro, convites e plano de cuidado.',
-            accentColor: _WorkspaceAccents.management,
+          key: widget.patientsCardKey,
+          child: MotionReveal(
+            delay: const Duration(milliseconds: 120),
+            child: _HomeMenuCard(
+              icon: Icons.people_outline,
+              accent: _WorkspaceAccents.management,
+              title: 'Meus pacientes',
+              subtitle: patientsSubtitle,
+              expanded: _open == _HomeMenu.patients,
+              onToggle: () => _toggle(_HomeMenu.patients),
+              items: [
+                _HomeMenuItem(
+                  icon: Icons.people_outline,
+                  title: 'Pacientes',
+                  subtitle: 'Carteira e plano terapêutico',
+                  onTap: () => context.push(
+                    PatientRoutes.list(ProfileRole.psychologist),
+                  ),
+                ),
+                _HomeMenuItem(
+                  icon: Icons.mark_email_unread_outlined,
+                  title: 'Convites',
+                  subtitle: 'Enviar e acompanhar o aceite',
+                  onTap: () => context.push(
+                    PatientInvitationRoutes.list(ProfileRole.psychologist),
+                  ),
+                ),
+                _HomeMenuItem(
+                  icon: Icons.person_add_alt_1_outlined,
+                  title: 'Novo paciente',
+                  subtitle: 'Cadastrar um paciente',
+                  onTap: () => context.push(
+                    PatientRoutes.create(ProfileRole.psychologist),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
-        const SizedBox(height: AppSpacing.sm),
-        MotionReveal(
-          delay: const Duration(milliseconds: 120),
-          child: _cardGrid(
-            [
-              ClinicalModuleCard(
-                icon: Icons.people_outline,
-                title: 'Pacientes',
-                subtitle: 'Carteira clínica, detalhes e plano de cuidado',
-                accentColor: _WorkspaceAccents.management,
-                onTap: () => context.push(
-                  PatientRoutes.list(ProfileRole.psychologist),
-                ),
-              ),
-              ClinicalModuleCard(
-                icon: Icons.mark_email_unread_outlined,
-                title: 'Convites',
-                subtitle: 'Enviar convite e acompanhar aceite do paciente',
-                accentColor: _WorkspaceAccents.management,
-                onTap: () => context.push(
-                  PatientInvitationRoutes.list(ProfileRole.psychologist),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: AppSpacing.xl),
+        const SizedBox(height: AppSpacing.md),
         KeyedSubtree(
-          key: assessmentSectionKey,
-          child: const AppSectionHeader(
-            title: 'Avaliação e recursos',
-            subtitle: 'Questionários, liberações, resultados e materiais.',
-            accentColor: _WorkspaceAccents.assessment,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        MotionReveal(
-          delay: const Duration(milliseconds: 160),
-          child: _cardGrid(
-            [
-              ClinicalModuleCard(
-                icon: Icons.assignment_outlined,
-                title: 'Meus questionários',
-                subtitle: 'Ver instrumentos liberados pelo administrador',
-                accentColor: _WorkspaceAccents.assessment,
-                onTap: () => context.push(
-                  QuestionnaireRoutes.psychologistCatalog,
+          key: widget.assessmentSectionKey,
+          child: MotionReveal(
+            delay: const Duration(milliseconds: 160),
+            child: _HomeMenuCard(
+              icon: Icons.assignment_outlined,
+              accent: _WorkspaceAccents.assessment,
+              title: 'Avaliação e recursos',
+              subtitle: assessmentSubtitle,
+              expanded: _open == _HomeMenu.assessment,
+              onToggle: () => _toggle(_HomeMenu.assessment),
+              items: [
+                _HomeMenuItem(
+                  icon: Icons.assignment_outlined,
+                  title: 'Questionários',
+                  subtitle: 'Instrumentos e liberação',
+                  onTap: () => context.push(
+                    QuestionnaireRoutes.psychologistCatalog,
+                  ),
                 ),
-              ),
-              ClinicalModuleCard(
-                icon: Icons.fact_check_outlined,
-                title: 'Liberar para paciente',
-                subtitle: 'Escolha um paciente e abra Questionários',
-                accentColor: _WorkspaceAccents.assessment,
-                onTap: () => context.push(
-                  PatientRoutes.list(ProfileRole.psychologist),
-                  extra: PatientSelectionIntent.questionnaires,
+                _HomeMenuItem(
+                  icon: Icons.insights_outlined,
+                  title: 'Resultados',
+                  subtitle: 'Respostas e revisão',
+                  onTap: () => context.push(
+                    PatientRoutes.list(ProfileRole.psychologist),
+                    extra: PatientSelectionIntent.results,
+                  ),
                 ),
-              ),
-              ClinicalModuleCard(
-                icon: Icons.insights_outlined,
-                title: 'Resultados',
-                subtitle: 'Acompanhar respostas e revisar instrumentos',
-                accentColor: _WorkspaceAccents.assessment,
-                onTap: () => context.push(
-                  PatientRoutes.list(ProfileRole.psychologist),
-                  extra: PatientSelectionIntent.results,
+                _HomeMenuItem(
+                  icon: Icons.library_books_outlined,
+                  title: 'Recursos terapêuticos',
+                  subtitle: 'Materiais e exercícios',
+                  onTap: () => context.push(
+                    PatientRoutes.list(ProfileRole.psychologist),
+                    extra: PatientSelectionIntent.therapyResources,
+                  ),
                 ),
-              ),
-              ClinicalModuleCard(
-                icon: Icons.library_books_outlined,
-                title: 'Recursos terapêuticos',
-                subtitle: 'Materiais e exercícios por paciente',
-                accentColor: _WorkspaceAccents.assessment,
-                onTap: () => context.push(
-                  PatientRoutes.list(ProfileRole.psychologist),
-                  extra: PatientSelectionIntent.therapyResources,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ],
     );
   }
+}
 
-  /// 2-column grid when inside the sidebar layout; falls back to
-  /// ResponsiveGrid on narrow screens.
-  Widget _cardGrid(List<Widget> cards) {
-    if (wideLayout) {
-      return LayoutBuilder(
-        builder: (_, box) {
-          const gap = AppSpacing.md;
-          final cardW = (box.maxWidth - gap) / 2;
-          return Wrap(
-            spacing: gap,
-            runSpacing: gap,
-            children: cards
-                .map((c) => SizedBox(width: cardW, child: c))
-                .toList(),
-          );
-        },
-      );
-    }
-    return ResponsiveGrid(mediumColumns: 2, expandedColumns: 3, children: cards);
+/// Uma opção dentro de um menu expansível da home.
+class _HomeMenuItem {
+  const _HomeMenuItem({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+}
+
+/// Botão grande da home que expande e mostra as opções dele.
+class _HomeMenuCard extends StatelessWidget {
+  const _HomeMenuCard({
+    required this.icon,
+    required this.accent,
+    required this.title,
+    required this.subtitle,
+    required this.expanded,
+    required this.onToggle,
+    required this.items,
+  });
+
+  final IconData icon;
+  final Color accent;
+  final String title;
+  final String subtitle;
+  final bool expanded;
+  final VoidCallback onToggle;
+  final List<_HomeMenuItem> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final duration =
+        AppAnimations.resolve(context, const Duration(milliseconds: 240));
+
+    return ClayCard(
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.xlAll),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Semantics(
+            button: true,
+            expanded: expanded,
+            label: '$title, $subtitle',
+            excludeSemantics: true,
+            onTap: onToggle,
+            child: InkWell(
+              onTap: onToggle,
+              borderRadius: AppRadius.xlAll,
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 46,
+                      height: 46,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: accent,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(icon, color: Colors.white, size: 24),
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                              color: theme.colorScheme.onSurface,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            subtitle,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    AnimatedRotation(
+                      turns: expanded ? 0.5 : 0,
+                      duration: duration,
+                      child: Icon(
+                        Icons.keyboard_arrow_down_rounded,
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          AnimatedSize(
+            duration: duration,
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.topCenter,
+            child: expanded
+                ? Column(
+                    children: [
+                      for (final item in items) ...[
+                        Divider(
+                          height: 1,
+                          thickness: 0.5,
+                          color: theme.colorScheme.outline,
+                        ),
+                        _HomeMenuRow(item: item, accent: accent),
+                      ],
+                    ],
+                  )
+                : const SizedBox(width: double.infinity),
+          ),
+        ],
+      ),
+    );
   }
 }
 
-// ---------------------------------------------------------------------------
-// Sidebar web do psicólogo (stats + calendário semanal)
-// ---------------------------------------------------------------------------
+class _HomeMenuRow extends StatelessWidget {
+  const _HomeMenuRow({required this.item, required this.accent});
 
-class _WebPsychologistSidebar extends ConsumerWidget {
-  const _WebPsychologistSidebar({required this.summaryKey});
-
-  final GlobalKey summaryKey;
+  final _HomeMenuItem item;
+  final Color accent;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final patients = ref.watch(patientsListProvider).valueOrNull;
-    final invitations = ref.watch(patientInvitationsListProvider).valueOrNull;
-    final questionnaires =
-        ref.watch(psychologistQuestionnairesProvider).valueOrNull ?? const [];
-
-    final activePatients =
-        (patients ?? const []).where((p) => p.isActive).length;
-    final pendingInvitations =
-        (invitations ?? const []).where((i) => i.isPending).length;
-
-    final metrics = [
-      _WorkspaceMetric(
-        icon: Icons.people_outline,
-        label: 'Pacientes',
-        value: activePatients,
-        accent: _WorkspaceAccents.management,
-        onTap: () =>
-            context.push(PatientRoutes.list(ProfileRole.psychologist)),
-      ),
-      _WorkspaceMetric(
-        icon: Icons.mark_email_unread_outlined,
-        label: 'Convites',
-        value: pendingInvitations,
-        accent: pendingInvitations > 0
-            ? AppColors.warning
-            : _WorkspaceAccents.management,
-        onTap: () => context
-            .push(PatientInvitationRoutes.list(ProfileRole.psychologist)),
-      ),
-      _WorkspaceMetric(
-        icon: Icons.assignment_outlined,
-        label: 'Questionários',
-        value: questionnaires.length,
-        accent: _WorkspaceAccents.assessment,
-        onTap: () =>
-            context.push(QuestionnaireRoutes.psychologistCatalog),
-      ),
-    ];
-
-    return SizedBox(
-      width: 280,
-      child: KeyedSubtree(
-        key: summaryKey,
-        child: _PsychologistSummaryFooter(metrics: metrics),
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Semantics(
+      button: true,
+      label: '${item.title}, ${item.subtitle}',
+      excludeSemantics: true,
+      onTap: item.onTap,
+      child: InkWell(
+        onTap: item.onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: 12,
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: accent.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(item.icon, size: 18, color: accent),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.title,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        color: theme.colorScheme.onSurface,
+                      ),
+                    ),
+                    Text(
+                      item.subtitle,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios_rounded,
+                size: 13,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -766,7 +863,7 @@ class _AlertsPanelState extends State<_AlertsPanel> {
                     Text(
                       _expanded
                           ? 'Mostrar menos'
-                          : 'Ver todos (${alerts.length})',
+                          : 'Ver todas (${alerts.length})',
                       style: theme.textTheme.labelMedium?.copyWith(
                         color: AppColors.warning,
                         fontWeight: FontWeight.w600,
@@ -1952,67 +2049,6 @@ class _WorkspaceMetric {
 }
 
 
-class _WorkspaceMetricCell extends StatelessWidget {
-  const _WorkspaceMetricCell({required this.metric});
-
-  final _WorkspaceMetric metric;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final duration = AppAnimations.resolve(
-      context,
-      const Duration(milliseconds: 320),
-    );
-
-    return Semantics(
-      button: true,
-      label: '${metric.label}: ${metric.value}',
-      child: InkWell(
-        onTap: metric.onTap,
-        borderRadius: AppRadius.mdAll,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.xs,
-            vertical: AppSpacing.sm,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(metric.icon, size: 20, color: metric.accent),
-              const SizedBox(height: AppSpacing.xs),
-              TweenAnimationBuilder<int>(
-                duration: duration,
-                curve: AppAnimations.standardCurve,
-                tween: IntTween(begin: 0, end: metric.value),
-                builder: (context, animated, _) {
-                  return Text(
-                    '$animated',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      color: theme.colorScheme.onSurface,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(height: AppSpacing.xxs),
-              Text(
-                metric.label,
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
 /// Cabeçalho da home do profissional: saudação pelo primeiro nome e uma
 /// linha de contexto vinda dos dados reais da carteira.
 ///
@@ -2022,12 +2058,10 @@ class _WorkspaceMetricCell extends StatelessWidget {
 class _ProfileHeader extends ConsumerWidget {
   const _ProfileHeader({
     required this.profile,
-    required this.summaryKey,
     required this.onHelpTap,
   });
 
   final UserProfile profile;
-  final GlobalKey summaryKey;
   final VoidCallback onHelpTap;
 
   @override
@@ -2035,16 +2069,9 @@ class _ProfileHeader extends ConsumerWidget {
     final firstName = profile.fullName.trim().split(RegExp(r'\s+')).first;
     final patients = ref.watch(patientsListProvider).valueOrNull;
     final invitations = ref.watch(patientInvitationsListProvider).valueOrNull;
-    final questionnaires =
-        ref.watch(psychologistQuestionnairesProvider).valueOrNull ?? const [];
 
     final activePatients =
         (patients ?? const []).where((patient) => patient.isActive).length;
-    final pendingInvitations = (invitations ?? const [])
-        .where((invitation) => invitation.isPending)
-        .length;
-
-    final isWide = AppBreakpoints.isWide(context);
 
     return _CupolaHeader(
       profile: profile,
@@ -2061,44 +2088,6 @@ class _ProfileHeader extends ConsumerWidget {
         icon: const Icon(Icons.help_outline_rounded),
         color: Colors.white,
       ),
-      // On wide screens the summary moves to the sidebar in _PsychologistWorkspace.
-      footer: isWide
-          ? null
-          : KeyedSubtree(
-              key: summaryKey,
-              child: _PsychologistSummaryFooter(
-                metrics: [
-                  _WorkspaceMetric(
-                    icon: Icons.people_outline,
-                    label: 'Pacientes',
-                    value: activePatients,
-                    accent: _WorkspaceAccents.management,
-                    onTap: () => context.push(
-                      PatientRoutes.list(ProfileRole.psychologist),
-                    ),
-                  ),
-                  _WorkspaceMetric(
-                    icon: Icons.mark_email_unread_outlined,
-                    label: 'Convites',
-                    value: pendingInvitations,
-                    accent: pendingInvitations > 0
-                        ? AppColors.warning
-                        : _WorkspaceAccents.management,
-                    onTap: () => context.push(
-                      PatientInvitationRoutes.list(ProfileRole.psychologist),
-                    ),
-                  ),
-                  _WorkspaceMetric(
-                    icon: Icons.assignment_outlined,
-                    label: 'Questionários',
-                    value: questionnaires.length,
-                    accent: _WorkspaceAccents.assessment,
-                    onTap: () =>
-                        context.push(QuestionnaireRoutes.psychologistCatalog),
-                  ),
-                ],
-              ),
-            ),
     );
   }
 
@@ -2140,7 +2129,6 @@ class _CupolaHeader extends StatelessWidget {
     required this.contextLine,
     required this.onProfileTap,
     required this.trailingAction,
-    this.footer,
   });
 
   final UserProfile profile;
@@ -2149,7 +2137,6 @@ class _CupolaHeader extends StatelessWidget {
   final String contextLine;
   final VoidCallback? onProfileTap;
   final Widget? trailingAction;
-  final Widget? footer;
 
   static String _greeting(int h) =>
       h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
@@ -2197,7 +2184,9 @@ class _CupolaHeader extends StatelessWidget {
               AppSpacing.xl,
               topInset + AppSpacing.xs,
               AppSpacing.xl,
-              footer != null ? 68 : AppSpacing.xl,
+              // Espaço para a onda da base: o texto de contexto não pode
+              // ficar por baixo dela.
+              68,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -2342,22 +2331,7 @@ class _CupolaHeader extends StatelessWidget {
       ),
     );
 
-    if (footer == null) return gradientBody;
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        gradientBody,
-        Transform.translate(
-          offset: const Offset(0, -12),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-            child: footer,
-          ),
-        ),
-      ],
-    );
+    return gradientBody;
   }
 
   /// Variante compacta horizontal para web/desktop (tela larga).
@@ -2466,23 +2440,7 @@ class _CupolaHeader extends StatelessWidget {
       ),
     );
 
-    if (footer == null) return bar;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        bar,
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.md,
-            AppSpacing.md,
-            AppSpacing.md,
-            0,
-          ),
-          child: footer,
-        ),
-      ],
-    );
+    return bar;
   }
 }
 
@@ -2513,197 +2471,3 @@ class _CupolaPainter extends CustomPainter {
   bool shouldRepaint(_CupolaPainter old) => old.color != color;
 }
 
-// ---------------------------------------------------------------------------
-// Footer unificado do psicólogo: stats + faixa semanal num único ClayCard
-// ---------------------------------------------------------------------------
-
-/// Stats (Pacientes / Convites / Questionários) e faixa semanal num único
-/// ClayCard que flutua sobre o canopy via Transform.translate do
-/// AppCanopyHeader. Unificados para não haver gap visual entre os dois blocos.
-class _PsychologistSummaryFooter extends ConsumerWidget {
-  const _PsychologistSummaryFooter({required this.metrics});
-
-  final List<_WorkspaceMetric> metrics;
-
-  // Iniciais em português: S=Segunda, T=Terça, Q=Quarta, Q=Quinta,
-  // S=Sexta, S=Sábado, D=Domingo (segunda-feira é dia 1 no Dart)
-  static const _labels = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
-
-  static bool _sameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
-
-  static Color _alertColor(PsychologistAlertKind kind) {
-    switch (kind) {
-      case PsychologistAlertKind.expiringInvitation:
-        return AppColors.error;
-      case PsychologistAlertKind.staleQuestionnaire:
-        return AppColors.warning;
-      case PsychologistAlertKind.missingCheckin:
-        return AppColors.info;
-      case PsychologistAlertKind.pendingResultsRelease:
-        return AppColors.success;
-      case PsychologistAlertKind.recentCheckin:
-        return AppColors.turquoise;
-    }
-  }
-
-  /// Mapeia alertas para o índice do dia na semana atual (0=seg…6=dom).
-  /// expiringInvitation usa daysCount para apontar o dia exato de expiração;
-  /// os demais ficam no dia de hoje.
-  static List<List<Color>> _buildDots(
-    List<PsychologistAlert> alerts,
-    DateTime now,
-    List<DateTime> days,
-  ) {
-    // Por dia: set de cores (sem duplicatas de cor) — máx 3 dots.
-    final dotsPerDay = List.generate(7, (_) => <Color>{});
-
-    for (final alert in alerts) {
-      final color = _alertColor(alert.kind);
-      DateTime target;
-      if (alert.kind == PsychologistAlertKind.expiringInvitation) {
-        target = DateTime(now.year, now.month, now.day)
-            .add(Duration(days: alert.daysCount));
-      } else {
-        target = now;
-      }
-      for (var i = 0; i < days.length; i++) {
-        if (_sameDay(days[i], target)) {
-          dotsPerDay[i].add(color);
-          break;
-        }
-      }
-    }
-
-    return dotsPerDay.map((s) => s.take(3).toList()).toList();
-  }
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final now = DateTime.now();
-    final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
-    final days = List.generate(7, (i) => startOfWeek.add(Duration(days: i)));
-
-    final alerts = ref.watch(psychologistAlertsProvider).valueOrNull ?? [];
-    final dots = _buildDots(alerts, now, days);
-
-    return ClayCard(
-      shape: RoundedRectangleBorder(borderRadius: AppRadius.xlAll),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Linha de stats
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                for (var i = 0; i < metrics.length; i++) ...[
-                  if (i > 0)
-                    Container(width: 1, height: 56, color: Theme.of(context).colorScheme.outline),
-                  Expanded(child: _WorkspaceMetricCell(metric: metrics[i])),
-                ],
-              ],
-            ),
-          ),
-          // Divisória
-          Divider(height: 1, thickness: 0.5, color: Theme.of(context).colorScheme.outline),
-          // Faixa semanal
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.sm,
-              vertical: AppSpacing.sm,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                for (var i = 0; i < 7; i++)
-                  _DayCell(
-                    label: _labels[i],
-                    day: days[i],
-                    isToday: _sameDay(days[i], now),
-                    dots: dots[i],
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DayCell extends StatelessWidget {
-  const _DayCell({
-    required this.label,
-    required this.day,
-    required this.isToday,
-    this.dots = const [],
-  });
-
-  final String label;
-  final DateTime day;
-  final bool isToday;
-  final List<Color> dots;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
-      width: 36,
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      decoration: BoxDecoration(
-        color: isToday ? theme.colorScheme.primaryContainer : Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            label,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: isToday ? Colors.white60 : theme.colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w700,
-              fontSize: 10,
-              letterSpacing: 0.3,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '${day.day}',
-            style: theme.textTheme.titleSmall?.copyWith(
-              color: isToday ? Colors.white : theme.colorScheme.onSurface,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 5),
-          SizedBox(
-            height: 6,
-            child: dots.isEmpty
-                ? const SizedBox.shrink()
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      for (var i = 0; i < dots.length; i++) ...[
-                        if (i > 0) const SizedBox(width: 2),
-                        Container(
-                          width: 5,
-                          height: 5,
-                          decoration: BoxDecoration(
-                            color: isToday
-                                ? dots[i].withValues(alpha: 0.9)
-                                : dots[i],
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-          ),
-        ],
-      ),
-    );
-  }
-}

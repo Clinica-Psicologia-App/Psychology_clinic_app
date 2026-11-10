@@ -27,31 +27,68 @@ void main() {
     await _pumpHome(tester);
 
     expect(tester.takeException(), isNull);
-    // O resumo da carteira ("Central de trabalho") foi promovido ao canopy;
-    // as seções de módulos seguem no corpo.
-    expect(find.text('Carteira de pacientes'), findsOneWidget);
+    expect(find.text('Meus pacientes'), findsOneWidget);
+    expect(find.text('Avaliação e recursos'), findsOneWidget);
+    expect(find.text('Carteira de pacientes'), findsNothing);
   });
 
-  testWidgets('resumo mostra as três métricas em uma linha', (tester) async {
+  testWidgets('os dois menus começam fechados, só com o resumo', (tester) async {
     await _pumpHome(tester);
 
-    // "Pacientes" e "Convites" aparecem duas vezes cada: como rótulo da
-    // métrica e como título do card de módulo. O resumo vem antes na lista,
-    // então a primeira ocorrência é sempre a do painel.
-    final pacientes = tester.getCenter(find.text('Pacientes').first);
-    final convites = tester.getCenter(find.text('Convites').first);
-    final questionarios = tester.getCenter(find.text('Questionários').first);
+    expect(find.text('2 pacientes · 1 convite'), findsOneWidget);
+    expect(find.text('0 questionários liberados'), findsOneWidget);
+    // Nenhuma opção aparece antes de abrir um menu.
+    expect(find.text('Pacientes'), findsNothing);
+    expect(find.text('Convites'), findsNothing);
+    expect(find.text('Novo paciente'), findsNothing);
+    expect(find.text('Questionários'), findsNothing);
+    expect(find.text('Resultados'), findsNothing);
+    expect(find.text('Recursos terapêuticos'), findsNothing);
+  });
 
-    // Colunas de largura igual e na mesma linha: o layout anterior (Wrap)
-    // deixava a terceira métrica órfã numa segunda linha.
-    expect(pacientes.dy, convites.dy);
-    expect(convites.dy, questionarios.dy);
+  testWidgets('abrir um menu mostra as opções e fecha o outro', (tester) async {
+    await _pumpHome(tester);
 
-    // E espaçadas por igual — cada coluna ocupa um terço da largura.
-    expect(
-      convites.dx - pacientes.dx,
-      closeTo(questionarios.dx - convites.dx, 1.0),
-    );
+    await tester.tap(find.text('Meus pacientes'));
+    await tester.pumpAndSettle();
+    expect(find.text('Pacientes'), findsOneWidget);
+    expect(find.text('Convites'), findsOneWidget);
+    expect(find.text('Novo paciente'), findsOneWidget);
+    expect(find.text('Questionários'), findsNothing);
+
+    await tester.tap(find.text('Avaliação e recursos'));
+    await tester.pumpAndSettle();
+    expect(find.text('Questionários'), findsOneWidget);
+    expect(find.text('Resultados'), findsOneWidget);
+    expect(find.text('Recursos terapêuticos'), findsOneWidget);
+    // O primeiro fechou.
+    expect(find.text('Pacientes'), findsNothing);
+    expect(find.text('Novo paciente'), findsNothing);
+
+    // Tocar de novo no mesmo menu fecha.
+    await tester.tap(find.text('Avaliação e recursos'));
+    await tester.pumpAndSettle();
+    expect(find.text('Questionários'), findsNothing);
+  });
+
+  testWidgets('"Liberar para paciente" não está mais na tela inicial',
+      (tester) async {
+    await _pumpHome(tester);
+    await tester.tap(find.text('Avaliação e recursos'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Liberar para paciente'), findsNothing);
+    expect(find.text('Meus questionários'), findsNothing);
+  });
+
+  testWidgets('o quadro da semana e o painel de números saíram',
+      (tester) async {
+    await _pumpHome(tester);
+
+    // Rótulos do painel antigo e as iniciais dos dias da semana.
+    expect(find.text('Questionários'), findsNothing);
+    expect(find.text('D'), findsNothing);
+    expect(find.text('T'), findsNothing);
   });
 
   testWidgets('saudação usa o primeiro nome do profissional', (tester) async {
@@ -119,6 +156,8 @@ Future<void> _pumpHome(
       ),
     ),
   );
+  // Dá tempo para as animações com atraso (MotionReveal) terminarem.
+  await tester.pump(const Duration(seconds: 1));
   await tester.pumpAndSettle();
 }
 

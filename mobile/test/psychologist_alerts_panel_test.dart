@@ -87,6 +87,8 @@ void main() {
     ]);
 
     final handle = tester.ensureSemantics();
+    // A árvore de semântica só é montada no próximo quadro.
+    await tester.pump();
     expect(
       find.bySemanticsLabel('Roberto com questionário em andamento há 9 dias'),
       findsOneWidget,
@@ -139,6 +141,8 @@ Future<void> _pumpHomeWithAlerts(
       ),
     ),
   );
+  // Dá tempo para as animações com atraso (MotionReveal) terminarem.
+  await tester.pump(const Duration(seconds: 1));
   await tester.pumpAndSettle();
 }
 

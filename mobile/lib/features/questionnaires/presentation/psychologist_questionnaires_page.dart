@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/config/env_config.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_empty_state.dart';
 import '../../../shared/widgets/app_motion.dart';
@@ -10,6 +11,7 @@ import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../../shared/widgets/brand_loading.dart';
+import '../../../shared/widgets/clinical_module_card.dart';
 import '../../patients/presentation/patient_routes.dart';
 import '../../patients/presentation/widgets/staff_section_header.dart';
 import '../../profile/domain/profile_role.dart';
@@ -46,7 +48,7 @@ class PsychologistQuestionnairesPage extends ConsumerWidget {
             // ── Header ───────────────────────────────────────────────────
             SliverToBoxAdapter(
               child: StaffSectionHeader(
-                navTitle: 'Meus questionários',
+                navTitle: 'Questionários',
                 eyebrow: 'INSTRUMENTOS CLÍNICOS',
                 headline: Builder(
                   builder: (ctx) {
@@ -93,6 +95,29 @@ class PsychologistQuestionnairesPage extends ConsumerWidget {
               )
             // ── Data ──────────────────────────────────────────────────────
             else ...[
+              // Liberar para paciente: vive aqui dentro de Questionários.
+              if (items != null && items.isNotEmpty)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSpacing.md,
+                      AppSpacing.lg,
+                      AppSpacing.md,
+                      0,
+                    ),
+                    child: ClinicalModuleCard(
+                      icon: Icons.fact_check_outlined,
+                      title: 'Liberar para paciente',
+                      subtitle:
+                          'Escolha um paciente e libere os questionários.',
+                      accentColor: AppColors.purple,
+                      onTap: () => context.push(
+                        PatientRoutes.list(ProfileRole.psychologist),
+                        extra: PatientSelectionIntent.questionnaires,
+                      ),
+                    ),
+                  ),
+                ),
               // Section header
               const SliverToBoxAdapter(
                 child: Padding(

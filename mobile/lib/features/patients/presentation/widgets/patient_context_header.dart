@@ -297,7 +297,12 @@ class _PatientHeaderContent extends StatelessWidget {
                       children: [
                         for (int i = 0; i < actions!.length; i++) ...[
                           if (i > 0) const SizedBox(width: AppSpacing.sm),
-                          Expanded(child: actions![i]),
+                          Expanded(
+                            flex: actions![i] is PatientHeaderActionBtn
+                                ? (actions![i] as PatientHeaderActionBtn).flex
+                                : 1,
+                            child: actions![i],
+                          ),
                         ],
                       ],
                     ),
@@ -597,11 +602,15 @@ class PatientHeaderActionBtn extends StatelessWidget {
     required this.icon,
     required this.onTap,
     this.solid = false,
+    this.flex = 1,
   });
 
   final String label;
   final IconData icon;
   final VoidCallback? onTap;
+
+  /// Largura relativa na linha de ações (rótulos longos pedem mais).
+  final int flex;
 
   /// Quando true, botão fica preenchido de branco (destaque principal).
   final bool solid;
@@ -632,8 +641,11 @@ class PatientHeaderActionBtn extends StatelessWidget {
                     : Colors.white,
               ),
               const SizedBox(width: 5),
-              Text(
+              Flexible(
+                child: Text(
                 label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w800,
@@ -641,6 +653,7 @@ class PatientHeaderActionBtn extends StatelessWidget {
                       ? const Color(0xFF0A3A5E)
                       : Colors.white,
                   letterSpacing: 0.2,
+                ),
                 ),
               ),
             ],

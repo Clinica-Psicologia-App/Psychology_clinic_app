@@ -55,6 +55,11 @@ abstract final class PatientRoutes {
   static String edit(ProfileRole role, String patientId) =>
       '${detail(role, patientId)}/edit';
 
+  /// Dados cadastrais do paciente (todos os dados pessoais, editar e
+  /// inativar o acesso).
+  static String registration(ProfileRole role, String patientId) =>
+      '${detail(role, patientId)}/registration';
+
   static String invitationList(ProfileRole role) =>
       PatientInvitationRoutes.list(role);
 

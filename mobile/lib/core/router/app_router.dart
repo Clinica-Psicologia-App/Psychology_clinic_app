@@ -66,6 +66,7 @@ import '../../features/patients/presentation/create_patient_page.dart';
 import '../../features/patients/domain/patient.dart';
 import '../../features/patients/presentation/edit_patient_page.dart';
 import '../../features/patients/presentation/patient_details_page.dart';
+import '../../features/patients/presentation/patient_registration_page.dart';
 import '../../features/patients/presentation/patient_picker_page.dart';
 import '../../features/patients/presentation/patient_routes.dart';
 import '../../features/patients/presentation/patients_page.dart';
@@ -608,6 +609,13 @@ List<RouteBase> _staffPatientRoutes(ProfileRole role) {
               builder: (_, state) => EditPatientPage(
                 role: role,
                 patient: state.extra as Patient,
+              ),
+            ),
+            GoRoute(
+              path: 'registration',
+              builder: (_, state) => PatientRegistrationPage(
+                role: role,
+                patientId: state.pathParameters['patientId']!,
               ),
             ),
             ...questionnaireRoutesFor(

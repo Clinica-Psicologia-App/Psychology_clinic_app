@@ -10,7 +10,6 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/errors/app_exception.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
-import '../../../shared/widgets/error_banner.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../coach/domain/coach_step.dart';
 import '../../coach/domain/coach_tour.dart';
@@ -27,6 +26,7 @@ import '../providers/patients_providers.dart';
 import 'patient_routes.dart';
 import 'widgets/future_modules_section.dart';
 import 'widgets/patient_context_header.dart';
+import 'widgets/patient_registration_widgets.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 import '../../../shared/widgets/brand_loading.dart';
 
@@ -79,7 +79,7 @@ class _PatientDetailsPageState extends ConsumerState<PatientDetailsPage> {
           CoachStep(
             id: 'resumo',
             text:
-                'O Resumo rápido mostra último check-in, metas ativas e '
+                'O Resumo do paciente mostra último check-in, metas ativas e '
                 'questionários. Toque em cada número para ir direto ao módulo. 🙂',
             pose: MascotPose.celebrate,
           ),
@@ -189,7 +189,6 @@ class _PatientDetailsBodyState extends State<_PatientDetailsBody> {
     final genogramKey = widget.genogramKey;
     final vitalsKey = widget.vitalsKey;
     final onTourTap = widget.onTourTap;
-    final dateFormat = MaterialLocalizations.of(context);
     final canEdit = role == ProfileRole.psychologist ||
         role == ProfileRole.platformAdmin;
     final isWide = AppBreakpoints.isWide(context);
@@ -204,7 +203,19 @@ class _PatientDetailsBodyState extends State<_PatientDetailsBody> {
               pageTitle: 'FICHA DO PACIENTE',
               role: role,
               actions: [
-                if (canEdit)
+                if (role == ProfileRole.psychologist)
+                  // Os dados pessoais ficam numa página própria, para a ficha
+                  // abrir direto nos módulos clínicos.
+                  PatientHeaderActionBtn(
+                    label: 'Dados cadastrais',
+                    icon: Icons.badge_outlined,
+                    solid: true,
+                    flex: 2,
+                    onTap: () => _push(
+                      PatientRoutes.registration(role, patient.id),
+                    ),
+                  )
+                else if (canEdit)
                   PatientHeaderActionBtn(
                     label: 'Editar paciente',
                     icon: Icons.edit_outlined,
@@ -235,131 +246,58 @@ class _PatientDetailsBodyState extends State<_PatientDetailsBody> {
                 : const EdgeInsets.all(AppSpacing.md),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-          _DetailsSectionCard(
-            title: 'Dados do paciente',
-            subtitle:
-                'Informações principais para identificação, contato e contexto clínico.',
-            children: [
-              _InfoRow(
-                  icon: Icons.mail_outline,
-                  label: 'E-mail',
-                  value: patient.email),
-              _SensitiveInfoRow(
-                icon: Icons.phone_outlined,
-                label: 'Telefone',
-                value: patient.phone,
-                maskedValue: _maskPhone(patient.phone),
+          if (role == ProfileRole.platformAdmin) ...[
+            PatientRegistrationDataCard(patient: patient),
+            const SizedBox(height: AppSpacing.md),
+            PatientLifecycleCard(patient: patient),
+            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.xs),
+            _PatientDeleteCard(patient: patient),
+            const SizedBox(height: AppSpacing.md),
+          ],
+          if (role == ProfileRole.psychologist) ...[
+            // Identificação resumida: o nome e a situação já estão no
+            // cabeçalho; o resto dos dados fica em "Dados cadastrais".
+            PatientIdentificationSummary(patient: patient),
+            const SizedBox(height: AppSpacing.md),
+            if (patient.isActive &&
+                patient.accessStatus == PatientAccessStatus.noAppAccess) ...[
+              AppInfoCard(
+                icon: Icons.mark_email_unread_outlined,
+                title: 'Convidar paciente',
+                body:
+                    'Gere um link para o paciente criar senha e concluir o primeiro acesso.',
+                action: IconButton(
+                  tooltip: 'Convidar paciente',
+                  onPressed: _navigating
+                      ? null
+                      : () => _push(
+                            PatientRoutes.invitationCreate(role),
+                            extra: PatientInvitationDraft(
+                              fullName: patient.fullName,
+                              email: patient.email,
+                              phone: patient.phone,
+                              responsiblePsychologistId:
+                                  patient.responsiblePsychologistId,
+                            ),
+                          ),
+                  icon: const Icon(Icons.arrow_forward_rounded),
+                ),
               ),
-              _SensitiveInfoRow(
-                icon: Icons.badge_outlined,
-                label: 'CPF',
-                value: patient.cpf,
-                maskedValue: _maskCpf(patient.cpf),
-              ),
-              _InfoRow(
-                icon: Icons.cake_outlined,
-                label: 'Nascimento',
-                value: patient.birthDate != null
-                    ? dateFormat.formatFullDate(patient.birthDate!)
-                    : null,
-              ),
-              _InfoRow(
-                  icon: Icons.wc_outlined,
-                  label: 'Gênero',
-                  value: patient.displayGender),
-              _InfoRow(
-                icon: Icons.favorite_border,
-                label: 'Estado civil',
-                value: patient.displayRelationshipStatus,
-              ),
-              _InfoRow(
-                icon: Icons.school_outlined,
-                label: 'Escolaridade',
-                value: patient.displayEducationLevel,
-              ),
-              _InfoRow(
-                  icon: Icons.work_outline,
-                  label: 'Ocupação',
-                  value: patient.occupation),
-              _InfoRow(
-                  icon: Icons.place_outlined,
-                  label: 'Naturalidade',
-                  value: _birthPlace(patient)),
-              _InfoRow(
-                icon: Icons.self_improvement_outlined,
-                label: 'Religião',
-                value: patient.religiousOrientation,
-              ),
-              _InfoRow(
-                  icon: Icons.groups_outlined,
-                  label: 'Grupo étnico',
-                  value: patient.displayEthnicGroup),
-              _InfoRow(
-                icon: Icons.diversity_1_outlined,
-                label: 'Orient. sexual',
-                value: patient.displaySexualOrientation,
-              ),
-              _InfoRow(
-                icon: Icons.child_care_outlined,
-                label: 'Filhos',
-                value: _hasChildrenLabel(patient.hasChildren),
-              ),
+              const SizedBox(height: AppSpacing.md),
             ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          if (role == ProfileRole.psychologist ||
-              role == ProfileRole.platformAdmin) ...[
-            _PatientLifecycleCard(patient: patient),
-            const SizedBox(height: AppSpacing.md),
-          ],
-          if (role != ProfileRole.platformAdmin &&
-              patient.isActive &&
-              patient.accessStatus == PatientAccessStatus.noAppAccess) ...[
-            AppInfoCard(
-              icon: Icons.mark_email_unread_outlined,
-              title: 'Convidar paciente',
-              body:
-                  'Gere um link para o paciente criar senha e concluir o primeiro acesso.',
-              action: IconButton(
-                tooltip: 'Convidar paciente',
-                onPressed: _navigating
-                    ? null
-                    : () => _push(
-                          PatientRoutes.invitationCreate(role),
-                          extra: PatientInvitationDraft(
-                            fullName: patient.fullName,
-                            email: patient.email,
-                            phone: patient.phone,
-                            responsiblePsychologistId:
-                                patient.responsiblePsychologistId,
-                          ),
+            _SummaryHeading(
+              reportKey: reportKey,
+              onReport: _navigating
+                  ? null
+                  : () => _push(
+                        ClinicalReportRoutes.staffOptions(
+                          role: role,
+                          patientId: patient.id,
                         ),
-                icon: const Icon(Icons.arrow_forward_rounded),
-              ),
+                      ),
             ),
-            const SizedBox(height: AppSpacing.md),
-          ],
-          if (role != ProfileRole.platformAdmin) ...[
-            AppInfoCard(
-              key: reportKey,
-              icon: Icons.picture_as_pdf_outlined,
-              title: 'Relatório clínico',
-              body: 'Gere um PDF supervisionado com as seções clínicas.',
-              tone: AppInfoCardTone.info,
-              action: IconButton(
-                tooltip: 'Gerar relatório',
-                onPressed: _navigating
-                    ? null
-                    : () => _push(
-                          ClinicalReportRoutes.staffOptions(
-                            role: role,
-                            patientId: patient.id,
-                          ),
-                        ),
-                icon: const Icon(Icons.arrow_forward_rounded),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
+            const SizedBox(height: AppSpacing.xs),
             _PatientVitalsSummary(
                 key: vitalsKey, role: role, patient: patient),
             const SizedBox(height: AppSpacing.xl),
@@ -372,46 +310,12 @@ class _PatientDetailsBodyState extends State<_PatientDetailsBody> {
               patientId: patient.id,
             ),
           ],
-          if (role == ProfileRole.platformAdmin) ...[
-            const SizedBox(height: AppSpacing.xs),
-            _PatientDeleteCard(patient: patient),
-            const SizedBox(height: AppSpacing.md),
-          ],
               ]),
             ),
           ),
         ],
       ),
     );
-  }
-
-  String? _birthPlace(Patient patient) {
-    final parts = [
-      patient.stateBirth,
-      patient.countryBirth,
-    ].where((value) => value != null && value.trim().isNotEmpty).cast<String>();
-
-    if (parts.isEmpty) return null;
-    return parts.join(' / ');
-  }
-
-  String? _hasChildrenLabel(bool? hasChildren) {
-    if (hasChildren == null) return null;
-    return hasChildren ? 'Sim' : 'Não';
-  }
-
-  static String? _maskCpf(String? value) {
-    if (value == null || value.trim().isEmpty) return null;
-    final digits = value.replaceAll(RegExp(r'\D'), '');
-    if (digits.length != 11) return '***.***.***-**';
-    return '***.***.${digits.substring(6, 9)}-**';
-  }
-
-  static String? _maskPhone(String? value) {
-    if (value == null || value.trim().isEmpty) return null;
-    final digits = value.replaceAll(RegExp(r'\D'), '');
-    if (digits.length < 4) return '••••';
-    return '•••••••${digits.substring(digits.length - 4)}';
   }
 }
 
@@ -441,6 +345,43 @@ class _PatientVitalsSummary extends ConsumerWidget {
         if (vitals == null) return const SizedBox.shrink();
         return _VitalsPanel(role: role, patient: patient, vitals: vitals);
       },
+    );
+  }
+}
+
+
+/// Título "Resumo do paciente" com um botão discreto do Relatório clínico.
+class _SummaryHeading extends StatelessWidget {
+  const _SummaryHeading({this.reportKey, required this.onReport});
+
+  final Key? reportKey;
+  final VoidCallback? onReport;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            'Resumo do paciente',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+        ),
+        TextButton.icon(
+          key: reportKey,
+          onPressed: onReport,
+          icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+          label: const Text('Relatório clínico'),
+          style: TextButton.styleFrom(
+            visualDensity: VisualDensity.compact,
+            textStyle: theme.textTheme.labelLarge,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -478,29 +419,12 @@ class _VitalsPanelState extends State<_VitalsPanel> {
     final role = widget.role;
     final patient = widget.patient;
     final vitals = widget.vitals;
-    final theme = Theme.of(context);
 
     return ClayCard(
       shape: RoundedRectangleBorder(borderRadius: AppRadius.xlAll),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              AppSpacing.md,
-              AppSpacing.lg,
-              AppSpacing.xs,
-            ),
-            child: Text(
-              'Resumo rápido',
-              style: theme.textTheme.labelMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 0.4,
-              ),
-            ),
-          ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
             child: Row(
@@ -652,308 +576,6 @@ class _VitalCell extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _DetailsSectionCard extends StatelessWidget {
-  const _DetailsSectionCard({
-    required this.title,
-    required this.children,
-    this.subtitle,
-  });
-
-  final String title;
-  final String? subtitle;
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return ClayCard(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            AppSectionHeader(title: title, subtitle: subtitle),
-            const SizedBox(height: AppSpacing.md),
-            ...children,
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _PatientLifecycleCard extends ConsumerStatefulWidget {
-  const _PatientLifecycleCard({required this.patient});
-
-  final Patient patient;
-
-  @override
-  ConsumerState<_PatientLifecycleCard> createState() =>
-      _PatientLifecycleCardState();
-}
-
-class _PatientLifecycleCardState extends ConsumerState<_PatientLifecycleCard> {
-  bool _updating = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final patient = widget.patient;
-    final isActive = patient.isActive;
-    final colors = Theme.of(context).colorScheme;
-
-    return ClayCard(
-      color: isActive ? null : colors.errorContainer.withValues(alpha: 0.35),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  isActive
-                      ? Icons.verified_user_outlined
-                      : Icons.person_off_outlined,
-                  color: isActive ? colors.primary : colors.error,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    isActive ? 'Paciente ativo' : 'Paciente inativo',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              isActive
-                  ? 'A inativação bloqueia o acesso do paciente, mas preserva todo o prontuário e histórico clínico.'
-                  : 'O prontuário permanece preservado e disponível para consulta. Reative para restaurar o acesso do paciente.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colors.onSurfaceVariant,
-                  ),
-            ),
-            const SizedBox(height: 16),
-            if (isActive)
-              OutlinedButton.icon(
-                onPressed: _updating ? null : _confirmStatusChange,
-                icon: _updating
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.person_off_outlined),
-                label: const Text('Inativar paciente'),
-              )
-            else
-              FilledButton.icon(
-                onPressed: _updating ? null : _confirmStatusChange,
-                icon: _updating
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Icon(Icons.person_add_alt_1_outlined),
-                label: const Text('Reativar paciente'),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Future<void> _confirmStatusChange() async {
-    final patient = widget.patient;
-    final willActivate = !patient.isActive;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(
-          willActivate ? 'Reativar paciente?' : 'Inativar paciente?',
-        ),
-        content: Text(
-          willActivate
-              ? 'O acesso de ${patient.fullName} será restaurado.'
-              : 'O acesso de ${patient.fullName} será bloqueado. O prontuário e todo o histórico clínico serão preservados.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(willActivate ? 'Reativar' : 'Inativar'),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
-
-    setState(() => _updating = true);
-    try {
-      await ref.read(patientsRepositoryProvider).setPatientActiveStatus(
-            patientId: patient.id,
-            isActive: willActivate,
-          );
-      ref.invalidate(patientDetailProvider(patient.id));
-      await ref.read(patientsListProvider.notifier).refresh();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            willActivate
-                ? 'Paciente reativado com sucesso.'
-                : 'Paciente inativado com sucesso.',
-          ),
-        ),
-      );
-    } catch (error) {
-      if (mounted) showErrorBanner(context, error);
-    } finally {
-      if (mounted) setState(() => _updating = false);
-    }
-  }
-}
-
-class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.label,
-    required this.value,
-    this.icon = Icons.info_outline,
-  });
-
-  final String label;
-  final String? value;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    if (value == null || value!.trim().isEmpty) return const SizedBox.shrink();
-    return _InfoRowLayout(
-      icon: icon,
-      label: label,
-      value: Text(
-        value!,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontWeight: FontWeight.w500,
-            ),
-      ),
-    );
-  }
-}
-
-/// Layout base de uma linha de dado: ícone + rótulo + valor (à direita).
-class _InfoRowLayout extends StatelessWidget {
-  const _InfoRowLayout({
-    required this.icon,
-    required this.label,
-    required this.value,
-    this.trailing,
-  });
-
-  final IconData icon;
-  final String label;
-  final Widget value;
-  final Widget? trailing;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 7),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Container(
-            width: 30,
-            height: 30,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(9),
-            ),
-            child: Icon(icon, size: 16, color: AppColors.cyan),
-          ),
-          const SizedBox(width: 10),
-          SizedBox(
-            width: 96,
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
-          ),
-          Expanded(
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: value,
-            ),
-          ),
-          if (trailing != null) trailing!,
-        ],
-      ),
-    );
-  }
-}
-
-class _SensitiveInfoRow extends StatefulWidget {
-  const _SensitiveInfoRow({
-    required this.label,
-    required this.value,
-    required this.maskedValue,
-    this.icon = Icons.lock_outline,
-  });
-
-  final String label;
-  final String? value;
-  final String? maskedValue;
-  final IconData icon;
-
-  @override
-  State<_SensitiveInfoRow> createState() => _SensitiveInfoRowState();
-}
-
-class _SensitiveInfoRowState extends State<_SensitiveInfoRow> {
-  bool _revealed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    if (widget.value == null || widget.value!.trim().isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    return _InfoRowLayout(
-      icon: widget.icon,
-      label: widget.label,
-      value: Text(
-        _revealed ? widget.value! : widget.maskedValue!,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurface,
-              fontWeight: FontWeight.w500,
-              letterSpacing: _revealed ? 0 : 1.5,
-            ),
-      ),
-      trailing: IconButton(
-        visualDensity: VisualDensity.compact,
-        tooltip:
-            _revealed ? 'Ocultar ${widget.label}' : 'Mostrar ${widget.label}',
-        onPressed: () => setState(() => _revealed = !_revealed),
-        icon: Icon(
-          _revealed ? Icons.visibility_off_outlined : Icons.visibility_outlined,
-          size: 20,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),
     );

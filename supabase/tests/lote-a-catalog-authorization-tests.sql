@@ -130,11 +130,28 @@ BEGIN
    NOT EXISTS(SELECT 1 FROM aclexplode(COALESCE((SELECT proacl FROM pg_proc WHERE oid=f.oid),acldefault('f',(SELECT proowner FROM pg_proc WHERE oid=f.oid)))) a
     WHERE a.grantee=0 AND a.privilege_type='EXECUTE')
    AND NOT has_function_privilege('anon',f.oid,'EXECUTE')
-   AND has_function_privilege('authenticated',f.oid,'EXECUTE')
+   -- S2/B2: the 11 consumers keep authenticated; assert_platform_admin itself must NOT be executable by it.
+   AND has_function_privilege('authenticated',f.oid,'EXECUTE') = (f.proname<>'assert_platform_admin')
    AND has_function_privilege('service_role',f.oid,'EXECUTE')
    AND has_function_privilege('postgres',f.oid,'EXECUTE')
    AND has_function_privilege('supabase_admin',f.oid,'EXECUTE'), 'effective grants: '||f.proname);
  END LOOP;
+END;
+$$;
+
+-- S2/B2: authenticated cannot call assert_platform_admin directly (privilege denial, before any guard logic).
+DO $$
+BEGIN
+ BEGIN
+  SET LOCAL ROLE authenticated;
+  PERFORM public.assert_platform_admin();
+  RESET ROLE;
+  RAISE EXCEPTION 'FAIL: authenticated executed assert_platform_admin directly';
+ EXCEPTION WHEN insufficient_privilege THEN
+  RESET ROLE;
+  PERFORM pg_temp.assert_true(SQLERRM LIKE 'permission denied for function assert_platform_admin%',
+   'authenticated direct assert_platform_admin: permission denied');
+ END;
 END;
 $$;
 
@@ -151,7 +168,8 @@ GRANT EXECUTE ON FUNCTION public.admin_list_questionnaires() TO anon;
 GRANT EXECUTE ON FUNCTION public.admin_publish_questionnaire(uuid) TO anon;
 GRANT EXECUTE ON FUNCTION public.admin_save_question(uuid,uuid,text,text,integer,public.question_answer_type,integer,integer,numeric,boolean) TO anon;
 GRANT EXECUTE ON FUNCTION public.admin_save_questionnaire_draft(uuid,text,text,text,text,text,text,text,text,integer,integer) TO anon;
-GRANT EXECUTE ON FUNCTION public.assert_platform_admin() TO anon;
+-- authenticated also gets it here only (S2/B2 revoked it) so the GUARD itself is still exercised.
+GRANT EXECUTE ON FUNCTION public.assert_platform_admin() TO anon, authenticated;
 
 DO $$
 DECLARE i record; c record; before_state jsonb; denial text;

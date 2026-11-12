@@ -191,7 +191,12 @@ BEGIN
  FOR c IN SELECT * FROM callers ORDER BY label='inactive patient' DESC,label LOOP
   IF c.dbrole<>'authenticated' OR c.actor IS NULL OR c.actor NOT IN ('e2000000-0000-0000-0000-000000000005','e2000000-0000-0000-0000-000000000009') THEN
    PERFORM pg_temp.run_case('helper NULL / '||c.label,c.actor,c.dbrole,'SELECT public.current_patient_id() IS NULL');
-   PERFORM pg_temp.run_case('view empty / '||c.label,c.actor,c.dbrole,'SELECT count(*)=0 FROM public.patient_shared_personality');
+   IF c.dbrole='anon' THEN
+    -- S2/M1: anon no longer executes the view's helpers (current_clinic_id etc.): denial, not an empty set.
+    PERFORM pg_temp.run_case('view denied / '||c.label,c.actor,c.dbrole,'SELECT count(*)=0 FROM public.patient_shared_personality','ANY_42501');
+   ELSE
+    PERFORM pg_temp.run_case('view empty / '||c.label,c.actor,c.dbrole,'SELECT count(*)=0 FROM public.patient_shared_personality');
+   END IF;
    PERFORM pg_temp.run_case('library / '||c.label,c.actor,c.dbrole,'SELECT public.get_my_library()','Active linked patient required');
   END IF;
  END LOOP;

@@ -221,10 +221,10 @@ SELECT pg_temp.run_case('pending own 8','e2000000-0000-0000-0000-000000000008','
 SELECT pg_temp.run_case('alerts own 8','e2000000-0000-0000-0000-000000000008','authenticated',$stmt$SELECT jsonb_array_length(a->'missing_checkins')>=1 AND (a->'pending_results_release'->0->>'patient_id')='e3000000-0000-0000-0000-000000000004' AND jsonb_array_length(a->'stale_questionnaires')=1 AND jsonb_array_length(a->'expiring_invitations')=1 FROM (SELECT public.get_psychologist_alerts() a) q$stmt$);
 SELECT pg_temp.run_case('non-owner empty get_patients_data_completion 3','e2000000-0000-0000-0000-000000000003','authenticated',$stmt$SELECT count(*)=0 FROM public.get_patients_data_completion()$stmt$);
 SELECT pg_temp.run_case('non-owner empty get_patients_with_pending_results_release 3','e2000000-0000-0000-0000-000000000003','authenticated',$stmt$SELECT count(*)=0 FROM public.get_patients_with_pending_results_release()$stmt$);
-SELECT pg_temp.run_case('non-owner alerts empty 3','e2000000-0000-0000-0000-000000000003','authenticated',$stmt$SELECT public.get_psychologist_alerts()='{"missing_checkins":[],"expiring_invitations":[],"stale_questionnaires":[],"pending_results_release":[]}'::jsonb$stmt$);
+SELECT pg_temp.run_case('non-owner alerts empty 3','e2000000-0000-0000-0000-000000000003','authenticated',$stmt$SELECT public.get_psychologist_alerts()='{"missing_checkins":[],"expiring_invitations":[],"stale_questionnaires":[],"pending_results_release":[],"recent_checkins":[]}'::jsonb$stmt$);
 SELECT pg_temp.run_case('non-owner empty get_patients_data_completion 14','e2000000-0000-0000-0000-000000000014','authenticated',$stmt$SELECT count(*)=0 FROM public.get_patients_data_completion()$stmt$);
 SELECT pg_temp.run_case('non-owner empty get_patients_with_pending_results_release 14','e2000000-0000-0000-0000-000000000014','authenticated',$stmt$SELECT count(*)=0 FROM public.get_patients_with_pending_results_release()$stmt$);
-SELECT pg_temp.run_case('non-owner alerts empty 14','e2000000-0000-0000-0000-000000000014','authenticated',$stmt$SELECT public.get_psychologist_alerts()='{"missing_checkins":[],"expiring_invitations":[],"stale_questionnaires":[],"pending_results_release":[]}'::jsonb$stmt$);
+SELECT pg_temp.run_case('non-owner alerts empty 14','e2000000-0000-0000-0000-000000000014','authenticated',$stmt$SELECT public.get_psychologist_alerts()='{"missing_checkins":[],"expiring_invitations":[],"stale_questionnaires":[],"pending_results_release":[],"recent_checkins":[]}'::jsonb$stmt$);
 
 -- Real lifecycle transitions; check linked login, audit and idempotent status.
 DO $$
@@ -300,7 +300,7 @@ BEGIN
   PERFORM pg_temp.run_case('psych clinic mismatch completion','e2000000-0000-0000-0000-000000000002','authenticated','SELECT count(*)=0 FROM public.get_patients_data_completion()');
   PERFORM pg_temp.run_case('psych clinic mismatch pending','e2000000-0000-0000-0000-000000000002','authenticated','SELECT count(*)=0 FROM public.get_patients_with_pending_results_release()');
   PERFORM pg_temp.run_case('psych clinic mismatch alerts','e2000000-0000-0000-0000-000000000002','authenticated',
-   $stmt$SELECT public.get_psychologist_alerts()='{"missing_checkins":[],"expiring_invitations":[],"stale_questionnaires":[],"pending_results_release":[]}'::jsonb$stmt$);
+   $stmt$SELECT public.get_psychologist_alerts()='{"missing_checkins":[],"expiring_invitations":[],"stale_questionnaires":[],"pending_results_release":[],"recent_checkins":[]}'::jsonb$stmt$);
   PERFORM pg_temp.run_case('lifecycle clinic mismatch','e2000000-0000-0000-0000-000000000002','authenticated',
    $stmt$SELECT public.set_patient_active_status('e3000000-0000-0000-0000-000000000001',true)$stmt$,'Clinical lifecycle access denied');
   RAISE EXCEPTION USING ERRCODE='ZB002';
@@ -396,6 +396,99 @@ BEGIN
   EXCEPTION WHEN SQLSTATE 'ZB002' THEN NULL;
   END;
  END LOOP;
+END;
+$$;
+
+-- S1_MUTATION_INJECTION_POINT
+-- S1 (A1 regression): recent_checkins, deactivated psychologist, transferred patient,
+-- pending_results_release key and clinic-scoped get_patient_vitals. Fictional data only.
+DO $$
+BEGIN
+ -- Deactivated psychologist keeps a valid session but must get no alert data.
+ BEGIN
+  INSERT INTO public.patient_check_ins(clinic_id,patient_id,checked_in_at)
+  VALUES ('e1000000-0000-0000-0000-000000000001','e3000000-0000-0000-0000-000000000001',now()-interval '2 hours');
+  UPDATE public.profiles SET is_active=false WHERE id='e2000000-0000-0000-0000-000000000002';
+  PERFORM pg_temp.run_case('S1 deactivated psychologist denied (owner with data)','e2000000-0000-0000-0000-000000000002','authenticated',
+   $stmt$SELECT public.get_psychologist_alerts()$stmt$,'Active psychologist required');
+  RAISE EXCEPTION USING ERRCODE='ZB002';
+ EXCEPTION WHEN SQLSTATE 'ZB002' THEN NULL;
+ END;
+
+ -- recent_checkins: own, active patient, last 24h only, newest check-in drives hours_ago.
+ BEGIN
+  INSERT INTO public.patient_check_ins(clinic_id,patient_id,checked_in_at) VALUES
+   ('e1000000-0000-0000-0000-000000000001','e3000000-0000-0000-0000-000000000001',now()-interval '2 hours'),
+   ('e1000000-0000-0000-0000-000000000001','e3000000-0000-0000-0000-000000000001',now()-interval '30 hours'),
+   ('e1000000-0000-0000-0000-000000000001','e3000000-0000-0000-0000-000000000009',now()-interval '1 hour'),
+   ('e1000000-0000-0000-0000-000000000002','e3000000-0000-0000-0000-000000000004',now()-interval '3 hours');
+  PERFORM pg_temp.run_case('S1 alert keys present','e2000000-0000-0000-0000-000000000002','authenticated',
+   $stmt$SELECT (SELECT array_agg(k ORDER BY k) FROM jsonb_object_keys(public.get_psychologist_alerts()) k)=ARRAY['expiring_invitations','missing_checkins','pending_results_release','recent_checkins','stale_questionnaires']$stmt$);
+  PERFORM pg_temp.run_case('S1 pending_results_release returns own patient','e2000000-0000-0000-0000-000000000002','authenticated',
+   $stmt$SELECT public.get_psychologist_alerts()->'pending_results_release'->0->>'patient_id'='e3000000-0000-0000-0000-000000000001'$stmt$);
+  PERFORM pg_temp.run_case('S1 recent_checkins own 2h only active patient','e2000000-0000-0000-0000-000000000002','authenticated',
+   $stmt$SELECT jsonb_array_length(a->'recent_checkins')=1 AND a->'recent_checkins'->0->>'patient_id'='e3000000-0000-0000-0000-000000000001' AND (a->'recent_checkins'->0->>'hours_ago')::int=2 FROM (SELECT public.get_psychologist_alerts() a) q$stmt$);
+  PERFORM pg_temp.run_case('S1 recent_checkins clinic B only own','e2000000-0000-0000-0000-000000000008','authenticated',
+   $stmt$SELECT jsonb_array_length(a->'recent_checkins')=1 AND a->'recent_checkins'->0->>'patient_id'='e3000000-0000-0000-0000-000000000004' FROM (SELECT public.get_psychologist_alerts() a) q$stmt$);
+  PERFORM pg_temp.run_case('S1 recent_checkins non-owner empty','e2000000-0000-0000-0000-000000000003','authenticated',
+   $stmt$SELECT public.get_psychologist_alerts()->'recent_checkins'='[]'::jsonb$stmt$);
+  RAISE EXCEPTION USING ERRCODE='ZB002';
+ EXCEPTION WHEN SQLSTATE 'ZB002' THEN NULL;
+ END;
+
+ -- recent_checkins 24h window: active own patients whose ONLY check-ins are older than 24h stay out;
+ -- boundary uses transaction now() on both sides, so it does not depend on wall-clock drift.
+ BEGIN
+  INSERT INTO public.patient_check_ins(clinic_id,patient_id,checked_in_at) VALUES
+   ('e1000000-0000-0000-0000-000000000001','e3000000-0000-0000-0000-000000000001',now()-interval '23 hours 59 minutes'),
+   ('e1000000-0000-0000-0000-000000000001','e3000000-0000-0000-0000-000000000007',now()-interval '24 hours 1 minute'),
+   ('e1000000-0000-0000-0000-000000000001','e3000000-0000-0000-0000-000000000002',now()-interval '30 hours');
+  PERFORM pg_temp.run_case('S1 recent_checkins 24h: inside boundary kept','e2000000-0000-0000-0000-000000000002','authenticated',
+   $stmt$SELECT EXISTS(SELECT 1 FROM jsonb_array_elements(public.get_psychologist_alerts()->'recent_checkins') i WHERE i->>'patient_id'='e3000000-0000-0000-0000-000000000001')$stmt$);
+  PERFORM pg_temp.run_case('S1 recent_checkins 24h: just outside boundary excluded','e2000000-0000-0000-0000-000000000002','authenticated',
+   $stmt$SELECT NOT EXISTS(SELECT 1 FROM jsonb_array_elements(public.get_psychologist_alerts()->'recent_checkins') i WHERE i->>'patient_id'='e3000000-0000-0000-0000-000000000007')$stmt$);
+  PERFORM pg_temp.run_case('S1 recent_checkins 24h: active patient with only old check-in excluded','e2000000-0000-0000-0000-000000000002','authenticated',
+   $stmt$SELECT NOT EXISTS(SELECT 1 FROM jsonb_array_elements(public.get_psychologist_alerts()->'recent_checkins') i WHERE i->>'patient_id'='e3000000-0000-0000-0000-000000000002') AND jsonb_array_length(public.get_psychologist_alerts()->'recent_checkins')=1$stmt$);
+  RAISE EXCEPTION USING ERRCODE='ZB002';
+ EXCEPTION WHEN SQLSTATE 'ZB002' THEN NULL;
+ END;
+
+ -- Transferred patient: new owner in clinic B must not inherit clinic A check-ins; vitals follow the same rule.
+ BEGIN
+  INSERT INTO public.patient_check_ins(clinic_id,patient_id,checked_in_at)
+  VALUES ('e1000000-0000-0000-0000-000000000001','e3000000-0000-0000-0000-000000000002',now()-interval '2 hours');
+  INSERT INTO public.questionnaire_responses(clinic_id,patient_id,questionnaire_id,questionnaire_version_id,status,created_at)
+  VALUES ('e1000000-0000-0000-0000-000000000001','e3000000-0000-0000-0000-000000000002','e4000000-0000-0000-0000-000000000001','e4000000-0000-0000-0000-000000000002','draft',now()-interval '2 days');
+  INSERT INTO public.therapy_goals(clinic_id,patient_id,title,status,completed_at) VALUES
+   ('e1000000-0000-0000-0000-000000000001','e3000000-0000-0000-0000-000000000002','Lote B goal A1','active',NULL),
+   ('e1000000-0000-0000-0000-000000000001','e3000000-0000-0000-0000-000000000002','Lote B goal A2','active',NULL),
+   ('e1000000-0000-0000-0000-000000000001','e3000000-0000-0000-0000-000000000002','Lote B goal A3','completed',now());
+  PERFORM pg_temp.run_case('S1 transfer: A sees recent_checkins before','e2000000-0000-0000-0000-000000000002','authenticated',
+   $stmt$SELECT EXISTS(SELECT 1 FROM jsonb_array_elements(public.get_psychologist_alerts()->'recent_checkins') i WHERE i->>'patient_id'='e3000000-0000-0000-0000-000000000002')$stmt$);
+  PERFORM pg_temp.run_case('S1 transfer: A vitals before','e2000000-0000-0000-0000-000000000002','authenticated',
+   $stmt$SELECT (v->>'access')::boolean AND (v->>'last_checkin_days')::int=0 AND (v->>'pending_questionnaires')::int=1 AND (v->>'active_goals')::int=2 FROM (SELECT public.get_patient_vitals('e3000000-0000-0000-0000-000000000002') v) q$stmt$);
+  UPDATE public.patients SET clinic_id='e1000000-0000-0000-0000-000000000002',responsible_psychologist_id='e2000000-0000-0000-0000-000000000008'
+  WHERE id='e3000000-0000-0000-0000-000000000002';
+  PERFORM pg_temp.run_case('S1 transfer: B recent_checkins ignores A history','e2000000-0000-0000-0000-000000000008','authenticated',
+   $stmt$SELECT NOT EXISTS(SELECT 1 FROM jsonb_array_elements(public.get_psychologist_alerts()->'recent_checkins') i WHERE i->>'patient_id'='e3000000-0000-0000-0000-000000000002')$stmt$);
+  PERFORM pg_temp.run_case('S1 transfer: A former owner recent_checkins empty of patient','e2000000-0000-0000-0000-000000000002','authenticated',
+   $stmt$SELECT NOT EXISTS(SELECT 1 FROM jsonb_array_elements(public.get_psychologist_alerts()->'recent_checkins') i WHERE i->>'patient_id'='e3000000-0000-0000-0000-000000000002')$stmt$);
+  PERFORM pg_temp.run_case('S1 transfer: B vitals ignore A check-in and draft','e2000000-0000-0000-0000-000000000008','authenticated',
+   $stmt$SELECT (v->>'access')::boolean AND v->>'last_checkin_days' IS NULL AND (v->>'pending_questionnaires')::int=0 AND (v->>'active_goals')::int=0 FROM (SELECT public.get_patient_vitals('e3000000-0000-0000-0000-000000000002') v) q$stmt$);
+  INSERT INTO public.therapy_goals(clinic_id,patient_id,title,status,completed_at) VALUES
+   ('e1000000-0000-0000-0000-000000000002','e3000000-0000-0000-0000-000000000002','Lote B goal B1','active',NULL),
+   ('e1000000-0000-0000-0000-000000000002','e3000000-0000-0000-0000-000000000002','Lote B goal B2','completed',now());
+  INSERT INTO public.patient_check_ins(clinic_id,patient_id,checked_in_at)
+  VALUES ('e1000000-0000-0000-0000-000000000002','e3000000-0000-0000-0000-000000000002',now()-interval '1 hour');
+  INSERT INTO public.questionnaire_responses(clinic_id,patient_id,questionnaire_id,questionnaire_version_id,status,created_at)
+  VALUES ('e1000000-0000-0000-0000-000000000002','e3000000-0000-0000-0000-000000000002','e4000000-0000-0000-0000-000000000001','e4000000-0000-0000-0000-000000000002','draft',now()-interval '1 day');
+  PERFORM pg_temp.run_case('S1 transfer: B recent_checkins sees only B check-in','e2000000-0000-0000-0000-000000000008','authenticated',
+   $stmt$SELECT EXISTS(SELECT 1 FROM jsonb_array_elements(public.get_psychologist_alerts()->'recent_checkins') i WHERE i->>'patient_id'='e3000000-0000-0000-0000-000000000002' AND (i->>'hours_ago')::int=1)$stmt$);
+  PERFORM pg_temp.run_case('S1 transfer: B vitals only B data','e2000000-0000-0000-0000-000000000008','authenticated',
+   $stmt$SELECT (v->>'last_checkin_days')::int=0 AND (v->>'pending_questionnaires')::int=1 AND (v->>'active_goals')::int=1 FROM (SELECT public.get_patient_vitals('e3000000-0000-0000-0000-000000000002') v) q$stmt$);
+  RAISE EXCEPTION USING ERRCODE='ZB002';
+ EXCEPTION WHEN SQLSTATE 'ZB002' THEN NULL;
+ END;
 END;
 $$;
 

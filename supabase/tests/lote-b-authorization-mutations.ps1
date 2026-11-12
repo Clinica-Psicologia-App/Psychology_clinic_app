@@ -37,20 +37,32 @@ foreach ($case in $cases) {
 }
 # Fifth mutation: remove exactly the three response/patient clinic predicates.
 # Guards and every other business condition stay intact.
-$current = Get-Content -Raw (Join-Path $migrations '20260914130000_harden_clinical_authorization.sql')
-$definitions = @()
-foreach ($name in @('get_patients_with_pending_results_release','get_psychologist_alerts')) {
-  $pattern = '(?is)CREATE\s+OR\s+REPLACE\s+FUNCTION\s+public\.' + [regex]::Escape($name) + '\s*\(.*?\bAS\s+(?<tag>\$[\w]*\$).*?\k<tag>\s*;'
-  $definition = [regex]::Match($current,$pattern).Value
-  if (!$definition) { throw "Protected definition missing: $name" }
-  $definitions += $definition
+# Reads the CURRENT definition of a function from a migration, ignoring commented-out
+# blocks (the S1 migration keeps the previous definitions as "-- ..." rollback text).
+function Get-CurrentDefinition([string]$File,[string]$Name) {
+  $lines = Get-Content (Join-Path $migrations $File) | Where-Object { $_ -notmatch '^\s*--' }
+  $text = $lines -join "`n"
+  $pattern = '(?is)CREATE\s+OR\s+REPLACE\s+FUNCTION\s+public\.' + [regex]::Escape($Name) + '\s*\(.*?\bAS\s+(?<tag>\$[\w]*\$).*?\k<tag>\s*;'
+  $definition = [regex]::Match($text,$pattern).Value
+  if (!$definition) { throw "Protected definition missing: $Name in $File" }
+  return $definition
 }
+$definitions = @(
+  (Get-CurrentDefinition '20260914130000_harden_clinical_authorization.sql' 'get_patients_with_pending_results_release'),
+  (Get-CurrentDefinition '20261112100000_fix_psychologist_alerts_regression.sql' 'get_psychologist_alerts')
+)
 $protected = $definitions -join "`n"
-$predicate = ' AND qr.clinic_id = p.clinic_id'
-if ([regex]::Matches($protected,[regex]::Escape($predicate)).Count -ne 3) {
-  throw 'Expected exactly three cross-clinic protections'
+# qr: 1 in pending (Lote B) + 2 in alerts (stale, pending_results_release); ci: 2 in alerts
+# (missing_checkins, recent_checkins). The mutation removes exactly these five predicates.
+$qrPredicate = ' AND qr.clinic_id = p.clinic_id'
+$ciPredicate = ' AND ci.clinic_id = p.clinic_id'
+if ([regex]::Matches($protected,[regex]::Escape($qrPredicate)).Count -ne 3) {
+  throw 'Expected exactly three qr cross-clinic protections'
 }
-$mutation = $protected.Replace($predicate,'')
+if ([regex]::Matches($protected,[regex]::Escape($ciPredicate)).Count -ne 2) {
+  throw 'Expected exactly two ci cross-clinic protections'
+}
+$mutation = $protected.Replace($qrPredicate,'').Replace($ciPredicate,'')
 $result = Run-Sql $tests.Replace('-- MUTATION_INJECTION_POINT',$mutation)
 $expected = 'FAIL: cross-clinic B pending ignores A / A age=40'
 if ($result.Code -eq 0 -or !$result.Output.Contains($expected)) {
@@ -60,4 +72,20 @@ Write-Host "PASS mutation cross-clinic: exit $($result.Code), $expected"
 $restored = Run-Sql $tests
 if ($restored.Code -ne 0 -or $restored.Passes -ne $clean.Passes) { throw $restored.Output }
 Write-Host "PASS restored cross-clinic: $($restored.Passes) checks"
-Write-Host 'All five mutation families detected; protected suite restored.'
+# Sixth mutation (S1 / A1): the regressed alerts body from 20260928130000 (no active-psychologist
+# guard, no clinic filter, no pending_results_release). Injected right before the S1 block so the
+# generic suite still runs against the protected function; it must fail on the S1 guard case.
+$regressedPattern = '(?is)CREATE\s+OR\s+REPLACE\s+FUNCTION\s+public\.get_psychologist_alerts\s*\(.*?\bAS\s+(?<tag>\$[\w]*\$).*?\k<tag>\s*;'
+$regressedFile = Get-Content -Raw (Join-Path $migrations '20260928130000_check_in_alert_recent.sql')
+$regressed = [regex]::Match($regressedFile,$regressedPattern).Value
+if (!$regressed) { throw 'Regressed definition missing: 20260928130000' }
+$result = Run-Sql $tests.Replace('-- S1_MUTATION_INJECTION_POINT',$regressed)
+$expected = 'FAIL: S1 deactivated psychologist denied (owner with data) allowed forbidden caller'
+if ($result.Code -eq 0 -or !$result.Output.Contains($expected)) {
+  throw "Regression mutation failed for unexpected reason:`n$($result.Output)"
+}
+Write-Host "PASS mutation regressed-alerts (20260928130000): exit $($result.Code), $expected"
+$restored = Run-Sql $tests
+if ($restored.Code -ne 0 -or $restored.Passes -ne $clean.Passes) { throw $restored.Output }
+Write-Host "PASS restored regressed-alerts: $($restored.Passes) checks"
+Write-Host 'All six mutation families detected; protected suite restored.'

@@ -408,3 +408,60 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 # declarative_schema_path = "./database"
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
+
+# --- S3 (12/11): verify_jwt versionado por função (valor proposto; deploy é B) ---
+[functions.accept-patient-invitation]
+verify_jwt = true
+
+# assign-questionnaire: produção hoje: false. Local com true: sem login 401 do gateway; JWT válido igual a antes.
+[functions.assign-questionnaire]
+verify_jwt = true
+
+[functions.create-patient]
+verify_jwt = true
+
+[functions.create-patient-invitation]
+verify_jwt = true
+
+[functions.create-staff-user]
+verify_jwt = true
+
+[functions.delete-clinic]
+verify_jwt = true
+
+[functions.delete-staff-user]
+verify_jwt = true
+
+# finish-questionnaire: produção hoje: false. Local com true: sem login 401 do gateway; JWT válido igual a antes.
+[functions.finish-questionnaire]
+verify_jwt = true
+
+[functions.generate-clinical-report]
+verify_jwt = true
+
+# invite-redirect: false é CORRETO (link público de convite, sem sessão).
+[functions.invite-redirect]
+verify_jwt = false
+
+[functions.review-questionnaire-response]
+verify_jwt = true
+
+# set-questionnaire-access: produção hoje: false. Local com true: sem login 401 do gateway; JWT válido igual a antes.
+[functions.set-questionnaire-access]
+verify_jwt = true
+
+[functions.start-questionnaire]
+verify_jwt = true
+
+[functions.submit-check-in]
+verify_jwt = true
+
+[functions.submit-questionnaire-answer]
+verify_jwt = true
+
+[functions.update-patient-basics]
+verify_jwt = true
+
+# update-psychologist-access: produção hoje: false. Local com true: igual a antes. Sem chamador no app: avaliar despublicar.
+[functions.update-psychologist-access]
+verify_jwt = true

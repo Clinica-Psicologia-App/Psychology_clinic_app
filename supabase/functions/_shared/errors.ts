@@ -1,8 +1,8 @@
 export class AppError extends Error {
-  code;
-  status;
-  details;
-  constructor(code, message, status = 400, details){
+  code: string;
+  status: number;
+  details?: unknown;
+  constructor(code: string, message: string, status = 400, details?: unknown){
     super(message);
     this.code = code;
     this.status = status;
@@ -10,6 +10,6 @@ export class AppError extends Error {
     this.name = "AppError";
   }
 }
-export function isAppError(error) {
+export function isAppError(error: unknown) {
   return error instanceof AppError;
 }

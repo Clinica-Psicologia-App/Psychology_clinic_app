@@ -1,7 +1,7 @@
 import { corsHeaders } from "./cors.ts";
 import { AppError, isAppError } from "./errors.ts";
 import { logger } from "./logger.ts";
-export function jsonResponse(body, status = 200) {
+export function jsonResponse(body: unknown, status = 200) {
   return new Response(JSON.stringify(body), {
     status,
     headers: {
@@ -10,8 +10,8 @@ export function jsonResponse(body, status = 200) {
     }
   });
 }
-export function pdfResponse(bytes, filename = "relatorio-clinico.pdf") {
-  return new Response(bytes, {
+export function pdfResponse(bytes: Uint8Array, filename = "relatorio-clinico.pdf") {
+  return new Response(bytes as BodyInit, {
     status: 200,
     headers: {
       ...corsHeaders,
@@ -20,7 +20,7 @@ export function pdfResponse(bytes, filename = "relatorio-clinico.pdf") {
     }
   });
 }
-export function handleOptions(req) {
+export function handleOptions(req: Request) {
   if (req.method === "OPTIONS") {
     return new Response(null, {
       status: 204,
@@ -29,19 +29,19 @@ export function handleOptions(req) {
   }
   return null;
 }
-export function requirePost(req) {
+export function requirePost(req: Request) {
   if (req.method !== "POST") {
     throw new AppError("VALIDATION_ERROR", "Method not allowed", 405);
   }
 }
-export async function parseJsonBody(req) {
+export async function parseJsonBody<T = any>(req: Request): Promise<T> {
   try {
     return await req.json();
   } catch  {
     throw new AppError("VALIDATION_ERROR", "Invalid JSON body", 400);
   }
 }
-export function handleError(error, functionName) {
+export function handleError(error: unknown, functionName: string) {
   if (isAppError(error)) {
     logger.warn(`${functionName}.app_error`, {
       code: error.code,

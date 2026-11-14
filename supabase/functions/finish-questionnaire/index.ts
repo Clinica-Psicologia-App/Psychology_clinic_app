@@ -192,7 +192,7 @@ serve(async (req) => {
         ),
       };
 
-      const snapshot: MergedResultSnapshot = scoringPayload
+      const snapshot: MergedResultSnapshot | LegacyCategorySnapshot = scoringPayload
         ? mergeSnapshot(legacySnapshot, scoringPayload, completedAt)
         : legacySnapshot;
 

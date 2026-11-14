@@ -7,7 +7,7 @@
  * Envia um e-mail via Resend.
  * Retorna true se enviado com sucesso, false se RESEND_API_KEY não está
  * configurado. Lança erro em caso de falha de API.
- */ export async function sendEmail(payload) {
+ */ export async function sendEmail(payload: { to: string; subject: string; html: string; from?: string }) {
   const apiKey = Deno.env.get("RESEND_API_KEY");
   if (!apiKey) {
     console.warn("[email] RESEND_API_KEY não configurado — e-mail ignorado.");
@@ -36,7 +36,7 @@
   return true;
 }
 /** Template HTML para convite de paciente. */
-export function buildPatientInviteEmail(opts) {
+export function buildPatientInviteEmail(opts: { fullName?: string | null; inviteUrl: string; expiresAt: string }) {
   const firstName = opts.fullName ? opts.fullName.split(" ")[0] : "";
   const greeting = firstName ? `Olá, ${firstName}!` : "Olá!";
   const expiry = new Date(opts.expiresAt).toLocaleDateString("pt-BR", {

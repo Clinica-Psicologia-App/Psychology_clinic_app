@@ -13,7 +13,7 @@ type ServiceAccount = {
 };
 
 /** Converte um PEM PKCS#8 para DER usando indexOf/slice (suporta formato de linha única ou multilinha). */
-function pemToDer(pem: string): Uint8Array {
+function pemToDer(pem: string): Uint8Array<ArrayBuffer> {
   const BEGIN = "-----BEGIN PRIVATE KEY-----";
   const END = "-----END PRIVATE KEY-----";
   const raw = String(pem ?? "");

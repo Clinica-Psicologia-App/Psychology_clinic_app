@@ -1,6 +1,15 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { AppError } from "./errors.ts";
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export function assertUuid(value, field) {
+export type CallerProfile = {
+  id: string;
+  clinic_id: string;
+  role: string;
+  full_name: string;
+  email: string;
+  is_active: boolean;
+};
+export function assertUuid(value: string, field: string) {
   if (!UUID_RE.test(value)) {
     throw new AppError("VALIDATION_ERROR", `Invalid UUID: ${field}`, 400, {
       field
@@ -8,14 +17,14 @@ export function assertUuid(value, field) {
   }
   return value;
 }
-export async function requireAuthUser(client) {
+export async function requireAuthUser(client: SupabaseClient) {
   const { data, error } = await client.auth.getUser();
   if (error || !data.user) {
     throw new AppError("UNAUTHORIZED", "Invalid or expired token", 401);
   }
   return data.user;
 }
-export async function getCallerProfile(client) {
+export async function getCallerProfile(client: SupabaseClient): Promise<CallerProfile> {
   const user = await requireAuthUser(client);
   const { data, error } = await client.from("profiles").select("id, clinic_id, role, full_name, email, is_active").eq("id", user.id).maybeSingle();
   if (error) {
@@ -28,12 +37,12 @@ export async function getCallerProfile(client) {
   }
   return data;
 }
-export function requireStaff(profile) {
+export function requireStaff(profile: CallerProfile) {
   if (profile.role !== "psychologist" && profile.role !== "platform_admin") {
     throw new AppError("FORBIDDEN", "Only staff can perform this clinical action", 403);
   }
 }
-export async function assertPatientAccess(client, patientId) {
+export async function assertPatientAccess(client: SupabaseClient, patientId: string) {
   const { data, error } = await client.from("patients").select("id").eq("id", patientId).maybeSingle();
   if (error) {
     throw new AppError("INTERNAL_ERROR", "Failed to verify patient access", 500);
@@ -44,12 +53,12 @@ export async function assertPatientAccess(client, patientId) {
     });
   }
 }
-export async function assertPsychologistInClinic(client, psychologistId, clinicId) {
+export async function assertPsychologistInClinic(client: SupabaseClient, psychologistId: string, clinicId: string) {
   await assertProfileInClinic(client, psychologistId, clinicId, "responsible_psychologist_id", [
     "psychologist"
   ]);
 }
-export async function assertProfileInClinic(client, profileId, clinicId, fieldName, allowedRoles) {
+export async function assertProfileInClinic(client: SupabaseClient, profileId: string, clinicId: string, fieldName: string, allowedRoles: string[]) {
   const { data, error } = await client.from("profiles").select("id, role, clinic_id").eq("id", profileId).maybeSingle();
   if (error) {
     throw new AppError("INTERNAL_ERROR", "Failed to validate profile", 500);
@@ -60,7 +69,7 @@ export async function assertProfileInClinic(client, profileId, clinicId, fieldNa
     });
   }
 }
-export async function assertPsychologistCanReceivePatient(client, psychologistId, clinicId) {
+export async function assertPsychologistCanReceivePatient(client: SupabaseClient, psychologistId: string, clinicId: string) {
   const { data: profile, error: profileError } = await client.from("profiles").select("id, role, clinic_id, is_active, can_receive_patients, patient_assignment_limit").eq("id", psychologistId).maybeSingle();
   if (profileError) {
     throw new AppError("INTERNAL_ERROR", "Failed to validate psychologist access limits", 500, {
@@ -104,7 +113,7 @@ export async function assertPsychologistCanReceivePatient(client, psychologistId
     });
   }
 }
-export async function assertEmailAvailableInClinic(client, clinicId, email) {
+export async function assertEmailAvailableInClinic(client: SupabaseClient, clinicId: string, email: string) {
   const normalized = email.trim().toLowerCase();
   const { data, error } = await client.from("profiles").select("id").eq("clinic_id", clinicId).ilike("email", normalized).limit(1);
   if (error) {

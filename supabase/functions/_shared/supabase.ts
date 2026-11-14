@@ -1,13 +1,13 @@
 import { createClient } from "@supabase/supabase-js";
 import { AppError } from "./errors.ts";
-function getEnv(name) {
+function getEnv(name: string) {
   const value = Deno.env.get(name);
   if (!value) {
     throw new AppError("INTERNAL_ERROR", `Missing env: ${name}`, 500);
   }
   return value;
 }
-export function createUserClient(authHeader) {
+export function createUserClient(authHeader: string) {
   return createClient(getEnv("SUPABASE_URL"), getEnv("SUPABASE_ANON_KEY"), {
     global: {
       headers: {
@@ -28,7 +28,7 @@ export function createServiceClient() {
     }
   });
 }
-export function getBearerToken(req) {
+export function getBearerToken(req: Request) {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader?.startsWith("Bearer ")) {
     throw new AppError("UNAUTHORIZED", "Missing Bearer token", 401);

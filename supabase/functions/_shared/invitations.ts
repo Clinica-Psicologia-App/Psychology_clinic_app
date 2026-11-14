@@ -1,16 +1,17 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { AppError } from "./errors.ts";
 const DEFAULT_EXPIRY_DAYS = 7;
-function bytesToHex(bytes) {
+function bytesToHex(bytes: Uint8Array) {
   return Array.from(bytes).map((byte)=>byte.toString(16).padStart(2, "0")).join("");
 }
-function toBase64Url(bytes) {
+function toBase64Url(bytes: Uint8Array) {
   return btoa(String.fromCharCode(...bytes)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 export function generateInvitationToken() {
   const bytes = crypto.getRandomValues(new Uint8Array(32));
   return toBase64Url(bytes);
 }
-export async function hashInvitationToken(token) {
+export async function hashInvitationToken(token: string) {
   const normalized = token.trim();
   if (!normalized) {
     throw new AppError("VALIDATION_ERROR", "Invitation token is required", 400);
@@ -26,7 +27,7 @@ export function invitationExpiresAt(days = DEFAULT_EXPIRY_DAYS) {
 // Marca como 'expired' os convites pendentes da clínica que já passaram do
 // prazo. Libera a vaga do psicólogo e o e-mail (índice único de pendente).
 // Usa service role porque o psicólogo não tem UPDATE em convites.
-export async function expireStalePendingInvitations(serviceClient, clinicId) {
+export async function expireStalePendingInvitations(serviceClient: SupabaseClient, clinicId: string) {
   const { error } = await serviceClient.from("patient_invitations").update({
     status: "expired"
   }).eq("clinic_id", clinicId).eq("status", "pending").lte("expires_at", new Date().toISOString());
@@ -36,7 +37,7 @@ export async function expireStalePendingInvitations(serviceClient, clinicId) {
     });
   }
 }
-export function buildInviteUrl(token) {
+export function buildInviteUrl(token: string) {
   const encodedToken = encodeURIComponent(token);
   const baseUrl = Deno.env.get("PATIENT_INVITATION_BASE_URL")?.trim();
 

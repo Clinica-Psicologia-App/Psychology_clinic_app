@@ -13,6 +13,10 @@ jobs:
         working-directory: mobile
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
@@ -78,12 +82,16 @@ jobs:
         run: |
           DB_CONTAINER="$(docker ps --filter 'name=supabase_db_' --format '{{.Names}}' | head -n 1)"
           test -n "$DB_CONTAINER"
+          RLS_STATUS=0
           RLS_OUTPUT="$(
             cat supabase/tests/rls-smoke-tests.sql |
               docker exec -i "$DB_CONTAINER" \
                 psql -U postgres -d postgres -v ON_ERROR_STOP=1 2>&1
-          )"
+          )" || RLS_STATUS=$?
           printf '%s\n' "$RLS_OUTPUT"
+          if [ "$RLS_STATUS" -ne 0 ]; then
+            exit "$RLS_STATUS"
+          fi
           if printf '%s\n' "$RLS_OUTPUT" | grep -q '\[FAIL\]'; then
             exit 1
           fi

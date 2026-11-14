@@ -141,7 +141,7 @@ VALUES (
 ON CONFLICT (id) DO NOTHING;
 
 INSERT INTO public.questionnaire_responses (
-  id, clinic_id, patient_id, questionnaire_id, status
+  id, clinic_id, patient_id, questionnaire_id, questionnaire_version_id, status
 )
 VALUES
   (
@@ -149,6 +149,7 @@ VALUES
     '11111111-1111-1111-1111-111111111101',
     '11111111-1111-1111-1111-111111111201',
     '11111111-1111-1111-1111-111111111301',
+    '66666666-6666-6666-6666-666666666801',
     'draft'
   ),
   (
@@ -156,6 +157,7 @@ VALUES
     '11111111-1111-1111-1111-111111111101',
     '11111111-1111-1111-1111-111111111201',
     '11111111-1111-1111-1111-111111111301',
+    '66666666-6666-6666-6666-666666666801',
     'draft'
   )
 ON CONFLICT (id) DO NOTHING;
@@ -257,8 +259,21 @@ BEGIN
   v_c := pg_temp._rls_count_as(v_patient, 'SELECT 1 FROM public.questionnaires');
   RAISE NOTICE 'patient SELECT questionnaires: % [%]', v_c, CASE WHEN v_c >= 1 THEN 'OK' ELSE 'FAIL' END;
 
+  -- Resposta 'completed': paciente so le as respostas depois da liberacao (patients.results_released_at).
   v_c := pg_temp._rls_count_as(v_patient, 'SELECT 1 FROM public.questionnaire_answers WHERE response_id = ''' || v_resp || '''');
-  RAISE NOTICE 'patient SELECT answers (5): % [%]', v_c, CASE WHEN v_c = 5 THEN 'OK' ELSE 'FAIL' END;
+  RAISE NOTICE 'patient SELECT answers antes da liberacao (0): % [%]', v_c, CASE WHEN v_c = 0 THEN 'OK_BLOCKED' ELSE 'FAIL' END;
+
+  v_ok := pg_temp._rls_exec_as(v_psych, 'SELECT public.set_patient_results_released(' || quote_literal(v_pat) || ', true)');
+  RAISE NOTICE 'psych libera resultados (RPC): [%]', CASE WHEN v_ok THEN 'OK' ELSE 'FAIL' END;
+
+  v_c := pg_temp._rls_count_as(v_patient, 'SELECT 1 FROM public.questionnaire_answers WHERE response_id = ''' || v_resp || '''');
+  RAISE NOTICE 'patient SELECT answers apos liberacao (5): % [%]', v_c, CASE WHEN v_c = 5 THEN 'OK' ELSE 'FAIL' END;
+
+  v_ok := pg_temp._rls_exec_as(v_psych, 'SELECT public.set_patient_results_released(' || quote_literal(v_pat) || ', false)');
+  RAISE NOTICE 'psych revoga liberacao (RPC): [%]', CASE WHEN v_ok THEN 'OK' ELSE 'FAIL' END;
+
+  v_c := pg_temp._rls_count_as(v_patient, 'SELECT 1 FROM public.questionnaire_answers WHERE response_id = ''' || v_resp || '''');
+  RAISE NOTICE 'patient SELECT answers apos revogacao (0): % [%]', v_c, CASE WHEN v_c = 0 THEN 'OK_BLOCKED' ELSE 'FAIL' END;
 
   v_c := pg_temp._rls_count_as(v_patient, 'SELECT 1 FROM public.therapy_resources WHERE id = ''' || v_res_ok || '''');
   RAISE NOTICE 'patient SELECT released resource: % [%]', v_c, CASE WHEN v_c = 1 THEN 'OK' ELSE 'FAIL' END;
@@ -334,12 +349,28 @@ BEGIN
   );
   RAISE NOTICE 'patient INSERT patients: [%]', CASE WHEN NOT v_ok THEN 'OK_BLOCKED' ELSE 'FAIL' END;
 
+  -- Catalogo global de questionarios: so platform_admin escreve.
   v_ok := pg_temp._rls_exec_as(
     v_admin,
     'INSERT INTO public.questionnaires (id, code, name) VALUES (' ||
-    quote_literal('33333333-3333-3333-3333-333333333801') || ', ''SMOKE_HACK'', ''Hack'')'
+    quote_literal('33333333-3333-3333-3333-333333333801') || ', ''SMOKE_ADMIN_OK'', ''Smoke'')'
   );
-  RAISE NOTICE 'platform admin INSERT questionnaires: [%]', CASE WHEN NOT v_ok THEN 'OK_BLOCKED' ELSE 'FAIL' END;
+  RAISE NOTICE 'platform admin INSERT questionnaires (permitido): [%]', CASE WHEN v_ok THEN 'OK' ELSE 'FAIL' END;
+  DELETE FROM public.questionnaires WHERE id = '33333333-3333-3333-3333-333333333801';
+
+  v_ok := pg_temp._rls_exec_as(
+    v_psych,
+    'INSERT INTO public.questionnaires (id, code, name) VALUES (' ||
+    quote_literal('33333333-3333-3333-3333-333333333802') || ', ''SMOKE_PSYCH_NO'', ''Smoke'')'
+  );
+  RAISE NOTICE 'psych INSERT questionnaires: [%]', CASE WHEN NOT v_ok THEN 'OK_BLOCKED' ELSE 'FAIL' END;
+
+  v_ok := pg_temp._rls_exec_as(
+    v_patient,
+    'INSERT INTO public.questionnaires (id, code, name) VALUES (' ||
+    quote_literal('33333333-3333-3333-3333-333333333803') || ', ''SMOKE_PATIENT_NO'', ''Smoke'')'
+  );
+  RAISE NOTICE 'patient INSERT questionnaires: [%]', CASE WHEN NOT v_ok THEN 'OK_BLOCKED' ELSE 'FAIL' END;
 
   -- -------------------------------------------------------------------------
   -- UPDATE permitido
@@ -370,6 +401,18 @@ BEGIN
     'UPDATE public.profiles SET full_name = ''Hack'' WHERE id = ''' || v_psych || ''''
   );
   RAISE NOTICE 'patient UPDATE other profile (rows=%): [%]', v_rows, CASE WHEN v_rows = 0 THEN 'OK_BLOCKED' ELSE 'FAIL' END;
+
+  v_rows := pg_temp._rls_rows_as(
+    v_psych,
+    'UPDATE public.questionnaires SET name = ''Hack'' WHERE id = ' || quote_literal(v_quest)
+  );
+  RAISE NOTICE 'psych UPDATE questionnaires (rows=%): [%]', v_rows, CASE WHEN v_rows = 0 THEN 'OK_BLOCKED' ELSE 'FAIL' END;
+
+  v_rows := pg_temp._rls_rows_as(
+    v_psych,
+    'DELETE FROM public.questionnaires WHERE id = ' || quote_literal(v_quest)
+  );
+  RAISE NOTICE 'psych DELETE questionnaires (rows=%): [%]', v_rows, CASE WHEN v_rows = 0 THEN 'OK_BLOCKED' ELSE 'FAIL' END;
 
   RAISE NOTICE '=== FIM — revisar NOTICE acima; transação será revertida ===';
 END;

@@ -225,11 +225,6 @@ class _PatientDetailsBodyState extends State<_PatientDetailsBody> {
                       extra: patient,
                     ),
                   ),
-                PatientHeaderActionBtn(
-                  label: 'Histórico',
-                  icon: Icons.history_rounded,
-                  onTap: () {},
-                ),
                 if (onTourTap != null)
                   PatientHeaderActionBtn(
                     label: 'Tour',

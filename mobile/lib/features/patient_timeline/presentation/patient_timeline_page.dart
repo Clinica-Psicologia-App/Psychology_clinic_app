@@ -197,7 +197,9 @@ class _TimelineList extends StatelessWidget {
               subtitle: subtitle,
               metadata: [
                 StatusChip(
-                  label: '${events.length} evento(s)',
+                  label: events.length == 1
+                      ? '1 acontecimento registrado'
+                      : '${events.length} acontecimentos registrados',
                   tone: AppStatusTone.info,
                   icon: Icons.event_note_outlined,
                 ),

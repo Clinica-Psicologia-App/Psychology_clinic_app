@@ -293,8 +293,8 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                   const MotionReveal(
                     delay: Duration(milliseconds: 130),
                     child: AppSectionHeader(
-                      title: 'Seu progresso',
-                      subtitle: 'Um resumo simples de como você está indo.',
+                      title: 'Seu acompanhamento',
+                      subtitle: 'Um resumo dos seus registros e acompanhamentos.',
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
@@ -324,8 +324,8 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                             icon: Icons.route_outlined,
                             title: 'Meu plano terapêutico',
                             subtitle:
-                                'Continue de onde parou: questionários, '
-                                'monitor diário e seus recursos.',
+                                'Suas atividades e ferramentas de acompanhamento em um '
+                                'só lugar.',
                             onTap: () =>
                                 context.push(PatientJourneyRoutes.journey),
                           ),
@@ -343,7 +343,8 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                                   icon: Icons.hub_outlined,
                                   title: 'Mapa mental',
                                   subtitle:
-                                      'Uma visão geral do que já conversamos.',
+                                      'Um espaço para visualizar e compreender as conexões '
+                                      'entre suas experiências, emoções e padrões.',
                                   accentColor: AppColors.purple,
                                   onTap: () => context
                                       .push(MentalMapRoutes.patientList),
@@ -358,7 +359,8 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                                   icon: Icons.menu_book_outlined,
                                   title: 'Biblioteca',
                                   subtitle:
-                                      'Materiais e exercícios pensados para você.',
+                                      'Conteúdos e exercícios para apoiar suas descobertas '
+                                      'e seu processo terapêutico.',
                                   accentColor: const Color(0xFF1D9E75),
                                   onTap: () => context.push(
                                     TherapyResourceRoutes.patientList,
@@ -376,7 +378,8 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
                           icon: Icons.monitor_heart_outlined,
                           title: 'Monitor diário',
                           subtitle:
-                              'Humor, rotina e como você tem se sentido.',
+                              'Registre como você está se sentindo e acompanhe suas '
+                              'experiências no dia a dia.',
                           accentColor: AppColors.cyan,
                           onTap: () =>
                               context.push(DailyMonitorRoutes.patientList),
@@ -1463,7 +1466,7 @@ class _PatientNextStep extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Tudo em dia por hoje',
+                    'Por hoje, não há questionários pendentes 💚',
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(
                           fontWeight: FontWeight.w700,
                           color: Theme.of(context).colorScheme.onSurface,
@@ -1471,8 +1474,8 @@ class _PatientNextStep extends ConsumerWidget {
                   ),
                   const SizedBox(height: AppSpacing.xxs),
                   Text(
-                    'Você já cuidou do que precisava por hoje. Volte quando '
-                    'quiser — sem pressa.',
+                    'Seus questionários estão em dia. Este espaço continua '
+                    'disponível sempre que você quiser voltar.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                           height: 1.4,

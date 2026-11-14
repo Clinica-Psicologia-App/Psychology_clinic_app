@@ -296,7 +296,8 @@ class _MotorGenogramPainter extends CustomPainter {
     final gender = byId[n.id]?.gender;
     if (gender == GenogramGender.female) {
       canvas.drawCircle(c, r, paint);
-    } else if (gender == GenogramGender.unknown ||
+    } else if (gender == null ||
+        gender == GenogramGender.unknown ||
         gender == GenogramGender.other) {
       _drawDiamond(canvas, c, r, paint);
     } else {
@@ -349,7 +350,9 @@ class _MotorGenogramPainter extends CustomPainter {
   double _edgeDistance(String id, Offset unit) {
     final gender = byId[id]?.gender;
     if (gender == GenogramGender.female) return _r;
-    if (gender == GenogramGender.unknown || gender == GenogramGender.other) {
+    if (gender == null ||
+        gender == GenogramGender.unknown ||
+        gender == GenogramGender.other) {
       // Losango: borda = r / (|cos| + |sin|) no espaço rotacionado 45°
       final ax = unit.dx.abs(), ay = unit.dy.abs();
       final denom = ax + ay;
@@ -569,8 +572,9 @@ class _MotorGenogramPainter extends CustomPainter {
     final isIndex = n.id == focusId;
     final gender = person?.gender;
     final isFemale = gender == GenogramGender.female;
-    final isDiamond =
-        gender == GenogramGender.unknown || gender == GenogramGender.other;
+    final isDiamond = gender == null ||
+        gender == GenogramGender.unknown ||
+        gender == GenogramGender.other;
     final isPregnancyLoss = person?.pregnancyLossType != null;
 
     // ── Símbolo de perda gestacional: pequeno triângulo ──────────────────────

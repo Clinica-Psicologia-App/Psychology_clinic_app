@@ -39,6 +39,7 @@ type UpdatePatientBasicsBody = {
   psychiatric_followup?: boolean | null;
   psychiatrist_notes?: string | null;
   important_to_know?: string | null;
+  children_notes?: string | null;
 };
 
 const FN = "update-patient-basics";
@@ -53,6 +54,7 @@ const TEXT_FIELDS = [
   "medication_notes",
   "psychiatrist_notes",
   "important_to_know",
+  "children_notes",
 ] as const;
 
 const BOOL_FIELDS = [
@@ -64,7 +66,7 @@ const BOOL_FIELDS = [
 const RETURN_COLUMNS =
   "id, preferred_name, birth_date, occupation, lives_with, has_children, " +
   "uses_medication, medication_notes, psychiatric_followup, psychiatrist_notes, " +
-  "important_to_know";
+  "important_to_know, children_notes";
 
 const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -139,6 +141,8 @@ serve(async (req) => {
     for (const field of BOOL_FIELDS) {
       if (body[field] !== undefined) payload[field] = normalizeBool(body[field]);
     }
+    // Minimização (LGPD): sem filhos, não guarda texto sobre filhos.
+    if (payload.has_children === false) payload.children_notes = null;
     if (body.birth_date !== undefined) {
       payload.birth_date = normalizeBirthDate(body.birth_date);
     }

@@ -72,7 +72,7 @@ export async function loadPatientForReport(
     );
   }
 
-  return data as PatientRow;
+  return data as unknown as PatientRow;
 }
 
 export async function fetchReportData(
@@ -210,7 +210,7 @@ async function fetchQuestionnaireBlocks(
     throw new AppError("INTERNAL_ERROR", "Failed to load questionnaires", 500);
   }
 
-  const rows = (data ?? []) as Array<{
+  const rows = (data ?? []) as unknown as Array<{
     id: string;
     completed_at: string | null;
     started_at: string | null;
@@ -490,9 +490,11 @@ function buildMentalMapSummary(input: {
     "intake_summary" | "current_life_context" | "therapy_demands"
   >;
   questionnaires: QuestionnaireReportBlock[];
-  problems: Array<{ status: string }>;
-  goals: Array<{ status: string }>;
-  checkIns: Array<{ checkedInAt: string; mood: number | null }>;
+  problems: Array<{ status: string; title: string }>;
+  goals: Array<{ status: string; title: string }>;
+  checkIns: Array<
+    { checkedInAt: string; mood: number | null; anxiety: number | null }
+  >;
   dailyMonitors: Array<{ createdAt: string }>;
   timelineEvents: Array<{ title: string }>;
   therapyResources: Array<{ title: string; description: string | null }>;

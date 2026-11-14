@@ -24,7 +24,7 @@ class HealthyResourcesRepository {
           .eq('psychologist_id', psychologistId)
           .limit(1);
       if (rows.isEmpty) return HealthyResources.empty();
-      return HealthyResources.fromJson(rows.first as Map<String, dynamic>);
+      return HealthyResources.fromJson(rows.first);
     } catch (e) {
       throw mapToAppException(e);
     }

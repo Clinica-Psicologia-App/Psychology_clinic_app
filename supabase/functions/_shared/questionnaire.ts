@@ -162,7 +162,10 @@ export async function loadResponseForUpdate(
     );
   }
 
-  return data;
+  // select embute `questionnaire:questionnaires(code)` (objeto no runtime; o parser de tipos infere array)
+  return data as unknown as
+    & Omit<typeof data, "questionnaire">
+    & { questionnaire: { code: string } | null };
 }
 
 export async function loadResponseContexts(

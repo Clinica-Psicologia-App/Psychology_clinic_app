@@ -44,12 +44,13 @@ Deno.test("pickMatchingRange is inclusive on bounds", () => {
   assertEquals(pickMatchingRange(3, ranges.slice(2, 3))?.label, "Domain Moderado");
 });
 
-Deno.test("classifySeverity prefers schema ranges over domain", () => {
+// Regra a revisar se um dia houver faixas só de domínio.
+Deno.test("classifySeverity falls back to domain range when schema ranges do not cover the score", () => {
   const match = classifySeverity(3, ranges, {
     schemaId: "schema-a",
     domainId: "domain-b",
   });
-  assertEquals(match, null);
+  assertEquals(match?.label, "Domain Moderado");
 });
 
 Deno.test("classifySeverity falls back to domain when schema has no band", () => {

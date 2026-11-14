@@ -277,7 +277,7 @@ class _PersonDetailBodyState extends ConsumerState<_PersonDetailBody> {
                     slivers: [
                       SliverToBoxAdapter(
                         child: PatientContextHeader(
-                          patientId: patientId!,
+                          patientId: patientId,
                           pageTitle: 'GENOGRAMA',
                           role: role,
                           accentColor: AppColors.cyan,

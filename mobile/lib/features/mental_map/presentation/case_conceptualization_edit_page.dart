@@ -8,6 +8,10 @@ import '../../../shared/widgets/error_banner.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/case_conceptualization.dart';
 import '../providers/case_conceptualization_providers.dart';
+import '../../initial_assessment/presentation/initial_assessment_routes.dart';
+import '../../patient_problems/presentation/patient_problem_routes.dart';
+import '../../personality_assessment/presentation/personality_assessment_routes.dart';
+import '../../questionnaires/presentation/questionnaire_routes.dart';
 import '../../therapy_demands/presentation/therapy_demands_routes.dart';
 
 /// Edição dos campos do terapeuta da Conceitualização de caso (Síntese):
@@ -607,6 +611,50 @@ class _EditState extends ConsumerState<_EditForm> {
                   ),
                 ],
               ),
+              // ── 5 · Nível de funcionamento ──────────────────────────────
+              _card(
+                icon: Icons.bar_chart_outlined,
+                title: '5 · Nível de funcionamento',
+                subtitle:
+                    '1 = Não Funcional  ·  6 = Excelente. Avalie cada área e adicione uma justificativa.',
+                children: [
+                  _openAction(
+                    key: const Key('edit_open_context'),
+                    text:
+                        'O contexto de vida é preenchido em Conhecer › Contexto de Vida e alimenta esta síntese.',
+                    label: 'Abrir Contexto de Vida',
+                    route: InitialAssessmentRoutes.staffContext(role: widget.role, patientId: widget.patientId),
+                  ),
+                  const SizedBox(height: 12),
+                  for (var i = 0; i < _funcAreas.length; i++) ...[
+                    if (i > 0) const Divider(height: 20),
+                    _funcBlock(kFunctioningAreas[i], _funcAreas[i]),
+                  ],
+                ],
+              ),
+
+              // ── 6 · Principais problemas de vida ────────────────────────
+              _card(
+                icon: Icons.report_problem_outlined,
+                title: '6 · Principais problemas de vida',
+                subtitle:
+                    'Identifique 3 ou mais problemas que precisam ser compreendidos e abordados na terapia.',
+                children: [
+                  _openAction(
+                    key: const Key('edit_open_problems'),
+                    text:
+                        'Os problemas do paciente são preenchidos em Conhecer › Problemas e alimentam esta síntese.',
+                    label: 'Abrir Problemas',
+                    route: PatientProblemRoutes.staffList(role: widget.role, patientId: widget.patientId),
+                  ),
+                  const SizedBox(height: 12),
+                  _field(_lp1, '6.1 Problema de vida'),
+                  _field(_lp2, '6.2 Problema de vida'),
+                  _field(_lp3, '6.3 Problema de vida'),
+                  _field(_lp4, '6.4 Outro problema de vida'),
+                ],
+              ),
+
               _card(
                 icon: Icons.history_edu_outlined,
                 title: '7.1 · Descrição geral da história inicial',
@@ -631,7 +679,15 @@ class _EditState extends ConsumerState<_EditForm> {
                 title: '7.3 · Fatores temperamentais/biológicos',
                 subtitle:
                     'Facetas do temperamento e fatores biológicos relevantes (ver Guia de Conceitualização).',
-                children: [_field(_temperament, 'Temperamento / biológico')],
+                children: [
+                  _openAction(
+                    key: const Key('edit_open_personality'),
+                    text:
+                        'Os fatores de temperamento podem ser consultados em Avaliar › Personalidade; o campo abaixo continua disponível.',
+                    label: 'Abrir Personalidade',
+                    route: PersonalityAssessmentRoutes.staffList(role: widget.role, patientId: widget.patientId),
+                  ),
+                  const SizedBox(height: 12),_field(_temperament, 'Temperamento / biológico')],
               ),
               _card(
                 icon: Icons.diversity_3_outlined,
@@ -639,61 +695,6 @@ class _EditState extends ConsumerState<_EditForm> {
                 subtitle:
                     'Normas e atitudes da origem étnica, religiosa e comunitária que tiveram papel nos problemas.',
                 children: [_field(_cultural, 'Fatores culturais')],
-              ),
-              _card(
-                icon: Icons.account_tree_outlined,
-                title: '10 · Sequência de modos',
-                subtitle: 'Até 3 sequências (gatilho → cadeia de modos).',
-                children: [
-                  for (var i = 0; i < _seqs.length; i++) ...[
-                    if (i > 0) const Divider(height: 22),
-                    _seqBlock(i + 1, _seqs[i]),
-                  ],
-                ],
-              ),
-              _card(
-                icon: Icons.handshake_outlined,
-                title: '11 · Relação terapêutica',
-                subtitle: 'Colaboração e vínculo (1–5) + notas.',
-                children: [
-                  _ratingRow('Colaboração', _collabRating, 5,
-                      (v) => setState(() => _collabRating = v)),
-                  _field(_collabNotes, 'Notas sobre a colaboração'),
-                  const SizedBox(height: 8),
-                  _ratingRow('Vínculo (reparent.)', _bondRating, 5,
-                      (v) => setState(() => _bondRating = v)),
-                  _field(_bondNotes, 'Notas sobre o vínculo'),
-                  const SizedBox(height: 8),
-                  _field(_therapistReactions,
-                      'Reações do terapeuta ao cliente'),
-                ],
-              ),
-              // ── 5 · Nível de funcionamento ──────────────────────────────
-              _card(
-                icon: Icons.bar_chart_outlined,
-                title: '5 · Nível de funcionamento',
-                subtitle:
-                    '1 = Não Funcional  ·  6 = Excelente. Avalie cada área e adicione uma justificativa.',
-                children: [
-                  for (var i = 0; i < _funcAreas.length; i++) ...[
-                    if (i > 0) const Divider(height: 20),
-                    _funcBlock(kFunctioningAreas[i], _funcAreas[i]),
-                  ],
-                ],
-              ),
-
-              // ── 6 · Principais problemas de vida ────────────────────────
-              _card(
-                icon: Icons.report_problem_outlined,
-                title: '6 · Principais problemas de vida',
-                subtitle:
-                    'Identifique 3 ou mais problemas que precisam ser compreendidos e abordados na terapia.',
-                children: [
-                  _field(_lp1, '6.1 Problema de vida'),
-                  _field(_lp2, '6.2 Problema de vida'),
-                  _field(_lp3, '6.3 Problema de vida'),
-                  _field(_lp4, '6.4 Outro problema de vida'),
-                ],
               ),
 
               // ── 8.1 · Lista completa de esquemas ─────────────────────────
@@ -703,6 +704,14 @@ class _EditState extends ConsumerState<_EditForm> {
                 subtitle:
                     'Liste todos os esquemas identificados nas 9 necessidades (7.2) antes de selecionar os centrais.',
                 children: [
+                  _openAction(
+                    key: const Key('edit_open_questionnaires_81'),
+                    text:
+                        'Os esquemas identificados vêm dos questionários em Avaliar › Questionários; o campo abaixo continua disponível.',
+                    label: 'Abrir Questionários',
+                    route: QuestionnaireRoutes.list(role: widget.role, patientId: widget.patientId),
+                  ),
+                  const SizedBox(height: 12),
                   _field(_allSchemas, 'Esquemas identificados (um por linha ou por vírgula)'),
                 ],
               ),
@@ -714,6 +723,14 @@ class _EditState extends ConsumerState<_EditForm> {
                 subtitle:
                     'Selecione 4–6 esquemas mais centrais e descreva a experiência do cliente quando ativados.',
                 children: [
+                  _openAction(
+                    key: const Key('edit_open_questionnaires_82'),
+                    text:
+                        'Os esquemas centrais vêm dos questionários em Avaliar › Questionários; os campos abaixo continuam disponíveis.',
+                    label: 'Abrir Questionários',
+                    route: QuestionnaireRoutes.list(role: widget.role, patientId: widget.patientId),
+                  ),
+                  const SizedBox(height: 12),
                   for (var i = 0; i < _centralSchemas.length; i++) ...[
                     if (i > 0) const Divider(height: 20),
                     _centralSchemaBlock(i + 1, _centralSchemas[i]),
@@ -803,6 +820,35 @@ class _EditState extends ConsumerState<_EditForm> {
                     if (i > 0) const Divider(height: 22),
                     _copingModeBlock(i + 1, _copingModes[i]),
                   ],
+                ],
+              ),
+
+              _card(
+                icon: Icons.account_tree_outlined,
+                title: '10 · Sequência de modos',
+                subtitle: 'Até 3 sequências (gatilho → cadeia de modos).',
+                children: [
+                  for (var i = 0; i < _seqs.length; i++) ...[
+                    if (i > 0) const Divider(height: 22),
+                    _seqBlock(i + 1, _seqs[i]),
+                  ],
+                ],
+              ),
+              _card(
+                icon: Icons.handshake_outlined,
+                title: '11 · Relação terapêutica',
+                subtitle: 'Colaboração e vínculo (1–5) + notas.',
+                children: [
+                  _ratingRow('Colaboração', _collabRating, 5,
+                      (v) => setState(() => _collabRating = v)),
+                  _field(_collabNotes, 'Notas sobre a colaboração'),
+                  const SizedBox(height: 8),
+                  _ratingRow('Vínculo (reparent.)', _bondRating, 5,
+                      (v) => setState(() => _bondRating = v)),
+                  _field(_bondNotes, 'Notas sobre o vínculo'),
+                  const SizedBox(height: 8),
+                  _field(_therapistReactions,
+                      'Reações do terapeuta ao cliente'),
                 ],
               ),
 
@@ -897,6 +943,30 @@ class _EditState extends ConsumerState<_EditForm> {
     );
   }
 
+  Widget _openAction({
+    required Key key,
+    required String text,
+    required String label,
+    required String route,
+  }) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(text,
+            style: theme.textTheme.bodySmall
+                ?.copyWith(color: AppColors.textSecondary)),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          key: key,
+          onPressed: () => context.push(route),
+          icon: const Icon(Icons.open_in_new, size: 16),
+          label: Text(label),
+        ),
+      ],
+    );
+  }
+
   Widget _needBlock(_NeedCtrls n) {
     final theme = Theme.of(context);
     return Column(
@@ -918,6 +988,12 @@ class _EditState extends ConsumerState<_EditForm> {
                     setState(() => n.rating = sel ? r : null),
               ),
           ],
+        ),
+        const SizedBox(height: 4),
+        Text(
+          '0 = quase nada, 1 = muito limitado, 3 = moderado, 5 = grande medida',
+          style: theme.textTheme.bodySmall
+              ?.copyWith(color: AppColors.textSecondary),
         ),
         _field(n.origin, 'Origem'),
         _field(n.schemas, 'Esquemas'),

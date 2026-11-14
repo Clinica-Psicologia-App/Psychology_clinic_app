@@ -98,7 +98,7 @@ avatar_type, avatar_path, avatar_url, avatar_config, avatar_updated_at
         payload['phone'] = trimmed.isEmpty ? null : trimmed;
       }
 
-      if (payload.isEmpty) return fetchCurrentProfile();
+      if (payload.isEmpty) return await fetchCurrentProfile();
 
       final row = await _client
           .from('profiles')

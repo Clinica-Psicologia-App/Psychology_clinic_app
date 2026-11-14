@@ -283,13 +283,13 @@ MentalCaseMapNode _buildPersonalityNode(
 
   if (assessments.isNotEmpty) {
     final candidate = assessments.firstWhere(
-      (a) => a.results != null && a.results!.domains.isNotEmpty,
+      (a) => a.results.domains.isNotEmpty,
       orElse: () => assessments.first,
     );
     lastUpdated = candidate.createdAt;
     assessmentId = candidate.id;
     final results = candidate.results;
-    if (results != null && results.domains.isNotEmpty) {
+    if (results.domains.isNotEmpty) {
       final instrument = instrumentForCode(candidate.instrument);
       for (final domainDef in instrument.domains) {
         final entry = results.domains[domainDef.code];

@@ -558,24 +558,6 @@ class QuestionnairesRepository {
     return userId;
   }
 
-  Future<String> _getProfessionalClinicId(String professionalId) async {
-    final row = await _client
-        .from('profiles')
-        .select('clinic_id')
-        .eq('id', professionalId)
-        .eq('role', 'psychologist')
-        .maybeSingle();
-
-    final clinicId = row?['clinic_id'] as String?;
-    if (clinicId == null) {
-      throw AppException(
-        code: AppExceptionCodes.unauthorized,
-        message: 'Clínica do psicólogo não encontrada.',
-      );
-    }
-    return clinicId;
-  }
-
   Future<Set<String>?> _listEnabledQuestionnaireIdsForProfessional(
     String professionalId,
   ) async {

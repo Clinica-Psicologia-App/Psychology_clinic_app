@@ -42,6 +42,7 @@ class _InitialAssessmentPatientPageState
   final _preferredName = TextEditingController();
   final _occupation = TextEditingController();
   final _livesWith = TextEditingController();
+  final _childrenNotes = TextEditingController();
   final _medicationNotes = TextEditingController();
   final _psychiatristNotes = TextEditingController();
   final _importantToKnow = TextEditingController();
@@ -86,6 +87,7 @@ class _InitialAssessmentPatientPageState
         _preferredName,
         _occupation,
         _livesWith,
+        _childrenNotes,
         _medicationNotes,
         _psychiatristNotes,
         _importantToKnow,
@@ -152,6 +154,7 @@ class _InitialAssessmentPatientPageState
     _preferredName.text = basics?.preferredName ?? '';
     _occupation.text = basics?.occupation ?? '';
     _livesWith.text = basics?.livesWith ?? '';
+    _childrenNotes.text = basics?.childrenNotes ?? '';
     _medicationNotes.text = basics?.medicationNotes ?? '';
     _psychiatristNotes.text = basics?.psychiatristNotes ?? '';
     _importantToKnow.text = basics?.importantToKnow ?? '';
@@ -221,6 +224,7 @@ class _InitialAssessmentPatientPageState
         _preferredName.text,
         _occupation.text,
         _livesWith.text,
+        _hasChildren ? _childrenNotes.text : '',
         _medicationNotes.text,
         _psychiatristNotes.text,
         _importantToKnow.text,
@@ -249,6 +253,8 @@ class _InitialAssessmentPatientPageState
     final occupation = _nullIfEmpty(_occupation.text);
     final livesWith = _nullIfEmpty(_livesWith.text);
     final hasChildren = _hasChildren;
+    final childrenNotes =
+        hasChildren ? _nullIfEmpty(_childrenNotes.text) : null;
     final usesMedication = _usesMedication;
     final medicationNotes =
         usesMedication ? _nullIfEmpty(_medicationNotes.text) : null;
@@ -269,6 +275,7 @@ class _InitialAssessmentPatientPageState
         occupation: occupation,
         livesWith: livesWith,
         hasChildren: hasChildren,
+        childrenNotes: childrenNotes,
         usesMedication: usesMedication,
         medicationNotes: medicationNotes,
         psychiatricFollowup: psychiatricFollowup,
@@ -482,9 +489,19 @@ class _InitialAssessmentPatientPageState
                                               _switchTile(
                                                 'Tem filhos?',
                                                 _hasChildren,
-                                                (v) => setState(
-                                                    () => _hasChildren = v),
+                                                (v) => setState(() {
+                                                  _hasChildren = v;
+                                                  if (!v) _childrenNotes.clear();
+                                                }),
                                               ),
+                                              if (_hasChildren)
+                                                _field(
+                                                  _childrenNotes,
+                                                  'Conte sobre seus filhos (nomes e idades)',
+                                                  maxLength: 1000,
+                                                  fieldKey: const ValueKey(
+                                                      'children_notes_field'),
+                                                ),
                                               _switchTile(
                                                 'Faz uso de algum medicamento?',
                                                 _usesMedication,
@@ -791,13 +808,18 @@ class _InitialAssessmentPatientPageState
     TextEditingController controller,
     String label, {
     String? helper,
+    int? maxLength,
+    Key? fieldKey,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: TextField(
+        key: fieldKey,
         controller: controller,
         minLines: 1,
         maxLines: 4,
+        maxLength: maxLength,
+
         textInputAction: TextInputAction.newline,
         decoration: InputDecoration(
           labelText: label,

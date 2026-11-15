@@ -29,6 +29,7 @@ class _FakeMutation extends InitialAssessmentMutationNotifier {
     String? occupation,
     String? livesWith,
     bool? hasChildren,
+    String? childrenNotes,
     bool? usesMedication,
     String? medicationNotes,
     bool? psychiatricFollowup,

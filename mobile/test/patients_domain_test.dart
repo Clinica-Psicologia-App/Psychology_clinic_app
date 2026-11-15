@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:terapia_esquema/features/patients/domain/create_patient_request.dart';
 import 'package:terapia_esquema/features/patients/domain/patient.dart';
+import 'package:terapia_esquema/features/patients/domain/update_patient_request.dart';
 
 void main() {
   test('Patient humanizes clinical storage values', () {
@@ -129,5 +130,17 @@ void main() {
     expect(json['ethnic_group'], 'Parda');
     expect(json['sexual_orientation'], 'Heterossexual');
     expect(json['has_children'], isFalse);
+  });
+
+  test('UpdatePatientRequest zera children_notes quando não tem filhos', () {
+    final off =
+        const UpdatePatientRequest(patientId: 'p1', hasChildren: false).toJson();
+    expect(off['has_children'], false);
+    expect(off.containsKey('children_notes'), isTrue);
+    expect(off['children_notes'], isNull);
+    final on =
+        const UpdatePatientRequest(patientId: 'p1', hasChildren: true).toJson();
+    expect(on.containsKey('children_notes'), isFalse);
+    expect(const UpdatePatientRequest(patientId: 'p1').toJson(), isEmpty);
   });
 }

@@ -128,8 +128,9 @@ class _FamilyContextFlowPageState extends ConsumerState<FamilyContextFlowPage> {
               () => _climate.contains(t) ? _climate.remove(t) : _climate.add(t)),
         ),
         const SizedBox(height: 24),
-        flowLabel('Se tivesse que descrever o clima da sua família em poucas '
-            'palavras, como descreveria?'),
+        flowLabel(_climate.contains(ClimateTrait.other)
+            ? 'Conte o que mais fazia parte do ambiente em que você cresceu.'
+            : 'Se tivesse que descrever o clima da sua família em poucas palavras, como descreveria?'),
         const SizedBox(height: 8),
         TextField(
           controller: _climateNoteController,

@@ -13,6 +13,7 @@ import '../../patient_problems/presentation/patient_problem_routes.dart';
 import '../../personality_assessment/presentation/personality_assessment_routes.dart';
 import '../../questionnaires/presentation/questionnaire_routes.dart';
 import '../../therapy_demands/presentation/therapy_demands_routes.dart';
+import '../../patients/presentation/patient_routes.dart';
 
 /// Edição dos campos do terapeuta da Conceitualização de caso (Síntese):
 /// necessidades não atendidas (7.2), sequência de modos (10) e relação
@@ -594,6 +595,21 @@ class _EditState extends ConsumerState<_EditForm> {
             padding: const EdgeInsets.fromLTRB(14, 14, 14, 96),
             children: [
               _card(
+                icon: Icons.badge_outlined,
+                title: '1 · Identificação',
+                subtitle: '',
+                children: [
+                  _openAction(
+                    key: const Key('edit_open_registration'),
+                    text:
+                        'Os dados de identificação são preenchidos em Dados cadastrais e alimentam esta síntese.',
+                    label: 'Abrir Dados cadastrais',
+                    route: PatientRoutes.registration(
+                        widget.role, widget.patientId),
+                  ),
+                ],
+              ),
+              _card(
                 icon: Icons.assignment_ind_outlined,
                 title: '2, 3 e 4 · Demandas terapêuticas',
                 subtitle:
@@ -932,10 +948,12 @@ class _EditState extends ConsumerState<_EditForm> {
               ),
             ],
           ),
-          const SizedBox(height: 2),
-          Text(subtitle,
-              style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant, height: 1.3)),
+          if (subtitle.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(subtitle,
+                style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant, height: 1.3)),
+          ],
           const SizedBox(height: 12),
           ...children,
         ],

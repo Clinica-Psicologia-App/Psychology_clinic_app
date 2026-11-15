@@ -34,7 +34,7 @@ void main() {
       (tester) async {
     await pump(tester);
     const prefixes = [
-      '2, 3 e 4 ·', '5 ·', '6 ·', '7.1 ·', '7.2 ·', '7.3 ·', '7.4 ·',
+      '1 · Identificação', '2, 3 e 4 ·', '5 ·', '6 ·', '7.1 ·', '7.2 ·', '7.3 ·', '7.4 ·',
       '8.1 ·', '8.2 ·', '9.1 ·', '9.2 ·', '9.3 ·', '9.4 ·', '10 ·', '11 ·',
       '12 ·', '13 ·',
     ];
@@ -61,7 +61,7 @@ void main() {
     expect(tester.widgetList(perNeed).length, greaterThanOrEqualTo(9));
   });
 
-  testWidgets('cartões 5, 6, 7.3 e 8 abrem as telas do mesmo paciente',
+  testWidgets('cartões 1, 5, 6, 7.3 e 8 abrem as telas do mesmo paciente',
       (tester) async {
     tester.view.physicalSize = const Size(800, 30000);
     tester.view.devicePixelRatio = 1;
@@ -75,6 +75,7 @@ void main() {
             role: ProfileRole.psychologist, patientId: 'p1'),
       ),
       for (final r in [
+        '$base/registration',
         '$base/initial-assessment/context',
         '$base/problems',
         '$base/personality',
@@ -102,6 +103,7 @@ void main() {
       await tester.pumpAndSettle();
     }
 
+    await openAndBack('edit_open_registration', '$base/registration');
     await openAndBack('edit_open_context', '$base/initial-assessment/context');
     await openAndBack('edit_open_problems', '$base/problems');
     await openAndBack('edit_open_personality', '$base/personality');

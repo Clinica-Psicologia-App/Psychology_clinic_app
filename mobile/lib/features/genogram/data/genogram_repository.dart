@@ -132,7 +132,7 @@ class GenogramRepository {
     if (patient == null) return;
 
     final rawGender = patient['gender'] as String?;
-    final genderValue = _mapPatientGender(rawGender);
+    final genderValue = GenogramRepository.mapPatientGender(rawGender);
 
     final rawBirthDate = patient['birth_date'] as String?;
     final birthYear = rawBirthDate != null
@@ -171,13 +171,12 @@ class GenogramRepository {
     });
   }
 
-  String? _mapPatientGender(String? patientGender) {
+  static String? mapPatientGender(String? patientGender) {
     return switch (patientGender) {
-      'male' => 'male',
-      'female' => 'female',
-      'other' => 'other',
-      'unknown' => 'unknown',
-      'non_binary' => 'other',
+      'male' || 'Masculino' || 'masculino' => 'male',
+      'female' || 'Feminino' || 'feminino' => 'female',
+      'other' || 'non_binary' || 'Não binário' || 'Outro' => 'other',
+      'unknown' || 'Prefiro não informar' => 'unknown',
       _ => null,
     };
   }

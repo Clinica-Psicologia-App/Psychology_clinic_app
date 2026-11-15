@@ -73,6 +73,8 @@ class UpdatePatientRequest {
       map['sexual_orientation'] = sexualOrientation;
     }
     if (hasChildren != null) map['has_children'] = hasChildren;
+    // Minimização (LGPD): sem filhos, não guarda o texto sobre filhos.
+    if (hasChildren == false) map['children_notes'] = null;
     if (responsiblePsychologistId != null) {
       map['responsible_psychologist_id'] = responsiblePsychologistId;
     }

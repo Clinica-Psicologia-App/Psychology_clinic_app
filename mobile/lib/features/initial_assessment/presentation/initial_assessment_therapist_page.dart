@@ -523,6 +523,9 @@ class _PatientBasicsCard extends StatelessWidget {
       ('Com quem mora', basics.livesWith),
       if (basics.hasChildren != null)
         ('Tem filhos', basics.hasChildren! ? 'Sim' : 'Não'),
+      if (basics.hasChildren == true &&
+          (basics.childrenNotes ?? '').isNotEmpty)
+        ('Sobre os filhos', basics.childrenNotes),
       if (basics.usesMedication != null)
         ('Usa medicação', basics.usesMedication! ? 'Sim' : 'Não'),
       if ((basics.medicationNotes ?? '').isNotEmpty)

@@ -2151,6 +2151,7 @@ class _BasicInfoSection extends StatelessWidget {
       ('Profissão/Ocupação', b.occupation),
       ('Com quem mora', b.livesWith),
       if (b.hasChildren != null) ('Tem filhos', b.hasChildren! ? 'Sim' : 'Não'),
+      if (b.hasChildren == true) ('Sobre os filhos', b.childrenNotes),
       ('Nível educacional', b.displayEducationLevel),
       ('Estado civil', b.displayRelationshipStatus),
       ('Orientação sexual', b.displaySexualOrientation),

@@ -34,7 +34,7 @@ void main() {
     await _pumpHome(tester);
 
     expect(tester.takeException(), isNull);
-    expect(find.text('Seu progresso'), findsOneWidget);
+    expect(find.text('Seu acompanhamento'), findsOneWidget);
     expect(find.text('Seus espaços'), findsOneWidget);
   });
 

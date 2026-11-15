@@ -248,19 +248,29 @@ class _InitialAssessmentPatientPageState
                       _field(_preferredName, 'Como prefere ser chamado(a)?'),
                       _birthDateField(context),
                       _field(_occupation, 'Profissão'),
-                      _field(_livesWith, 'Com quem você mora?'),
+                      _field(
+                        _livesWith,
+                        'Com quem você mora?',
+                        helper:
+                            'Você pode mencionar familiares, companheiro(a), '
+                            'amigos ou se mora sozinho(a).',
+                      ),
                       _switchTile(
                         'Tem filhos?',
                         _hasChildren,
                         (v) => setState(() => _hasChildren = v),
                       ),
                       _switchTile(
-                        'Faz uso de medicação?',
+                        'Faz uso de algum medicamento?',
                         _usesMedication,
                         (v) => setState(() => _usesMedication = v),
                       ),
                       if (_usesMedication)
-                        _field(_medicationNotes, 'Qual medicação? (opcional)'),
+                        _field(
+                          _medicationNotes,
+                          'Qual medicação? (opcional)',
+                          helper: 'Informar nome e, se desejar, dosagem.',
+                        ),
                       _switchTile(
                         'Tem acompanhamento psiquiátrico?',
                         _psychiatricFollowup,
@@ -300,9 +310,9 @@ class _InitialAssessmentPatientPageState
                     accent: AppColors.purple,
                     title: 'Como está sua vida hoje?',
                     subtitle:
-                        'As pessoas costumam viver momentos diferentes em cada '
-                        'área da vida. Avalie como você percebe cada uma delas '
-                        'neste momento.',
+                        'Cada área da nossa vida pode estar em um momento '
+                        'diferente. Pense em como você se sente em relação a '
+                        'cada uma delas e indique sua percepção neste momento.',
                   ),
                   const SizedBox(height: 14),
                   Padding(
@@ -375,7 +385,7 @@ class _InitialAssessmentPatientPageState
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.check),
-                  label: Text(saving ? 'Salvando...' : 'Salvar avaliação'),
+                  label: Text(saving ? 'Salvando...' : 'Salvar informações'),
                 ),
               ),
             ],
@@ -493,7 +503,11 @@ class _InitialAssessmentPatientPageState
     );
   }
 
-  Widget _field(TextEditingController controller, String label) {
+  Widget _field(
+    TextEditingController controller,
+    String label, {
+    String? helper,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: TextField(
@@ -501,7 +515,11 @@ class _InitialAssessmentPatientPageState
         minLines: 1,
         maxLines: 4,
         textInputAction: TextInputAction.newline,
-        decoration: InputDecoration(labelText: label),
+        decoration: InputDecoration(
+          labelText: label,
+          helperText: helper,
+          helperMaxLines: 3,
+        ),
       ),
     );
   }

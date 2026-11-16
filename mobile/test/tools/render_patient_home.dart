@@ -5,12 +5,15 @@
 //
 // Saída: build/patient_home.png
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:terapia_esquema/core/theme/app_theme.dart';
 import 'package:terapia_esquema/features/auth/presentation/role_home_shell.dart';
 import 'package:terapia_esquema/features/auth/providers/auth_providers.dart';
 import 'package:terapia_esquema/features/clinic_entitlements/domain/clinic_feature_entitlement.dart';
@@ -35,7 +38,26 @@ const _patientCtx = QuestionnaireListContext(role: ProfileRole.patient);
 const _patientId = 'pac-1';
 
 void main() {
+  setUpAll(() async {
+    const dir = r'C:\Users\bruno\flutter\bin\cache\artifacts\material_fonts';
+    await ui.loadFontFromList(
+      File('$dir/materialicons-regular.otf').readAsBytesSync(),
+      fontFamily: 'MaterialIcons',
+    );
+    for (final f in [
+      'Poppins-Regular.ttf',
+      'Poppins-Bold.ttf',
+      'Poppins-Italic.ttf',
+    ]) {
+      await ui.loadFontFromList(
+        File('assets/fonts/$f').readAsBytesSync(),
+        fontFamily: 'Poppins',
+      );
+    }
+  });
+
   testWidgets('captura a home do paciente', (tester) async {
+    // 360 dp × 2000 dp (3× pixel ratio)
     tester.view.physicalSize = const Size(1080, 6000);
     tester.view.devicePixelRatio = 3.0;
     addTearDown(tester.view.reset);
@@ -80,43 +102,50 @@ void main() {
           myPatientCheckInsProvider.overrideWith(() => _FakeCheckIns(now)),
           patientResultsListProvider.overrideWith(() => _FakeResults()),
         ],
-        child: const MaterialApp(
-          home: RoleHomeShell(
-            title: 'EsquemaCore',
-            subtitle: 'Sua jornada terapêutica',
-            role: ProfileRole.patient,
+        child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.light,
+          locale: const Locale('pt', 'BR'),
+          supportedLocales: const [Locale('pt', 'BR')],
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          home: const RepaintBoundary(
+            key: Key('cap'),
+            child: RoleHomeShell(
+              title: 'EsquemaCore',
+              subtitle: 'Sua jornada terapêutica',
+              role: ProfileRole.patient,
+            ),
           ),
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    // pumpAndSettle não funciona: _FeaturedExploreCard tem animação repeat
+    // infinita. Avançamos em etapas para drenar todos os Timer do MotionReveal.
+    await tester.pump();
+    for (var i = 0; i < 20; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
 
-    final image = await captureImage(
-      find.byType(RoleHomeShell),
+    final boundary = tester.renderObject<RenderRepaintBoundary>(
+      find.byKey(const Key('cap')),
     );
-    final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+    late final Uint8List png;
+    await tester.runAsync(() async {
+      final image = await boundary.toImage(pixelRatio: 1.0);
+      final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+      png = bytes!.buffer.asUint8List();
+    });
     final out = File('build/patient_home.png')
       ..parent.createSync(recursive: true)
-      ..writeAsBytesSync(bytes!.buffer.asUint8List());
+      ..writeAsBytesSync(png);
 
     // ignore: avoid_print
     print('Gerado em ${out.absolute.path}');
-  });
-}
 
-Future<ui.Image> captureImage(Finder finder) async {
-  final element = finder.evaluate().single;
-  final renderObject = element.renderObject!;
-  // A tela inteira já é maior que o viewport; envolvemos numa
-  // RepaintBoundary implícita via toImage do próprio RenderRepaintBoundary
-  // mais próximo (o MaterialApp/Scaffold já fornece uma).
-  RenderRepaintBoundary boundary;
-  RenderObject current = renderObject;
-  while (current is! RenderRepaintBoundary) {
-    current = current.parent!;
-  }
-  boundary = current;
-  return boundary.toImage(pixelRatio: 1.0);
+    // Descarta o widget tree antes do teardown para parar a animação repeat
+    // de _FeaturedExploreCard; sem isso o cleanup trava em loop infinito.
+    await tester.pumpWidget(const SizedBox());
+  });
 }
 
 class _FakeGoals extends MyTherapyGoalsNotifier {

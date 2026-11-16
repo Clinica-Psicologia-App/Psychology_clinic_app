@@ -1573,8 +1573,6 @@ class _FeaturedExploreCardState extends State<_FeaturedExploreCard>
                 const SizedBox(height: AppSpacing.xxs),
                 Text(
                   widget.subtitle,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: Colors.white.withValues(alpha: 0.85),
                     height: 1.35,
@@ -1730,8 +1728,6 @@ class _PatientExploreTile extends StatelessWidget {
                   const SizedBox(height: AppSpacing.xxs),
                   Text(
                     subtitle,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: Colors.white.withValues(alpha: 0.8),
                       height: 1.35,
@@ -1829,8 +1825,6 @@ class _PatientExploreCard extends StatelessWidget {
                         const SizedBox(height: AppSpacing.xxs),
                         Text(
                           subtitle,
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: Colors.white.withValues(alpha: 0.85),
                             height: 1.35,

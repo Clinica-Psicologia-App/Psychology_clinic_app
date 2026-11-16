@@ -2014,7 +2014,7 @@ class _SchemaBarRow extends ConsumerWidget {
           context: context,
           isScrollControlled: true,
           useSafeArea: true,
-          builder: (_) => _ConsolidatedActivationSheet(
+          builder: (_) => ConsolidatedActivationSheet(
             schema: schema,
             onChanged: onActivationChanged,
           ),
@@ -2091,8 +2091,10 @@ class _ThresholdBar extends StatelessWidget {
 
 // ── Sheet de ativação consolidada ───────────────────────────────────────────
 
-class _ConsolidatedActivationSheet extends ConsumerStatefulWidget {
-  const _ConsolidatedActivationSheet({
+@visibleForTesting
+class ConsolidatedActivationSheet extends ConsumerStatefulWidget {
+  const ConsolidatedActivationSheet({
+    super.key,
     required this.schema,
     this.onChanged,
   });
@@ -2101,14 +2103,15 @@ class _ConsolidatedActivationSheet extends ConsumerStatefulWidget {
   final VoidCallback? onChanged;
 
   @override
-  ConsumerState<_ConsolidatedActivationSheet> createState() =>
-      _ConsolidatedActivationSheetState();
+  ConsumerState<ConsolidatedActivationSheet> createState() =>
+      ConsolidatedActivationSheetState();
 }
 
-class _ConsolidatedActivationSheetState
-    extends ConsumerState<_ConsolidatedActivationSheet> {
+class ConsolidatedActivationSheetState
+    extends ConsumerState<ConsolidatedActivationSheet> {
   late final TextEditingController _obsController;
   bool _saving = false;
+  String? _error;
 
   bool get _isActivated => widget.schema.isActivated;
   bool get _isPsiActivated => widget.schema.isPsiActivated;
@@ -2142,6 +2145,48 @@ class _ConsolidatedActivationSheetState
           );
       widget.onChanged?.call();
       if (mounted) Navigator.of(context).pop();
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
+
+  Future<void> _remove() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        content: const Text(
+          'Remover a ativação manual deste esquema? '
+          'As respostas dos questionários não são apagadas.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('Remover'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await ref
+          .read(
+              manageSchemaActivationProvider(widget.schema.responseId).notifier)
+          .deactivate(widget.schema.code);
+      widget.onChanged?.call();
+      if (mounted) Navigator.of(context).pop();
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error =
+            'Não foi possível remover a ativação. Tente novamente.');
+      }
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -2238,6 +2283,28 @@ class _ConsolidatedActivationSheetState
                     : Text(_isPsiActivated ? 'Salvar observação' : 'Ativar'),
               ),
             ),
+            if (_isPsiActivated) ...[
+              if (_error != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _error!,
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: theme.colorScheme.error),
+                ),
+              ],
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: TextButton.icon(
+                  onPressed: _saving ? null : _remove,
+                  icon: const Icon(Icons.remove_circle_outline, size: 18),
+                  label: const Text('Remover ativação'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: theme.colorScheme.error,
+                  ),
+                ),
+              ),
+            ],
           ] else ...[
             const SizedBox(height: 12),
             Container(
@@ -2276,7 +2343,7 @@ class _ConsolidatedActivationSheetState
 
 /// Explica ao psicólogo como funciona a ativação de esquemas: o sistema ativa
 /// os de pontuação alta (fixos) e ele pode *acrescentar* ativações manuais.
-/// Deixa explícito que aqui ele apenas ativa — nada é desativado.
+/// Explica que só a ativação manual pode ser removida.
 class _ActivationTutorial extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -2359,8 +2426,7 @@ class _ActivationTutorial extends StatelessWidget {
             marker: const Icon(Icons.lock_outline,
                 size: 13, color: AppColors.textMuted),
             lead: 'Importante:',
-            rest: 'aqui você apenas ativa esquemas — nenhum esquema é '
-                'desativado.',
+            rest: 'a ativação manual pode ser removida; a automática não.',
           ),
         ],
       ),

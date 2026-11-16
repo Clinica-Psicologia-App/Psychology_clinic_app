@@ -187,7 +187,7 @@ List<JourneyStep> buildPatientJourneySteps(
   String? problemsHint() {
     if (p == null) return null;
     if (p.totalProblemCount == 0) {
-      return 'Nenhum problema registrado ainda.';
+      return 'Nenhuma questão registrada até o momento.';
     }
     if (p.openProblemCount > 0) {
       return '${p.openProblemCount} problema(s) em acompanhamento.';
@@ -246,7 +246,10 @@ List<JourneyStep> buildPatientJourneySteps(
     if (p.timelineEventCount == 0) {
       return 'Nenhum evento registrado ainda.';
     }
-    return '${p.timelineEventCount} evento(s) na linha do tempo.';
+    final n = p.timelineEventCount;
+    return n == 1
+        ? '1 acontecimento registrado'
+        : '$n acontecimentos registrados';
   }
 
   double? timelineFraction() {
@@ -333,7 +336,9 @@ List<JourneyStep> buildPatientJourneySteps(
     JourneyStep(
       id: JourneyStepId.initialAssessment,
       title: 'Conhecendo você',
-      subtitle: 'Sua história atual e como está sua vida hoje.',
+      subtitle:
+          'Um espaço para compartilhar um pouco sobre você, o que está '
+          'vivendo e como percebe diferentes áreas da sua vida.',
       icon: Icons.assignment_ind_outlined,
       availability: initialAssessmentStatus(),
       phase: JourneyPhase.conhecer,
@@ -354,7 +359,10 @@ List<JourneyStep> buildPatientJourneySteps(
     JourneyStep(
       id: JourneyStepId.timeline,
       title: 'Linha da vida',
-      subtitle: 'Eventos importantes da sua história e da terapia.',
+      subtitle:
+          'Um espaço para revisitar acontecimentos e experiências '
+          'significativas da sua história, construindo conexões com seu '
+          'processo terapêutico.',
       icon: Icons.timeline_outlined,
       availability: timelineStatus(),
       phase: JourneyPhase.conhecer,
@@ -366,7 +374,9 @@ List<JourneyStep> buildPatientJourneySteps(
     JourneyStep(
       id: JourneyStepId.genogram,
       title: 'Genograma',
-      subtitle: 'Mapa das relações familiares e vínculos importantes.',
+      subtitle:
+          'Um espaço para conhecer sua história familiar e compreender os '
+          'vínculos e as relações que fazem parte da sua vida.',
       icon: Icons.family_restroom_outlined,
       availability: genogramStatus(),
       phase: JourneyPhase.conhecer,
@@ -378,7 +388,10 @@ List<JourneyStep> buildPatientJourneySteps(
     JourneyStep(
       id: JourneyStepId.problems,
       title: 'Problemas e demandas',
-      subtitle: 'Focos, queixas e pontos de atenção em acompanhamento.',
+      subtitle:
+          'Um espaço para identificar e compreender as dificuldades, '
+          'preocupações e situações que você deseja trabalhar ao longo do '
+          'processo terapêutico.',
       icon: Icons.report_problem_outlined,
       availability: problemsStatus(),
       phase: JourneyPhase.conhecer,

@@ -42,6 +42,7 @@ class _InitialAssessmentPatientPageState
   final _preferredName = TextEditingController();
   final _occupation = TextEditingController();
   final _livesWith = TextEditingController();
+  final _childrenNotes = TextEditingController();
   final _medicationNotes = TextEditingController();
   final _psychiatristNotes = TextEditingController();
   final _importantToKnow = TextEditingController();
@@ -65,27 +66,81 @@ class _InitialAssessmentPatientPageState
 
   bool _initialized = false;
 
+  // Salvamento (#21): foto dos campos já gravados e save em andamento.
+  String? _savedSnapshot;
+  Future<bool>? _saving;
+  Object? _lastError;
+  bool _dirtyFlag = false;
+
+  // Etapa atual do indicador (#14), conforme a rolagem.
+  final _scroll = ScrollController();
+  final _listKey = GlobalKey();
+  final _stepKeys = [GlobalKey(), GlobalKey(), GlobalKey()];
+  final _step = ValueNotifier<int>(0);
+
   InitialAssessmentContext get _ctx => InitialAssessmentContext(
         role: widget.role,
         patientId: widget.patientId,
       );
 
+  List<TextEditingController> get _allControllers => [
+        _preferredName,
+        _occupation,
+        _livesWith,
+        _childrenNotes,
+        _medicationNotes,
+        _psychiatristNotes,
+        _importantToKnow,
+        _reason,
+        _duration,
+        _discomfort,
+        _expectations,
+        _relatedEvent,
+        ..._guided.values,
+      ];
+
+  /// Há alteração ainda não gravada?
+  bool get _isDirty => _initialized && _snapshot() != _savedSnapshot;
+
+  /// Mantém o `PopScope` em dia quando só o texto muda.
+  void _recheckDirty() {
+    if (!mounted) return;
+    final d = _isDirty;
+    if (d != _dirtyFlag) setState(() => _dirtyFlag = d);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(_updateStep);
+  }
+
+  /// Etapa visível: a última seção cujo topo já passou da linha de leitura.
+  void _updateStep() {
+    if (!_scroll.hasClients) return;
+    final pos = _scroll.position;
+    var step = 0;
+    if (pos.maxScrollExtent > 0 && pos.pixels >= pos.maxScrollExtent - 4) {
+      step = 2;
+    } else {
+      final list = _listKey.currentContext?.findRenderObject();
+      if (list is! RenderBox || !list.attached) return;
+      final listTop = list.localToGlobal(Offset.zero).dy;
+      for (var i = 0; i < _stepKeys.length; i++) {
+        final r = _stepKeys[i].currentContext?.findRenderObject();
+        if (r is! RenderBox || !r.attached) continue;
+        final top = r.localToGlobal(Offset.zero).dy - listTop;
+        if (top <= 140) step = i;
+      }
+    }
+    if (_step.value != step) _step.value = step;
+  }
+
   @override
   void dispose() {
-    for (final c in [
-      _preferredName,
-      _occupation,
-      _livesWith,
-      _medicationNotes,
-      _psychiatristNotes,
-      _importantToKnow,
-      _reason,
-      _duration,
-      _discomfort,
-      _expectations,
-      _relatedEvent,
-      ..._guided.values,
-    ]) {
+    _scroll.dispose();
+    _step.dispose();
+    for (final c in _allControllers) {
       c.dispose();
     }
     super.dispose();
@@ -99,6 +154,7 @@ class _InitialAssessmentPatientPageState
     _preferredName.text = basics?.preferredName ?? '';
     _occupation.text = basics?.occupation ?? '';
     _livesWith.text = basics?.livesWith ?? '';
+    _childrenNotes.text = basics?.childrenNotes ?? '';
     _medicationNotes.text = basics?.medicationNotes ?? '';
     _psychiatristNotes.text = basics?.psychiatristNotes ?? '';
     _importantToKnow.text = basics?.importantToKnow ?? '';
@@ -121,6 +177,10 @@ class _InitialAssessmentPatientPageState
       _guided[area] = TextEditingController(text: a.guidedAnswer ?? '');
     }
     _initialized = true;
+    _savedSnapshot = _snapshot();
+    for (final c in _allControllers) {
+      c.addListener(_recheckDirty);
+    }
   }
 
   List<LifeAreaAssessment> _collectAreas() {
@@ -159,267 +219,515 @@ class _InitialAssessmentPatientPageState
     if (picked != null) setState(() => _birthDate = picked);
   }
 
-  Future<void> _save() async {
+  /// Foto de todos os campos editáveis, para saber se algo mudou.
+  String _snapshot() => [
+        _preferredName.text,
+        _occupation.text,
+        _livesWith.text,
+        _hasChildren ? _childrenNotes.text : '',
+        _medicationNotes.text,
+        _psychiatristNotes.text,
+        _importantToKnow.text,
+        _birthDate?.toIso8601String(),
+        _hasChildren,
+        _usesMedication,
+        _psychiatricFollowup,
+        _reason.text,
+        _duration.text,
+        _discomfort.text,
+        _expectations.text,
+        _relatedEvent.text,
+        for (final area in kLifeAreasInOrder) ...[
+          _scores[area],
+          _sufferings[area],
+          _guided[area]?.text,
+        ],
+      ].join('\u0001');
+
+  /// Captura os valores AGORA e devolve a gravação (mesmo fluxo do botão
+  /// Salvar). Não depende do `context` depois de chamada.
+  Future<void> Function() _prepareSave() {
     final notifier = ref.read(initialAssessmentMutationProvider(_ctx).notifier);
-    try {
+    final preferredName = _nullIfEmpty(_preferredName.text);
+    final birthDate = _birthDate;
+    final occupation = _nullIfEmpty(_occupation.text);
+    final livesWith = _nullIfEmpty(_livesWith.text);
+    final hasChildren = _hasChildren;
+    final childrenNotes =
+        hasChildren ? _nullIfEmpty(_childrenNotes.text) : null;
+    final usesMedication = _usesMedication;
+    final medicationNotes =
+        usesMedication ? _nullIfEmpty(_medicationNotes.text) : null;
+    final psychiatricFollowup = _psychiatricFollowup;
+    final psychiatristNotes =
+        psychiatricFollowup ? _nullIfEmpty(_psychiatristNotes.text) : null;
+    final importantToKnow = _nullIfEmpty(_importantToKnow.text);
+    final reason = _reason.text.trim();
+    final duration = _duration.text.trim();
+    final discomfort = _discomfort.text.trim();
+    final expectations = _expectations.text.trim();
+    final relatedEvent = _relatedEvent.text.trim();
+    final areas = _collectAreas();
+    return () async {
       await notifier.savePatientBasics(
-        preferredName: _nullIfEmpty(_preferredName.text),
-        birthDate: _birthDate,
-        occupation: _nullIfEmpty(_occupation.text),
-        livesWith: _nullIfEmpty(_livesWith.text),
-        hasChildren: _hasChildren,
-        usesMedication: _usesMedication,
-        medicationNotes:
-            _usesMedication ? _nullIfEmpty(_medicationNotes.text) : null,
-        psychiatricFollowup: _psychiatricFollowup,
-        psychiatristNotes:
-            _psychiatricFollowup ? _nullIfEmpty(_psychiatristNotes.text) : null,
-        importantToKnow: _nullIfEmpty(_importantToKnow.text),
+        preferredName: preferredName,
+        birthDate: birthDate,
+        occupation: occupation,
+        livesWith: livesWith,
+        hasChildren: hasChildren,
+        childrenNotes: childrenNotes,
+        usesMedication: usesMedication,
+        medicationNotes: medicationNotes,
+        psychiatricFollowup: psychiatricFollowup,
+        psychiatristNotes: psychiatristNotes,
+        importantToKnow: importantToKnow,
       );
       await notifier.saveIntake(
-        reasonForSeeking: _reason.text.trim(),
-        problemDuration: _duration.text.trim(),
-        mainDiscomfort: _discomfort.text.trim(),
-        expectations: _expectations.text.trim(),
-        relatedEvent: _relatedEvent.text.trim(),
+        reasonForSeeking: reason,
+        problemDuration: duration,
+        mainDiscomfort: discomfort,
+        expectations: expectations,
+        relatedEvent: relatedEvent,
       );
-      await notifier.saveLifeAreas(_collectAreas());
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Avaliação salva.')),
-      );
+      await notifier.saveLifeAreas(areas);
+    };
+  }
+
+  /// Grava tudo (mesma gravação do botão, da saída e da navegação). Se já
+  /// houver gravação em andamento, devolve o MESMO Future. Nunca lança:
+  /// `true` = gravou; `false` = falhou (erro em [_lastError]) e a tela
+  /// continua com alteração pendente.
+  Future<bool> _saveOnce() {
+    final running = _saving;
+    if (running != null) return running;
+    final f = _doSave().whenComplete(() {
+      _saving = null;
+      if (mounted) setState(() {});
+    });
+    _saving = f;
+    if (mounted) setState(() {});
+    return f;
+  }
+
+  Future<bool> _doSave() async {
+    try {
+      final snap = _snapshot();
+      final run = _prepareSave();
+      await run();
+      _savedSnapshot = snap; // só depois do sucesso
+      _lastError = null;
+      return true;
     } catch (e) {
+      _lastError = e;
+      return false;
+    }
+  }
+
+  void _snack(String text) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+  }
+
+  /// Abre outra tela só depois de gravar o que mudou; se falhar, fica aqui.
+  Future<void> _pushSaving(String route) async {
+    if (_isDirty) {
+      final ok = await _saveOnce();
       if (!mounted) return;
-      showErrorBanner(context, e);
+      if (!ok) {
+        _snack('Não foi possível salvar. Tente de novo antes de continuar.');
+        return;
+      }
+    }
+    context.push(route);
+  }
+
+  Future<void> _save() async {
+    final ok = await _saveOnce();
+    if (!mounted) return;
+    if (ok) {
+      _snack('Avaliação salva.');
+    } else {
+      showErrorBanner(context, _lastError ?? 'Não foi possível salvar.');
+    }
+  }
+
+  /// Saída com alteração pendente: pergunta o que fazer.
+  Future<void> _onPopBlocked() async {
+    final choice = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Você tem informações não salvas'),
+        content: const Text('Deseja salvar antes de sair?'),
+        actions: [
+          TextButton(
+            key: const Key('exit_continue'),
+            onPressed: () => Navigator.of(ctx).pop('continue'),
+            child: const Text('Continuar editando'),
+          ),
+          TextButton(
+            key: const Key('exit_discard'),
+            onPressed: () => Navigator.of(ctx).pop('discard'),
+            child: const Text('Sair sem salvar'),
+          ),
+          FilledButton(
+            key: const Key('exit_save'),
+            onPressed: () => Navigator.of(ctx).pop('save'),
+            child: const Text('Salvar e sair'),
+          ),
+        ],
+      ),
+    );
+    if (!mounted) return;
+    if (choice == 'discard') {
+      Navigator.of(context).pop();
+    } else if (choice == 'save') {
+      final ok = await _saveOnce();
+      if (!mounted) return;
+      if (ok) {
+        Navigator.of(context).pop();
+      } else {
+        _snack('Não foi possível salvar. Você continua nesta tela.');
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    _dirtyFlag = _isDirty;
     final async = ref.watch(initialAssessmentProvider(_ctx));
-    final saving = ref.watch(initialAssessmentMutationProvider(_ctx)).isLoading;
+    final saving = _saving != null ||
+        ref.watch(initialAssessmentMutationProvider(_ctx)).isLoading;
 
-    return AppCanopyScaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: PatientContextHeader(
-              patientId: widget.patientId,
-              pageTitle: 'CONHECENDO VOCÊ',
-              role: widget.role,
-              accentColor: AppColors.cyan,
-            ),
-          ),
-          SliverFillRemaining(
-            hasScrollBody: true,
-            child: AsyncStateBody<InitialAssessment>(
-              asyncValue: async,
-              onRetry: () => ref.invalidate(initialAssessmentProvider(_ctx)),
-              dataBuilder: (data) {
-          _initFromData(data);
-          return Stack(
-            children: [
-              ListView(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
-                children: [
-                  _stepsIndicator(context),
-                  const SizedBox(height: 18),
-                  _section(
-                    context,
-                    icon: Icons.waving_hand_outlined,
-                    accent: AppColors.turquoise,
-                    title: 'Conhecendo você',
-                    subtitle:
-                        'Antes de começarmos, queremos conhecer um pouco sobre você.',
-                    children: [
-                      if ((_fullName ?? '').isNotEmpty)
+    return PopScope(
+        canPop: !_isDirty && _saving == null,
+        onPopInvokedWithResult: (didPop, _) {
+          if (didPop) return;
+          if (_saving != null) {
+            _snack('Aguarde, salvando…');
+            return;
+          }
+          _onPopBlocked();
+        },
+        child: AppCanopyScaffold(
+          body: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: PatientContextHeader(
+                  patientId: widget.patientId,
+                  pageTitle: 'CONHECENDO VOCÊ',
+                  role: widget.role,
+                  accentColor: AppColors.cyan,
+                  onBack: () => Navigator.of(context).maybePop(),
+                ),
+              ),
+              SliverFillRemaining(
+                hasScrollBody: true,
+                child: AsyncStateBody<InitialAssessment>(
+                  asyncValue: async,
+                  onRetry: () =>
+                      ref.invalidate(initialAssessmentProvider(_ctx)),
+                  dataBuilder: (data) {
+                    _initFromData(data);
+                    return Column(
+                      children: [
                         Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: InputDecorator(
-                            decoration: const InputDecoration(
-                              labelText: 'Nome',
-                              helperText:
-                                  'Para alterar, fale com seu psicólogo.',
-                              prefixIcon: Icon(Icons.lock_outline, size: 18),
-                            ),
-                            child: Text(_fullName!),
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                          child: _stepsIndicator(context),
+                        ),
+                        Expanded(
+                          child: Stack(
+                            children: [
+                              // Enquanto grava, o formulário inteiro fica travado (toque e foco).
+                              ExcludeFocus(
+                                  excluding: saving,
+                                  child: IgnorePointer(
+                                      ignoring: saving,
+                                      child: ListView(
+                                        key: _listKey,
+                                        controller: _scroll,
+                                        padding: const EdgeInsets.fromLTRB(
+                                            16, 14, 16, 96),
+                                        children: [
+                                          _section(
+                                            context,
+                                            key: _stepKeys[0],
+                                            icon: Icons.waving_hand_outlined,
+                                            accent: AppColors.turquoise,
+                                            title: 'Conhecendo você',
+                                            subtitle:
+                                                'Antes de começarmos, queremos conhecer um pouco sobre você.',
+                                            children: [
+                                              if ((_fullName ?? '').isNotEmpty)
+                                                Padding(
+                                                  padding:
+                                                      const EdgeInsets.only(
+                                                          bottom: 12),
+                                                  child: InputDecorator(
+                                                    decoration:
+                                                        const InputDecoration(
+                                                      labelText: 'Nome',
+                                                      helperText:
+                                                          'Para alterar, fale com seu psicólogo.',
+                                                      prefixIcon: Icon(
+                                                          Icons.lock_outline,
+                                                          size: 18),
+                                                    ),
+                                                    child: Text(_fullName!),
+                                                  ),
+                                                ),
+                                              _field(_preferredName,
+                                                  'Como prefere ser chamado(a)?'),
+                                              _birthDateField(context),
+                                              _field(_occupation, 'Profissão'),
+                                              _field(
+                                                _livesWith,
+                                                'Com quem você mora?',
+                                                helper:
+                                                    'Você pode mencionar familiares, companheiro(a), '
+                                                    'amigos ou se mora sozinho(a).',
+                                              ),
+                                              _switchTile(
+                                                'Tem filhos?',
+                                                _hasChildren,
+                                                (v) => setState(() {
+                                                  _hasChildren = v;
+                                                  if (!v) _childrenNotes.clear();
+                                                }),
+                                              ),
+                                              if (_hasChildren)
+                                                _field(
+                                                  _childrenNotes,
+                                                  'Conte sobre seus filhos (nomes e idades)',
+                                                  maxLength: 1000,
+                                                  fieldKey: const ValueKey(
+                                                      'children_notes_field'),
+                                                ),
+                                              _switchTile(
+                                                'Faz uso de algum medicamento?',
+                                                _usesMedication,
+                                                (v) => setState(
+                                                    () => _usesMedication = v),
+                                              ),
+                                              if (_usesMedication)
+                                                _field(
+                                                  _medicationNotes,
+                                                  'Qual medicação? (opcional)',
+                                                  helper:
+                                                      'Informar nome e, se desejar, dosagem.',
+                                                ),
+                                              _switchTile(
+                                                'Tem acompanhamento psiquiátrico?',
+                                                _psychiatricFollowup,
+                                                (v) => setState(() =>
+                                                    _psychiatricFollowup = v),
+                                              ),
+                                              if (_psychiatricFollowup)
+                                                _field(_psychiatristNotes,
+                                                    'Detalhes do acompanhamento (opcional)'),
+                                              _field(
+                                                _importantToKnow,
+                                                'Existe algo importante sobre você que gostaria que seu '
+                                                'terapeuta soubesse?',
+                                              ),
+                                            ],
+                                          ),
+                                          _section(
+                                            context,
+                                            key: _stepKeys[1],
+                                            icon: Icons.chat_bubble_outline,
+                                            accent: AppColors.blue,
+                                            title: 'O que está acontecendo?',
+                                            subtitle:
+                                                'Conte um pouco sobre o que está acontecendo na sua vida '
+                                                'e o que fez você procurar terapia neste momento.',
+                                            children: [
+                                              _field(_reason,
+                                                  'O que fez você procurar terapia agora?'),
+                                              _field(_duration,
+                                                  'Há quanto tempo isso acontece?'),
+                                              _field(_discomfort,
+                                                  'O que mais incomoda hoje?'),
+                                              _field(_expectations,
+                                                  'O que espera que seja diferente após a terapia?'),
+                                              _field(_relatedEvent,
+                                                  'Existe algum acontecimento importante relacionado a isso?'),
+                                            ],
+                                          ),
+                                          KeyedSubtree(
+                                              key: _stepKeys[2],
+                                              child: _sectionHeader(
+                                                context,
+                                                icon: Icons.spa_outlined,
+                                                accent: AppColors.purple,
+                                                title:
+                                                    'Como está sua vida hoje?',
+                                                subtitle:
+                                                    'Cada área da nossa vida pode estar em um momento '
+                                                    'diferente. Pense em como você se sente em relação a '
+                                                    'cada uma delas e indique sua percepção neste momento.',
+                                              )),
+                                          const SizedBox(height: 14),
+                                          Padding(
+                                            padding: const EdgeInsets.only(
+                                                bottom: 16),
+                                            child: DecoratedBox(
+                                              decoration: BoxDecoration(
+                                                color:
+                                                    Theme.of(context).cardColor,
+                                                borderRadius:
+                                                    BorderRadius.circular(16),
+                                                boxShadow: [
+                                                  BoxShadow(
+                                                    color: AppColors.navy
+                                                        .withValues(
+                                                            alpha: 0.07),
+                                                    blurRadius: 10,
+                                                    offset: const Offset(0, 2),
+                                                  ),
+                                                ],
+                                              ),
+                                              child: Padding(
+                                                padding:
+                                                    const EdgeInsets.all(16),
+                                                child: LifeAreaWheelChart(
+                                                    scores: _scores),
+                                              ),
+                                            ),
+                                          ),
+                                          for (final area in kLifeAreasInOrder)
+                                            LifeAreaCard(
+                                              area: area,
+                                              score: _scores[area],
+                                              suffering: _sufferings[area],
+                                              guidedController: _guided[area]!,
+                                              onScoreChanged: (v) => setState(
+                                                  () => _scores[area] = v),
+                                              onSufferingChanged: (v) =>
+                                                  setState(() =>
+                                                      _sufferings[area] = v),
+                                            ),
+                                          const SizedBox(height: 12),
+                                          ClayCard(
+                                            margin: const EdgeInsets.only(
+                                                bottom: 10),
+                                            child: ListTile(
+                                              leading: const Icon(
+                                                  Icons.history_edu_outlined),
+                                              title:
+                                                  const Text('Minha História'),
+                                              subtitle: const Text(
+                                                  'Conte os momentos marcantes da sua vida.'),
+                                              trailing: const Icon(
+                                                  Icons.chevron_right),
+                                              onTap: () => _pushSaving(
+                                                  InitialAssessmentRoutes
+                                                      .patientHistory),
+                                            ),
+                                          ),
+                                          ClayCard(
+                                            margin: const EdgeInsets.only(
+                                                bottom: 10),
+                                            child: ListTile(
+                                              leading: const Icon(Icons
+                                                  .family_restroom_outlined),
+                                              title:
+                                                  const Text('Minha Família'),
+                                              subtitle: const Text(
+                                                  'As pessoas da sua história e como eram essas relações.'),
+                                              trailing: const Icon(
+                                                  Icons.chevron_right),
+                                              onTap: () => _pushSaving(
+                                                  InitialAssessmentRoutes
+                                                      .patientFamily),
+                                            ),
+                                          ),
+                                        ],
+                                      ))),
+                              if (saving)
+                                const Positioned(
+                                  left: 0,
+                                  right: 0,
+                                  top: 0,
+                                  child: LinearProgressIndicator(minHeight: 3),
+                                ),
+                              Positioned(
+                                left: 16,
+                                right: 16,
+                                bottom: 16,
+                                child: FilledButton.icon(
+                                  onPressed: saving ? null : _save,
+                                  icon: saving
+                                      ? const SizedBox(
+                                          width: 18,
+                                          height: 18,
+                                          child: CircularProgressIndicator(
+                                              strokeWidth: 2),
+                                        )
+                                      : const Icon(Icons.check),
+                                  label: Text(saving
+                                      ? 'Salvando...'
+                                      : 'Salvar informações'),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      _field(_preferredName, 'Como prefere ser chamado(a)?'),
-                      _birthDateField(context),
-                      _field(_occupation, 'Profissão'),
-                      _field(_livesWith, 'Com quem você mora?'),
-                      _switchTile(
-                        'Tem filhos?',
-                        _hasChildren,
-                        (v) => setState(() => _hasChildren = v),
-                      ),
-                      _switchTile(
-                        'Faz uso de medicação?',
-                        _usesMedication,
-                        (v) => setState(() => _usesMedication = v),
-                      ),
-                      if (_usesMedication)
-                        _field(_medicationNotes, 'Qual medicação? (opcional)'),
-                      _switchTile(
-                        'Tem acompanhamento psiquiátrico?',
-                        _psychiatricFollowup,
-                        (v) => setState(() => _psychiatricFollowup = v),
-                      ),
-                      if (_psychiatricFollowup)
-                        _field(_psychiatristNotes,
-                            'Detalhes do acompanhamento (opcional)'),
-                      _field(
-                        _importantToKnow,
-                        'Existe algo importante sobre você que gostaria que seu '
-                        'terapeuta soubesse?',
-                      ),
-                    ],
-                  ),
-                  _section(
-                    context,
-                    icon: Icons.chat_bubble_outline,
-                    accent: AppColors.blue,
-                    title: 'O que está acontecendo?',
-                    subtitle:
-                        'Conte um pouco sobre o que está acontecendo na sua vida '
-                        'e o que fez você procurar terapia neste momento.',
-                    children: [
-                      _field(_reason, 'O que fez você procurar terapia agora?'),
-                      _field(_duration, 'Há quanto tempo isso acontece?'),
-                      _field(_discomfort, 'O que mais incomoda hoje?'),
-                      _field(_expectations,
-                          'O que espera que seja diferente após a terapia?'),
-                      _field(_relatedEvent,
-                          'Existe algum acontecimento importante relacionado a isso?'),
-                    ],
-                  ),
-                  _sectionHeader(
-                    context,
-                    icon: Icons.spa_outlined,
-                    accent: AppColors.purple,
-                    title: 'Como está sua vida hoje?',
-                    subtitle:
-                        'As pessoas costumam viver momentos diferentes em cada '
-                        'área da vida. Avalie como você percebe cada uma delas '
-                        'neste momento.',
-                  ),
-                  const SizedBox(height: 14),
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).cardColor,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.navy.withValues(alpha: 0.07),
-                            blurRadius: 10,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: LifeAreaWheelChart(scores: _scores),
-                      ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ));
+  }
+
+  /// Indicador das 3 partes da tela: atual em destaque, concluídas em
+  /// turquesa suave e as que faltam em cinza.
+  Widget _stepsIndicator(BuildContext context) {
+    final theme = Theme.of(context);
+    const labels = ['Sobre você', 'O que houve', 'Sua vida'];
+    return ValueListenableBuilder<int>(
+      valueListenable: _step,
+      builder: (context, current, _) => Row(
+        children: [
+          for (var i = 0; i < labels.length; i++) ...[
+            if (i > 0) const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                children: [
+                  AnimatedContainer(
+                    key: Key('step_bar_$i'),
+                    duration: const Duration(milliseconds: 200),
+                    height: i == current ? 6 : 4,
+                    decoration: BoxDecoration(
+                      color: i == current
+                          ? AppColors.turquoise
+                          : i < current
+                              ? AppColors.turquoise.withValues(alpha: 0.45)
+                              : theme.colorScheme.outline
+                                  .withValues(alpha: 0.35),
+                      borderRadius: BorderRadius.circular(3),
                     ),
                   ),
-                  for (final area in kLifeAreasInOrder)
-                    LifeAreaCard(
-                      area: area,
-                      score: _scores[area],
-                      suffering: _sufferings[area],
-                      guidedController: _guided[area]!,
-                      onScoreChanged: (v) => setState(() => _scores[area] = v),
-                      onSufferingChanged: (v) =>
-                          setState(() => _sufferings[area] = v),
-                    ),
-                  const SizedBox(height: 12),
-                  ClayCard(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    child: ListTile(
-                      leading: const Icon(Icons.history_edu_outlined),
-                      title: const Text('Minha História'),
-                      subtitle: const Text(
-                          'Conte os momentos marcantes da sua vida.'),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () =>
-                          context.push(InitialAssessmentRoutes.patientHistory),
-                    ),
-                  ),
-                  ClayCard(
-                    margin: const EdgeInsets.only(bottom: 10),
-                    child: ListTile(
-                      leading: const Icon(Icons.family_restroom_outlined),
-                      title: const Text('Minha Família'),
-                      subtitle: const Text(
-                          'As pessoas da sua história e como eram essas relações.'),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () =>
-                          context.push(InitialAssessmentRoutes.patientFamily),
+                  const SizedBox(height: 5),
+                  Text(
+                    labels[i],
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      fontWeight:
+                          i == current ? FontWeight.w800 : FontWeight.w600,
+                      fontSize: 9.5,
+                      color: i == current
+                          ? theme.colorScheme.onSurface
+                          : theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
               ),
-              Positioned(
-                left: 16,
-                right: 16,
-                bottom: 16,
-                child: FilledButton.icon(
-                  onPressed: saving ? null : _save,
-                  icon: saving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.check),
-                  label: Text(saving ? 'Salvando...' : 'Salvar avaliação'),
-                ),
-              ),
-            ],
-          );
-        },
-      ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Indicador simples das 3 partes da tela.
-  Widget _stepsIndicator(BuildContext context) {
-    final theme = Theme.of(context);
-    const labels = ['Sobre você', 'O que houve', 'Sua vida'];
-    return Row(
-      children: [
-        for (var i = 0; i < labels.length; i++) ...[
-          if (i > 0) const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              children: [
-                Container(
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppColors.turquoise,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  labels[i],
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 9.5,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
             ),
-          ),
+          ],
         ],
-      ],
+      ),
     );
   }
 
@@ -466,6 +774,7 @@ class _InitialAssessmentPatientPageState
   /// Seção em card: cabeçalho + campos.
   Widget _section(
     BuildContext context, {
+    Key? key,
     required IconData icon,
     required Color accent,
     required String title,
@@ -474,12 +783,14 @@ class _InitialAssessmentPatientPageState
   }) {
     final theme = Theme.of(context);
     return Container(
+      key: key,
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 6),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.5)),
+        border:
+            Border.all(color: theme.colorScheme.outline.withValues(alpha: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -493,15 +804,28 @@ class _InitialAssessmentPatientPageState
     );
   }
 
-  Widget _field(TextEditingController controller, String label) {
+  Widget _field(
+    TextEditingController controller,
+    String label, {
+    String? helper,
+    int? maxLength,
+    Key? fieldKey,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: TextField(
+        key: fieldKey,
         controller: controller,
         minLines: 1,
         maxLines: 4,
+        maxLength: maxLength,
+
         textInputAction: TextInputAction.newline,
-        decoration: InputDecoration(labelText: label),
+        decoration: InputDecoration(
+          labelText: label,
+          helperText: helper,
+          helperMaxLines: 3,
+        ),
       ),
     );
   }

@@ -114,8 +114,11 @@ class _FamilyContextFlowPageState extends ConsumerState<FamilyContextFlowPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        flowHint('Pensando na família em que você cresceu...'),
-        flowQuestion('O que costumava acontecer em casa?'),
+        flowHint(
+            'Pensando na família ou nas pessoas com quem você cresceu...'),
+        flowQuestion('Quais destas situações faziam parte da sua infância?'),
+        flowHint('Selecione todas as opções que combinam com suas '
+            'experiências. Você pode marcar mais de uma.'),
         const SizedBox(height: 14),
         flowChipGrid<ClimateTrait>(
           items: kClimateTraitsInOrder,
@@ -125,14 +128,16 @@ class _FamilyContextFlowPageState extends ConsumerState<FamilyContextFlowPage> {
               () => _climate.contains(t) ? _climate.remove(t) : _climate.add(t)),
         ),
         const SizedBox(height: 24),
-        flowLabel('Se tivesse que descrever o clima da sua família em poucas '
-            'palavras, como descreveria?'),
+        flowLabel(_climate.contains(ClimateTrait.other)
+            ? 'Conte o que mais fazia parte do ambiente em que você cresceu.'
+            : 'Se tivesse que descrever o clima da sua família em poucas palavras, como descreveria?'),
         const SizedBox(height: 8),
         TextField(
           controller: _climateNoteController,
           maxLines: 3,
           decoration: flowFieldDecoration(
-              'Ex.: Todos se gostavam, mas ninguém falava sobre sentimentos.'),
+              'Descreva, com suas palavras, como era o ambiente familiar '
+              'em que você cresceu.'),
         ),
       ],
     );

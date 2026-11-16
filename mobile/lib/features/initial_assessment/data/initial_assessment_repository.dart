@@ -67,7 +67,7 @@ class InitialAssessmentRepository {
 
   static const _basicsSelect =
       'full_name, preferred_name, birth_date, occupation, lives_with, '
-      'has_children, uses_medication, medication_notes, psychiatric_followup, '
+      'has_children, children_notes, uses_medication, medication_notes, psychiatric_followup, '
       'psychiatrist_notes, important_to_know, '
       'education_level, relationship_status, sexual_orientation, country_birth, '
       'ethnic_group, religious_orientation, '
@@ -230,6 +230,7 @@ class InitialAssessmentRepository {
     String? occupation,
     String? livesWith,
     bool? hasChildren,
+    String? childrenNotes,
     bool? usesMedication,
     String? medicationNotes,
     bool? psychiatricFollowup,
@@ -245,6 +246,7 @@ class InitialAssessmentRepository {
         'occupation': occupation,
         'lives_with': livesWith,
         'has_children': hasChildren,
+        'children_notes': childrenNotes,
         'uses_medication': usesMedication,
         'medication_notes': medicationNotes,
         'psychiatric_followup': psychiatricFollowup,

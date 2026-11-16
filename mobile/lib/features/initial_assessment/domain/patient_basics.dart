@@ -17,6 +17,7 @@ class PatientBasics {
     this.occupation,
     this.livesWith,
     this.hasChildren,
+    this.childrenNotes,
     this.usesMedication,
     this.medicationNotes,
     this.psychiatricFollowup,
@@ -42,6 +43,10 @@ class PatientBasics {
   final String? occupation;
   final String? livesWith;
   final bool? hasChildren;
+
+  /// Texto livre do paciente sobre os filhos (nomes e idades). Dado de
+  /// terceiros: só existe quando [hasChildren] é verdadeiro.
+  final String? childrenNotes;
   final bool? usesMedication;
   final String? medicationNotes;
   final bool? psychiatricFollowup;
@@ -159,6 +164,7 @@ class PatientBasics {
       occupation: json['occupation'] as String?,
       livesWith: json['lives_with'] as String?,
       hasChildren: json['has_children'] as bool?,
+      childrenNotes: json['children_notes'] as String?,
       usesMedication: json['uses_medication'] as bool?,
       medicationNotes: json['medication_notes'] as String?,
       psychiatricFollowup: json['psychiatric_followup'] as bool?,

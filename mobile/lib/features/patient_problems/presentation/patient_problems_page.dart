@@ -30,7 +30,7 @@ class PatientProblemsPage extends ConsumerWidget {
       asyncValue: listAsync,
       onRetry: () => ref.read(myPatientProblemsProvider.notifier).refresh(),
       emptyMessage:
-          'Nenhum problema registrado. Use o botão abaixo para adicionar uma queixa ou foco de trabalho.',
+          'Nenhuma questão registrada até o momento.',
       emptyIcon: Icons.report_problem_outlined,
       dataBuilder: (items) => RefreshIndicator(
         onRefresh: () async {

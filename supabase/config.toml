@@ -462,6 +462,9 @@ verify_jwt = true
 [functions.update-patient-basics]
 verify_jwt = true
 
+[functions.update-patient-credentials]
+verify_jwt = true
+
 # update-psychologist-access: produção hoje: false. Local com true: igual a antes. Sem chamador no app: avaliar despublicar.
 [functions.update-psychologist-access]
 verify_jwt = true

@@ -26,18 +26,22 @@ class PatientTimelinePage extends ConsumerWidget {
     final listAsync = ref.watch(myPatientTimelineProvider);
     final patientIdAsync = ref.watch(myPatientIdProvider);
 
-    final body = AsyncStateBody<List<PatientTimelineEvent>>(
-      asyncValue: listAsync,
+    // O vazio é tratado dentro de _TimelineList (cabeçalho + botão "Novo
+    // evento" + mensagem); o registro evita o atalho de lista vazia do
+    // AsyncStateBody, que esconderia o botão.
+    final body = AsyncStateBody<(List<PatientTimelineEvent>,)>(
+      asyncValue: listAsync.whenData((e) => (e,)),
       onRetry: () => ref.read(myPatientTimelineProvider.notifier).refresh(),
-      emptyMessage:
-          'Nenhum evento na linha do tempo. Registre marcos da sua história ou do processo terapêutico.',
+      emptyMessage: '',
       emptyIcon: Icons.timeline_outlined,
-      dataBuilder: (items) => RefreshIndicator(
+      dataBuilder: (data) => RefreshIndicator(
         onRefresh: () async {
           await ref.read(myPatientTimelineProvider.notifier).refresh();
         },
         child: _TimelineList(
-          events: items,
+          events: data.$1,
+          emptyMessage:
+              'Nenhum evento na linha do tempo. Registre marcos da sua história ou do processo terapêutico.',
           title: 'Sua linha do tempo',
           subtitle:
               'Organize marcos por etapa da vida e registre como eles ainda aparecem no presente.',
@@ -112,18 +116,19 @@ class StaffPatientTimelinePage extends ConsumerWidget {
           ),
           SliverFillRemaining(
             hasScrollBody: true,
-            child: AsyncStateBody<List<PatientTimelineEvent>>(
-              asyncValue: listAsync,
+            child: AsyncStateBody<(List<PatientTimelineEvent>,)>(
+              asyncValue: listAsync.whenData((e) => (e,)),
               onRetry: () => ref.invalidate(staffPatientTimelineProvider(ctx)),
-              emptyMessage: 'Nenhum evento registrado para este paciente.',
+              emptyMessage: '',
               emptyIcon: Icons.timeline_outlined,
-              dataBuilder: (items) => RefreshIndicator(
+              dataBuilder: (data) => RefreshIndicator(
                 onRefresh: () async {
                   ref.invalidate(staffPatientTimelineProvider(ctx));
                   await ref.read(staffPatientTimelineProvider(ctx).future);
                 },
                 child: _TimelineList(
-                  events: items,
+                  events: data.$1,
+                  emptyMessage: 'Nenhum evento registrado para este paciente.',
                   title: 'Linha do tempo clínica',
                   subtitle:
                       'Visualize eventos-chave, etapas da vida e pontes com o presente.',
@@ -161,6 +166,7 @@ class StaffPatientTimelinePage extends ConsumerWidget {
 class _TimelineList extends StatelessWidget {
   const _TimelineList({
     required this.events,
+    required this.emptyMessage,
     required this.title,
     required this.subtitle,
     required this.onCreate,
@@ -168,6 +174,7 @@ class _TimelineList extends StatelessWidget {
   });
 
   final List<PatientTimelineEvent> events;
+  final String emptyMessage;
   final String title;
   final String subtitle;
   final Future<void> Function() onCreate;
@@ -186,7 +193,7 @@ class _TimelineList extends StatelessWidget {
         AppSpacing.md,
         AppSpacing.xxl,
       ),
-      itemCount: events.length + 1,
+      itemCount: events.isEmpty ? 2 : events.length + 1,
       itemBuilder: (context, index) {
         if (index == 0) {
           return Padding(
@@ -222,6 +229,12 @@ class _TimelineList extends StatelessWidget {
                 label: const Text('Novo evento'),
               ),
             ),
+          );
+        }
+        if (events.isEmpty) {
+          return EmptyStatePanel(
+            message: emptyMessage,
+            icon: Icons.timeline_outlined,
           );
         }
         final eventIndex = index - 1;

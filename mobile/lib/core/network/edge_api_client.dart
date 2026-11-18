@@ -13,10 +13,23 @@ class EdgeApiClient {
 
   final SupabaseClient _client;
 
+  /// [errorOverride] é opcional: recebe o `error` do payload e o status HTTP e,
+  /// se devolver uma exceção, ela substitui o mapeamento padrão (por exemplo
+  /// para manter uma mensagem do servidor). Sem ele, nada muda. Erros de
+  /// sessão (status 401 ou código UNAUTHORIZED/SESSION_EXPIRED) nunca passam
+  /// pelo override: seguem sempre o caminho padrão deste cliente.
   Future<Map<String, dynamic>> invoke(
     String functionName, {
     Map<String, dynamic>? body,
+    AppException? Function(Map<String, dynamic> error, int? status)?
+        errorOverride,
   }) async {
+    AppException mapPayload(Map<String, dynamic> error, int? status) =>
+        (_isSessionError(error, status)
+            ? null
+            : errorOverride?.call(error, status)) ??
+        mapEdgeErrorPayload(error, httpStatus: status);
+
     try {
       final response = await _client.functions.invoke(
         functionName,
@@ -28,9 +41,9 @@ class EdgeApiClient {
       if (response.status >= 400 &&
           parsed['ok'] == false &&
           parsed['error'] is Map) {
-        throw mapEdgeErrorPayload(
+        throw mapPayload(
           Map<String, dynamic>.from(parsed['error'] as Map),
-          httpStatus: response.status,
+          response.status,
         );
       }
 
@@ -42,9 +55,9 @@ class EdgeApiClient {
       }
 
       if (parsed['ok'] == false && parsed['error'] is Map) {
-        throw mapEdgeErrorPayload(
+        throw mapPayload(
           Map<String, dynamic>.from(parsed['error'] as Map),
-          httpStatus: response.status,
+          response.status,
         );
       }
 
@@ -63,8 +76,31 @@ class EdgeApiClient {
       }
       rethrow;
     } catch (e) {
+      if (errorOverride != null && e is FunctionException) {
+        final payload = _parseBodySafe(e.details);
+        if (payload['error'] is Map) {
+          final error = Map<String, dynamic>.from(payload['error'] as Map);
+          final custom = _isSessionError(error, e.status)
+              ? null
+              : errorOverride(error, e.status);
+          if (custom != null) throw custom;
+        }
+      }
       throw mapToAppException(e);
     }
+  }
+}
+
+bool _isSessionError(Map<String, dynamic> error, int? status) {
+  final code = error['code']?.toString();
+  return status == 401 || code == 'UNAUTHORIZED' || code == 'SESSION_EXPIRED';
+}
+
+Map<String, dynamic> _parseBodySafe(Object? data) {
+  try {
+    return _parseBody(data);
+  } catch (_) {
+    return {};
   }
 }
 

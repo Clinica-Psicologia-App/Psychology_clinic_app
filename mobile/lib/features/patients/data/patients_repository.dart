@@ -10,6 +10,7 @@ import '../domain/patient_data_completion.dart';
 import '../domain/patient_vitals.dart';
 import '../domain/psychologist_alert.dart';
 import '../domain/psychologist_option.dart';
+import '../domain/update_patient_credentials_request.dart';
 import '../domain/update_patient_request.dart';
 
 class PatientsRepository {
@@ -154,6 +155,34 @@ access_profile:profiles!patients_profile_id_fkey(is_active, avatar_type, avatar_
     } catch (e) {
       throw mapToAppException(e);
     }
+  }
+
+  /// Troca o e-mail de acesso e/ou a senha do paciente (Edge Function
+  /// `update-patient-credentials`). A senha nunca é registrada: só vai no corpo.
+  ///
+  /// Usa o mesmo [EdgeApiClient] das demais funções (inclusive a política de
+  /// sessão expirada). Só mantém a mensagem do servidor no estado parcial
+  /// ("Repita o pedido"), que o mapeamento padrão trocaria por uma frase
+  /// genérica de erro de servidor.
+  Future<void> updatePatientCredentials(
+    UpdatePatientCredentialsRequest request,
+  ) async {
+    await _edgeApi.invoke(
+      'update-patient-credentials',
+      body: request.toJson(),
+      errorOverride: (error, status) {
+        final message = error['message']?.toString() ?? '';
+        if (error['code'] == 'INTERNAL_ERROR' &&
+            message.contains('Repita o pedido')) {
+          return AppException(
+            code: AppExceptionCodes.unknown,
+            message: message,
+            details: {'httpStatus': status},
+          );
+        }
+        return null;
+      },
+    );
   }
 
   Future<Patient> createPatient(CreatePatientRequest request) async {

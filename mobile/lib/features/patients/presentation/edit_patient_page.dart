@@ -11,6 +11,7 @@ import '../../../shared/widgets/status_chip.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/patient.dart';
 import '../domain/psychologist_option.dart';
+import '../domain/update_patient_credentials_request.dart';
 import '../domain/update_patient_request.dart';
 import '../providers/patients_providers.dart';
 
@@ -384,6 +385,12 @@ class _EditPatientPageState extends ConsumerState<EditPatientPage> {
                 const SizedBox(height: 24),
               ],
 
+              if (widget.role == ProfileRole.platformAdmin ||
+                  widget.role == ProfileRole.psychologist) ...[
+                PatientAccessSection(patient: widget.patient),
+                const SizedBox(height: 24),
+              ],
+
               FilledButton(
                 onPressed: updateState.isLoading ? null : _submit,
                 child: updateState.isLoading
@@ -488,6 +495,222 @@ class _PsychologistDropdown extends StatelessWidget {
           )
           .toList(),
       onChanged: onChanged,
+    );
+  }
+}
+
+/// Seção "Acesso do paciente": troca o e-mail de login e/ou define nova senha.
+/// Só aparece para a equipe (a página decide). Tem formulário e botão próprios,
+/// separados do "Salvar alterações" dos dados pessoais.
+class PatientAccessSection extends ConsumerStatefulWidget {
+  const PatientAccessSection({super.key, required this.patient});
+
+  final Patient patient;
+
+  @override
+  ConsumerState<PatientAccessSection> createState() =>
+      _PatientAccessSectionState();
+}
+
+class _PatientAccessSectionState extends ConsumerState<PatientAccessSection> {
+  static final _emailRe = RegExp(r'^[^\s@*,]+@[^\s@*,]+\.[^\s@*,]+$');
+
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _email;
+  final _password = TextEditingController();
+  final _confirm = TextEditingController();
+
+  /// E-mail de login atual, atualizado após cada troca com sucesso (o
+  /// `widget.patient` não muda sozinho, então duas trocas seguidas, A→B e B→A,
+  /// precisam comparar com este valor).
+  late String _currentEmail;
+
+  bool _saving = false;
+  String? _error;
+  String? _done;
+
+  @override
+  void initState() {
+    super.initState();
+    _email = TextEditingController(text: widget.patient.email ?? '');
+    _currentEmail = _normalized(widget.patient.email);
+  }
+
+  @override
+  void dispose() {
+    _email.dispose();
+    _password.dispose();
+    _confirm.dispose();
+    super.dispose();
+  }
+
+  String _normalized(String? v) => (v ?? '').trim().toLowerCase();
+
+  Future<void> _submit() async {
+    setState(() {
+      _error = null;
+      _done = null;
+    });
+    if (!_formKey.currentState!.validate()) return;
+
+    final newEmail = _normalized(_email.text);
+    final emailChanged = newEmail.isNotEmpty && newEmail != _currentEmail;
+    final password = _password.text;
+    if (!emailChanged && password.isEmpty) {
+      setState(() => _error = 'Informe um novo e-mail ou uma nova senha.');
+      return;
+    }
+
+    // Capturados antes do await: a tela pode ser fechada durante o envio e o
+    // servidor já pode ter alterado o acesso, então o cache precisa ser
+    // invalidado mesmo assim.
+    final repo = ref.read(patientsRepositoryProvider);
+    final container = ProviderScope.containerOf(context, listen: false);
+    final patientId = widget.patient.id;
+
+    setState(() => _saving = true);
+    try {
+      await repo.updatePatientCredentials(
+        UpdatePatientCredentialsRequest(
+          patientId: patientId,
+          email: emailChanged ? newEmail : null,
+          password: password.isEmpty ? null : password,
+        ),
+      );
+      if (emailChanged) _currentEmail = newEmail;
+      container.invalidate(patientDetailProvider(patientId));
+      container.invalidate(patientsListProvider);
+      if (!mounted) return;
+      _password.clear();
+      _confirm.clear();
+      setState(() {
+        _saving = false;
+        _done = 'Acesso do paciente atualizado.';
+      });
+    } catch (e) {
+      // Estado parcial (login trocado, ficha não): o cache também muda.
+      container.invalidate(patientDetailProvider(patientId));
+      container.invalidate(patientsListProvider);
+      if (!mounted) return;
+      setState(() {
+        _saving = false;
+        _error =
+            e is AppException ? e.message : 'Erro ao salvar. Tente novamente.';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final header = const _SectionHeader('Acesso do paciente');
+
+    if (widget.patient.profileId == null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          header,
+          const SizedBox(height: 12),
+          Text(
+            'Este paciente ainda não aceitou o convite. '
+            'Reenvie o convite com o e-mail correto.',
+            style: theme.textTheme.bodyMedium,
+          ),
+        ],
+      );
+    }
+
+    return Form(
+      key: _formKey,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          header,
+          const SizedBox(height: 12),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Text(
+              'O paciente passará a entrar com o novo e-mail. '
+              'O e-mail da ficha também será trocado. '
+              'Quem já estiver conectado continua até sair do app.',
+            ),
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _email,
+            decoration: const InputDecoration(
+              labelText: 'E-mail de acesso',
+              border: OutlineInputBorder(),
+            ),
+            keyboardType: TextInputType.emailAddress,
+            autocorrect: false,
+            validator: (v) {
+              final t = (v ?? '').trim();
+              if (t.isEmpty) return null;
+              return _emailRe.hasMatch(t) ? null : 'E-mail inválido';
+            },
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _password,
+            decoration: const InputDecoration(
+              labelText: 'Nova senha',
+              helperText: 'De 8 a 72 caracteres.',
+              border: OutlineInputBorder(),
+            ),
+            obscureText: true,
+            enableSuggestions: false,
+            autocorrect: false,
+            validator: (v) {
+              final t = v ?? '';
+              if (t.isEmpty) return null;
+              if (t.length < 8 || t.length > 72) {
+                return 'A senha deve ter de 8 a 72 caracteres';
+              }
+              return null;
+            },
+          ),
+          const SizedBox(height: 16),
+          TextFormField(
+            controller: _confirm,
+            decoration: const InputDecoration(
+              labelText: 'Confirmar nova senha',
+              border: OutlineInputBorder(),
+            ),
+            obscureText: true,
+            enableSuggestions: false,
+            autocorrect: false,
+            validator: (v) =>
+                (v ?? '') == _password.text ? null : 'As senhas não são iguais',
+          ),
+          if (_error != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              _error!,
+              style: TextStyle(color: theme.colorScheme.error),
+            ),
+          ],
+          if (_done != null) ...[
+            const SizedBox(height: 12),
+            Text(_done!, style: theme.textTheme.bodyMedium),
+          ],
+          const SizedBox(height: 16),
+          OutlinedButton(
+            onPressed: _saving ? null : _submit,
+            child: _saving
+                ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Atualizar acesso'),
+          ),
+        ],
+      ),
     );
   }
 }

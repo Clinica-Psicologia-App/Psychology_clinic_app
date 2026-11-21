@@ -162,6 +162,12 @@ class _TimelineEventFlowPageState extends ConsumerState<TimelineEventFlowPage> {
       presentInfluence: orig?.presentInfluence,
       stillInfluences: orig?.stillInfluences,
       presentAreas: orig?.presentAreas ?? const [],
+      // chaves de outro vocabulário (psicóloga): nunca apagar
+      unknownNeedKeys: orig?.unknownNeedKeys ?? const [],
+      unknownPresentAreaKeys: orig?.unknownPresentAreaKeys ?? const [],
+      unknownCategoryKeys: orig?.unknownCategoryKeys ?? const [],
+      // emoções: a tela as edita; só as desconhecidas são mantidas
+      unknownEmotionKeys: orig?.unknownEmotionKeys ?? const [],
     );
     try {
       if (_isEditing) {

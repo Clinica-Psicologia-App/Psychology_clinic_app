@@ -4,8 +4,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../shared/widgets/app_page_header.dart';
 import '../../../../shared/widgets/status_chip.dart';
-import '../../../life_story/domain/life_story_deepen_enums.dart';
 import '../../domain/patient_timeline_event.dart';
+import '../../domain/psychologist_option_labels.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 
 class PatientTimelineEventTile extends StatelessWidget {
@@ -848,9 +848,7 @@ List<String> _labelsFor(
 
 // Rótulos derivados dos enums canônicos do fluxo Conhecer — as chaves antigas
 // daqui não batiam com as gravadas no banco, e apareciam cruas na tela.
-final _emotionalNeedLabels = {
-  for (final need in EmotionalNeed.values) need.key: need.label,
-};
+final _emotionalNeedLabels = kEmotionalNeedLabels;
 
 const _copingLabels = {
   'avoidance': 'Me afastei / evitei sentir',
@@ -862,7 +860,5 @@ const _copingLabels = {
   'other': 'Outro',
 };
 
-final _presentAreaLabels = {
-  for (final area in PresentArea.values) area.key: area.label,
-};
+final _presentAreaLabels = kPresentAreaLabels;
 

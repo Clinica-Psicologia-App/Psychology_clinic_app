@@ -119,6 +119,17 @@ AppException _mapPostgrestException(PostgrestException error) {
     );
   }
 
+  if ((code == '23514' || msg.contains('violates check constraint')) &&
+      msg.contains('patient_timeline_events')) {
+    return AppException(
+      code: AppExceptionCodes.validation,
+      message:
+          'Uma das opções escolhidas não pôde ser salva. Revise as opções marcadas e tente de novo.',
+      cause: error,
+      details: {'code': code},
+    );
+  }
+
   if (code == '23505' || msg.contains('duplicate key')) {
     return AppException(
       code: AppExceptionCodes.conflict,

@@ -31,6 +31,10 @@ class LifeTimelineEvent {
     this.presentInfluence,
     this.stillInfluences,
     this.presentAreas = const [],
+    this.unknownEmotionKeys = const [],
+    this.unknownCategoryKeys = const [],
+    this.unknownNeedKeys = const [],
+    this.unknownPresentAreaKeys = const [],
     this.createdAt,
   });
 
@@ -70,6 +74,14 @@ class LifeTimelineEvent {
   final StillInfluences? stillInfluences;
   final List<PresentArea> presentAreas;
 
+  /// Chaves gravadas por outro vocabulário (ex.: a psicóloga) que este modelo
+  /// não conhece. Ficam guardadas só para serem regravadas intactas em
+  /// [toRow]: salvar nunca apaga o que outra pessoa registrou.
+  final List<String> unknownEmotionKeys;
+  final List<String> unknownCategoryKeys;
+  final List<String> unknownNeedKeys;
+  final List<String> unknownPresentAreaKeys;
+
   final DateTime? createdAt;
 
   bool get hasDeepenData =>
@@ -87,6 +99,11 @@ class LifeTimelineEvent {
     List<T> mapKeys<T>(String col, T? Function(String?) from) => [
           for (final k in (json[col] as List?) ?? const [])
             if (from(k as String?) case final v?) v,
+        ];
+
+    List<String> unknownKeys<T>(String col, T? Function(String?) from) => [
+          for (final k in (json[col] as List?) ?? const [])
+            if (k is String && from(k) == null) k,
         ];
 
     return LifeTimelineEvent(
@@ -114,6 +131,11 @@ class LifeTimelineEvent {
       stillInfluences:
           stillInfluencesFromKey(json['still_influences'] as String?),
       presentAreas: mapKeys('present_area_keys', presentAreaFromKey),
+      unknownEmotionKeys: unknownKeys('emotion_keys', timelineEmotionFromKey),
+      unknownCategoryKeys: unknownKeys('category_keys', lifeCategoryFromKey),
+      unknownNeedKeys: unknownKeys('emotional_need_keys', emotionalNeedFromKey),
+      unknownPresentAreaKeys:
+          unknownKeys('present_area_keys', presentAreaFromKey),
       createdAt: json['created_at'] == null
           ? null
           : DateTime.tryParse(json['created_at'] as String),
@@ -126,20 +148,23 @@ class LifeTimelineEvent {
         'life_chapter': lifeChapter?.key,
         'age_at_event': ageAtEvent,
         'age_precision': agePrecision?.key,
-        'emotion_keys': emotions.map((e) => e.key).toList(),
+        'emotion_keys': [...emotions.map((e) => e.key), ...unknownEmotionKeys],
         'emotion_other': emotionOther,
         'emotional_impact': emotionalImpact,
         // Aprofundar
         'event_recurrence': eventRecurrence?.key,
         'age_from': ageFrom,
         'age_to': ageTo,
-        'category_keys': categories.map((c) => c.key).toList(),
-        'emotional_need_keys': needs.map((n) => n.key).toList(),
+        'category_keys': [...categories.map((c) => c.key), ...unknownCategoryKeys],
+        'emotional_need_keys': [...needs.map((n) => n.key), ...unknownNeedKeys],
         'emotional_need_other': needOther,
         'need_was_met': needWasMet?.key,
         'meaning': meaning,
         'present_influence': presentInfluence,
         'still_influences': stillInfluences?.key,
-        'present_area_keys': presentAreas.map((a) => a.key).toList(),
+        'present_area_keys': [
+          ...presentAreas.map((a) => a.key),
+          ...unknownPresentAreaKeys,
+        ],
       };
 }

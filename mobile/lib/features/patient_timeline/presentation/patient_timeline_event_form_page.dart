@@ -15,6 +15,7 @@ import '../../patient_check_ins/presentation/widgets/patient_check_in_widgets.da
 import '../../profile/domain/profile_role.dart';
 import '../domain/patient_timeline_event.dart';
 import '../domain/patient_timeline_event_input.dart';
+import '../domain/psychologist_option_labels.dart';
 import '../providers/patient_timeline_providers.dart';
 import '../../../shared/widgets/brand_loading.dart';
 
@@ -618,15 +619,8 @@ const _lifeStageOptions = [
   _Option('Maturidade', 'Maturidade'),
 ];
 
-const _emotionalNeedOptions = [
-  _Option('connection_acceptance', 'Conexão e Aceitação'),
-  _Option(
-      'autonomy_competence_identity', 'Autonomia, competência e identidade'),
-  _Option('limits_self_control', 'Limites e autocontrole'),
-  _Option('expression_freedom', 'Liberdade de Expressão'),
-  _Option('recognition_value', 'Valorização e reconhecimento'),
-  _Option('spontaneity_leisure', 'Espontaneidade e Lazer'),
-  _Option('other', 'Outra'),
+final _emotionalNeedOptions = [
+  for (final o in kPsychologistEmotionalNeedOptions) _Option(o.$1, o.$2),
 ];
 
 const _copingOptions = [
@@ -639,11 +633,6 @@ const _copingOptions = [
   _Option('other', 'Outro'),
 ];
 
-const _presentAreaOptions = [
-  _Option('relationships', 'Relações'),
-  _Option('self_esteem', 'Autoestima'),
-  _Option('work', 'Trabalho'),
-  _Option('emotions', 'Emoções'),
-  _Option('decisions', 'Decisões'),
-  _Option('body', 'Corpo'),
+final _presentAreaOptions = [
+  for (final o in kPsychologistPresentAreaOptions) _Option(o.$1, o.$2),
 ];

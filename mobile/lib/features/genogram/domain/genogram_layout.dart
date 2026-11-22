@@ -36,7 +36,11 @@ class GEmotionalRel {
 class GPerson {
   final String id;
   final GSex sex;
-  const GPerson(this.id, {this.sex = GSex.unknown});
+
+  /// Ano de nascimento (opcional). Só ordena irmãos do mesmo grupo (mais velho
+  /// à esquerda); sem ano a pessoa fica onde já ficaria (e vai após quem tem).
+  final int? birthYear;
+  const GPerson(this.id, {this.sex = GSex.unknown, this.birthYear});
 }
 
 /// Um vínculo estrutural.
@@ -74,12 +78,16 @@ class GPlaced {
   /// posicionar: ancestrais no lado interno, tios/tias no externo.
   bool ancestor;
 
+  /// Cópia de [GPerson.birthYear] (ordenação de irmãos).
+  final int? birthYear;
+
   GPlaced(
     this.id, {
     this.generation = 0,
     this.lineage = GLineage.unknown,
     this.connected = false,
     this.ancestor = false,
+    this.birthYear,
   });
 }
 
@@ -169,7 +177,9 @@ GLayout buildGenogramStructure({
     }
   }
 
-  final placed = {for (final id in ids) id: GPlaced(id)};
+  final placed = {
+    for (final p in people) p.id: GPlaced(p.id, birthYear: p.birthYear),
+  };
 
   if (!ids.contains(focusId)) {
     return GLayout(
@@ -408,6 +418,12 @@ GDiagram positionGenogram(
     }
   }
 
+  // Quem é FILHO(A) de alguém na árvore (tem grupo de irmãos).
+  final sibGroupOf = <String, int>{
+    for (var i = 0; i < layout.sibGroups.length; i++)
+      for (final m in layout.sibGroups[i].members) m: i,
+  };
+
   final byGen = <int, List<GPlaced>>{};
   for (final p in connected) {
     byGen.putIfAbsent(p.generation, () => []).add(p);
@@ -439,33 +455,121 @@ GDiagram positionGenogram(
     ];
 
     final inGen = {for (final p in base) p.id};
-    final order = <String>[];
+    final baseIndex = {
+      for (var i = 0; i < base.length; i++) base[i].id: i,
+    };
+
+    // BLOCO = cadeia CONEXA inteira de casamentos (e ex) da faixa, em linha
+    // reta: [ex… | pessoa | atual…]. A pessoa-âncora é quem é FILHA de alguém na
+    // árvore (o cônjuge de fora fica sempre ao lado dela, o atual à direita);
+    // sem filha na cadeia, vale a primeira da faixa.
     final done = <String>{};
-    for (final p in base) {
-      if (done.contains(p.id)) continue;
-      final mySpouses = (spousesOf[p.id] ?? [])
+    List<String> expand(String x, int side) {
+      // side 0: livre (ex à esquerda, atual à direita); -1: x tem de ficar
+      // primeiro; 1: x tem de ficar por último (para tocar a âncora).
+      done.add(x);
+      final sp = (spousesOf[x] ?? [])
           .where((s) => inGen.contains(s) && !done.contains(s))
           .toList();
-      // Ex-cônjuges (separação ou divórcio) ficam à esquerda da pessoa.
-      final exes = mySpouses
-          .where((s) => coupleMap[ck(p.id, s)]?.current == false)
+      done.addAll(sp);
+      final exes = sp
+          .where((s) => coupleMap[ck(x, s)]?.current == false)
           .toList();
-      // Cônjuge atual fica à direita.
-      final currents = mySpouses
-          .where((s) => coupleMap[ck(p.id, s)]?.current == true)
+      final curs = sp
+          .where((s) => coupleMap[ck(x, s)]?.current != false)
           .toList();
-      for (final ex in exes.reversed) {
-        order.add(ex);
-        done.add(ex);
+      final left = <String>[];
+      final right = <String>[];
+      if (side == 0) {
+        for (final ex in exes.reversed) {
+          left.addAll(expand(ex, 1));
+        }
+        for (final cur in curs) {
+          right.addAll(expand(cur, -1));
+        }
+      } else if (side == 1) {
+        for (final s in [...exes.reversed, ...curs]) {
+          left.addAll(expand(s, 1));
+        }
+      } else {
+        for (final s in [...curs, ...exes]) {
+          right.addAll(expand(s, -1));
+        }
       }
-      order.add(p.id);
-      done.add(p.id);
-      for (final cur in currents) {
-        order.add(cur);
-        done.add(cur);
+      return [...left, x, ...right];
+    }
+
+    // Quem começou o bloco decide o lugar dele na faixa (linhagem/ancestral).
+    final blocks = <({List<String> ids, GPlaced head})>[];
+    for (final p in base) {
+      if (done.contains(p.id)) continue;
+      final comp = <String>{p.id};
+      final stack = [p.id];
+      while (stack.isNotEmpty) {
+        final x = stack.removeLast();
+        for (final s in spousesOf[x] ?? const <String>[]) {
+          if (inGen.contains(s) && comp.add(s)) stack.add(s);
+        }
+      }
+      final sorted = comp.toList()
+        ..sort((a, b) => baseIndex[a]!.compareTo(baseIndex[b]!));
+      final root = sorted.firstWhere(sibGroupOf.containsKey, orElse: () => p.id);
+      blocks.add((ids: expand(root, 0), head: p));
+    }
+
+    // IDADE: dentro de cada grupo de irmãos (mesmos pais), os blocos dos irmãos
+    // trocam de lugar entre si — mais velho primeiro, sem ano no fim, empate =
+    // ordem atual. Só trocam blocos que ocupam a mesma região da faixa
+    // (mesma linhagem e mesmo lado ancestral): linhagem e ancestralidade
+    // continuam vindo antes da idade. O irmão é sempre a pessoa FILHA daqueles
+    // pais; o ano do bloco é o dele. Um bloco só participa de um grupo (o
+    // primeiro que o alcança) — assim dois grupos nunca se desfazem. Sem anos
+    // a ordem não muda.
+    final claimed = <int>{};
+    for (var gi = 0; gi < layout.sibGroups.length; gi++) {
+      final members = layout.sibGroups[gi].members.toSet();
+      final byRegion = <String, List<int>>{};
+      for (var i = 0; i < blocks.length; i++) {
+        if (claimed.contains(i)) continue;
+        if (!blocks[i].ids.any(members.contains)) continue;
+        // Região de ordenação = a da pessoa FILHA daqueles pais (o membro da
+        // fratria dentro do bloco), não a de quem abriu o bloco. Só troca
+        // de lugar quem também ocupa o mesmo trecho da faixa (mesma região do
+        // início do bloco), para nunca mover um bloco de linhagem.
+        final m = blocks[i].ids.firstWhere(members.contains);
+        final pm = layout.placed[m]!;
+        final h = blocks[i].head;
+        (byRegion['${pm.lineage.index}|${pm.ancestor}/'
+                '${h.lineage.index}|${h.ancestor}'] ??= [])
+            .add(i);
+      }
+      for (final slots in byRegion.values) {
+        if (slots.length < 2) continue;
+        int? yearOf(int i) {
+          int? best;
+          for (final id in blocks[i].ids) {
+            if (!members.contains(id)) continue;
+            final y = layout.placed[id]!.birthYear;
+            if (y != null && (best == null || y < best)) best = y;
+          }
+          return best;
+        }
+
+        final order = [...slots]..sort((x, y) {
+            final yx = yearOf(x), yy = yearOf(y);
+            if (yx == yy) return x.compareTo(y);
+            if (yx == null) return 1;
+            if (yy == null) return -1;
+            return yx.compareTo(yy);
+          });
+        final copy = [for (final i in order) blocks[i]];
+        for (var k = 0; k < slots.length; k++) {
+          blocks[slots[k]] = copy[k];
+        }
+        claimed.addAll(slots);
       }
     }
-    rowOrders[g] = order;
+    rowOrders[g] = [for (final b in blocks) ...b.ids];
   }
 
   // childrenOf reconstruído dos grupos de irmãos.
@@ -651,4 +755,33 @@ List<GSibGroup> _siblingGroups(
     for (final e in byParents.entries)
       GSibGroup(e.value, e.key.split('|').toSet()),
   ];
+}
+
+/// X de onde sai a descida dos filhos de [g] no desenho.
+///
+/// - Dois pais: o meio entre eles (centro da linha do casal).
+/// - Um só pai/mãe que tem UM cônjuge atual na faixa (o cadastro costuma ligar
+///   o filho só ao paciente): o meio da linha desse casal, não o centro do
+///   próprio pai/mãe — assim a descida parte do casal, como no desenho clássico.
+/// - Caso contrário, o centro dos pais.
+double? sibGroupDropX(GLayout layout, GDiagram diagram, GSibGroup g) {
+  double? xOf(String id) => diagram.byId(id)?.x;
+  final xs = [for (final p in g.parents) xOf(p)].whereType<double>().toList();
+  if (xs.isEmpty) return null;
+  if (xs.length == 1 && g.parents.length == 1) {
+    final only = g.parents.first;
+    final me = diagram.byId(only)!;
+    final partners = <String>{
+      for (final c in layout.couples)
+        if (c.current && (c.a == only || c.b == only))
+          c.a == only ? c.b : c.a,
+    }.where((o) {
+      final n = diagram.byId(o);
+      return n != null && n.y == me.y;
+    }).toList();
+    if (partners.length == 1) {
+      return (me.x + diagram.byId(partners.first)!.x) / 2;
+    }
+  }
+  return xs.reduce((a, b) => a + b) / xs.length;
 }

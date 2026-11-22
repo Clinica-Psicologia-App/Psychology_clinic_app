@@ -490,8 +490,8 @@ class _MotorGenogramPainter extends CustomPainter {
       final parents = g.parents.map(_p).whereType<GPositioned>().toList();
       final kids = g.members.map(_p).whereType<GPositioned>().toList();
       if (parents.isEmpty || kids.isEmpty) continue;
-      final midX = parents.map((p) => p.x).reduce((a, b) => a + b) /
-          parents.length;
+      final midX = sibGroupDropX(layout, diagram, g) ??
+          parents.map((p) => p.x).reduce((a, b) => a + b) / parents.length;
       final parentY = parents.first.y;
       final childY = kids.first.y;
       final barY = (parentY + childY) / 2 + 20;

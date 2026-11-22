@@ -35,6 +35,7 @@ List<RouteBase> staffPatientMentalMapRoutes({required ProfileRole role}) {
           builder: (context, state) => CaseConceptualizationEditPage(
             role: role,
             patientId: state.pathParameters['patientId']!,
+            focus: state.uri.queryParameters['focus'],
           ),
         ),
       ],

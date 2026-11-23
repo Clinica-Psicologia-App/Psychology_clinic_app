@@ -16,6 +16,10 @@ import '../../personality_assessment/presentation/personality_assessment_routes.
 import '../../personality_assessment/providers/personality_assessment_providers.dart';
 import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../profile/domain/profile_role.dart';
+import '../../patient_problems/presentation/patient_problem_routes.dart';
+import '../../questionnaires/presentation/questionnaire_routes.dart';
+import '../../therapy_demands/presentation/therapy_demands_routes.dart';
+import '../../therapy_goals/presentation/therapy_goal_routes.dart';
 import 'case_conceptualization_pdf.dart';
 import 'case_conceptualization_word.dart';
 import 'mental_map_routes.dart';
@@ -150,6 +154,27 @@ class CaseConceptualizationPage extends ConsumerWidget {
           role: role,
           patientId: patientId,
           data: data,
+          onFill: (section) async {
+            // Mesmos destinos dos botões "Abrir …" do editor: 2, 3 e 4 em
+            // Demandas Terapêuticas; 6 em Problemas; 8.2 e 9 em Questionários;
+            // 12 em Objetivos. Os demais, no editor, já rolado até o item.
+            final external = switch (section) {
+              '2' || '3' || '4' =>
+                TherapyDemandsRoutes.staff(role: role, patientId: patientId),
+              '6' => PatientProblemRoutes.staffList(
+                  role: role, patientId: patientId),
+              '8.2' || '9' =>
+                QuestionnaireRoutes.list(role: role, patientId: patientId),
+              '12' =>
+                TherapyGoalRoutes.staffList(role: role, patientId: patientId),
+              _ => null,
+            };
+            await context.push(external ??
+                MentalMapRoutes.staffCaseConceptualizationEdit(
+                    role: role, patientId: patientId, focus: section));
+            ref.invalidate(caseConceptualizationProvider(patientId));
+            if (external != null) ref.invalidate(staffMentalMapProvider(ctx));
+          },
           concept:
               ref.watch(caseConceptualizationProvider(patientId)).valueOrNull,
           assessment: ref
@@ -177,7 +202,11 @@ class _Body extends StatelessWidget {
     this.concept,
     this.assessment,
     this.personalityIntegrations = const [],
+    required this.onFill,
   });
+
+  /// Toque num item em branco: abre o lugar onde ele é preenchido.
+  final void Function(String section) onFill;
 
   final ProfileRole role;
   final String patientId;
@@ -225,8 +254,10 @@ class _Body extends StatelessWidget {
           title: 'Impressões gerais',
           child: (concept?.hasGeneralImpressions ?? false)
               ? _impressions(concept!.generalImpressions)
-              : const _Placeholder(
+              : _Placeholder(
                   'Como o cliente se apresenta (inicial/atual) — a preencher.',
+                  key: const Key('fill_3'),
+                  onTap: () => onFill('3'),
                 ),
         ),
 
@@ -236,8 +267,10 @@ class _Body extends StatelessWidget {
           title: 'Perspectiva diagnóstica',
           child: (concept?.hasDiagnosis ?? false)
               ? _diagnosisView(concept!.diagnosis)
-              : const _Placeholder(
+              : _Placeholder(
                   'Sistema (CID-11/DSM-5) e diagnósticos — a preencher.',
+                  key: const Key('fill_4'),
+                  onTap: () => onFill('4'),
                 ),
         ),
 
@@ -247,7 +280,9 @@ class _Body extends StatelessWidget {
           title: 'Nível de funcionamento',
           child: (concept?.hasFunctioning ?? false)
               ? _FunctioningView(functioning: concept!.functioning)
-              : _LifeAreaFallback(lifeAreas: assessment?.lifeAreas ?? const []),
+              : _LifeAreaFallback(
+                  lifeAreas: assessment?.lifeAreas ?? const [],
+                  onFill: () => onFill('5')),
         ),
 
         // 6. Problemas de vida — narrativa do terapeuta (documento §6).
@@ -257,7 +292,8 @@ class _Body extends StatelessWidget {
           child: (concept?.hasLifeProblems ?? false)
               ? _LifeProblemsView(problems: concept!.lifeProblems)
               : data.activeProblems.isEmpty
-                  ? const _Placeholder('Nenhum problema registrado ainda.')
+                  ? _Placeholder('Nenhum problema registrado ainda.',
+                      key: const Key('fill_6'), onTap: () => onFill('6'))
                   : Column(
                       children: [
                         for (final p in data.activeProblems)
@@ -275,7 +311,7 @@ class _Body extends StatelessWidget {
         _Section(
           number: '7',
           title: 'Origens infantis e adolescentes',
-          child: _OriginsSection(concept: concept),
+          child: _OriginsSection(concept: concept, onFill: onFill),
         ),
 
         // 8.1. Todos os esquemas identificados nas 9 necessidades.
@@ -284,7 +320,8 @@ class _Body extends StatelessWidget {
           title: 'Todos os esquemas identificados',
           child: (concept?.hasAllSchemas ?? false)
               ? Text(concept!.allSchemas!, style: const TextStyle(height: 1.6))
-              : const _Placeholder('Lista completa de esquemas — a preencher.'),
+              : _Placeholder('Lista completa de esquemas — a preencher.',
+                  key: const Key('fill_8.1'), onTap: () => onFill('8.1')),
         ),
 
         // 8.2. Esquemas centrais — seleção curada do terapeuta (documento §8.2).
@@ -294,7 +331,8 @@ class _Body extends StatelessWidget {
           child: (concept?.hasCentralSchemas ?? false)
               ? _CentralSchemasView(schemas: concept!.centralSchemas)
               : core.topSchemas.isEmpty
-                  ? const _Placeholder('Sem YSQ concluído.')
+                  ? _Placeholder('Sem YSQ concluído.',
+                      key: const Key('fill_8.2'), onTap: () => onFill('8.2'))
                   : _SchemasList(schemas: core.topSchemas),
         ),
 
@@ -305,7 +343,8 @@ class _Body extends StatelessWidget {
           child: (concept?.hasModeAssessment ?? false)
               ? _ModeAssessmentView(modes: concept!.modeAssessment)
               : core.topModes.isEmpty
-                  ? const _Placeholder('Sem YAMI concluído.')
+                  ? _Placeholder('Sem YAMI concluído.',
+                      key: const Key('fill_9'), onTap: () => onFill('9'))
                   : _ModesList(modes: core.topModes),
         ),
 
@@ -315,7 +354,8 @@ class _Body extends StatelessWidget {
           title: 'Sequência de modos',
           child: (concept?.hasAnySequence ?? false)
               ? _SequencesList(concept: concept!)
-              : const _Placeholder('Gatilho → sequência de modos — a preencher.'),
+              : _Placeholder('Gatilho → sequência de modos — a preencher.',
+                  key: const Key('fill_10'), onTap: () => onFill('10')),
         ),
 
         // 11. Relação terapêutica (campos do terapeuta).
@@ -324,8 +364,10 @@ class _Body extends StatelessWidget {
           title: 'Relação terapêutica',
           child: (concept?.hasRelationship ?? false)
               ? _RelationshipView(rel: concept!.relationship)
-              : const _Placeholder(
+              : _Placeholder(
                   'Colaboração e vínculo de reparentalização (1–5) — a preencher.',
+                  key: const Key('fill_11'),
+                  onTap: () => onFill('11'),
                 ),
         ),
 
@@ -336,7 +378,8 @@ class _Body extends StatelessWidget {
           child: (concept?.hasTherapyObjectives ?? false)
               ? _TherapyObjectivesView(objectives: concept!.therapyObjectives)
               : data.activeGoals.isEmpty
-                  ? const _Placeholder('Nenhum objetivo ativo.')
+                  ? _Placeholder('Nenhum objetivo ativo.',
+                      key: const Key('fill_12'), onTap: () => onFill('12'))
                   : Column(
                       children: [
                         for (var i = 0; i < data.activeGoals.length; i++)
@@ -357,7 +400,8 @@ class _Body extends StatelessWidget {
                         height: 1.45,
                       ),
                 )
-              : const _Placeholder('Sem comentários adicionais.'),
+              : _Placeholder('Sem comentários adicionais.',
+                  key: const Key('fill_13'), onTap: () => onFill('13')),
         ),
       ],
     );
@@ -528,7 +572,8 @@ class _Body extends StatelessWidget {
     ].where((e) => (e.value ?? '').trim().isNotEmpty).toList();
 
     if (!hasPatientReason && parts.isEmpty) {
-      return const _Placeholder('Motivo/queixa ainda não registrado.');
+      return _Placeholder('Motivo/queixa ainda não registrado.',
+          key: const Key('fill_2'), onTap: () => onFill('2'));
     }
     final theme = Theme.of(context);
     return Column(
@@ -786,14 +831,17 @@ class _PersonalityLink extends StatelessWidget {
 }
 
 class _Placeholder extends StatelessWidget {
-  const _Placeholder(this.text);
+  const _Placeholder(this.text, {super.key, this.onTap});
 
   final String text;
+
+  /// Quando existe um campo para preencher este item, o toque leva até ele.
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Row(
+    final row = Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Icon(Icons.edit_note_outlined, size: 15, color: AppColors.textMuted),
@@ -805,10 +853,19 @@ class _Placeholder extends StatelessWidget {
               color: AppColors.textMuted,
               fontStyle: FontStyle.italic,
               height: 1.4,
+              decoration: onTap == null ? null : TextDecoration.underline,
             ),
           ),
         ),
+        if (onTap != null)
+          const Icon(Icons.chevron_right, size: 16, color: AppColors.textMuted),
       ],
+    );
+    if (onTap == null) return row;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(6),
+      child: Padding(padding: const EdgeInsets.symmetric(vertical: 4), child: row),
     );
   }
 }
@@ -1109,9 +1166,10 @@ class _SchemasList extends StatelessWidget {
 /// 7 — origens: 7.1 história inicial, 7.2 necessidades, 7.3 temperamento,
 /// 7.4 fatores culturais (títulos fiéis ao formulário padrão).
 class _OriginsSection extends StatelessWidget {
-  const _OriginsSection({required this.concept});
+  const _OriginsSection({required this.concept, required this.onFill});
 
   final CaseConceptualization? concept;
+  final void Function(String section) onFill;
 
   @override
   Widget build(BuildContext context) {
@@ -1147,14 +1205,8 @@ class _OriginsSection extends StatelessWidget {
               ?.copyWith(color: AppColors.textPrimary, height: 1.45),
         );
 
-    Widget placeholder(String t) => Text(
-          t,
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: AppColors.textMuted,
-            fontStyle: FontStyle.italic,
-            height: 1.4,
-          ),
-        );
+    Widget placeholder(String t, String section) => _Placeholder(t,
+        key: Key('fill_$section'), onTap: () => onFill(section));
 
     Widget block(String number, String title, Widget content) => Padding(
           padding: const EdgeInsets.only(bottom: 12),
@@ -1176,7 +1228,7 @@ class _OriginsSection extends StatelessWidget {
           'Descrição geral da história inicial',
           hasEarly
               ? text(o!.earlyHistory)
-              : placeholder('Resumo da infância/adolescência — a preencher.'),
+              : placeholder('Resumo da infância/adolescência — a preencher.', '7.1'),
         ),
         block(
           '7.2',
@@ -1184,7 +1236,8 @@ class _OriginsSection extends StatelessWidget {
           (concept?.hasAnyNeed ?? false)
               ? _NeedsList(concept: concept!)
               : placeholder(
-                  'Necessidades essenciais (0–5), origem e esquemas — a preencher.'),
+                  'Necessidades essenciais (0–5), origem e esquemas — a preencher.',
+                  '7.2'),
         ),
         block(
           '7.3',
@@ -1192,7 +1245,8 @@ class _OriginsSection extends StatelessWidget {
           hasTemp
               ? text(o!.temperament)
               : placeholder(
-                  'Facetas do temperamento e fatores biológicos — a preencher.'),
+                  'Facetas do temperamento e fatores biológicos — a preencher.',
+                  '7.3'),
         ),
         Padding(
           padding: EdgeInsets.zero,
@@ -1203,7 +1257,8 @@ class _OriginsSection extends StatelessWidget {
               hasCultural
                   ? text(o!.cultural)
                   : placeholder(
-                      'Normas culturais, étnicas e religiosas relevantes — a preencher.'),
+                      'Normas culturais, étnicas e religiosas relevantes — a preencher.',
+                      '7.4'),
             ],
           ),
         ),
@@ -1547,9 +1602,10 @@ class _ModesList extends StatelessWidget {
 /// Mostra as notas de satisfação/sofrimento do paciente agrupadas pelos
 /// 6 grupos clínicos, servindo de referência para a avaliação 1–6.
 class _LifeAreaFallback extends StatelessWidget {
-  const _LifeAreaFallback({required this.lifeAreas});
+  const _LifeAreaFallback({required this.lifeAreas, this.onFill});
 
   final List<LifeAreaAssessment> lifeAreas;
+  final VoidCallback? onFill;
 
   Color _scoreColor(int? score) {
     if (score == null) return AppColors.textMuted;
@@ -1565,9 +1621,11 @@ class _LifeAreaFallback extends StatelessWidget {
     final rated = lifeAreas.where((a) => a.hasRating).toList();
 
     if (rated.isEmpty) {
-      return const _Placeholder(
+      return _Placeholder(
         'Avaliação clínica do terapeuta (escala 1–6) — a preencher.\n'
         'O paciente ainda não preencheu o Contexto de Vida.',
+        key: const Key('fill_5'),
+        onTap: onFill,
       );
     }
 

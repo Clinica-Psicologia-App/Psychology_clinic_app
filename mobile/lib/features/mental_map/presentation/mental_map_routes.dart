@@ -32,10 +32,15 @@ abstract final class MentalMapRoutes {
   }
 
   /// Edição dos campos do terapeuta da Conceitualização de caso.
+  ///
+  /// [focus] (ex.: `7.1`, `10`) rola o editor até o cartão do item.
   static String staffCaseConceptualizationEdit({
     required ProfileRole role,
     required String patientId,
+    String? focus,
   }) {
-    return '${staffCaseConceptualization(role: role, patientId: patientId)}/edit';
+    final base =
+        '${staffCaseConceptualization(role: role, patientId: patientId)}/edit';
+    return focus == null ? base : '$base?focus=$focus';
   }
 }

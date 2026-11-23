@@ -95,6 +95,11 @@ class _DeepenEventFlowPageState extends ConsumerState<DeepenEventFlowPage> {
       emotionOther: e.emotionOther,
       emotionalImpact: e.emotionalImpact,
       peopleIds: e.peopleIds,
+      // chaves de outro vocabulário (psicóloga): nunca apagar
+      unknownEmotionKeys: e.unknownEmotionKeys,
+      unknownCategoryKeys: e.unknownCategoryKeys,
+      unknownNeedKeys: e.unknownNeedKeys,
+      unknownPresentAreaKeys: e.unknownPresentAreaKeys,
       // aprofundar
       eventRecurrence: _recurrence,
       // a faixa de idade é definida na tela da história

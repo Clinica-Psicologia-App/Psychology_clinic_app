@@ -10,6 +10,8 @@ import '../domain/case_conceptualization.dart';
 import '../providers/case_conceptualization_providers.dart';
 import '../../initial_assessment/presentation/initial_assessment_routes.dart';
 import '../../patient_problems/presentation/patient_problem_routes.dart';
+import '../../personality_assessment/domain/personality_assessment.dart';
+import '../../personality_assessment/providers/personality_assessment_providers.dart';
 import '../../personality_assessment/presentation/personality_assessment_routes.dart';
 import '../../questionnaires/presentation/questionnaire_routes.dart';
 import '../../therapy_demands/presentation/therapy_demands_routes.dart';
@@ -23,10 +25,14 @@ class CaseConceptualizationEditPage extends ConsumerWidget {
     super.key,
     required this.role,
     required this.patientId,
+    this.focus,
   });
 
   final ProfileRole role;
   final String patientId;
+
+  /// Item a mostrar ao abrir (ex.: `7.1`): o editor rola até o cartão dele.
+  final String? focus;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -55,6 +61,7 @@ class CaseConceptualizationEditPage extends ConsumerWidget {
         role: role,
         patientId: patientId,
         initial: data,
+        focus: focus,
       ),
     );
   }
@@ -65,11 +72,13 @@ class _EditForm extends ConsumerStatefulWidget {
     required this.role,
     required this.patientId,
     required this.initial,
+    this.focus,
   });
 
   final ProfileRole role;
   final String patientId;
   final CaseConceptualization initial;
+  final String? focus;
 
   @override
   ConsumerState<_EditForm> createState() => _EditState();
@@ -317,6 +326,16 @@ class _EditState extends ConsumerState<_EditForm> {
   @override
   void initState() {
     super.initState();
+    final focus = widget.focus;
+    if (focus != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final ctx = _sectionKeys[focus]?.currentContext;
+        if (ctx != null && ctx.mounted) {
+          Scrollable.ensureVisible(ctx,
+              duration: const Duration(milliseconds: 300), alignment: 0.02);
+        }
+      });
+    }
     // Prefill garantido: o formulário só é montado depois que o documento
     // carrega (ver CaseConceptualizationEditPage.build).
     final data = widget.initial;
@@ -584,6 +603,9 @@ class _EditState extends ConsumerState<_EditForm> {
     }
   }
 
+  /// Chave de cada cartão (pelo número do item no título), para rolar até ele.
+  final _sectionKeys = <String, GlobalKey>{};
+
   @override
   Widget build(BuildContext context) {
     return AppScaffold(
@@ -592,6 +614,9 @@ class _EditState extends ConsumerState<_EditForm> {
       body: Stack(
         children: [
           ListView(
+            // Com item em foco, monta tudo para o cartão existir ao rolar.
+            // ignore: deprecated_member_use
+            cacheExtent: widget.focus == null ? null : 100000,
             padding: const EdgeInsets.fromLTRB(14, 14, 14, 96),
             children: [
               _card(
@@ -703,7 +728,9 @@ class _EditState extends ConsumerState<_EditForm> {
                     label: 'Abrir Personalidade',
                     route: PersonalityAssessmentRoutes.staffList(role: widget.role, patientId: widget.patientId),
                   ),
-                  const SizedBox(height: 12),_field(_temperament, 'Temperamento / biológico')],
+                  const SizedBox(height: 12),
+                  _personalityPull(),
+                  _field(_temperament, 'Temperamento / biológico', maxLines: 8)],
               ),
               _card(
                 icon: Icons.diversity_3_outlined,
@@ -926,6 +953,8 @@ class _EditState extends ConsumerState<_EditForm> {
   }) {
     final theme = Theme.of(context);
     return Container(
+      key: _sectionKeys.putIfAbsent(
+          title.split(' · ').first, () => GlobalKey()),
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.fromLTRB(14, 13, 14, 14),
       decoration: BoxDecoration(
@@ -982,6 +1011,79 @@ class _EditState extends ConsumerState<_EditForm> {
           label: Text(label),
         ),
       ],
+    );
+  }
+
+  /// 7.3: acrescenta ao campo o resumo do resultado de Personalidade já
+  /// registrado (domínios com nível), sem apagar o que a psicóloga escreveu.
+  Widget _personalityPull() {
+    final async = ref.watch(personalityAssessmentsProvider(widget.patientId));
+    final summary = async.hasValue
+        ? personalitySummaryForConceptualization(async.value!)
+        : null;
+    final theme = Theme.of(context);
+    final hintStyle =
+        theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary);
+
+    // Texto da dica / estado: carregando, erro (com nova tentativa) ou vazio.
+    Widget? note;
+    var label = 'Trazer da Personalidade (NEO PI-R)';
+    if (async.isLoading && !async.hasValue) {
+      label = 'Carregando Personalidade…';
+    } else if (async.hasError && !async.hasValue) {
+      note = Row(
+        key: const Key('edit_pull_personality_error'),
+        children: [
+          Flexible(
+            child: Text('Não foi possível carregar a Personalidade.',
+                style: hintStyle),
+          ),
+          TextButton(
+            key: const Key('edit_pull_personality_retry'),
+            onPressed: () =>
+                ref.invalidate(personalityAssessmentsProvider(widget.patientId)),
+            child: const Text('Tentar novamente'),
+          ),
+        ],
+      );
+    } else if (summary == null) {
+      note = Text('Sem resultado de Personalidade ainda',
+          key: const Key('edit_pull_personality_hint'), style: hintStyle);
+    }
+
+    final button = OutlinedButton.icon(
+      key: const Key('edit_pull_personality'),
+      onPressed: summary == null
+          ? null
+          : () {
+              final cur = _temperament.text.trimRight();
+              final next = cur.isEmpty ? summary : '$cur\n\n$summary';
+              setState(() {
+                _temperament.text = next;
+                _temperament.selection =
+                    TextSelection.collapsed(offset: next.length);
+              });
+            },
+      icon: const Icon(Icons.download_outlined, size: 16),
+      label: Text(label),
+    );
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: note == null
+          ? button
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (async.hasValue)
+                  Tooltip(
+                      message: 'Sem resultado de Personalidade ainda',
+                      child: button)
+                else
+                  button,
+                const SizedBox(height: 4),
+                note,
+              ],
+            ),
     );
   }
 
@@ -1065,12 +1167,13 @@ class _EditState extends ConsumerState<_EditForm> {
     );
   }
 
-  Widget _field(TextEditingController c, String label) => Padding(
+  Widget _field(TextEditingController c, String label, {int maxLines = 3}) =>
+      Padding(
         padding: const EdgeInsets.only(top: 8),
         child: TextField(
           controller: c,
           minLines: 1,
-          maxLines: 3,
+          maxLines: maxLines,
           textCapitalization: TextCapitalization.sentences,
           decoration: InputDecoration(labelText: label, isDense: true),
         ),
@@ -1191,4 +1294,28 @@ class _EditState extends ConsumerState<_EditForm> {
           _field(ctrls.progress, 'Progresso / notas'),
         ],
       );
+}
+
+/// Resumo do resultado de Personalidade mais recente que tenha algum domínio
+/// com nível: "NEO PI-R (dd/mm/aaaa): Neuroticismo: Alto; …". `null` quando não
+/// há resultado. Só usa rótulos que o app já tem (instrumento, domínios, níveis).
+@visibleForTesting
+String? personalitySummaryForConceptualization(
+    List<PersonalityAssessment> list) {
+  final sorted = [...list]..sort((a, b) =>
+      (b.appliedOn ?? b.createdAt).compareTo(a.appliedOn ?? a.createdAt));
+  for (final a in sorted) {
+    final inst = a.instrumentDef;
+    final parts = <String>[];
+    for (final d in inst.domains) {
+      final level = a.results.domains[d.code]?.overall.level;
+      if (level != null) parts.add('${d.label}: ${level.label}');
+    }
+    if (parts.isEmpty) continue;
+    final dt = a.appliedOn ?? a.createdAt;
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${inst.name} (${two(dt.day)}/${two(dt.month)}/${dt.year}): '
+        '${parts.join('; ')}.';
+  }
+  return null;
 }

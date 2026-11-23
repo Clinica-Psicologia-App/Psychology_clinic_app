@@ -178,7 +178,8 @@ GLayoutInput? buildLayoutInput({
   if (focusId == null) return null;
 
   final gpeople = [
-    for (final p in people) GPerson(p.id, sex: _sexOf(p.gender)),
+    for (final p in people)
+      GPerson(p.id, sex: _sexOf(p.gender), birthYear: p.birthYear),
   ];
 
   return GLayoutInput(gpeople, structuralEdges(relationships), focusId,

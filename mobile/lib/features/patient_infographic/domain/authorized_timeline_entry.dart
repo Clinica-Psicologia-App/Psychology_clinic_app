@@ -1,4 +1,6 @@
 import '../../life_story/domain/life_timeline_age.dart';
+import 'timeline_chronology.dart' as chrono;
+import 'timeline_chronology.dart' show TimelineRef;
 
 /// Acontecimento que o psicólogo autorizou a aparecer no infográfico do
 /// paciente (retorno de `get_patient_infographic_timeline`).
@@ -8,6 +10,10 @@ class AuthorizedTimelineEntry {
     required this.title,
     required this.periodLabel,
     this.ageStart,
+    this.eventDate,
+    this.rawPeriod,
+    this.lifeChapter,
+    this.createdAt,
   });
 
   final String id;
@@ -18,6 +24,12 @@ class AuthorizedTimelineEntry {
 
   /// Idade inicial, só para ordenar.
   final int? ageStart;
+
+  /// Campos extras só para ordenar (a função pode ou não devolvê-los).
+  final DateTime? eventDate;
+  final String? rawPeriod;
+  final String? lifeChapter;
+  final DateTime? createdAt;
 
   factory AuthorizedTimelineEntry.fromJson(Map<String, dynamic> json) {
     final age = (json['age_at_event'] as num?)?.toInt();
@@ -32,8 +44,15 @@ class AuthorizedTimelineEntry {
       periodLabel: label ??
           (period != null && period.isNotEmpty ? period : _chapter(json)),
       ageStart: age,
+      eventDate: _date(json['event_date']),
+      rawPeriod: period,
+      lifeChapter: json['life_chapter'] as String?,
+      createdAt: _date(json['created_at']),
     );
   }
+
+  static DateTime? _date(Object? v) =>
+      v is String && v.isNotEmpty ? DateTime.tryParse(v)?.toLocal() : null;
 
   static String _chapter(Map<String, dynamic> json) =>
       switch (json['life_chapter']) {
@@ -47,16 +66,26 @@ class AuthorizedTimelineEntry {
         _ => '',
       };
 
-  /// Mais antigos primeiro; sem idade vão para o fim.
+  TimelineRef get _ref => TimelineRef(
+        eventDate: eventDate,
+        ageAtEvent: ageStart,
+        periodLabel: rawPeriod,
+        lifeChapter: lifeChapter,
+        createdAt: createdAt,
+      );
+
+  /// Comparador para `List.sort` (mesma regra; prefira [sortChronologically],
+  /// que é estável).
   static int compareChronologically(
     AuthorizedTimelineEntry a,
     AuthorizedTimelineEntry b,
-  ) {
-    final x = a.ageStart;
-    final y = b.ageStart;
-    if (x == null && y == null) return 0;
-    if (x == null) return 1;
-    if (y == null) return -1;
-    return x.compareTo(y);
-  }
+  ) =>
+      chrono.compareChronologically(a._ref, b._ref);
+
+  /// Cópia em ordem cronológica (mais antigo primeiro), mesma regra do
+  /// infográfico do terapeuta; sem nascimento conhecido aqui.
+  static List<AuthorizedTimelineEntry> sortChronologically(
+    List<AuthorizedTimelineEntry> entries,
+  ) =>
+      chrono.sortChronologically(entries, (e) => e._ref);
 }

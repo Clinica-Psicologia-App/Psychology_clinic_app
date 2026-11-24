@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,6 +16,7 @@ import '../../profile/domain/profile_role.dart';
 import '../domain/patient_infographic_data.dart';
 import '../providers/patient_infographic_providers.dart';
 import 'infographic_export.dart';
+import 'infographic_pdf_preview_page.dart';
 import 'widgets/patient_infographic_poster.dart';
 
 /// Tela do infográfico do paciente (lente do terapeuta): mostra o pôster
@@ -23,10 +26,14 @@ class PatientInfographicPage extends ConsumerStatefulWidget {
     super.key,
     required this.role,
     required this.patientId,
+    this.pdfViewerBuilder,
   });
 
   final ProfileRole role;
   final String patientId;
+
+  /// Só para testes/render: visualizador no lugar do `PdfPreview`.
+  final Widget Function(BuildContext, Uint8List)? pdfViewerBuilder;
 
   @override
   ConsumerState<PatientInfographicPage> createState() =>
@@ -69,14 +76,22 @@ class _PatientInfographicPageState
           bytes: pdfBytes,
           filename: '$base.pdf',
         );
+      } else if (asPdf) {
+        // No celular: abre a prévia do PDF; só envia se a pessoa tocar em
+        // "Compartilhar" lá dentro.
+        final pdf = await InfographicExport.buildPdf(png);
+        if (!mounted) return;
+        await Navigator.of(context).push<void>(
+          MaterialPageRoute(
+            builder: (_) => InfographicPdfPreviewPage(
+              pdfBytes: pdf,
+              fileName: base,
+              viewerBuilder: widget.pdfViewerBuilder,
+            ),
+          ),
+        );
       } else {
-        final String path;
-        if (asPdf) {
-          final pdf = await InfographicExport.buildPdf(png);
-          path = await InfographicExport.writeTempFile('$base.pdf', pdf);
-        } else {
-          path = await InfographicExport.writeTempFile('$base.png', png);
-        }
+        final path = await InfographicExport.writeTempFile('$base.png', png);
         await InfographicExport.share(path, text: 'Infográfico clínico');
       }
     } catch (e) {

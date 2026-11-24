@@ -15,10 +15,10 @@ final ownInfographicTimelineProvider =
       'get_patient_infographic_timeline',
       params: {'p_patient_id': patientId},
     );
-    return [
+    return AuthorizedTimelineEntry.sortChronologically([
       for (final row in rows as List)
         AuthorizedTimelineEntry.fromJson(Map<String, dynamic>.from(row as Map)),
-    ]..sort(AuthorizedTimelineEntry.compareChronologically);
+    ]);
   } catch (e) {
     throw mapToAppException(e);
   }

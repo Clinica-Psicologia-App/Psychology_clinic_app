@@ -89,6 +89,7 @@ class PatientTimelineEvent {
 
   static const _chapterLabels = <String, String>{
     'birth': 'Nascimento',
+    'early_years': 'Primeiros anos',
     'childhood': 'Infância',
     'adolescence': 'Adolescência',
     'adulthood': 'Vida adulta',

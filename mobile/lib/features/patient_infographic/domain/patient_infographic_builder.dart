@@ -21,6 +21,7 @@ import '../../therapy_goals/domain/therapy_goal.dart';
 import 'attachment_descriptions.dart';
 import 'patient_infographic_data.dart';
 import 'schema_descriptions.dart';
+import 'timeline_chronology.dart';
 
 /// Monta o [PatientInfographicData] a partir dos dados reais do paciente —
 /// determinístico, sem IA. Cada seção vem do módulo onde o terapeuta a
@@ -126,26 +127,22 @@ InfographicHeader _buildHeader(Patient patient) {
 
 // ── Linha do tempo ─────────────────────────────────────────────────────────
 
-/// Idade aproximada do evento, só para ordenar: data → idade pela data de
-/// nascimento; idade informada; capítulo da vida (idade típica do capítulo).
-double _approxAge(PatientTimelineEvent e, DateTime? birth) {
-  final date = e.eventDate;
-  if (date != null && birth != null) {
-    return date.difference(birth).inDays / 365.25;
-  }
-  if (e.ageAtEvent != null) return e.ageAtEvent!.toDouble();
-  const chapterAge = [0.0, 6.0, 15.0, 30.0, 55.0, 99.0];
-  final order = e.lifeChapterOrder;
-  if (order != null) return chapterAge[order];
-  return double.infinity; // sem referência: vai para o fim
-}
-
 List<InfographicTimelineEntry> _buildTimeline(
   List<PatientTimelineEvent> events,
   DateTime? birth,
 ) {
-  final sorted = [...events]
-    ..sort((a, b) => _approxAge(a, birth).compareTo(_approxAge(b, birth)));
+  // Mais antigo primeiro (regra única em timeline_chronology.dart).
+  final sorted = sortChronologically(
+    events,
+    (e) => TimelineRef(
+      eventDate: e.eventDate,
+      ageAtEvent: e.ageAtEvent,
+      periodLabel: e.periodLabel,
+      lifeChapter: e.lifeChapter,
+      createdAt: e.createdAt,
+    ),
+    birth: birth,
+  );
 
   const palette = [
     AppColors.cyan,

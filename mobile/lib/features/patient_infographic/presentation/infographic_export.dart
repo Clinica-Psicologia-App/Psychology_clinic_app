@@ -12,7 +12,7 @@ import 'package:share_plus/share_plus.dart';
 /// Captura + exportação do pôster do infográfico.
 ///
 /// O PNG é capturado nativamente do [RepaintBoundary]; o PDF embute esse mesmo
-/// PNG numa única página, então imagem e documento saem do mesmo layout.
+/// PNG em páginas A4, então imagem e documento saem do mesmo layout.
 class InfographicExport {
   const InfographicExport._();
 
@@ -28,28 +28,183 @@ class InfographicExport {
     return bytes!.buffer.asUint8List();
   }
 
-  /// Monta um PDF de uma página só, com o tamanho do próprio pôster: nada é
-  /// cortado nem fatiado, e o texto continua legível ao ampliar (um A4 fixo
-  /// encolheria o pôster, que é bem mais comprido que largo).
-  static Future<Uint8List> buildPdf(Uint8List png) async {
-    final codec = await ui.instantiateImageCodec(png);
-    final frame = await codec.getNextFrame();
-    final w = frame.image.width.toDouble();
-    final h = frame.image.height.toDouble();
-    frame.image.dispose();
+  /// Margem das páginas A4 do PDF (pt).
+  static const double pdfMargin = 24;
 
-    // Largura de 595 pt (A4); a altura segue a proporção do pôster.
-    const pageWidth = 595.0;
-    final pageHeight = pageWidth * h / w;
+  /// Páginas necessárias para um pôster de [w] × [h] px em A4 retrato, com o
+  /// pôster ocupando a largura útil.
+  @visibleForTesting
+  static int pdfPageCount(int w, int h) {
+    final usableW = PdfPageFormat.a4.width - pdfMargin * 2;
+    final usableH = PdfPageFormat.a4.height - pdfMargin * 2;
+    final posterH = usableW * h / w;
+    return (posterH / usableH - 1e-9).ceil().clamp(1, 1000);
+  }
+
+  /// Ponto de corte (linha exclusiva) da fatia que começa em [start], com no
+  /// máximo [maxHeight] linhas, num PNG RGBA de [width] × [height].
+  ///
+  /// Procura, de baixo para cima a partir do fim da página e até ~35% da sua
+  /// altura, uma linha inteira na cor de fundo do pôster (a do pixel 0,0) e
+  /// corta no meio da faixa de fundo encontrada, para não partir um cartão.
+  /// Sem faixa, corta no limite da página. Sempre devolve um valor > [start].
+  @visibleForTesting
+  static int pdfCutPoint(
+    Uint8List rgba,
+    int width,
+    int height,
+    int start,
+    int maxHeight,
+  ) {
+    final end = start + maxHeight;
+    if (end >= height) return height;
+    bool isBg(int row) {
+      final o = row * width * 4;
+      for (var x = 0; x < width; x++) {
+        final i = o + x * 4;
+        for (var k = 0; k < 4; k++) {
+          if ((rgba[i + k] - rgba[k]).abs() > 2) return false;
+        }
+      }
+      return true;
+    }
+
+    final minRow = start + (maxHeight * 0.65).floor();
+    for (var r = end - 1; r >= minRow; r--) {
+      if (!isBg(r)) continue;
+      var a = r;
+      while (a - 1 >= minRow && isBg(a - 1)) {
+        a--;
+      }
+      final cut = (a + r) ~/ 2 + 1;
+      return cut > start ? cut.clamp(start + 1, end) : end;
+    }
+    return end;
+  }
+
+  /// Cortes (linhas exclusivas, em pixels do original [w] × [h]) calculados
+  /// sobre uma cópia reduzida RGBA [sw] × [sh]. [maxRows] é a altura máxima da
+  /// fatia no original. Cada corte > o anterior e o último = [h].
+  @visibleForTesting
+  static List<int> pdfCutsScaled(
+    Uint8List smallRgba,
+    int sw,
+    int sh,
+    int w,
+    int h,
+    int maxRows,
+  ) {
+    final maxSmall = (maxRows * sw / w).floor().clamp(1, sh);
+    final cuts = <int>[];
+    var startSmall = 0;
+    var prev = 0;
+    while (startSmall < sh) {
+      final cs = pdfCutPoint(smallRgba, sw, sh, startSmall, maxSmall);
+      var cut = cs >= sh ? h : (cs * h / sh).floor();
+      if (cut > prev + maxRows) cut = prev + maxRows;
+      if (cut <= prev) cut = prev + 1;
+      if (cut > h) cut = h;
+      cuts.add(cut);
+      prev = cut;
+      startSmall = cs;
+      if (cut >= h) break;
+    }
+    if (cuts.last != h) cuts.add(h);
+    return cuts;
+  }
+
+  /// Monta o PDF em A4 retrato, em várias páginas: o pôster ocupa a largura
+  /// útil da página (nada é cortado na lateral) e é fatiado na altura,
+  /// preferindo cortar entre cartões ([pdfCutPoint]). É o mesmo PNG da imagem,
+  /// embutido uma só vez. Os cortes são achados numa cópia reduzida (~300 px
+  /// de largura), descartada antes de montar o documento.
+  static Future<Uint8List> buildPdf(Uint8List png) async {
+    final int w;
+    final int h;
+    final codec = await ui.instantiateImageCodec(png);
+    try {
+      final frame = await codec.getNextFrame();
+      try {
+        w = frame.image.width;
+        h = frame.image.height;
+      } finally {
+        frame.image.dispose();
+      }
+    } finally {
+      codec.dispose();
+    }
+
+    const format = PdfPageFormat.a4;
+    final usableW = format.width - pdfMargin * 2;
+    final usableH = format.height - pdfMargin * 2;
+    final scale = usableW / w; // pt por pixel
+    final maxRows = (usableH / scale).floor();
+    final posterH = h * scale;
+
+    final List<int> cuts;
+    {
+      final small = await ui.instantiateImageCodec(
+        png,
+        targetWidth: w > 300 ? 300 : w,
+      );
+      try {
+        final frame = await small.getNextFrame();
+        try {
+          final data =
+              await frame.image.toByteData(format: ui.ImageByteFormat.rawRgba);
+          cuts = pdfCutsScaled(
+            data!.buffer.asUint8List(),
+            frame.image.width,
+            frame.image.height,
+            w,
+            h,
+            maxRows,
+          );
+        } finally {
+          frame.image.dispose();
+        }
+      } finally {
+        small.dispose();
+      }
+    }
+
     final doc = pw.Document();
     final image = pw.MemoryImage(png);
-    doc.addPage(
-      pw.Page(
-        pageFormat: PdfPageFormat(pageWidth, pageHeight),
-        margin: pw.EdgeInsets.zero,
-        build: (_) => pw.Image(image, fit: pw.BoxFit.fill),
-      ),
-    );
+    var start = 0;
+    for (final cut in cuts) {
+      final sliceH = (cut - start) * scale;
+      final top = -start * scale;
+      doc.addPage(
+        pw.Page(
+          pageFormat: format,
+          margin: const pw.EdgeInsets.all(pdfMargin),
+          build: (_) => pw.Align(
+            alignment: pw.Alignment.topLeft,
+            child: pw.SizedBox(
+              width: usableW,
+              height: sliceH,
+              child: pw.ClipRect(
+                child: pw.Stack(
+                  overflow: pw.Overflow.clip,
+                  children: [
+                    pw.Positioned(
+                      left: 0,
+                      top: top,
+                      child: pw.SizedBox(
+                        width: usableW,
+                        height: posterH,
+                        child: pw.Image(image, fit: pw.BoxFit.fill),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      start = cut;
+    }
     return doc.save();
   }
 

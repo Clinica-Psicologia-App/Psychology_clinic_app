@@ -10,9 +10,12 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_kit.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_shell.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../domain/clinic_summary.dart';
 import '../providers/clinics_providers.dart';
+import 'widgets/desktop_clinics_view.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 import '../../../shared/widgets/brand_loading.dart';
 
@@ -27,6 +30,49 @@ class ClinicsPage extends ConsumerWidget {
     final loaded = state.hasValue;
     final personal = clinics.where((c) => c.isPersonal).length;
     final institutional = clinics.length - personal;
+
+    // A partir de 768 px: tabela em painel com a casca de desktop. Abaixo
+    // disso, a tela do celular, sem alteração.
+    if (isDesktopAdminWidth(context)) {
+      return DesktopAdminShell(
+        nav: DesktopAdminNav.clinics,
+        title: 'Clínicas',
+        subtitle: 'Clínicas e profissionais individuais',
+        actions: [
+          DaButton(
+            kind: DaButtonKind.primary,
+            icon: Icons.add_business_outlined,
+            label: 'Nova clínica',
+            onPressed: () => _showCreateClinicSheet(context, ref),
+          ),
+          DaButton(
+            kind: DaButtonKind.ghost,
+            icon: Icons.refresh,
+            tooltip: 'Atualizar',
+            onPressed: () => ref.read(clinicsProvider.notifier).refresh(),
+          ),
+        ],
+        body: state.when(
+          loading: () => const Center(child: BrandLoader()),
+          error: (e, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Text(
+                e is AppException
+                    ? userMessageFor(e)
+                    : 'Erro ao carregar clínicas.',
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+          data: (clinics) => DesktopClinicsView(
+            clinics: clinics,
+            onToggleActive: (clinic) => _toggleActive(context, ref, clinic),
+            onDelete: (clinic) => _deleteClinic(context, ref, clinic),
+          ),
+        ),
+      );
+    }
 
     return AppSectionScaffold(
       title: 'Clínicas',
@@ -82,17 +128,23 @@ class ClinicsPage extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
   ) async {
-    final result = await showModalBottomSheet<_CreateClinicResult>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: AppColors.navy.withValues(alpha: 0.36),
-      builder: (_) => UncontrolledProviderScope(
-        container: ProviderScope.containerOf(context),
-        child: const _CreateClinicSheet(),
-      ),
-    );
+    final result = isDesktopAdminWidth(context)
+        ? await showDesktopSlideOver<_CreateClinicResult>(
+            context,
+            title: 'Nova clínica',
+            child: const _CreateClinicSheet(embedded: true),
+          )
+        : await showModalBottomSheet<_CreateClinicResult>(
+            context: context,
+            isScrollControlled: true,
+            useSafeArea: true,
+            backgroundColor: Colors.transparent,
+            barrierColor: AppColors.navy.withValues(alpha: 0.36),
+            builder: (_) => UncontrolledProviderScope(
+              container: ProviderScope.containerOf(context),
+              child: const _CreateClinicSheet(),
+            ),
+          );
 
     if (result == null || !context.mounted) return;
 
@@ -497,7 +549,10 @@ class _CreateClinicResult {
 }
 
 class _CreateClinicSheet extends StatefulWidget {
-  const _CreateClinicSheet();
+  const _CreateClinicSheet({this.embedded = false});
+
+  /// true = dentro do painel lateral do desktop (sem alça, título nem moldura).
+  final bool embedded;
 
   @override
   State<_CreateClinicSheet> createState() => _CreateClinicSheetState();
@@ -521,6 +576,18 @@ class _CreateClinicSheetState extends State<_CreateClinicSheet> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.embedded) {
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(22),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: _fields(context, embedded: true),
+          ),
+        ),
+      );
+    }
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     final availableHeight =
         MediaQuery.sizeOf(context).height - MediaQuery.paddingOf(context).top;
@@ -555,7 +622,20 @@ class _CreateClinicSheetState extends State<_CreateClinicSheet> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
+                    children: _fields(context, embedded: false),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _fields(BuildContext context, {required bool embedded}) {
+    return [
+      if (!embedded) ...[
                       Center(
                         child: Container(
                           width: 32,
@@ -575,6 +655,7 @@ class _CreateClinicSheetState extends State<_CreateClinicSheet> {
                             ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: AppSpacing.xs),
+      ],
                       Text(
                         'Cadastre uma clínica ou consultório com equipe. '
                         'Para psicólogos autônomos, use "Novo usuário" e selecione "Profissional individual".',
@@ -628,15 +709,7 @@ class _CreateClinicSheetState extends State<_CreateClinicSheet> {
                           label: const Text('Criar clínica'),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+    ];
   }
 
   void _submit() {

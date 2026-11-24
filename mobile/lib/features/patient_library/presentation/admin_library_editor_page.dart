@@ -8,6 +8,9 @@ import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_kit.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_shell.dart';
+import 'admin_library_routes.dart';
 import '../../../shared/widgets/clay_card.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../domain/library_work_full.dart';
@@ -292,6 +295,9 @@ class _AdminLibraryEditorPageState
 
   @override
   Widget build(BuildContext context) {
+    // A partir de 768 px: casca de desktop, coluna da capa e seções em 2
+    // colunas. Abaixo disso, a tela do celular, sem alteração.
+    if (isDesktopAdminWidth(context)) return _buildDesktop();
     return AppSectionScaffold(
       title: _isEditing ? 'Editar obra' : 'Nova obra',
       subtitle: 'Catálogo da Biblioteca',
@@ -455,6 +461,366 @@ class _AdminLibraryEditorPageState
                     ),
                   ),
                 ),
+    );
+  }
+
+  // ── Desktop (>= 768 px) ───────────────────────────────────────────────────
+  // Casca + coluna da capa/índice + seções em 2 colunas. Mesmos controllers,
+  // validações e métodos (_save, _delete, _pickCover) do layout do celular.
+  final _dSecKeys = [GlobalKey(), GlobalKey(), GlobalKey(), GlobalKey()];
+  int _dActive = 0;
+
+  Widget _buildDesktop() {
+    final t = DesktopAdminTokens.of(context);
+    final m = DesktopAdminMetrics.of(MediaQuery.sizeOf(context).width);
+    return DesktopAdminShell(
+      nav: DesktopAdminNav.home,
+      crumbs: const [
+        DaCrumb('Início', '/platform'),
+        DaCrumb('Catálogo da Biblioteca', AdminLibraryRoutes.catalog),
+      ],
+      title: _isEditing ? 'Editar obra' : 'Nova obra',
+      subtitle: 'Catálogo da Biblioteca',
+      actions: [
+        if (_isEditing)
+          DaButton(
+            kind: DaButtonKind.ghost,
+            icon: Icons.delete_outline,
+            danger: true,
+            tooltip: 'Remover',
+            onPressed: _saving ? null : _delete,
+          ),
+        DaButton(
+          kind: DaButtonKind.primary,
+          icon: Icons.save_outlined,
+          label: _isEditing ? 'Salvar alterações' : 'Criar obra',
+          onPressed: _saving ? null : _save,
+        ),
+      ],
+      body: _loading
+          ? const BrandLoader()
+          : _loadError != null
+              ? Center(
+                  child: Text(_loadError!,
+                      style: daText(context, t, color: t.err)))
+              : Form(
+                  key: _formKey,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Container(
+                        width: 288,
+                        decoration: BoxDecoration(
+                            border: Border(right: BorderSide(color: t.bd))),
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+                          child: _dSide(t),
+                        ),
+                      ),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          padding:
+                              EdgeInsets.fromLTRB(m.pad + 4, 24, m.pad + 4, 32),
+                          child: Align(
+                            alignment: Alignment.topLeft,
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 980),
+                              child: _dSections(t),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+    );
+  }
+
+  Widget _dSide(DesktopAdminTokens t) {
+    final series = _workType == 'Série' || _workType == 'Minissérie';
+    const sections = [
+      'Identificação',
+      'Classificação clínica',
+      'Camada do psicólogo',
+      'Camada do paciente',
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AnimatedBuilder(
+          animation: Listenable.merge([_title, _coverUrl]),
+          builder: (context, _) {
+            final url = _coverUrl.text.trim();
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: SizedBox(
+                    width: 96,
+                    height: 136,
+                    child: LibraryCover(
+                      gradient: series
+                          ? const [Color(0xFF2E7D6B), Color(0xFF11808F)]
+                          : const [Color(0xFF3B2F8F), Color(0xFF7C6A9C)],
+                      url: url.isEmpty ? null : url,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      DaTag.az(context, _workType),
+                      const SizedBox(height: 8),
+                      Text(
+                          _title.text.trim().isEmpty
+                              ? 'Sem título'
+                              : _title.text.trim(),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: daText(context, t,
+                              weight: FontWeight.w600, size: 14)),
+                      const SizedBox(height: 8),
+                      _isPublished
+                          ? DaTag.ok(context, 'Publicada')
+                          : const DaTag('Oculta'),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 16),
+        Row(children: [
+          Expanded(
+            child: Text('Publicada (liberada aos psicólogos)',
+                style: daText(context, t, size: 12.5, color: t.tx2)),
+          ),
+          DaSwitch(
+            value: _isPublished,
+            semantics: 'Publicada',
+            tablet: DesktopAdminMetrics.of(MediaQuery.sizeOf(context).width)
+                .tablet,
+            onChanged: () => setState(() => _isPublished = !_isPublished),
+          ),
+        ]),
+        const SizedBox(height: 18),
+        Row(children: [
+          Icon(Icons.image_outlined, size: 15, color: t.tx2),
+          const SizedBox(width: 6),
+          Text('Capa',
+              style: daText(context, t,
+                  size: 12.5, weight: FontWeight.w600, color: t.tx2)),
+        ]),
+        const SizedBox(height: 8),
+        DaButton(
+          icon: Icons.upload_outlined,
+          label: _uploadingCover ? 'Enviando…' : 'Enviar imagem',
+          expand: true,
+          onPressed: _uploadingCover ? null : _pickCover,
+        ),
+        const SizedBox(height: 10),
+        DaTextField('URL da capa', _coverUrl, hint: 'https://…'),
+        const SizedBox(height: 6),
+        AnimatedBuilder(
+          animation: _coverUrl,
+          builder: (_, __) => Text(
+              _coverUrl.text.trim().isNotEmpty
+                  ? 'Pré-visualização atualizada ao lado.'
+                  : 'Suba uma imagem ou cole a URL diretamente.',
+              style: daText(context, t, size: 11.5, color: t.tx3)),
+        ),
+        const SizedBox(height: 20),
+        for (var i = 0; i < sections.length; i++)
+          DaIndexItem(
+            label: sections[i],
+            active: i == _dActive,
+            onTap: () {
+              setState(() => _dActive = i);
+              final ctx = _dSecKeys[i].currentContext;
+              if (ctx != null) {
+                Scrollable.ensureVisible(ctx,
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOutCubic);
+              }
+            },
+          ),
+      ],
+    );
+  }
+
+  Widget _dSec(int i, String title, Widget child, {String? subtitle}) {
+    final t = DesktopAdminTokens.of(context);
+    return Padding(
+      key: _dSecKeys[i],
+      padding: const EdgeInsets.only(bottom: 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(title,
+              style: daText(context, t, size: 15, weight: FontWeight.w600)),
+          if (subtitle != null)
+            Text(subtitle, style: daText(context, t, size: 12.5, color: t.tx3)),
+          const SizedBox(height: 14),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _dSub(IconData icon, String title) {
+    final t = DesktopAdminTokens.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: 6, bottom: 12),
+      child: Row(children: [
+        Icon(icon, size: 16, color: t.tq),
+        const SizedBox(width: 8),
+        Text(title,
+            style: daText(context, t, size: 13, weight: FontWeight.w600)),
+      ]),
+    );
+  }
+
+  Widget _dSections(DesktopAdminTokens t) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _dSec(
+          0,
+          'Identificação',
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              DaGrid([
+                (DaTextField('Título exibido', _title, required: true), false),
+                (DaTextField('Título original', _originalTitle), false),
+                (
+                  DaDropdown<String>(
+                    label: 'Tipo',
+                    value: _workType,
+                    items: [
+                      for (final w in _workTypes)
+                        DropdownMenuItem(value: w, child: Text(w)),
+                    ],
+                    onChanged: (v) => setState(() => _workType = v ?? 'Filme'),
+                  ),
+                  false
+                ),
+                (DaTextField('Ano', _year, number: true), false),
+                (DaTextField('Gêneros', _genres), true),
+                (DaTextField('Duração', _duration), false),
+                (DaTextField('Temporadas', _seasons), false),
+                (DaTextField('Classificação (etária)', _rating), false),
+                (
+                  DaDropdown<String?>(
+                    label: 'Intensidade',
+                    value: _intensity,
+                    items: [
+                      const DropdownMenuItem(value: null, child: Text('—')),
+                      for (final i in _intensities)
+                        DropdownMenuItem(value: i, child: Text(i)),
+                    ],
+                    onChanged: (v) => setState(() => _intensity = v),
+                  ),
+                  false
+                ),
+                (DaTextField('Sinopse', _synopsis, lines: 3), true),
+              ]),
+              const SizedBox(height: 14),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                decoration: BoxDecoration(
+                  color: t.rz,
+                  border: Border.all(color: t.bd2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(children: [
+                  Icon(Icons.animation_outlined, size: 18, color: t.tx2),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text('Animação',
+                        style: daText(context, t, weight: FontWeight.w600)),
+                  ),
+                  DaSwitch(
+                    value: _isAnimation,
+                    semantics: 'Animação',
+                    tablet: DesktopAdminMetrics.of(
+                            MediaQuery.sizeOf(context).width)
+                        .tablet,
+                    onChanged: () =>
+                        setState(() => _isAnimation = !_isAnimation),
+                  ),
+                ]),
+              ),
+            ],
+          ),
+        ),
+        _dSec(
+          1,
+          'Classificação clínica',
+          DaGrid([
+            (DaTextField('Esquema principal', _primarySchema), false),
+            (DaTextField('Domínio', _domain), false),
+            (_listEditor('Esquemas associados', _associatedSchemas), false),
+            (_listEditor('Temas', _themes), false),
+          ]),
+        ),
+        _dSec(
+          2,
+          'Camada do psicólogo',
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _dSub(Icons.medical_services_outlined, 'Indicação clínica'),
+              DaGrid([
+                (_listEditor('Quando indicar', _whenToIndicate), false),
+                (_listEditor('Objetivos', _objectives), false),
+              ]),
+              _dSub(Icons.psychology_outlined, 'Análise da obra'),
+              DaGrid([
+                (_listEditor('Focos de observação', _observationFocus), false),
+                (
+                  _listEditor(
+                      'Mobilizações emocionais', _emotionalMobilizations),
+                  false
+                ),
+                (_listEditor('Modos de esquema', _schemaModes), false),
+                (_listEditor('Cuidados clínicos', _clinicalCautions), false),
+              ]),
+              _dSub(Icons.forum_outlined, 'Para a sessão'),
+              DaGrid([
+                (
+                  _listEditor('Intervenções em sessão', _sessionInterventions),
+                  false
+                ),
+                (_listEditor('Perguntas de sessão', _sessionQuestions), false),
+                (DaTextField('Nota clínica', _clinicalNote, lines: 3), true),
+              ]),
+            ],
+          ),
+          subtitle: 'Não visível ao paciente',
+        ),
+        _dSec(
+          3,
+          'Camada do paciente',
+          DaGrid([
+            (DaTextField('Antes de assistir', _patientBefore, lines: 3), true),
+            (_listEditor('Enquanto assiste, observe', _patientDuring), false),
+            (
+              _AfterQuestionsEditor(
+                questions: _patientAfter,
+                onChanged: () => setState(() {}),
+              ),
+              false
+            ),
+            (DaTextField('Onde assistir', _whereToWatch), true),
+          ]),
+        ),
+      ],
     );
   }
 

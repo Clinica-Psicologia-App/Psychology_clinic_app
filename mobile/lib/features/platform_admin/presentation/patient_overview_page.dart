@@ -7,6 +7,9 @@ import '../../../core/theme/app_shadows.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/app_motion.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_kit.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_shell.dart';
+import 'widgets/desktop_patient_overview_view.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../profile/presentation/widgets/user_avatar.dart';
@@ -36,6 +39,36 @@ class PatientOverviewPage extends ConsumerWidget {
       0,
       (sum, u) => sum + u.pendingPatientInvitationsCount,
     );
+
+    // A partir de 768 px: tabela só de leitura com a casca de desktop.
+    if (isDesktopAdminWidth(context)) {
+      return DesktopAdminShell(
+        nav: DesktopAdminNav.patients,
+        title: 'Distribuição de Pacientes',
+        subtitle: subtitle,
+        actions: [
+          DaButton(
+            kind: DaButtonKind.ghost,
+            icon: Icons.refresh,
+            tooltip: 'Atualizar',
+            onPressed: () => ref.read(clinicUsersProvider.notifier).refresh(),
+          ),
+        ],
+        body: usersAsync.when(
+          loading: () => const Center(child: BrandLoader()),
+          error: (e, _) => Center(
+            child: Text(
+              'Erro ao carregar dados.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: AppColors.error),
+            ),
+          ),
+          data: (_) => DesktopPatientOverviewView(psychologists: psychologists),
+        ),
+      );
+    }
 
     return AppSectionScaffold(
       title: 'Distribuição de Pacientes',

@@ -21,6 +21,25 @@ class CaseConceptualizationWord {
   static const defaultLogoAsset =
       'assets/branding/esquema_core_logo_principal.png';
 
+  /// Só para teste: força o ramo web (null = usa [kIsWeb]).
+  @visibleForTesting
+  static bool? debugForceWeb;
+
+  /// Só para teste: substitui a entrega web (bytes e nome do arquivo).
+  @visibleForTesting
+  static Future<void> Function(Uint8List bytes, String name)? debugWebDeliver;
+
+  /// Arquivos entregues na web (testável sem o navegador).
+  @visibleForTesting
+  static List<XFile> webFiles(Uint8List bytes, String name) =>
+      [XFile.fromData(bytes, name: name, mimeType: 'application/rtf')];
+
+  static Future<void> _deliverWeb(Uint8List bytes, String name) =>
+      Share.shareXFiles(
+        webFiles(bytes, name),
+        fileNameOverrides: [name],
+      );
+
   /// [logoBytes] = logo de quem exporta (null = logo padrão do EsquemaCore).
   /// RTF só embute PNG e JPEG: WebP/ilegível cai na logo padrão.
   static Future<void> shareOrOpen({
@@ -29,11 +48,7 @@ class CaseConceptualizationWord {
     InitialAssessment? assessment,
     Uint8List? logoBytes,
   }) async {
-    if (kIsWeb) {
-      throw UnsupportedError(
-        'Export em Word não disponível na versão web.',
-      );
-    }
+    final web = debugForceWeb ?? kIsWeb;
     var logo = logoBytes;
     if (logo == null || _imageInfo(logo) == null) {
       try {
@@ -44,8 +59,13 @@ class CaseConceptualizationWord {
     }
     final bytes = _build(
         data: data, concept: concept, assessment: assessment, logoBytes: logo);
-    final dir = await getTemporaryDirectory();
     final name = _fileName(data.patientName);
+    if (web) {
+      // Web: sem sistema de arquivos; o share_plus baixa o .rtf no navegador.
+      await (debugWebDeliver ?? _deliverWeb)(bytes, name);
+      return;
+    }
+    final dir = await getTemporaryDirectory();
     final file = File('${dir.path}/$name');
     await file.writeAsBytes(bytes, flush: true);
     await Share.shareXFiles(

@@ -33,6 +33,9 @@ const List<CoreNeed> kCoreNeeds = [
       'Necessidade de um pai/cuidador que seja experiente, confiante e competente (um modelo saudável)'),
 ];
 
+/// Notas aceitas na 7.2: 0, 1, 3, 5 ou 'X' (informação insuficiente).
+const List<String> kUnmetNeedRatings = ['0', '1', '3', '5', 'X'];
+
 /// Avaliação de uma necessidade não atendida (7.2).
 class UnmetNeed {
   const UnmetNeed({
@@ -45,8 +48,13 @@ class UnmetNeed {
   /// Chave em [kCoreNeeds].
   final String needKey;
 
-  /// '0'–'5' ou 'X' (informação insuficiente). Null = ainda não avaliado.
+  /// Um de [kUnmetNeedRatings] ('X' = informação insuficiente). Null = ainda
+  /// não avaliado. Valores antigos fora da lista (ex.: '2') continuam sendo
+  /// lidos e regravados sem perda.
   final String? rating;
+
+  /// Nota 'X' (informação insuficiente).
+  bool get isInsufficientInfo => rating == 'X';
   final String? origin;
   final String? schemas;
 
@@ -138,19 +146,39 @@ class TherapeuticRelationship {
     this.bondRating,
     this.bondNotes,
     this.therapistReactions,
+    this.collaborationImprove,
+    this.bondStrengthen,
+    this.otherFactors,
   });
 
   final int? collaborationRating; // 1–5
+
+  /// 11.2.2 — descrição do processo colaborativo. Também guarda o texto único
+  /// antigo (que cobria 11.2.2 e 11.2.3): nada é movido nem apagado.
   final String? collaborationNotes;
+
+  /// 11.2.3 — como melhorar a colaboração.
+  final String? collaborationImprove;
   final int? bondRating; // 1–5
+
+  /// 11.3.2 — descrição do vínculo de reparentalidade (inclui o texto antigo).
   final String? bondNotes;
+
+  /// 11.3.3 — como fortalecer o vínculo.
+  final String? bondStrengthen;
+
+  /// 11.4 — outros fatores (opcional).
+  final String? otherFactors;
   final String? therapistReactions;
 
   bool get isEmpty =>
       collaborationRating == null &&
       bondRating == null &&
       (collaborationNotes ?? '').trim().isEmpty &&
+      (collaborationImprove ?? '').trim().isEmpty &&
       (bondNotes ?? '').trim().isEmpty &&
+      (bondStrengthen ?? '').trim().isEmpty &&
+      (otherFactors ?? '').trim().isEmpty &&
       (therapistReactions ?? '').trim().isEmpty;
 
   factory TherapeuticRelationship.fromJson(Map<String, dynamic> j) =>
@@ -160,6 +188,9 @@ class TherapeuticRelationship {
         bondRating: (j['bond_rating'] as num?)?.toInt(),
         bondNotes: j['bond_notes'] as String?,
         therapistReactions: j['therapist_reactions'] as String?,
+        collaborationImprove: j['collaboration_improve'] as String?,
+        bondStrengthen: j['bond_strengthen'] as String?,
+        otherFactors: j['other_factors'] as String?,
       );
 
   Map<String, dynamic> toJson() {
@@ -173,6 +204,10 @@ class TherapeuticRelationship {
       if (t(bondNotes) != null) 'bond_notes': t(bondNotes),
       if (t(therapistReactions) != null)
         'therapist_reactions': t(therapistReactions),
+      if (t(collaborationImprove) != null)
+        'collaboration_improve': t(collaborationImprove),
+      if (t(bondStrengthen) != null) 'bond_strengthen': t(bondStrengthen),
+      if (t(otherFactors) != null) 'other_factors': t(otherFactors),
     };
   }
 }
@@ -503,19 +538,28 @@ class Diagnosis {
 /// Avaliação de uma área de funcionamento pelo terapeuta (1 = Não Funcional,
 /// 6 = Excelente). Seção 5 do formulário.
 class FunctioningEntry {
-  const FunctioningEntry({this.rating, this.explanation});
+  const FunctioningEntry(
+      {int? rating, this.explanation, this.notApplicable = false})
+      // N/A e nota são excludentes: marcar N/A descarta a nota.
+      : rating = notApplicable ? null : rating;
   final int? rating;
   final String? explanation;
-  bool get isEmpty => rating == null && (explanation ?? '').trim().isEmpty;
+
+  /// N/A (não se aplica): a área não cabe ser avaliada. Sem nota.
+  final bool notApplicable;
+  bool get isEmpty =>
+      rating == null && !notApplicable && (explanation ?? '').trim().isEmpty;
 
   factory FunctioningEntry.fromJson(Map<String, dynamic> j) => FunctioningEntry(
         rating: (j['rating'] as num?)?.toInt(),
         explanation: j['explanation'] as String?,
+        notApplicable: j['not_applicable'] == true,
       );
 
   Map<String, dynamic> toJson() {
     String? t(String? v) => (v ?? '').trim().isEmpty ? null : v!.trim();
     return {
+      if (notApplicable) 'not_applicable': true,
       if (rating != null) 'rating': rating,
       if (t(explanation) != null) 'explanation': t(explanation),
     };
@@ -999,6 +1043,59 @@ class TherapyObjectiveEntry {
 
 // ── DOCUMENTO COMPLETO ────────────────────────────────────────────────────────
 
+/// Cabeçalho do formulário 3.8, digitado pela psicóloga
+/// (coluna `form_header`).
+class CaseFormHeader {
+  const CaseFormHeader({
+    this.therapistName,
+    this.formDate,
+    this.sessionsCount,
+    this.monthsSinceFirst,
+  });
+
+  final String? therapistName;
+
+  /// Data do formulário, só dia (gravada como 'YYYY-MM-DD').
+  final DateTime? formDate;
+  final int? sessionsCount;
+  final int? monthsSinceFirst;
+
+  bool get isEmpty =>
+      (therapistName ?? '').trim().isEmpty &&
+      formDate == null &&
+      sessionsCount == null &&
+      monthsSinceFirst == null;
+
+  factory CaseFormHeader.fromJson(Map<String, dynamic> j) {
+    int? nonNeg(Object? v) {
+      final n = (v as num?)?.toInt();
+      return n == null || n < 0 ? null : n;
+    }
+
+    return CaseFormHeader(
+      therapistName: j['therapist_name'] as String?,
+      formDate: DateTime.tryParse((j['form_date'] as String?) ?? ''),
+      sessionsCount: nonNeg(j['sessions_count']),
+      monthsSinceFirst: nonNeg(j['months_since_first']),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    String two(int n) => n.toString().padLeft(2, '0');
+    final name = (therapistName ?? '').trim();
+    final d = formDate;
+    return {
+      if (name.isNotEmpty) 'therapist_name': name,
+      if (d != null)
+        'form_date': '${d.year.toString().padLeft(4, '0')}-${two(d.month)}-${two(d.day)}',
+      if (sessionsCount != null && sessionsCount! >= 0)
+        'sessions_count': sessionsCount,
+      if (monthsSinceFirst != null && monthsSinceFirst! >= 0)
+        'months_since_first': monthsSinceFirst,
+    };
+  }
+}
+
 /// Documento completo (uma linha por paciente).
 class CaseConceptualization {
   const CaseConceptualization({
@@ -1013,6 +1110,7 @@ class CaseConceptualization {
     this.centralSchemas = const [],
     this.modeAssessment = const SchemaModeAssessment(),
     this.therapyObjectives = const [],
+    this.formHeader = const CaseFormHeader(),
     this.motivoInitial,
     this.motivoCurrent,
     this.allSchemas,
@@ -1044,6 +1142,9 @@ class CaseConceptualization {
 
   /// Seção 12 — objetivos de terapia com sub-campos (a)–(e).
   final List<TherapyObjectiveEntry> therapyObjectives;
+
+  /// Cabeçalho do formulário (terapeuta, data, nº de sessões, meses).
+  final CaseFormHeader formHeader;
 
   /// Seção 2a — situação inicial que levou à terapia (perspectiva do terapeuta).
   final String? motivoInitial;
@@ -1104,6 +1205,7 @@ class CaseConceptualization {
     final csRaw = (j['central_schemas'] as List?) ?? const [];
     final ma = (j['mode_assessment'] as Map?) ?? const {};
     final toRaw = (j['therapy_objectives'] as List?) ?? const [];
+    final fh = (j['form_header'] as Map?) ?? const {};
 
     final byKey = <String, UnmetNeed>{
       for (final e in needsRaw)
@@ -1146,6 +1248,7 @@ class CaseConceptualization {
       therapyObjectives: toLoaded.isEmpty
           ? List.generate(5, (_) => const TherapyObjectiveEntry())
           : toLoaded,
+      formHeader: CaseFormHeader.fromJson(Map<String, dynamic>.from(fh)),
       motivoInitial: j['motivo_initial'] as String?,
       motivoCurrent: j['motivo_current'] as String?,
       allSchemas: j['all_schemas'] as String?,

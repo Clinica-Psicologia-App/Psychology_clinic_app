@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -134,10 +135,12 @@ class _SeqCtrls {
 }
 
 class _FuncCtrls {
-  _FuncCtrls(this.areaKey, {this.rating, String? explanation})
+  _FuncCtrls(this.areaKey,
+      {this.rating, String? explanation, this.notApplicable = false})
       : explanation = TextEditingController(text: explanation ?? '');
   final String areaKey;
   int? rating;
+  bool notApplicable;
   final TextEditingController explanation;
   void dispose() => explanation.dispose();
 }
@@ -264,6 +267,16 @@ class _EditState extends ConsumerState<_EditForm> {
   late final TextEditingController _collabNotes;
   late final TextEditingController _bondNotes;
   late final TextEditingController _therapistReactions;
+  // 11.2.3 · como melhorar a colaboração; 11.3.3 · fortalecer o vínculo; 11.4
+  late final TextEditingController _collabImprove;
+  late final TextEditingController _bondStrengthen;
+  late final TextEditingController _otherFactors;
+
+  // Cabeçalho do formulário (digitado pela psicóloga)
+  late final TextEditingController _fhName;
+  late final TextEditingController _fhSessions;
+  late final TextEditingController _fhMonths;
+  DateTime? _fhDate;
   // 8.1 · lista completa de esquemas antes de selecionar os centrais
   late final TextEditingController _allSchemas;
 
@@ -362,6 +375,15 @@ class _EditState extends ConsumerState<_EditForm> {
     _bondNotes = TextEditingController(text: rel.bondNotes ?? '');
     _therapistReactions =
         TextEditingController(text: rel.therapistReactions ?? '');
+    _collabImprove = TextEditingController(text: rel.collaborationImprove ?? '');
+    _bondStrengthen = TextEditingController(text: rel.bondStrengthen ?? '');
+    _otherFactors = TextEditingController(text: rel.otherFactors ?? '');
+
+    final fh = data.formHeader;
+    _fhName = TextEditingController(text: fh.therapistName ?? '');
+    _fhSessions = TextEditingController(text: fh.sessionsCount?.toString() ?? '');
+    _fhMonths = TextEditingController(text: fh.monthsSinceFirst?.toString() ?? '');
+    _fhDate = fh.formDate;
 
     _comments = TextEditingController(text: data.additionalComments ?? '');
 
@@ -378,7 +400,9 @@ class _EditState extends ConsumerState<_EditForm> {
         () {
           final e = data.functioning.entryFor(a.key);
           return _FuncCtrls(a.key,
-              rating: e.rating, explanation: e.explanation);
+              rating: e.rating,
+              explanation: e.explanation,
+              notApplicable: e.notApplicable);
         }()
     ];
 
@@ -468,6 +492,12 @@ class _EditState extends ConsumerState<_EditForm> {
     _collabNotes.dispose();
     _bondNotes.dispose();
     _therapistReactions.dispose();
+    _collabImprove.dispose();
+    _bondStrengthen.dispose();
+    _otherFactors.dispose();
+    _fhName.dispose();
+    _fhSessions.dispose();
+    _fhMonths.dispose();
     _comments.dispose();
     _allSchemas.dispose();
     _earlyHistory.dispose();
@@ -535,6 +565,15 @@ class _EditState extends ConsumerState<_EditForm> {
         bondRating: _bondRating,
         bondNotes: _bondNotes.text,
         therapistReactions: _therapistReactions.text,
+        collaborationImprove: _collabImprove.text,
+        bondStrengthen: _bondStrengthen.text,
+        otherFactors: _otherFactors.text,
+      ),
+      formHeader: CaseFormHeader(
+        therapistName: _fhName.text,
+        formDate: _fhDate,
+        sessionsCount: int.tryParse(_fhSessions.text.trim()),
+        monthsSinceFirst: int.tryParse(_fhMonths.text.trim()),
       ),
       origins: CaseOrigins(
         earlyHistory: _earlyHistory.text,
@@ -545,7 +584,9 @@ class _EditState extends ConsumerState<_EditForm> {
         entries: {
           for (final f in _funcAreas)
             f.areaKey: FunctioningEntry(
-                rating: f.rating, explanation: f.explanation.text),
+                rating: f.rating,
+                explanation: f.explanation.text,
+                notApplicable: f.notApplicable),
         },
       ),
       lifeProblems: TherapistLifeProblems(
@@ -620,6 +661,33 @@ class _EditState extends ConsumerState<_EditForm> {
             padding: const EdgeInsets.fromLTRB(14, 14, 14, 96),
             children: [
               _card(
+                icon: Icons.article_outlined,
+                title: 'Cabeçalho do formulário',
+                subtitle:
+                    'Aparece no topo do PDF e do Word. Preencha como no formulário 3.8.',
+                children: [
+                  _field(_fhName, 'Nome da psicóloga'),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: OutlinedButton.icon(
+                        key: const Key('edit_fh_date'),
+                        onPressed: _pickFormDate,
+                        icon: const Icon(Icons.event_outlined, size: 16),
+                        label: Text(_fhDate == null
+                            ? 'Data do formulário'
+                            : 'Data: ${_fmtDate(_fhDate!)}'),
+                      ),
+                    ),
+                  ),
+                  _numField(_fhSessions, 'Número de sessões',
+                      key: const Key('edit_fh_sessions')),
+                  _numField(_fhMonths, 'Meses desde a primeira sessão',
+                      key: const Key('edit_fh_months')),
+                ],
+              ),
+              _card(
                 icon: Icons.badge_outlined,
                 title: '1 · Identificação',
                 subtitle: '',
@@ -657,7 +725,7 @@ class _EditState extends ConsumerState<_EditForm> {
                 icon: Icons.bar_chart_outlined,
                 title: '5 · Nível de funcionamento',
                 subtitle:
-                    '1 = Não Funcional  ·  6 = Excelente. Avalie cada área e adicione uma justificativa.',
+                    '1 = Não Funcional  ·  6 = Excelente  ·  N/A = não se aplica. Avalie cada área e adicione uma justificativa.',
                 children: [
                   _openAction(
                     key: const Key('edit_open_context'),
@@ -707,7 +775,7 @@ class _EditState extends ConsumerState<_EditForm> {
                 icon: Icons.spa_outlined,
                 title: '7.2 · Necessidades não atendidas',
                 subtitle:
-                    'Avaliação: 0 = quase nada, 1 = muito limitado, 3 = moderado, 5 = grande medida.',
+                    'Avaliação: X = informação insuficiente, 0 = quase nada, 1 = muito limitado, 3 = moderado, 5 = grande medida.',
                 children: [
                   for (var i = 0; i < _needs.length; i++) ...[
                     if (i > 0) const Divider(height: 22),
@@ -880,18 +948,26 @@ class _EditState extends ConsumerState<_EditForm> {
               _card(
                 icon: Icons.handshake_outlined,
                 title: '11 · Relação terapêutica',
-                subtitle: 'Colaboração e vínculo (1–5) + notas.',
+                subtitle: 'Colaboração e vínculo (1–5) + descrição e como melhorar.',
                 children: [
-                  _ratingRow('Colaboração', _collabRating, 5,
-                      (v) => setState(() => _collabRating = v)),
-                  _field(_collabNotes, 'Notas sobre a colaboração'),
-                  const SizedBox(height: 8),
-                  _ratingRow('Vínculo (reparent.)', _bondRating, 5,
-                      (v) => setState(() => _bondRating = v)),
-                  _field(_bondNotes, 'Notas sobre o vínculo'),
-                  const SizedBox(height: 8),
+                  _sectionLabel('11.1 Reações pessoais do terapeuta ao cliente'),
                   _field(_therapistReactions,
-                      'Reações do terapeuta ao cliente'),
+                      '11.1 Reações pessoais do terapeuta ao cliente'),
+                  const SizedBox(height: 8),
+                  _sectionLabel('11.2 Colaboração'),
+                  _ratingRow('11.2.1 Nota', _collabRating, 5,
+                      (v) => setState(() => _collabRating = v)),
+                  _field(_collabNotes, '11.2.2 Descrição da colaboração'),
+                  _field(_collabImprove, '11.2.3 Como melhorar a colaboração'),
+                  const SizedBox(height: 8),
+                  _sectionLabel('11.3 Vínculo de reparentalidade'),
+                  _ratingRow('11.3.1 Nota', _bondRating, 5,
+                      (v) => setState(() => _bondRating = v)),
+                  _field(_bondNotes, '11.3.2 Descrição do vínculo'),
+                  _field(_bondStrengthen, '11.3.3 Como fortalecer o vínculo'),
+                  const SizedBox(height: 8),
+                  _sectionLabel('11.4 Outros fatores (opcional)'),
+                  _field(_otherFactors, '11.4 Outros fatores'),
                 ],
               ),
 
@@ -1100,8 +1176,9 @@ class _EditState extends ConsumerState<_EditForm> {
           spacing: 6,
           runSpacing: 6,
           children: [
-            for (final r in const ['0', '1', '3', '5'])
+            for (final r in kUnmetNeedRatings)
               ChoiceChip(
+                key: Key('need_${n.key}_$r'),
                 label: Text(r),
                 selected: n.rating == r,
                 onSelected: (sel) =>
@@ -1111,7 +1188,7 @@ class _EditState extends ConsumerState<_EditForm> {
         ),
         const SizedBox(height: 4),
         Text(
-          '0 = quase nada, 1 = muito limitado, 3 = moderado, 5 = grande medida',
+          'X = informação insuficiente, 0 = quase nada, 1 = muito limitado, 3 = moderado, 5 = grande medida',
           style: theme.textTheme.bodySmall
               ?.copyWith(color: AppColors.textSecondary),
         ),
@@ -1167,6 +1244,32 @@ class _EditState extends ConsumerState<_EditForm> {
     );
   }
 
+  static String _fmtDate(DateTime d) =>
+      '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+
+  Future<void> _pickFormDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _fhDate ?? now,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(now.year + 1, 12, 31),
+    );
+    if (picked != null) setState(() => _fhDate = picked);
+  }
+
+  Widget _numField(TextEditingController c, String label, {Key? key}) =>
+      Padding(
+        padding: const EdgeInsets.only(top: 8),
+        child: TextField(
+          key: key,
+          controller: c,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          decoration: InputDecoration(labelText: label, isDense: true),
+        ),
+      );
+
   Widget _field(TextEditingController c, String label, {int maxLines = 3}) =>
       Padding(
         padding: const EdgeInsets.only(top: 8),
@@ -1205,14 +1308,25 @@ class _EditState extends ConsumerState<_EditForm> {
           runSpacing: 6,
           children: [
             for (final v in [1, 2, 3, 4, 5, 6])
-              StatefulBuilder(
-                builder: (_, set) => ChoiceChip(
-                  label: Text('$v'),
-                  selected: ctrls.rating == v,
-                  onSelected: (_) =>
-                      setState(() => ctrls.rating = ctrls.rating == v ? null : v),
-                ),
+              ChoiceChip(
+                key: Key('func_${ctrls.areaKey}_$v'),
+                label: Text('$v'),
+                selected: ctrls.rating == v,
+                onSelected: (_) => setState(() {
+                  ctrls.notApplicable = false;
+                  ctrls.rating = ctrls.rating == v ? null : v;
+                }),
               ),
+            // N/A e nota são excludentes: marcar N/A descarta a nota.
+            ChoiceChip(
+              key: Key('func_${ctrls.areaKey}_na'),
+              label: const Text('N/A'),
+              selected: ctrls.notApplicable,
+              onSelected: (sel) => setState(() {
+                ctrls.notApplicable = sel;
+                if (sel) ctrls.rating = null;
+              }),
+            ),
           ],
         ),
         _field(ctrls.explanation, 'Justificativa'),

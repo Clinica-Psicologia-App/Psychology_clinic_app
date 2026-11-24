@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -17,14 +19,17 @@ import '../../personality_assessment/providers/personality_assessment_providers.
 import '../../patients/presentation/widgets/patient_context_header.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../patient_problems/presentation/patient_problem_routes.dart';
+import '../../profile/providers/document_logo_providers.dart';
 import '../../questionnaires/presentation/questionnaire_routes.dart';
 import '../../therapy_demands/presentation/therapy_demands_routes.dart';
 import '../../therapy_goals/presentation/therapy_goal_routes.dart';
 import 'case_conceptualization_pdf.dart';
+import 'case_conceptualization_pdf_preview_page.dart';
 import 'case_conceptualization_word.dart';
 import 'mental_map_routes.dart';
 import '../domain/case_conceptualization.dart';
 import '../domain/mental_map_case_summary.dart';
+import '../domain/mental_map_clinical_core.dart';
 import '../domain/mental_map_data.dart';
 import '../domain/mental_map_goal_summary.dart';
 import '../domain/mental_map_score_highlight.dart';
@@ -39,15 +44,69 @@ import '../providers/mental_map_providers.dart';
 /// do Mapa mental) no layout do formulário padrão. As seções que dependem de
 /// avaliação do terapeuta (necessidades 0–5, sequência de modos, relação
 /// terapêutica) aparecem como "a preencher" até ganharem armazenamento próprio.
+/// Largura mínima (px) para o visual de documento no desktop.
+const double _kDocumentMinWidth = 900;
+
+class _DocMode extends InheritedWidget {
+  const _DocMode({required this.wide, required super.child});
+  final bool wide;
+  static bool of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<_DocMode>()?.wide ?? false;
+  @override
+  bool updateShouldNotify(_DocMode old) => old.wide != wide;
+}
+
+/// Linha de quadro: rótulo com fundo claro e resposta ao lado.
+class _DocRow extends StatelessWidget {
+  const _DocRow({required this.label, required this.value});
+  final String label;
+  final String value;
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    const line = Color(0xFFB8C4DC);
+    return Container(
+      decoration: BoxDecoration(border: Border.all(color: line, width: 0.8)),
+      child: IntrinsicHeight(
+        child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Container(
+            width: 220,
+            color: const Color(0xFFEAF0FA),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            child: Text(label,
+                style: t.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700, color: AppColors.navy)),
+          ),
+          const VerticalDivider(width: 0.8, thickness: 0.8, color: line),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+              child: Text(value, style: t.bodyMedium),
+            ),
+          ),
+        ]),
+      ),
+    );
+  }
+}
+
 class CaseConceptualizationPage extends ConsumerWidget {
   const CaseConceptualizationPage({
     super.key,
     required this.role,
     required this.patientId,
+    this.onSharePdf,
+    this.pdfPreviewBuilder,
   });
 
   final ProfileRole role;
   final String patientId;
+
+  /// Injeta o compartilhamento do PDF (testes). Padrão: folha do sistema.
+  final PdfShareFn? onSharePdf;
+
+  /// Troca o visualizador de páginas da prévia (testes/renders).
+  final Widget Function(BuildContext, Uint8List)? pdfPreviewBuilder;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -78,7 +137,13 @@ class CaseConceptualizationPage extends ConsumerWidget {
                       return;
                     }
                     try {
-                      await CaseConceptualizationPdf.shareOrPrint(
+                      final logo = await ref
+                          .read(documentLogoRepositoryProvider)
+                          .downloadOwn();
+                      // Prévia primeiro: nada é baixado nem enviado até tocar
+                      // em "Compartilhar" na tela de prévia.
+                      final bytes = await CaseConceptualizationPdf.build(
+                        logoBytes: logo,
                         data: data,
                         concept: ref
                             .read(caseConceptualizationProvider(patientId))
@@ -90,6 +155,17 @@ class CaseConceptualizationPage extends ConsumerWidget {
                             ))
                             .valueOrNull,
                       );
+                      if (!context.mounted) return;
+                      await Navigator.of(context).push(MaterialPageRoute<void>(
+                        fullscreenDialog: true,
+                        builder: (_) => CaseConceptualizationPdfPreviewPage(
+                          bytes: bytes,
+                          fileName:
+                              CaseConceptualizationPdf.fileNameFor(data.patientName),
+                          onShare: onSharePdf,
+                          previewBuilder: pdfPreviewBuilder,
+                        ),
+                      ));
                     } catch (e) {
                       if (context.mounted) showErrorBanner(context, e);
                     }
@@ -109,7 +185,11 @@ class CaseConceptualizationPage extends ConsumerWidget {
                       return;
                     }
                     try {
+                      final logo = await ref
+                          .read(documentLogoRepositoryProvider)
+                          .downloadOwn();
                       await CaseConceptualizationWord.shareOrOpen(
+                        logoBytes: logo,
                         data: data,
                         concept: ref
                             .read(caseConceptualizationProvider(patientId))
@@ -185,6 +265,7 @@ class CaseConceptualizationPage extends ConsumerWidget {
           personalityIntegrations:
               ref.watch(personalityIntegrationsProvider(patientId)).valueOrNull ??
                   const [],
+          logoBytes: ref.watch(documentLogoProvider).valueOrNull,
         ),
       ),
           ),
@@ -203,11 +284,14 @@ class _Body extends StatelessWidget {
     this.assessment,
     this.personalityIntegrations = const [],
     required this.onFill,
+    this.logoBytes,
   });
 
   /// Toque num item em branco: abre o lugar onde ele é preenchido.
   final void Function(String section) onFill;
 
+  /// Logo de quem está vendo (null = logo padrão do EsquemaCore).
+  final Uint8List? logoBytes;
   final ProfileRole role;
   final String patientId;
   final MentalMapData data;
@@ -220,10 +304,51 @@ class _Body extends StatelessWidget {
     final summary = data.caseSummary;
     final core = data.clinicalCore;
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(14, 14, 14, 32),
-      children: [
-        _hero(context),
+    // Desktop (≥ 900): mesmo conteúdo no visual de documento (folha centrada,
+    // títulos numerados e quadros). Mobile: lista de cartões como sempre.
+    return LayoutBuilder(builder: (context, c) {
+      final wide = c.maxWidth >= _kDocumentMinWidth;
+      final list = ListView(
+        padding: wide
+            ? const EdgeInsets.fromLTRB(40, 32, 40, 40)
+            : const EdgeInsets.fromLTRB(14, 14, 14, 32),
+        children: _children(context, summary, core, wide),
+      );
+      if (!wide) return list;
+      return _DocMode(
+        wide: true,
+        child: ColoredBox(
+          color: const Color(0xFFEEF1F7),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 940),
+              child: Container(
+                margin: const EdgeInsets.symmetric(vertical: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(6),
+                  border: Border.all(color: const Color(0xFFD5DCEB)),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x1A0D1B3D),
+                      blurRadius: 24,
+                      offset: Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: list,
+              ),
+            ),
+          ),
+        ),
+      );
+    });
+  }
+
+  List<Widget> _children(BuildContext context, MentalMapCaseSummary summary,
+      MentalMapClinicalCore core, bool wide) {
+    return [
+        wide ? _docTitle(context) : _hero(context),
         const SizedBox(height: 12),
         if (personalityIntegrations.isNotEmpty) ...[
           _PersonalityLink(
@@ -238,7 +363,10 @@ class _Body extends StatelessWidget {
         _Section(
           number: '1',
           title: 'Informações básicas do cliente',
-          child: _BasicInfoSection(basics: assessment?.basics),
+          framed: !wide,
+          child: wide
+              ? _basicsDoc(assessment?.basics)
+              : _BasicInfoSection(basics: assessment?.basics),
         ),
 
         // 2. Motivo da terapia
@@ -278,11 +406,26 @@ class _Body extends StatelessWidget {
         _Section(
           number: '5',
           title: 'Nível de funcionamento',
-          child: (concept?.hasFunctioning ?? false)
-              ? _FunctioningView(functioning: concept!.functioning)
-              : _LifeAreaFallback(
-                  lifeAreas: assessment?.lifeAreas ?? const [],
-                  onFill: () => onFill('5')),
+          child: wide
+              ? ((concept?.hasFunctioning ?? false)
+                  ? _FunctioningDoc(
+                      functioning: concept?.functioning,
+                      lifeAreas: assessment?.lifeAreas ?? const [],
+                    )
+                  // #25: em branco, o quadro inteiro é tocável (como no mobile).
+                  : InkWell(
+                      key: const Key('fill_5'),
+                      onTap: () => onFill('5'),
+                      child: _FunctioningDoc(
+                        functioning: concept?.functioning,
+                        lifeAreas: assessment?.lifeAreas ?? const [],
+                      ),
+                    ))
+              : (concept?.hasFunctioning ?? false)
+                  ? _FunctioningView(functioning: concept!.functioning)
+                  : _LifeAreaFallback(
+                      lifeAreas: assessment?.lifeAreas ?? const [],
+                      onFill: () => onFill('5')),
         ),
 
         // 6. Problemas de vida — narrativa do terapeuta (documento §6).
@@ -403,9 +546,115 @@ class _Body extends StatelessWidget {
               : _Placeholder('Sem comentários adicionais.',
                   key: const Key('fill_13'), onTap: () => onFill('13')),
         ),
+    ];
+  }
+
+  /// 1 (desktop) — mesmos quadros do PDF/Word: rótulo | resposta.
+  Widget _basicsDoc(PatientBasics? b) {
+    String join(Iterable<String?> parts) => parts
+        .where((e) => (e ?? '').trim().isNotEmpty)
+        .map((e) => e!.trim())
+        .join('  ·  ');
+    String dash(String v) => v.isEmpty ? '—' : v;
+    String two(int n) => n.toString().padLeft(2, '0');
+    final bd = b?.birthDate;
+    final kids = b?.hasChildren == null
+        ? null
+        : (b!.hasChildren! ? 'Tem filhos' : 'Sem filhos');
+    final rows = <(String, String)>[
+      ('Nome/ID do cliente', join([data.patientName, b?.preferredName])),
+      (
+        'Idade / data de nascimento',
+        join([
+          b?.age == null ? null : '${b!.age} anos',
+          bd == null ? null : '${two(bd.day)}/${two(bd.month)}/${bd.year}',
+        ])
+      ),
+      (
+        'Relacionamento atual / orientação sexual / filhos',
+        join([b?.displayRelationshipStatus, b?.displaySexualOrientation, kids])
+      ),
+      ('Ocupação e posição', join([b?.occupation])),
+      ('Nível educacional mais alto', join([b?.displayEducationLevel])),
+      (
+        'País de nascimento / religião / grupo étnico',
+        join([b?.countryBirth, b?.religiousOrientation, b?.ethnicGroup])
+      ),
+    ];
+    return Column(
+      children: [for (final r in rows) _DocRow(label: r.$1, value: dash(r.$2))],
+    );
+  }
+
+  /// Título no estilo de documento (desktop): logo, título, linha navy e o
+  /// quadro do formulário (psicóloga, data, nº de sessões, meses).
+  Widget _docTitle(BuildContext context) {
+    final theme = Theme.of(context);
+    final fh = concept?.formHeader;
+    String two(int n) => n.toString().padLeft(2, '0');
+    final d = fh?.formDate;
+    final date = d == null ? '—' : '${two(d.day)}/${two(d.month)}/${d.year}';
+    String v(String? x) => (x ?? '').trim().isEmpty ? '—' : x!.trim();
+    final logo = logoBytes != null
+        ? Image.memory(logoBytes!,
+            key: const Key('doc_logo_custom'),
+            height: 48,
+            fit: BoxFit.contain,
+            alignment: Alignment.centerLeft,
+            errorBuilder: (_, __, ___) => _defaultLogo())
+        : _defaultLogo();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 180), child: logo),
+            const SizedBox(width: 18),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Conceituação de caso',
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      color: AppColors.navy,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Terapia do Esquema · itens na ordem do Formulário de Conceituação de Caso (versão 3.8)',
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: AppColors.textMuted),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Container(height: 2, color: AppColors.navy),
+        const SizedBox(height: 12),
+        _DocRow(label: 'Psicóloga', value: v(fh?.therapistName)),
+        _DocRow(label: 'Data', value: date),
+        _DocRow(label: 'Número de sessões', value: v(fh?.sessionsCount?.toString())),
+        _DocRow(
+            label: 'Meses desde a primeira sessão',
+            value: v(fh?.monthsSinceFirst?.toString())),
       ],
     );
   }
+
+  Widget _defaultLogo() => Image.asset(
+        CaseConceptualizationPdf.defaultLogoAsset,
+        key: const Key('doc_logo_default'),
+        height: 64,
+        fit: BoxFit.contain,
+        alignment: Alignment.centerLeft,
+        errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+      );
 
   Widget _impressions(GeneralImpressions g) {
     return Builder(builder: (context) {
@@ -655,7 +904,11 @@ class _Section extends StatelessWidget {
     required this.number,
     required this.title,
     required this.child,
+    this.framed = true,
   });
+
+  /// No desktop, quando o conteúdo já é um quadro próprio, não duplica a moldura.
+  final bool framed;
 
   final String number;
   final String title;
@@ -664,6 +917,52 @@ class _Section extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    if (_DocMode.of(context)) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 22),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(children: [
+              Container(
+                width: 28,
+                height: 28,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.navy,
+                  borderRadius: BorderRadius.circular(7),
+                ),
+                child: Text(number,
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: number.length > 1 ? 11 : 13,
+                        fontWeight: FontWeight.w800)),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(title,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800, color: AppColors.navy)),
+              ),
+            ]),
+            const SizedBox(height: 4),
+            Container(height: 1.5, color: AppColors.navy.withValues(alpha: 0.18)),
+            const SizedBox(height: 10),
+            if (framed)
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  border:
+                      Border.all(color: const Color(0xFFB8C4DC), width: 0.8),
+                ),
+                child: child,
+              )
+            else
+              child,
+          ],
+        ),
+      );
+    }
     return Container(
       margin: const EdgeInsets.only(bottom: 9),
       decoration: BoxDecoration(
@@ -1487,9 +1786,13 @@ class _RelationshipView extends StatelessWidget {
         if (rel.collaborationRating != null)
           meter('Colaboração', rel.collaborationRating),
         if (rel.bondRating != null) meter('Vínculo', rel.bondRating),
-        note('Colaboração:', rel.collaborationNotes),
-        note('Vínculo:', rel.bondNotes),
-        note('Reações do terapeuta:', rel.therapistReactions),
+        note('11.1 Reações pessoais do terapeuta ao cliente:',
+            rel.therapistReactions),
+        note('11.2.2 Colaboração:', rel.collaborationNotes),
+        note('11.2.3 Como melhorar a colaboração:', rel.collaborationImprove),
+        note('11.3.2 Vínculo:', rel.bondNotes),
+        note('11.3.3 Como fortalecer o vínculo:', rel.bondStrengthen),
+        note('11.4 Outros fatores:', rel.otherFactors),
       ],
     );
   }
@@ -1767,7 +2070,7 @@ class _FunctioningView extends StatelessWidget {
     final entries = [
       for (final area in kFunctioningAreas)
         (area, functioning.entries[area.key]),
-    ].where((e) => e.$2 != null && e.$2!.rating != null).toList();
+    ].where((e) => e.$2 != null && (e.$2!.rating != null || e.$2!.notApplicable)).toList();
 
     if (entries.isEmpty) {
       return const _Placeholder('Nível de funcionamento ainda não avaliado.');
@@ -1794,9 +2097,9 @@ class _FunctioningView extends StatelessWidget {
                       borderRadius: BorderRadius.circular(7),
                     ),
                     child: Text(
-                      '${entry.rating}',
+                      entry.notApplicable ? 'N/A' : '${entry.rating}',
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: entry.notApplicable ? 9 : 13,
                         fontWeight: FontWeight.w800,
                         color: color,
                       ),
@@ -1829,6 +2132,137 @@ class _FunctioningView extends StatelessWidget {
               );
             }),
           ),
+      ],
+    );
+  }
+}
+
+/// 5 (desktop) — avaliação CLÍNICA 1–6 ou N/A em quadro; as notas 0–10 do
+/// Contexto de Vida da paciente entram só como linha secundária identificada.
+class _FunctioningDoc extends StatelessWidget {
+  const _FunctioningDoc({required this.functioning, required this.lifeAreas});
+
+  final FunctioningAssessment? functioning;
+  final List<LifeAreaAssessment> lifeAreas;
+
+  Widget _chip(String t, bool sel, {double w = 24}) => Container(
+        width: w,
+        height: 24,
+        margin: const EdgeInsets.only(right: 4),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: sel ? AppColors.navy : null,
+          border: Border.all(
+              color: sel ? AppColors.navy : const Color(0xFFB8C4DC), width: 0.8),
+          borderRadius: BorderRadius.circular(4),
+        ),
+        child: Text(t,
+            style: TextStyle(
+                fontSize: 11,
+                fontWeight: sel ? FontWeight.w800 : FontWeight.w500,
+                color: sel ? Colors.white : AppColors.textMuted)),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    const line = Color(0xFFB8C4DC);
+    final rated = [
+      for (final a in lifeAreas)
+        if (a.score != null) a,
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Nota: 1 = não funcional · 6 = excelente · N/A = não se aplica',
+            style: theme.textTheme.labelSmall
+                ?.copyWith(color: AppColors.textMuted)),
+        const SizedBox(height: 6),
+        Container(
+          decoration: BoxDecoration(border: Border.all(color: line, width: 0.8)),
+          child: Column(
+            children: [
+              for (var i = 0; i < kFunctioningAreas.length; i++)
+                () {
+                  final area = kFunctioningAreas[i];
+                  final e = functioning?.entryFor(area.key) ??
+                      const FunctioningEntry();
+                  return Container(
+                    key: Key('func_row_${area.key}'),
+                    decoration: BoxDecoration(
+                      border: i == 0
+                          ? null
+                          : const Border(top: BorderSide(color: line, width: 0.8)),
+                    ),
+                    child: IntrinsicHeight(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Container(
+                            width: 250,
+                            color: const Color(0xFFEAF0FA),
+                            padding: const EdgeInsets.all(10),
+                            child: Text('${area.code} ${area.label}',
+                                style: theme.textTheme.bodySmall?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: AppColors.navy)),
+                          ),
+                          const VerticalDivider(width: 0.8, color: line),
+                          Padding(
+                            padding: const EdgeInsets.all(10),
+                            child: Row(children: [
+                              for (var v = 1; v <= 6; v++)
+                                _chip('$v', !e.notApplicable && e.rating == v),
+                              _chip('N/A', e.notApplicable, w: 38),
+                            ]),
+                          ),
+                          const VerticalDivider(width: 0.8, color: line),
+                          Expanded(
+                            child: Padding(
+                              padding: const EdgeInsets.all(10),
+                              child: Text(
+                                (e.explanation ?? '').trim().isEmpty
+                                    ? '—'
+                                    : e.explanation!.trim(),
+                                style: theme.textTheme.bodySmall
+                                    ?.copyWith(color: AppColors.textPrimary),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }(),
+            ],
+          ),
+        ),
+        if (rated.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Text(
+              'Dado da paciente (Contexto de Vida, escala 0–10) — não é a avaliação clínica',
+              style: theme.textTheme.labelMedium?.copyWith(
+                  color: AppColors.textMuted, fontWeight: FontWeight.w700)),
+          const SizedBox(height: 4),
+          Wrap(
+            spacing: 8,
+            runSpacing: 6,
+            children: [
+              for (final a in rated)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F5FA),
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: Text('${a.area.label}: ${a.score}/10',
+                      style: theme.textTheme.labelSmall
+                          ?.copyWith(color: AppColors.textSecondary)),
+                ),
+            ],
+          ),
+        ],
       ],
     );
   }

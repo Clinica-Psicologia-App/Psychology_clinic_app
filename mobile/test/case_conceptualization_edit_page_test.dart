@@ -54,7 +54,7 @@ void main() {
       (tester) async {
     await pump(tester);
     const legend =
-        '0 = quase nada, 1 = muito limitado, 3 = moderado, 5 = grande medida';
+        'X = informação insuficiente, 0 = quase nada, 1 = muito limitado, 3 = moderado, 5 = grande medida';
     // 1 no subtítulo do cartão (termina com ponto) + 1 por necessidade.
     final perNeed = find.text(legend);
     expect(perNeed, findsWidgets);

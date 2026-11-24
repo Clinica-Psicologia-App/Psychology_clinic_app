@@ -26,6 +26,7 @@ Map<String, dynamic> synthesisColumns(CaseConceptualization data) {
     'central_schemas': data.centralSchemasJson(),
     'mode_assessment': data.modeAssessment.toJson(),
     'therapy_objectives': data.therapyObjectivesJson(),
+    'form_header': data.formHeader.toJson(),
   };
 }
 
@@ -42,7 +43,7 @@ class CaseConceptualizationRepository {
       'therapeutic_relationship, general_impressions, diagnosis, '
       'origins, motivo_initial, motivo_current, all_schemas, additional_comments, '
       'functioning, life_problems, central_schemas, mode_assessment, '
-      'therapy_objectives, updated_at';
+      'therapy_objectives, form_header, updated_at';
 
   /// Carrega o documento do paciente; se ainda não existe, devolve um vazio.
   Future<CaseConceptualization> load(String patientId) async {

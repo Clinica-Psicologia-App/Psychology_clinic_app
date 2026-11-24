@@ -19,6 +19,7 @@ import '../../patients/presentation/widgets/staff_section_header.dart';
 import '../domain/profile_role.dart';
 import '../providers/profile_providers.dart';
 import 'profile_routes.dart';
+import 'widgets/document_logo_card.dart';
 import 'widgets/user_avatar.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 import '../../../shared/widgets/brand_loading.dart';
@@ -248,6 +249,10 @@ class _ProfileBodyState extends ConsumerState<_ProfileBody> {
                     ],
                   ],
                 ),
+                if (p.role != ProfileRole.patient) ...[
+                  const SizedBox(height: 12),
+                  const DocumentLogoCard(),
+                ],
                 const SizedBox(height: 12),
                 _SectionCard(
                   title: 'Conta e acessos',

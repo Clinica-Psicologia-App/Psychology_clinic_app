@@ -1,11 +1,13 @@
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, visibleForTesting;
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../initial_assessment/domain/initial_assessment.dart';
+import '../../initial_assessment/domain/life_area.dart';
 import '../domain/case_conceptualization.dart';
 import '../domain/mental_map_data.dart';
 
@@ -15,17 +17,33 @@ import '../domain/mental_map_data.dart';
 class CaseConceptualizationWord {
   const CaseConceptualizationWord._();
 
+  /// Logo padrão (nunca o mascote) quando a psicóloga não enviou a dela.
+  static const defaultLogoAsset =
+      'assets/branding/esquema_core_logo_principal.png';
+
+  /// [logoBytes] = logo de quem exporta (null = logo padrão do EsquemaCore).
+  /// RTF só embute PNG e JPEG: WebP/ilegível cai na logo padrão.
   static Future<void> shareOrOpen({
     required MentalMapData data,
     CaseConceptualization? concept,
     InitialAssessment? assessment,
+    Uint8List? logoBytes,
   }) async {
     if (kIsWeb) {
       throw UnsupportedError(
         'Export em Word não disponível na versão web.',
       );
     }
-    final bytes = _build(data: data, concept: concept, assessment: assessment);
+    var logo = logoBytes;
+    if (logo == null || _imageInfo(logo) == null) {
+      try {
+        logo = (await rootBundle.load(defaultLogoAsset)).buffer.asUint8List();
+      } catch (_) {
+        logo = null;
+      }
+    }
+    final bytes = _build(
+        data: data, concept: concept, assessment: assessment, logoBytes: logo);
     final dir = await getTemporaryDirectory();
     final name = _fileName(data.patientName);
     final file = File('${dir.path}/$name');
@@ -35,6 +53,20 @@ class CaseConceptualizationWord {
       text: 'Formulação de Caso — ${data.patientName}',
     );
   }
+
+  /// Gera os bytes do RTF (para teste e pré-visualização).
+  @visibleForTesting
+  static Uint8List buildBytes({
+    required MentalMapData data,
+    CaseConceptualization? concept,
+    InitialAssessment? assessment,
+    Uint8List? logoBytes,
+  }) =>
+      _build(
+          data: data,
+          concept: concept,
+          assessment: assessment,
+          logoBytes: logoBytes);
 
   static String _fileName(String name) {
     final safe = name
@@ -48,6 +80,7 @@ class CaseConceptualizationWord {
     required MentalMapData data,
     CaseConceptualization? concept,
     InitialAssessment? assessment,
+    Uint8List? logoBytes,
   }) {
     final buf = StringBuffer();
     final c = concept;
@@ -63,23 +96,68 @@ class CaseConceptualizationWord {
       r'{\rtf1\ansi\ansicpg1252\deff0'
       r'{\fonttbl{\f0\fswiss\fcharset0 Arial;}{\f1\fnil\fcharset0 Arial;}}'
       r'{\colortbl;\red13\green27\blue61;\red74\green85\blue104;'
-      r'\red59\green130\blue246;\red255\green255\blue255;}'
+      r'\red59\green130\blue246;\red255\green255\blue255;\red234\green240\blue250;\red184\green196\blue220;}'
       '\n'
-      r'\paperw12240\paperh15840\margl1800\margr1800\margt1440\margb1440'
+      r'\paperw12240\paperh15840\margl1134\margr1134\margt1134\margb1134'
       '\n'
       r'\f0\fs22\cf0'
       '\n',
     );
 
-    // ── Capa ────────────────────────────────────────────────────────────────
-    _heading(buf, 'FORMULAÇÃO DE CASO', size: 40, center: true);
-    _heading(buf, 'Terapia do Esquema', size: 28, center: true);
+    // ── Cabeçalho (logo + título + quadro do formulário) ─────────────────────
+    _logo(buf, logoBytes);
+    _heading(buf, 'Conceituação de caso', size: 40, center: true);
+    _heading(buf, 'Terapia do Esquema · Formulário de Conceituação de Caso (versão 3.8)',
+        size: 20, center: true);
     _blank(buf);
-    _field(buf, 'Paciente', data.patientName);
-    _field(buf, 'Data', dateStr);
-    if ((assessment?.basics?.preferredName ?? '').trim().isNotEmpty) {
-      _field(buf, 'Nome preferido', assessment!.basics!.preferredName!);
+    final fh = c?.formHeader;
+    final fd = fh?.formDate;
+    // Data digitada pela psicóloga; vazia fica vazia (não usa a data do export).
+    final formDate = fd == null
+        ? ''
+        : '${fd.day.toString().padLeft(2, '0')}/${fd.month.toString().padLeft(2, '0')}/${fd.year}';
+    _field(buf, 'Psicóloga', (fh?.therapistName ?? '').trim().isEmpty ? '—' : fh!.therapistName!.trim());
+    _field(buf, 'Data', formDate);
+    _field(buf, 'Número de sessões', fh?.sessionsCount?.toString() ?? '—');
+    _field(buf, 'Meses desde a primeira sessão', fh?.monthsSinceFirst?.toString() ?? '—');
+    _divider(buf);
+
+    // ── Seção 1 — Informações básicas do cliente ─────────────────────────────
+    _sectionTitle(buf, '1. Informações básicas do cliente');
+    final b = assessment?.basics;
+    String join(Iterable<String?> parts) => parts
+        .where((e) => (e ?? '').trim().isNotEmpty)
+        .map((e) => e!.trim())
+        .join('  ·  ');
+    String? age = b?.age == null ? null : '${b!.age} anos';
+    String? birth;
+    final bd = b?.birthDate;
+    if (bd != null) {
+      birth =
+          '${bd.day.toString().padLeft(2, '0')}/${bd.month.toString().padLeft(2, '0')}/${bd.year}';
     }
+    final kids = b?.hasChildren == null
+        ? null
+        : (b!.hasChildren! ? 'Tem filhos' : 'Sem filhos');
+    String dash(String v) => v.isEmpty ? '—' : v;
+    _field(buf, 'Nome/ID do cliente',
+        dash(join([data.patientName, b?.preferredName])));
+    _field(buf, 'Idade / data de nascimento', dash(join([age, birth])));
+    _field(
+        buf,
+        'Relacionamento atual / orientação sexual / filhos',
+        dash(join([
+          b?.displayRelationshipStatus,
+          b?.displaySexualOrientation,
+          kids
+        ])));
+    _field(buf, 'Ocupação e posição', dash(join([b?.occupation])));
+    _field(buf, 'Nível educacional mais alto',
+        dash(join([b?.displayEducationLevel])));
+    _field(
+        buf,
+        'País de nascimento / religião / grupo étnico',
+        dash(join([b?.countryBirth, b?.religiousOrientation, b?.ethnicGroup])));
     _divider(buf);
 
     // ── Seção 2 — Motivo da busca ────────────────────────────────────────────
@@ -155,22 +233,31 @@ class CaseConceptualizationWord {
     }
     _divider(buf);
 
-    // ── Seção 5 — Funcionamento ──────────────────────────────────────────────
-    _sectionTitle(buf, '5. Funcionamento Global');
-    if (c?.hasFunctioning == true) {
-      for (final area in kFunctioningAreas) {
-        final entry = c!.functioning.entryFor(area.key);
-        if (entry.isEmpty) continue;
-        _label(buf, '${area.code} — ${area.label}');
-        if (entry.rating != null) {
-          _body(buf, 'Avaliação: ${entry.rating}/6');
-        }
-        if ((entry.explanation ?? '').trim().isNotEmpty) {
-          _body(buf, entry.explanation!);
-        }
+    // ── Seção 5 — Nível de funcionamento (avaliação clínica 1–6 ou N/A) ──────
+    _sectionTitle(buf, '5. Nível atual de funcionamento');
+    _body(buf, 'Nota: 1 = não funcional · 6 = excelente · N/A = não se aplica');
+    for (final area in kFunctioningAreas) {
+      final entry = c?.functioning.entryFor(area.key) ?? const FunctioningEntry();
+      final nota = entry.notApplicable
+          ? 'N/A'
+          : (entry.rating == null ? '—' : '${entry.rating}/6');
+      final expl = (entry.explanation ?? '').trim();
+      _field(buf, '${area.code} ${area.label}',
+          expl.isEmpty ? 'Nota: $nota' : 'Nota: $nota  ·  $expl');
+    }
+    final lifeScores = [
+      if (assessment != null)
+        for (final area in kLifeAreasInOrder)
+          if (assessment.lifeAreaFor(area).score != null)
+            (area.label, assessment.lifeAreaFor(area).score!),
+    ];
+    if (lifeScores.isNotEmpty) {
+      _blank(buf);
+      _label(buf,
+          'Dado da paciente (Contexto de Vida, escala 0–10) — não é a avaliação clínica');
+      for (final ls in lifeScores) {
+        _field(buf, ls.$1, '${ls.$2}/10');
       }
-    } else {
-      _empty(buf);
     }
     _divider(buf);
 
@@ -222,7 +309,8 @@ class CaseConceptualizationWord {
         if (u.isEmpty) continue;
         _label(buf, n.label, indent: true);
         if ((u.rating ?? '').trim().isNotEmpty) {
-          _body(buf, 'Avaliação: ${u.rating}');
+          _body(buf,
+            'Avaliação: ${u.rating == 'X' ? 'X (informação insuficiente)' : u.rating}');
         }
         if ((u.origin ?? '').trim().isNotEmpty) {
           _body(buf, 'Origem: ${u.origin!}');
@@ -357,25 +445,36 @@ class CaseConceptualizationWord {
     }
     _divider(buf);
 
-    // ── Seção 11 — Relação terapêutica ──────────────────────────────────────
+    // ── Seção 11 — Relação terapêutica (11.1–11.4) ────────────────────
     _sectionTitle(buf, '11. Relação Terapêutica');
     if (c?.hasRelationship == true) {
       final r = c!.relationship;
-      if (r.collaborationRating != null) {
-        _field(buf, 'Colaboração', '${r.collaborationRating}/5');
+      bool has(String? v) => (v ?? '').trim().isNotEmpty;
+      if (has(r.therapistReactions)) {
+        _label(buf, '11.1 Reações pessoais do terapeuta ao cliente');
+        _maybeLine(buf, 'Descrição', r.therapistReactions);
       }
-      if ((r.collaborationNotes ?? '').trim().isNotEmpty) {
-        _body(buf, r.collaborationNotes!);
+      if (r.collaborationRating != null ||
+          has(r.collaborationNotes) ||
+          has(r.collaborationImprove)) {
+        _label(buf, '11.2 Colaboração');
+        if (r.collaborationRating != null) {
+          _field(buf, '11.2.1 Nota (1–5)', '${r.collaborationRating}/5');
+        }
+        _maybeLine(buf, '11.2.2 Descrição', r.collaborationNotes);
+        _maybeLine(buf, '11.2.3 Como melhorar', r.collaborationImprove);
       }
-      if (r.bondRating != null) {
-        _field(buf, 'Vínculo', '${r.bondRating}/5');
+      if (r.bondRating != null || has(r.bondNotes) || has(r.bondStrengthen)) {
+        _label(buf, '11.3 Vínculo de reparentalidade');
+        if (r.bondRating != null) {
+          _field(buf, '11.3.1 Nota (1–5)', '${r.bondRating}/5');
+        }
+        _maybeLine(buf, '11.3.2 Descrição', r.bondNotes);
+        _maybeLine(buf, '11.3.3 Como fortalecer', r.bondStrengthen);
       }
-      if ((r.bondNotes ?? '').trim().isNotEmpty) {
-        _body(buf, r.bondNotes!);
-      }
-      if ((r.therapistReactions ?? '').trim().isNotEmpty) {
-        _label(buf, 'Reações do terapeuta');
-        _body(buf, r.therapistReactions!);
+      if (has(r.otherFactors)) {
+        _label(buf, '11.4 Outros');
+        _maybeLine(buf, '11.4 Outros fatores', r.otherFactors);
       }
     } else {
       _empty(buf);
@@ -429,6 +528,65 @@ class CaseConceptualizationWord {
     return Uint8List.fromList(buf.toString().codeUnits);
   }
 
+  /// Tipo e dimensões (px) de PNG/JPEG; null se não for um dos dois.
+  @visibleForTesting
+  static ({String type, int w, int h})? imageInfo(Uint8List b) => _imageInfo(b);
+
+  static ({String type, int w, int h})? _imageInfo(Uint8List b) {
+    try {
+      if (b.length > 24 &&
+          b[0] == 0x89 &&
+          b[1] == 0x50 &&
+          b[2] == 0x4E &&
+          b[3] == 0x47) {
+        final w = (b[16] << 24) | (b[17] << 16) | (b[18] << 8) | b[19];
+        final h = (b[20] << 24) | (b[21] << 16) | (b[22] << 8) | b[23];
+        return (w > 0 && h > 0) ? (type: 'png', w: w, h: h) : null;
+      }
+      if (b.length > 4 && b[0] == 0xFF && b[1] == 0xD8) {
+        var i = 2;
+        while (i + 9 < b.length) {
+          if (b[i] != 0xFF) {
+            i++;
+            continue;
+          }
+          final m = b[i + 1];
+          if (m == 0xD8 || m == 0x01 || (m >= 0xD0 && m <= 0xD7)) {
+            i += 2;
+            continue;
+          }
+          final len = (b[i + 2] << 8) | b[i + 3];
+          final isSof = m >= 0xC0 && m <= 0xCF && m != 0xC4 && m != 0xC8 && m != 0xCC;
+          if (isSof) {
+            final h = (b[i + 5] << 8) | b[i + 6];
+            final w = (b[i + 7] << 8) | b[i + 8];
+            return (w > 0 && h > 0) ? (type: 'jpeg', w: w, h: h) : null;
+          }
+          i += 2 + len;
+        }
+      }
+    } catch (_) {}
+    return null;
+  }
+
+  /// Logo no topo (PNG/JPEG), com ~2,6 cm de altura no máximo.
+  static void _logo(StringBuffer buf, Uint8List? bytes) {
+    final info = bytes == null ? null : _imageInfo(bytes);
+    if (bytes == null || info == null) return;
+    const maxH = 1300.0; // twips
+    const maxW = 3400.0;
+    var scale = maxH / info.h;
+    if (info.w * scale > maxW) scale = maxW / info.w;
+    final wg = (info.w * scale).round();
+    final hg = (info.h * scale).round();
+    final hex = StringBuffer();
+    for (final v in bytes) {
+      hex.write(v.toRadixString(16).padLeft(2, '0'));
+    }
+    buf.write('{\\pard\\ql{\\pict\\${info.type}blip\\picw${info.w}\\pich${info.h}'
+        '\\picwgoal$wg\\pichgoal$hg\n$hex}\\par}\n');
+  }
+
   // ── RTF helpers ─────────────────────────────────────────────────────────────
 
   static void _heading(
@@ -445,51 +603,52 @@ class CaseConceptualizationWord {
 
   static void _sectionTitle(StringBuffer buf, String text) {
     buf.write(
-      '{\\pard\\ql\\b\\fs26\\cf1 ${_e(text)}\\b0\\fs22\\cf0\\par}\n',
+      '{\\pard\\ql\\sb240\\sa100\\b\\fs26\\cf1 ${_e(text)}\\b0\\fs22\\cf0\\par}\n',
     );
   }
 
+  // Quadros: linhas de tabela RTF com borda; linhas seguidas formam um quadro.
+  static const _bd = r'\clbrdrt\brdrs\brdrw8\brdrcf6\clbrdrl\brdrs\brdrw8\brdrcf6'
+      r'\clbrdrb\brdrs\brdrw8\brdrcf6\clbrdrr\brdrs\brdrw8\brdrcf6';
+  static const _wTotal = 9972;
+  static const _wLabel = 3000;
+
+  /// Faixa de sub-título do quadro (largura total, fundo claro, negrito).
   static void _label(StringBuffer buf, String text, {bool indent = false}) {
-    final left = indent ? r'\li360' : '';
-    buf.write(
-      '{\\pard\\ql$left\\b ${_e(text)}:\\b0\\par}\n',
-    );
+    buf.write('\\trowd\\trgaph90\\trleft0$_bd\\clcbpat5\\cellx$_wTotal'
+        '\\pard\\intbl\\ql\\b ${_e(text)}\\b0\\cell\\row\n');
   }
 
+  /// Linha de 2 colunas: rótulo (fundo claro) e resposta.
   static void _field(StringBuffer buf, String label, String value) {
-    buf.write(
-      '{\\pard\\ql\\b ${_e(label)}:\\b0  ${_e(value)}\\par}\n',
-    );
+    buf.write('\\trowd\\trgaph90\\trleft0$_bd\\clcbpat5\\cellx$_wLabel'
+        '$_bd\\cellx$_wTotal'
+        '\\pard\\intbl\\ql\\b ${_e(label)}\\b0\\cell'
+        '\\pard\\intbl\\ql ${_e(value)}\\cell\\row\n');
   }
 
-  static void _body(StringBuffer buf, String text) {
-    buf.write('{\\pard\\ql\\li360 ${_e(text)}\\par}\n');
+  static void _row1(StringBuffer buf, String inner) {
+    buf.write('\\trowd\\trgaph90\\trleft0$_bd\\cellx$_wTotal'
+        '\\pard\\intbl\\ql $inner\\cell\\row\n');
   }
 
-  static void _bullet(StringBuffer buf, String text) {
-    buf.write('{\\pard\\ql\\li360 \\bullet   ${_e(text)}\\par}\n');
-  }
+  static void _body(StringBuffer buf, String text) => _row1(buf, _e(text));
 
-  static void _empty(StringBuffer buf) {
-    buf.write(
-      '{\\pard\\ql\\li360\\cf2\\i (não preenchido)\\i0\\cf0\\par}\n',
-    );
-  }
+  static void _bullet(StringBuffer buf, String text) =>
+      _row1(buf, '\\bullet   ${_e(text)}');
+
+  static void _empty(StringBuffer buf) =>
+      _row1(buf, '\\cf2\\i (não preenchido)\\i0\\cf0');
 
   static void _blank(StringBuffer buf) {
-    buf.write('{\\pard\\par}\n');
+    buf.write('{\\pard\\fs12\\par}\\n');
   }
 
-  static void _divider(StringBuffer buf) {
-    buf.write('{\\pard\\brdrb\\brdrs\\brdrw10\\brsp20 \\par}\n');
-    _blank(buf);
-  }
+  static void _divider(StringBuffer buf) => _blank(buf);
 
   static void _maybeLine(StringBuffer buf, String label, String? value) {
     if ((value ?? '').trim().isEmpty) return;
-    buf.write(
-      '{\\pard\\ql\\li360\\b ${_e(label)}:\\b0  ${_e(value!.trim())}\\par}\n',
-    );
+    _field(buf, label, value!.trim());
   }
 
   /// Escapa texto para RTF ANSI (codepage 1252 + unicode fallback).

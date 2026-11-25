@@ -29,8 +29,9 @@ class _Group {
   final List<ClinicUser> users = [];
 }
 
-/// Usuários em desktop: controle segmentado, busca, tabela em painel com
-/// grupos por vínculo, "⋯" e painel lateral de detalhe.
+/// Usuários em desktop: controle segmentado, busca, tabela em painel com duas
+/// seções (blocos de clínica que abrem e fecham; consultórios individuais em
+/// uma linha por pessoa), "⋯" e painel lateral de detalhe.
 class DesktopUsersView extends StatefulWidget {
   const DesktopUsersView({
     super.key,
@@ -53,6 +54,9 @@ class _DesktopUsersViewState extends State<DesktopUsersView> {
   _Filter _filter = _Filter.all;
   String _query = '';
   String? _selectedId;
+
+  /// Clínicas fechadas (todas começam abertas).
+  final Set<String> _collapsed = {};
 
   List<_Group> _groups(List<ClinicUser> users) {
     final map = <String, _Group>{};
@@ -79,6 +83,49 @@ class _DesktopUsersViewState extends State<DesktopUsersView> {
     if (q.isEmpty) return true;
     return u.fullName.toLowerCase().contains(q) ||
         u.email.toLowerCase().contains(q);
+  }
+
+  Widget _row(ClinicUser u, DesktopAdminMetrics m) => _UserTr(
+        key: ValueKey(u.id),
+        user: u,
+        m: m,
+        selected: _selectedId == u.id,
+        isMe: u.id == widget.currentProfileId,
+        canDelete: u.canBeDeletedBy(
+          currentProfileId: widget.currentProfileId,
+          actorIsPlatformAdmin: widget.isPlatformAdmin,
+        ),
+        actions: widget.actions,
+        onOpen: () => _openDetail(u),
+      );
+
+  /// Bloco de uma clínica. O "X/Y ativos" é da clínica inteira, não só das
+  /// pessoas que o filtro deixou à mostra.
+  Widget _clinicBlock(_Group g, DesktopAdminMetrics m) {
+    final members = widget.users.where((u) => u.clinicId == g.id);
+    final open = !_collapsed.contains(g.id);
+    return Column(
+      key: ValueKey('clinica-${g.id}'),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _ClinicHeader(
+          name: g.first.clinicName,
+          active: members.where((u) => u.isActive).length,
+          total: members.length,
+          clinicIsActive: g.first.clinicIsActive,
+          open: open,
+          onTap: () => setState(
+              () => open ? _collapsed.add(g.id) : _collapsed.remove(g.id)),
+        ),
+        _Collapsible(
+          open: open,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [for (final u in g.users) _row(u, m)],
+          ),
+        ),
+      ],
+    );
   }
 
   Future<void> _openDetail(ClinicUser user) async {
@@ -148,8 +195,11 @@ class _DesktopUsersViewState extends State<DesktopUsersView> {
       };
       return byRole && _matches(u);
     }).toList();
-    final groups = _groups(filtered);
-    final allGroups = _groups(users);
+    final clinics =
+        _groups(filtered.where((u) => !u.isPersonalClinic).toList());
+    // Consultórios na mesma ordem de antes (pelo nome do consultório).
+    final practices =
+        _groups(filtered.where((u) => u.isPersonalClinic).toList());
 
     return Padding(
       padding: EdgeInsets.fromLTRB(m.pad, m.size == DesktopAdminSize.desktop ? 24 : 18, m.pad, 24),
@@ -166,8 +216,8 @@ class _DesktopUsersViewState extends State<DesktopUsersView> {
             child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 860),
               child: Text(
-                'Cada bloco representa uma clínica ou um consultório '
-                'individual. Dentro dele ficam os profissionais vinculados.',
+                'Clínicas aparecem em blocos com seus profissionais; '
+                'consultórios individuais, um por linha.',
                 style: daText(context, t, color: t.tx2),
               ),
             ),
@@ -197,9 +247,6 @@ class _DesktopUsersViewState extends State<DesktopUsersView> {
                   ),
                 ),
               ),
-              const SizedBox(width: 10),
-              DaTag('${allGroups.length} grupo(s)',
-                  icon: Icons.account_tree_outlined),
             ],
           ),
           const SizedBox(height: 14),
@@ -222,22 +269,15 @@ class _DesktopUsersViewState extends State<DesktopUsersView> {
                           )
                         : ListView(
                             children: [
-                              for (final g in groups) ...[
-                                _GroupRow(group: g),
-                                for (final u in g.users)
-                                  _UserTr(
-                                    key: ValueKey(u.id),
-                                    user: u,
-                                    m: m,
-                                    selected: _selectedId == u.id,
-                                    isMe: u.id == widget.currentProfileId,
-                                    canDelete: u.canBeDeletedBy(
-                                      currentProfileId: widget.currentProfileId,
-                                      actorIsPlatformAdmin: widget.isPlatformAdmin,
-                                    ),
-                                    actions: widget.actions,
-                                    onOpen: () => _openDetail(u),
-                                  ),
+                              if (clinics.isNotEmpty) ...[
+                                _SectionTitle('Clínicas (${clinics.length})'),
+                                for (final g in clinics) _clinicBlock(g, m),
+                              ],
+                              if (practices.isNotEmpty) ...[
+                                _SectionTitle(
+                                    'Consultórios individuais (${practices.length})'),
+                                for (final g in practices)
+                                  for (final u in g.users) _row(u, m),
                               ],
                             ],
                           ),
@@ -332,12 +372,18 @@ class _Segmented extends StatelessWidget {
   }
 }
 
-const double _wPapel = 140;
-const double _wStatus = 100;
-const double _wCount = 150;
-const double _wLimit = 120;
-const double _wAtivo = 72;
 const double _wMais = 56;
+double _wPapel(DesktopAdminMetrics m) => m.tablet ? 112 : 140;
+double _wPacientes(DesktopAdminMetrics m) => m.tablet ? 128 : 170;
+double _wAtivo(DesktopAdminMetrics m) => m.tablet ? 112 : 116;
+
+/// Abrir e fechar um bloco de clínica.
+const _kCollapseDuration = Duration(milliseconds: 170);
+
+Duration _collapseDuration(BuildContext context) =>
+    MediaQuery.disableAnimationsOf(context)
+        ? Duration.zero
+        : _kCollapseDuration;
 
 class _HeaderRow extends StatelessWidget {
   const _HeaderRow({required this.m});
@@ -347,11 +393,11 @@ class _HeaderRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final t = DesktopAdminTokens.of(context);
-    Widget h(String s, {double? w, bool right = false}) {
+    Widget h(String s, {double? w}) {
       final text = Text(s,
           maxLines: 1,
-          textAlign: right ? TextAlign.right : TextAlign.left,
-          style: daText(context, t, size: 12, weight: FontWeight.w500, color: t.tx3));
+          style: daText(context, t,
+              size: 12, weight: FontWeight.w500, color: t.tx3));
       return w == null ? Expanded(child: text) : SizedBox(width: w, child: text);
     }
 
@@ -365,12 +411,9 @@ class _HeaderRow extends StatelessWidget {
       child: Row(
         children: [
           h('Nome'),
-          h('Papel', w: _wPapel),
-          h('Status', w: _wStatus),
-          if (!m.tablet) h('Pacientes/convites', w: _wCount, right: true),
-          if (!m.tablet) const SizedBox(width: 14),
-          if (!m.tablet) h('Limite', w: _wLimit),
-          h('Ativo', w: _wAtivo),
+          h('Papel', w: _wPapel(m)),
+          h('Pacientes', w: _wPacientes(m)),
+          h('Ativo', w: _wAtivo(m)),
           const SizedBox(width: _wMais),
         ],
       ),
@@ -378,49 +421,162 @@ class _HeaderRow extends StatelessWidget {
   }
 }
 
-class _GroupRow extends StatelessWidget {
-  const _GroupRow({required this.group});
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle(this.label);
 
-  final _Group group;
+  final String label;
 
   @override
   Widget build(BuildContext context) {
     final t = DesktopAdminTokens.of(context);
-    final f = group.first;
-    final personal = f.isPersonalClinic;
-    final active = group.users.where((u) => u.isActive).length;
     return Container(
-      height: 46,
+      height: 42,
+      alignment: Alignment.centerLeft,
       padding: const EdgeInsets.symmetric(horizontal: 18),
-      decoration: BoxDecoration(
-        color: t.bg,
-        border: Border(
-          top: BorderSide(color: t.bd2),
-          bottom: BorderSide(color: t.bd2),
+      decoration:
+          BoxDecoration(border: Border(bottom: BorderSide(color: t.bd2))),
+      child: Semantics(
+        header: true,
+        child: Text(label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: daText(context, t, weight: FontWeight.w700)),
+      ),
+    );
+  }
+}
+
+class _ClinicHeader extends StatefulWidget {
+  const _ClinicHeader({
+    required this.name,
+    required this.active,
+    required this.total,
+    required this.clinicIsActive,
+    required this.open,
+    required this.onTap,
+  });
+
+  final String name;
+  final int active;
+  final int total;
+  final bool clinicIsActive;
+  final bool open;
+  final VoidCallback onTap;
+
+  @override
+  State<_ClinicHeader> createState() => _ClinicHeaderState();
+}
+
+class _ClinicHeaderState extends State<_ClinicHeader> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = DesktopAdminTokens.of(context);
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: Semantics(
+        button: true,
+        expanded: widget.open,
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: widget.onTap,
+          child: AnimatedContainer(
+            duration: daHoverDuration(context),
+            height: 46,
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: _hover ? t.hov : t.bg,
+              border: Border(bottom: BorderSide(color: t.bd2)),
+            ),
+            child: Row(
+              children: [
+                AnimatedRotation(
+                  // ▾ aberto, ▸ fechado.
+                  turns: widget.open ? 0 : -0.25,
+                  duration: _collapseDuration(context),
+                  child: Icon(Icons.arrow_drop_down, size: 24, color: t.tx2),
+                ),
+                const SizedBox(width: 6),
+                Flexible(
+                  child: Text(widget.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: daText(context, t, weight: FontWeight.w600)),
+                ),
+                const SizedBox(width: 10),
+                DaTag('${widget.active}/${widget.total} ativos', bg: t.hov2),
+                if (!widget.clinicIsActive) ...[
+                  const SizedBox(width: 8),
+                  DaTag('Inativa', bg: t.hov2, fg: t.err),
+                ],
+              ],
+            ),
+          ),
         ),
       ),
-      child: Row(
-        children: [
-          DaIconBox(
-            personal ? Icons.person_pin_circle_outlined : Icons.apartment_outlined,
-            color: personal ? DesktopAdminTokens.purple : DesktopAdminTokens.blue,
-            size: 28,
+    );
+  }
+}
+
+/// Altura que abre e fecha; fechado, o conteúdo sai da árvore.
+class _Collapsible extends StatefulWidget {
+  const _Collapsible({required this.open, required this.child});
+
+  final bool open;
+  final Widget child;
+
+  @override
+  State<_Collapsible> createState() => _CollapsibleState();
+}
+
+class _CollapsibleState extends State<_Collapsible>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller =
+      AnimationController(vsync: this, value: widget.open ? 1 : 0);
+  late final CurvedAnimation _curved =
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOutCubic);
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _controller.duration = _collapseDuration(context);
+  }
+
+  @override
+  void didUpdateWidget(_Collapsible old) {
+    super.didUpdateWidget(old);
+    if (old.open != widget.open) {
+      widget.open ? _controller.forward() : _controller.reverse();
+    }
+  }
+
+  @override
+  void dispose() {
+    _curved.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      child: widget.child,
+      builder: (context, child) {
+        if (!widget.open && _controller.isDismissed) {
+          return const SizedBox.shrink();
+        }
+        return ClipRect(
+          child: Align(
+            alignment: Alignment.topCenter,
+            heightFactor: _curved.value,
+            child: IgnorePointer(ignoring: !widget.open, child: child),
           ),
-          const SizedBox(width: 10),
-          Flexible(
-            child: Text(f.clinicName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: daText(context, t, weight: FontWeight.w600)),
-          ),
-          const SizedBox(width: 10),
-          personal ? DaTag.rx(context, f.clinicTypeLabel) : DaTag.az(context, f.clinicTypeLabel),
-          const SizedBox(width: 8),
-          f.clinicIsActive ? DaTag.ok(context, 'Ativa') : const DaTag('Inativa'),
-          const SizedBox(width: 8),
-          DaTag('$active/${group.users.length} ativos'),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -468,13 +624,21 @@ class _UserTrState extends State<_UserTr> {
             ? Expanded(child: child)
             : SizedBox(width: w, child: Align(alignment: al, child: child));
 
-    final limitText = !psy
+    // Pacientes e convites já reservados, junto do limite.
+    final slots = u.reservedPatientSlots;
+    final patients = !psy
         ? '—'
         : !u.canReceivePatients
-            ? 'Novos bloqueados'
+            ? '$slots · novos bloqueados'
             : (u.patientAssignmentLimit == null
-                ? 'sem limite'
-                : '${u.patientAssignmentLimit}');
+                ? '$slots · sem limite'
+                : '$slots de ${u.patientAssignmentLimit}');
+    final practiceOff = u.isPersonalClinic && !u.clinicIsActive;
+    final practiceTag = DaTag('Consultório inativo', bg: t.hov2, fg: t.err);
+    final email = Text(u.email,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: daText(context, t, size: 12, color: t.tx3));
 
     return MouseRegion(
       cursor: SystemMouseCursors.click,
@@ -485,7 +649,8 @@ class _UserTrState extends State<_UserTr> {
         onTap: widget.onOpen,
         child: AnimatedContainer(
           duration: daHoverDuration(context),
-          height: m.row,
+          // No tablet o selo do consultório ganha uma 3ª linha.
+          height: practiceOff && m.tablet ? m.row + 24 : m.row,
           padding: const EdgeInsets.only(left: 18),
           decoration: BoxDecoration(
             color: widget.selected
@@ -521,46 +686,52 @@ class _UserTrState extends State<_UserTr> {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: daText(context, t, weight: FontWeight.w600)),
-                          Text(u.email,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: daText(context, t, size: 12, color: t.tx3)),
+                          email,
+                          if (practiceOff && m.tablet) practiceTag,
                         ],
                       ),
                     ),
+                    if (practiceOff && !m.tablet) ...[
+                      const SizedBox(width: 12),
+                      practiceTag,
+                    ],
+                    const SizedBox(width: 10),
                   ],
                 ),
               ),
               cell(
                 psy ? DaTag.az(context, u.role.label) : DaTag.rx(context, u.role.label),
-                w: _wPapel,
+                w: _wPapel(m),
               ),
-              cell(_StatusDot(active: u.isActive), w: _wStatus),
-              if (!m.tablet)
-                cell(
-                  Text(psy ? '${u.reservedPatientSlots}' : '—',
-                      style: daText(context, t,
-                          color: psy ? t.tx : t.tx3)),
-                  w: _wCount,
-                  al: Alignment.centerRight,
-                ),
-              if (!m.tablet) const SizedBox(width: 14),
-              if (!m.tablet)
-                cell(
-                  Text(limitText,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: daText(context, t, color: t.tx3)),
-                  w: _wLimit,
-                ),
               cell(
-                DaSwitch(
-                  value: u.isActive,
-                  semantics: 'Ativo',
-                  tablet: m.tablet,
-                  onChanged: widget.isMe ? null : () => a.toggleActive(u),
+                Text(patients,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: daText(context, t, color: psy ? t.tx : t.tx3)),
+                w: _wPacientes(m),
+              ),
+              cell(
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    DaSwitch(
+                      value: u.isActive,
+                      semantics: 'Ativo',
+                      tablet: m.tablet,
+                      onChanged: widget.isMe ? null : () => a.toggleActive(u),
+                    ),
+                    if (!u.isActive) ...[
+                      const SizedBox(width: 8),
+                      Flexible(
+                        child: Text('Inativo',
+                            maxLines: 1,
+                            style: daText(context, t,
+                                weight: FontWeight.w500, color: t.tx3)),
+                      ),
+                    ],
+                  ],
                 ),
-                w: _wAtivo,
+                w: _wAtivo(m),
               ),
               SizedBox(
                 width: _wMais,

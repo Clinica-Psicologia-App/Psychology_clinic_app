@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -242,6 +243,61 @@ void main() {
       desktopAdminMenuCollapsed.value = false;
       await _settle(tester);
       expect(find.text('PLATAFORMA'), findsOneWidget);
+    });
+  });
+
+  group('Troca de tela', () {
+    double minOpacityAbove(WidgetTester tester, Finder f) {
+      var o = 1.0;
+      for (final e in find
+          .ancestor(of: f, matching: find.byType(FadeTransition))
+          .evaluate()) {
+        final v = (e.widget as FadeTransition).opacity.value;
+        if (v < o) o = v;
+      }
+      return o;
+    }
+
+    testWidgets('≥768: menu, barra e fio ficam parados na troca de rota',
+        (tester) async {
+      await _pump(tester, desk, '/platform');
+      final menuPos = tester.getTopLeft(find.text('PLATAFORMA'));
+      final recolherPos = tester.getTopLeft(find.text('Recolher menu'));
+      await tester.tap(find.text('Usuários').first); // item do menu
+      // Em pleno meio da transição (a tela antiga ainda existe por baixo):
+      // todos os menus no mesmo lugar, opacos e sem slide.
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 60));
+      for (final (f, expected) in [
+        (find.text('PLATAFORMA'), menuPos),
+        (find.text('Recolher menu'), recolherPos),
+      ]) {
+        for (final e in f.evaluate()) {
+          final box = e.renderObject! as RenderBox;
+          expect(box.localToGlobal(Offset.zero), expected);
+        }
+        expect(minOpacityAbove(tester, f), 1.0);
+        for (final e in find
+            .ancestor(of: f, matching: find.byType(SlideTransition))
+            .evaluate()) {
+          expect((e.widget as SlideTransition).position.value, Offset.zero);
+        }
+      }
+      await _settle(tester, 8);
+      expect(find.text('Separação por vínculo'), findsOneWidget);
+      expect(tester.getTopLeft(find.text('PLATAFORMA')), menuPos);
+    });
+
+    testWidgets('celular: a transição de página de hoje continua',
+        (tester) async {
+      await _pump(tester, phone, '/platform');
+      await tester.tap(find.text('Usuários').first);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 60));
+      // A nova tela ainda está entrando (fade < 1).
+      expect(minOpacityAbove(tester, find.text('Separação por vínculo')),
+          lessThan(1.0));
+      await _settle(tester, 10);
     });
   });
 

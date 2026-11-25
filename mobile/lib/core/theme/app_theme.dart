@@ -596,6 +596,14 @@ abstract final class AppTheme {
   }
 }
 
+bool _isDesktopAdminRoute(PageRoute<dynamic> route, BuildContext context) {
+  if (MediaQuery.sizeOf(context).width < 768) return false;
+  final settings = route.settings;
+  if (settings is! Page) return false;
+  final key = settings.key;
+  return key is ValueKey<String> && key.value.startsWith('/platform');
+}
+
 class _AppPageTransitionsBuilder extends PageTransitionsBuilder {
   const _AppPageTransitionsBuilder();
 
@@ -611,6 +619,11 @@ class _AppPageTransitionsBuilder extends PageTransitionsBuilder {
         !AppAnimations.shouldAnimate(context)) {
       return child;
     }
+
+    // Admin em desktop (>= 768 px, rotas /platform*): a casca (menu lateral,
+    // barra e fio de gradiente) fica parada na troca de tela. A transição de
+    // página ficava acima da casca e movia tudo, então aqui não há transição.
+    if (_isDesktopAdminRoute(route, context)) return child;
 
     final curved = CurvedAnimation(
       parent: animation,

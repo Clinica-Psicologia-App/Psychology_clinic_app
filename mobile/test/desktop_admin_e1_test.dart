@@ -136,13 +136,14 @@ const _dest = [
       route: '/platform/patient-overview'),
 ];
 
+late GoRouter _router;
 
 Future<void> _pump(WidgetTester tester, Size size, String location) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
   desktopAdminMenuCollapsed.value = false;
-  final router = GoRouter(
+  final router = _router = GoRouter(
     initialLocation: location,
     routes: [
       ShellRoute(
@@ -286,6 +287,232 @@ void main() {
       await _settle(tester, 8);
       expect(find.text('Separação por vínculo'), findsOneWidget);
       expect(tester.getTopLeft(find.text('PLATAFORMA')), menuPos);
+    });
+
+    // Entrada do conteúdo da tela cujo corpo contém [f].
+    Finder entranceOf(Finder f) =>
+        find.ancestor(of: f, matching: find.byKey(daContentEntranceKey));
+    double opacityOf(WidgetTester tester, Finder f) =>
+        tester.widget<FadeTransition>(entranceOf(f)).opacity.value;
+    double riseOf(WidgetTester tester, Finder f) => tester
+        .widget<Transform>(find
+            .descendant(of: entranceOf(f), matching: find.byType(Transform))
+            .first)
+        .transform
+        .getTranslation()
+        .y;
+
+    testWidgets('≥768: só o conteúdo entra com fade + subida; barra parada',
+        (tester) async {
+      final users = find.text('Separação por vínculo');
+      for (final size in [desk, tablet]) {
+        await tester.pumpWidget(const SizedBox());
+        await _pump(tester, size, '/platform');
+        await tester.tap(find.text('Usuários').first);
+        await tester.pump();
+        await tester.pump(const Duration(milliseconds: 60));
+        expect(opacityOf(tester, users), inExclusiveRange(0.0, 1.0));
+        expect(riseOf(tester, users),
+            inExclusiveRange(0.0, kDaContentEntranceRise));
+        final midContent = tester.getTopLeft(users);
+        // Botão da barra superior da tela nova: fora da animação.
+        final action = find.text('Novo acesso');
+        expect(entranceOf(action), findsNothing);
+        final midAction = tester.getTopLeft(action);
+
+        await _settle(tester, 8);
+        expect(opacityOf(tester, users), 1.0);
+        expect(riseOf(tester, users), 0.0);
+        expect(tester.getTopLeft(action), midAction);
+        final end = tester.getTopLeft(users);
+        expect(midContent.dx, end.dx);
+        expect(midContent.dy, greaterThan(end.dy));
+        expect(midContent.dy - end.dy, lessThan(kDaContentEntranceRise));
+      }
+    });
+
+    testWidgets('≥768: dura 220 ms', (tester) async {
+      final users = find.text('Separação por vínculo');
+      await _pump(tester, desk, '/platform');
+      await tester.tap(find.text('Usuários').first);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
+      expect(opacityOf(tester, users), lessThan(1.0));
+      await tester.pump(const Duration(milliseconds: 30));
+      expect(opacityOf(tester, users), 1.0);
+      await _settle(tester, 8);
+    });
+
+    testWidgets('≥768: voltar ao Início também entra suave, sem esperar',
+        (tester) async {
+      final home = find.text('Estrutura da plataforma');
+      await _pump(tester, desk, '/platform');
+      final menuPos = tester.getTopLeft(find.text('PLATAFORMA'));
+      await tester.tap(find.text('Usuários').first);
+      await _settle(tester, 8);
+      await tester.tap(find.text('Início').first);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 60));
+      expect(opacityOf(tester, home), inExclusiveRange(0.0, 1.0));
+      expect(riseOf(tester, home),
+          inExclusiveRange(0.0, kDaContentEntranceRise));
+      // A tela que sai não fica por cima.
+      final leaving = find.ancestor(
+          of: find.text('Separação por vínculo'),
+          matching: find.byType(Opacity));
+      expect(
+          leaving.evaluate().map((e) => (e.widget as Opacity).opacity),
+          contains(0.0));
+      for (final e in find.text('PLATAFORMA').evaluate()) {
+        final box = e.renderObject! as RenderBox;
+        expect(box.localToGlobal(Offset.zero), menuPos);
+      }
+      await _settle(tester, 8);
+      expect(opacityOf(tester, home), 1.0);
+      expect(find.text('Separação por vínculo'), findsNothing);
+    });
+
+    IgnorePointer guardOf(WidgetTester tester, Finder f) =>
+        tester.widget<IgnorePointer>(
+            find.ancestor(of: f, matching: find.byKey(daLeavingGuardKey)));
+    String location() =>
+        _router.routerDelegate.currentConfiguration.last.matchedLocation;
+
+    for (final (nome, voltar) in <(String, Future<void> Function(WidgetTester))>[
+      (
+        'Navigator.maybePop',
+        (tester) async {
+          await Navigator.of(
+                  tester.element(find.text('Separação por vínculo')))
+              .maybePop();
+        }
+      ),
+      (
+        'botão voltar do sistema',
+        (tester) async {
+          await tester.binding.handlePopRoute();
+        }
+      ),
+    ]) {
+      testWidgets('≥768: $nome entra suave e trava a tela que sai',
+          (tester) async {
+        final home = find.text('Estrutura da plataforma');
+        final users = find.text('Separação por vínculo');
+        await _pump(tester, desk, '/platform');
+        await tester.tap(find.text('Usuários').first);
+        await _settle(tester, 8);
+        expect(guardOf(tester, users).ignoring, isFalse);
+        await voltar(tester);
+        await tester.pump();
+        // Já no primeiro quadro: invisível e sem toque.
+        expect(guardOf(tester, users).ignoring, isTrue);
+        expect(guardOf(tester, home).ignoring, isFalse);
+        // O 1º tique marca o início da animação; o 2º já anda.
+        await tester.pump(const Duration(milliseconds: 16));
+        await tester.pump(const Duration(milliseconds: 60));
+        expect(opacityOf(tester, home), inExclusiveRange(0.0, 1.0));
+        await _settle(tester, 8);
+        expect(users, findsNothing);
+        expect(opacityOf(tester, home), 1.0);
+        expect(guardOf(tester, home).ignoring, isFalse);
+        expect(location(), '/platform');
+      });
+    }
+
+    testWidgets('≥768: toque durante a saída vai para a tela revelada',
+        (tester) async {
+      final users = find.text('Separação por vínculo');
+      for (final espera in [Duration.zero, const Duration(milliseconds: 60)]) {
+        await tester.pumpWidget(const SizedBox());
+        await _pump(tester, desk, '/platform');
+        await tester.tap(find.text('Usuários').first);
+        await _settle(tester, 8);
+        final novoAcesso = tester.getCenter(find.text('Novo acesso'));
+        await Navigator.of(tester.element(users)).maybePop();
+        await tester.pump();
+        await tester.pump(espera);
+        expect(users, findsOneWidget); // a tela que sai ainda existe
+        // Onde estava o botão da tela invisível: nada abre.
+        await tester.tapAt(novoAcesso);
+        await tester.pump();
+        expect(find.text('Criar usuário'), findsNothing);
+        // Atalho do Início revelado: recebe o toque.
+        await tester.tap(find.text('Visualizar, inativar e reativar pacientes.'));
+        await tester.pump();
+        expect(location(), '/platform/patient-overview');
+        await _settle(tester, 8);
+        expect(find.text('Criar usuário'), findsNothing);
+      }
+    });
+
+    testWidgets('≥768: abrir e fechar diálogo não mexe na tela',
+        (tester) async {
+      final users = find.text('Separação por vínculo');
+      await _pump(tester, desk, '/platform/users');
+
+      Future<void> parada() async {
+        for (var i = 0; i < 6; i++) {
+          await tester.pump(const Duration(milliseconds: 60));
+          expect(opacityOf(tester, users), 1.0);
+          expect(riseOf(tester, users), 0.0);
+          expect(guardOf(tester, users).ignoring, isFalse);
+        }
+      }
+
+      // Confirmação fechada em "Cancelar".
+      await tester.tap(find.byType(AnimatedAlign).first);
+      await parada();
+      expect(find.text('Inativar usuário'), findsOneWidget);
+      await tester.tap(find.text('Cancelar'));
+      await parada();
+      expect(find.text('Inativar usuário'), findsNothing);
+
+      // Painel lateral fechado pelo voltar do sistema: só ele fecha.
+      await tester.tap(find.text('Dr. Paulo Modelo'));
+      await parada();
+      expect(find.text('Detalhe do usuário'), findsOneWidget);
+      await tester.binding.handlePopRoute();
+      await parada();
+      expect(find.text('Detalhe do usuário'), findsNothing);
+      expect(location(), '/platform/users');
+
+      // A tela continua recebendo toque.
+      await tester.tap(find.text('Novo acesso'));
+      await parada();
+      expect(find.text('Criar usuário'), findsOneWidget);
+    });
+
+    testWidgets('≥768 com disableAnimations: troca sem animação',
+        (tester) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          const FakeAccessibilityFeatures(disableAnimations: true);
+      addTearDown(
+          tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+      final users = find.text('Separação por vínculo');
+      final home = find.text('Estrutura da plataforma');
+      await _pump(tester, desk, '/platform');
+      await tester.tap(find.text('Usuários').first);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 20));
+      expect(opacityOf(tester, users), 1.0);
+      expect(riseOf(tester, users), 0.0);
+      await _settle(tester, 8);
+      await tester.tap(find.text('Início').first);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 20));
+      expect(opacityOf(tester, home), 1.0);
+      expect(riseOf(tester, home), 0.0);
+      await _settle(tester, 8);
+    });
+
+    testWidgets('celular não tem a entrada de conteúdo do desktop',
+        (tester) async {
+      await _pump(tester, phone, '/platform');
+      await tester.tap(find.text('Usuários').first);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 60));
+      expect(find.byKey(daContentEntranceKey), findsNothing);
+      await _settle(tester, 10);
     });
 
     testWidgets('celular: a transição de página de hoje continua',

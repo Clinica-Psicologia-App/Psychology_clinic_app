@@ -72,6 +72,15 @@ const _entries = [
       '/platform/patient-overview'),
 ];
 
+/// Entrada da área de conteúdo: fade-in + subida curta. Menu, barra, abas e
+/// fio de gradiente ficam fora dela.
+const daContentEntranceKey = ValueKey<String>('da-content-entrance');
+const kDaContentEntranceDuration = Duration(milliseconds: 220);
+const kDaContentEntranceRise = 8.0;
+
+/// Trava de toque da casca enquanto a rota dela está saindo.
+const daLeavingGuardKey = ValueKey<String>('da-leaving-guard');
+
 /// Casca do administrador a partir de 768 px: menu lateral (recolhível; trilho
 /// de 76 px no tablet), barra superior com trilha, título, subtítulo e ações.
 class DesktopAdminShell extends ConsumerWidget {
@@ -104,7 +113,7 @@ class DesktopAdminShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final t = DesktopAdminTokens.of(context);
     final m = DesktopAdminMetrics.of(MediaQuery.sizeOf(context).width);
-    return Scaffold(
+    final shell = Scaffold(
       backgroundColor: t.bg,
       body: DefaultTextStyle(
         style: daText(context, t),
@@ -130,9 +139,10 @@ class DesktopAdminShell extends ConsumerWidget {
                         ),
                         if (tabs != null) tabs!,
                         Expanded(
-                            child: Material(
-                                type: MaterialType.transparency,
-                                child: body)),
+                            child: _ContentEntrance(
+                                child: Material(
+                                    type: MaterialType.transparency,
+                                    child: body))),
                       ],
                     ),
                   ),
@@ -152,6 +162,106 @@ class DesktopAdminShell extends ConsumerWidget {
           ],
         ),
       ),
+    );
+    return _HideWhileLeaving(child: shell);
+  }
+}
+
+/// Anima só o conteúdo: ao montar a tela e quando ela volta a aparecer porque
+/// a de cima saiu (voltar). Sem animação com [MediaQuery.disableAnimations].
+class _ContentEntrance extends StatefulWidget {
+  const _ContentEntrance({required this.child});
+
+  final Widget child;
+
+  @override
+  State<_ContentEntrance> createState() => _ContentEntranceState();
+}
+
+class _ContentEntranceState extends State<_ContentEntrance>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller =
+      AnimationController(vsync: this, duration: kDaContentEntranceDuration);
+  late final CurvedAnimation _curved =
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic);
+
+  /// Animação da rota que cobre esta.
+  Animation<double>? _covering;
+  bool _animate = true;
+  bool _entered = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _animate = !MediaQuery.disableAnimationsOf(context);
+    final covering = ModalRoute.of(context)?.secondaryAnimation;
+    if (covering != _covering) {
+      _covering?.removeStatusListener(_onCovering);
+      _covering = covering?..addStatusListener(_onCovering);
+    }
+    if (!_animate) {
+      _controller.value = 1;
+    } else if (!_entered) {
+      _controller.forward();
+    }
+    _entered = true;
+  }
+
+  void _onCovering(AnimationStatus status) {
+    if (status == AnimationStatus.reverse && _animate) {
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _covering?.removeStatusListener(_onCovering);
+    _curved.dispose();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      key: daContentEntranceKey,
+      opacity: _curved,
+      alwaysIncludeSemantics: true,
+      child: AnimatedBuilder(
+        animation: _curved,
+        child: widget.child,
+        builder: (_, child) => Transform.translate(
+          offset: Offset(0, kDaContentEntranceRise * (1 - _curved.value)),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+/// A rota não tem transição de página (a casca fica parada), mas ao voltar a
+/// tela que sai ainda ficaria por cima até o fim da rota. Ela some na hora,
+/// para a de baixo aparecer já entrando, e deixa de receber toques.
+class _HideWhileLeaving extends StatelessWidget {
+  const _HideWhileLeaving({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final animation = ModalRoute.of(context)?.animation;
+    if (animation == null) return child;
+    return AnimatedBuilder(
+      animation: animation,
+      child: child,
+      builder: (_, child) {
+        final leaving = animation.status == AnimationStatus.reverse;
+        return IgnorePointer(
+          key: daLeavingGuardKey,
+          ignoring: leaving,
+          child: Opacity(opacity: leaving ? 0 : 1, child: child),
+        );
+      },
     );
   }
 }

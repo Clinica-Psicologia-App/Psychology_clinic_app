@@ -873,17 +873,17 @@ class _CardListRowState extends State<_CardListRow> {
         behavior: HitTestBehavior.opaque,
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
+          duration: daHoverDuration(context),
           padding: const EdgeInsets.fromLTRB(14, 6, 6, 6),
           constraints: const BoxConstraints(minHeight: 52),
           decoration: BoxDecoration(
             color: widget.selected
                 ? t.sel
-                : (_hover ? t.hov : Colors.transparent),
+                : (_hover ? t.hov : daClear(t.hov)),
             border: Border(
               bottom: BorderSide(color: t.bd),
               left: BorderSide(
-                  color: widget.selected ? t.tq : Colors.transparent,
+                  color: widget.selected ? t.tq : daClear(t.tq),
                   width: 3),
             ),
           ),

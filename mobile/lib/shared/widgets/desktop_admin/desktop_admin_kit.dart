@@ -135,6 +135,17 @@ TextStyle daText(BuildContext context, DesktopAdminTokens t,
 
 enum DaButtonKind { primary, outline, ghost }
 
+/// Realce de hover (linhas e botões dentro delas).
+const kDaHoverDuration = Duration(milliseconds: 140);
+
+/// Instantâneo com "reduzir movimento".
+Duration daHoverDuration(BuildContext context) =>
+    MediaQuery.disableAnimationsOf(context) ? Duration.zero : kDaHoverDuration;
+
+/// A mesma cor, invisível. [Colors.transparent] é preto com alfa 0: animar dele
+/// para uma cor clara passa por um cinza escuro (a "piscada" no hover).
+Color daClear(Color color) => color.withValues(alpha: 0);
+
 /// Botão de desktop: altura de controle, raio 8, hover e foco visíveis.
 class DaButton extends StatefulWidget {
   const DaButton({
@@ -179,16 +190,16 @@ class _DaButtonState extends State<DaButton> {
         ? t.ac
         : _hover
             ? (ghost ? t.hov2 : t.hov)
-            : (ghost ? Colors.transparent : t.rz);
+            : (ghost ? daClear(t.hov2) : t.rz);
     final border = primary
         ? t.ac
         : ghost
-            ? Colors.transparent
+            ? daClear(t.bd2)
             : (_hover ? t.tx3 : t.bd2);
     final iconOnly = widget.label == null;
 
     Widget child = AnimatedContainer(
-      duration: const Duration(milliseconds: 150),
+      duration: daHoverDuration(context),
       height: m.ctl,
       width: iconOnly ? m.ctl : null,
       padding: iconOnly ? EdgeInsets.zero : const EdgeInsets.symmetric(horizontal: 14),
@@ -759,7 +770,7 @@ class _DaIndexItemState extends State<DaIndexItem> {
         behavior: HitTestBehavior.opaque,
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
+          duration: daHoverDuration(context),
           height: 36,
           alignment: Alignment.centerLeft,
           margin: const EdgeInsets.only(bottom: 2),
@@ -767,9 +778,9 @@ class _DaIndexItemState extends State<DaIndexItem> {
           decoration: BoxDecoration(
             color: widget.active
                 ? t.rz
-                : (_hover ? t.hov2 : Colors.transparent),
+                : (_hover ? t.hov2 : daClear(t.hov2)),
             border:
-                Border.all(color: widget.active ? t.bd2 : Colors.transparent),
+                Border.all(color: widget.active ? t.bd2 : daClear(t.bd2)),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(widget.label,

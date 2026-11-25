@@ -165,17 +165,17 @@ class _ItemState extends State<_Item> {
         behavior: HitTestBehavior.opaque,
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
+          duration: daHoverDuration(context),
           constraints: BoxConstraints(minHeight: widget.m.row),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
             color: widget.selected
                 ? t.sel
-                : (_hover ? t.hov : Colors.transparent),
+                : (_hover ? t.hov : daClear(t.hov)),
             border: Border(
               bottom: BorderSide(color: t.bd),
               left: BorderSide(
-                  color: widget.selected ? t.tq : Colors.transparent,
+                  color: widget.selected ? t.tq : daClear(t.tq),
                   width: 3),
             ),
           ),
@@ -200,10 +200,11 @@ class _ItemState extends State<_Item> {
                   ],
                 ),
               ),
-              Icon(Icons.chevron_right,
-                  size: 16,
-                  color: t.tx3.withValues(
-                      alpha: widget.selected || _hover ? 1 : 0)),
+              AnimatedOpacity(
+                duration: daHoverDuration(context),
+                opacity: widget.selected || _hover ? 1 : 0,
+                child: Icon(Icons.chevron_right, size: 16, color: t.tx3),
+              ),
             ],
           ),
         ),

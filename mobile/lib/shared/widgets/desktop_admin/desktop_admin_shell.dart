@@ -356,10 +356,10 @@ class _CrumbState extends State<_Crumb> {
       child: GestureDetector(
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
+          duration: daHoverDuration(context),
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: _hover ? t.hov : Colors.transparent,
+            color: _hover ? t.hov : daClear(t.hov),
             borderRadius: BorderRadius.circular(6),
           ),
           child: Text(widget.label,
@@ -576,13 +576,13 @@ class _NavItemState extends State<_NavItem> {
           child: Stack(
             children: [
               AnimatedContainer(
-                duration: const Duration(milliseconds: 150),
+                duration: daHoverDuration(context),
                 width: double.infinity,
                 height: widget.tablet ? 58 : widget.m.ctl,
                 decoration: BoxDecoration(
-                  color: sel ? t.rz : (_hover ? t.hov2 : Colors.transparent),
+                  color: sel ? t.rz : (_hover ? t.hov2 : daClear(t.hov2)),
                   border: Border.all(
-                      color: sel ? t.bd2 : Colors.transparent),
+                      color: sel ? t.bd2 : daClear(t.bd2)),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: content,
@@ -651,10 +651,10 @@ class _CollapseButtonState extends State<_CollapseButton> {
           behavior: HitTestBehavior.opaque,
           onTap: () => desktopAdminMenuCollapsed.value = !c,
           child: AnimatedContainer(
-            duration: const Duration(milliseconds: 150),
+            duration: daHoverDuration(context),
             height: widget.m.ctl,
             decoration: BoxDecoration(
-              color: _hover ? t.hov2 : Colors.transparent,
+              color: _hover ? t.hov2 : daClear(t.hov2),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Row(

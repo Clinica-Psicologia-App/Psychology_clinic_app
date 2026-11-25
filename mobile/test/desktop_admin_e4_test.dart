@@ -16,7 +16,10 @@ import 'package:terapia_esquema/features/profile/domain/user_profile.dart';
 import 'package:terapia_esquema/features/user_management/domain/clinic_user.dart';
 import 'package:terapia_esquema/features/user_management/providers/user_management_providers.dart';
 import 'package:terapia_esquema/shared/widgets/app_nav_shell.dart';
+import 'package:terapia_esquema/shared/widgets/desktop_admin/desktop_admin_kit.dart';
 import 'package:terapia_esquema/shared/widgets/desktop_admin/desktop_admin_shell.dart';
+
+import 'desktop_admin_hover_helper.dart';
 
 import 'package:terapia_esquema/features/patient_library/data/admin_library_repository.dart';
 import 'package:terapia_esquema/features/patient_library/domain/library_work.dart';
@@ -534,6 +537,30 @@ void main() {
     testWidgets('tablet sem overflow', (tester) async {
       await _pump(tester, tablet, '/platform/psychoeducation/m1');
       expect(find.text('Cards (3)'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('Hover das linhas', () {
+    for (final (nome, rota, linha) in [
+      ('Biblioteca', '/platform/library', 'Obra Exemplo 1'),
+      ('Psicoeducação', '/platform/psychoeducation', 'Módulo Exemplo 1'),
+      ('Cards do módulo', '/platform/psychoeducation/m1', 'Card fictício dois'),
+    ]) {
+      testWidgets('$nome: fade só no fundo, sem piscada', (tester) async {
+        await _pump(tester, desk, rota);
+        await expectSmoothRowHover(tester, find.text(linha));
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    testWidgets('Índice do editor da biblioteca: sem piscada', (tester) async {
+      await _pump(tester, desk, '/platform/library/w1');
+      await expectSmoothRowHover(
+          tester,
+          find.descendant(
+              of: find.byType(DaIndexItem).at(1),
+              matching: find.byType(Text)));
       expect(tester.takeException(), isNull);
     });
   });

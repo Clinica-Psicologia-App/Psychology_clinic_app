@@ -25,6 +25,8 @@ import 'package:terapia_esquema/features/user_management/providers/user_manageme
 import 'package:terapia_esquema/shared/widgets/app_nav_shell.dart';
 import 'package:terapia_esquema/shared/widgets/desktop_admin/desktop_admin_shell.dart';
 
+import 'desktop_admin_hover_helper.dart';
+
 class _FakeAuth extends AuthController {
   _FakeAuth() : super(_DummyRef()) {
     state = const AsyncValue<UserProfile?>.data(UserProfile(
@@ -375,5 +377,18 @@ void main() {
       expect(find.text('Auditoria'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
+  });
+
+  group('Hover das linhas', () {
+    for (final (nome, rota, linha) in [
+      ('Clínicas', '/platform/clinics', 'Clínica Exemplo'),
+      ('Planos', '/platform/plans', 'Consultório Individual Modelo'),
+    ]) {
+      testWidgets('$nome: fade só no fundo, sem piscada', (tester) async {
+        await _pump(tester, desk, rota);
+        await expectSmoothRowHover(tester, find.text(linha));
+        expect(tester.takeException(), isNull);
+      });
+    }
   });
 }

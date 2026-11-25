@@ -21,6 +21,8 @@ import 'package:terapia_esquema/features/questionnaires/data/questionnaire_catal
 import 'package:terapia_esquema/features/questionnaires/data/questionnaires_repository.dart';
 import 'package:terapia_esquema/shared/widgets/desktop_admin/desktop_admin_shell.dart';
 
+import 'desktop_admin_hover_helper.dart';
+
 
 import 'package:terapia_esquema/features/platform_admin/presentation/platform_admin_home_page.dart';
 import 'package:terapia_esquema/features/questionnaires/domain/question_answer_type.dart';
@@ -666,6 +668,36 @@ void main() {
     testWidgets('tablet sem overflow', (tester) async {
       await _pump(tester, tablet, '$catalog/q2/preview', extra: _session);
       expect(find.text('1/3'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('Hover das linhas', () {
+    for (final (nome, rota, linha) in [
+      ('Catálogo', catalog, 'Questionário Exemplo 1'),
+      ('Permissões', access, 'Dr. Paulo Modelo'),
+    ]) {
+      testWidgets('$nome: fade só no fundo, sem piscada', (tester) async {
+        await _pump(tester, desk, rota);
+        await expectSmoothRowHover(tester, find.text(linha));
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    testWidgets('Índice do editor de questionário: sem piscada',
+        (tester) async {
+      await _pump(tester, desk, '$catalog/q2');
+      await expectSmoothRowHover(tester, find.text('Perguntas (3)').first);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('Perguntas do editor: fade só no fundo, sem piscada',
+        (tester) async {
+      await _pump(tester, desk, '$catalog/q2');
+      await tester.tap(find.text('Perguntas (3)').first);
+      await _settle(tester, 8);
+      await expectSmoothRowHover(
+          tester, find.textContaining('Pergunta fictícia número 2'));
       expect(tester.takeException(), isNull);
     });
   });

@@ -21,6 +21,8 @@ import 'package:terapia_esquema/features/user_management/providers/user_manageme
 import 'package:terapia_esquema/shared/widgets/app_nav_shell.dart';
 import 'package:terapia_esquema/shared/widgets/desktop_admin/desktop_admin_shell.dart';
 
+import 'desktop_admin_hover_helper.dart';
+
 class _FakeAuth extends AuthController {
   _FakeAuth() : super(_DummyRef()) {
     state = const AsyncValue<UserProfile?>.data(UserProfile(
@@ -631,6 +633,65 @@ void main() {
       await _pump(tester, tablet, '/platform/users');
       expect(find.text('Dr. Paulo Modelo'), findsOneWidget);
       expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('Hover das linhas', () {
+    testWidgets('Usuários: fade só no fundo, sem piscada', (tester) async {
+      await _pump(tester, desk, '/platform/users');
+      await expectSmoothRowHover(tester, find.text('Dr. Paulo Modelo'));
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('Usuários no tablet: mesmo comportamento', (tester) async {
+      await _pump(tester, tablet, '/platform/users');
+      await expectSmoothRowHover(tester, find.text('Dr. Paulo Modelo'));
+    });
+
+    testWidgets('botão "⋯" dentro da linha: sem piscada', (tester) async {
+      await _pump(tester, desk, '/platform/users');
+      await expectSmoothRowHover(tester, find.byIcon(Icons.more_horiz).at(3));
+    });
+
+    for (final (nome, size) in [('menu lateral', desk), ('trilho', tablet)]) {
+      testWidgets('item do $nome: sem piscada', (tester) async {
+        await _pump(tester, size, '/platform/users');
+        await expectSmoothRowHover(tester, find.text('Clínicas').first);
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    testWidgets('trilha da barra superior: sem piscada', (tester) async {
+      await _pump(tester, desk, '/platform/users');
+      final crumb = find.text('Início').last;
+      expect(tester.getTopLeft(crumb).dx, greaterThan(256)); // fora do menu
+      await expectSmoothRowHover(tester, crumb);
+    });
+
+    testWidgets('"Recolher menu": sem piscada', (tester) async {
+      await _pump(tester, desk, '/platform/users');
+      await expectSmoothRowHover(tester, find.text('Recolher menu'));
+      expect(desktopAdminMenuCollapsed.value, isFalse);
+    });
+
+    testWidgets('menu com disableAnimations: instantâneo', (tester) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          const FakeAccessibilityFeatures(disableAnimations: true);
+      addTearDown(
+          tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+      await _pump(tester, desk, '/platform/users');
+      await expectSmoothRowHover(tester, find.text('Clínicas').first,
+          reduced: true);
+    });
+
+    testWidgets('com disableAnimations o realce é instantâneo', (tester) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          const FakeAccessibilityFeatures(disableAnimations: true);
+      addTearDown(
+          tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+      await _pump(tester, desk, '/platform/users');
+      await expectSmoothRowHover(tester, find.text('Dr. Paulo Modelo'),
+          reduced: true);
     });
   });
 }

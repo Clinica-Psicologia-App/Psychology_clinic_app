@@ -159,11 +159,11 @@ class _RowState extends State<_Row> {
         behavior: HitTestBehavior.opaque,
         onTap: widget.onOpen,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
+          duration: daHoverDuration(context),
           height: m.row + 8,
           padding: const EdgeInsets.only(left: 18),
           decoration: BoxDecoration(
-            color: _hover ? t.hov : Colors.transparent,
+            color: _hover ? t.hov : daClear(t.hov),
             border: Border(bottom: BorderSide(color: t.bd)),
           ),
           child: Row(children: [
@@ -250,7 +250,8 @@ class _RowState extends State<_Row> {
             ),
             SizedBox(
               width: 40,
-              child: Opacity(
+              child: AnimatedOpacity(
+                duration: daHoverDuration(context),
                 opacity: _hover ? 1 : 0,
                 child: Icon(Icons.chevron_right, size: 18, color: t.tx3),
               ),

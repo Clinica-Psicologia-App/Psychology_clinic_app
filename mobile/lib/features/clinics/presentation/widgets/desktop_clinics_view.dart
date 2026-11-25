@@ -207,17 +207,17 @@ class _TrState extends State<_Tr> {
         behavior: HitTestBehavior.opaque,
         onTap: widget.onOpen,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
+          duration: daHoverDuration(context),
           height: m.row,
           padding: const EdgeInsets.only(left: 18),
           decoration: BoxDecoration(
             color: widget.selected
                 ? t.sel
-                : (_hover ? t.hov : Colors.transparent),
+                : (_hover ? t.hov : daClear(t.hov)),
             border: Border(
               bottom: BorderSide(color: t.bd),
               left: BorderSide(
-                  color: widget.selected ? t.tq : Colors.transparent,
+                  color: widget.selected ? t.tq : daClear(t.tq),
                   width: 3),
             ),
           ),
@@ -276,7 +276,7 @@ class _TrState extends State<_Tr> {
               SizedBox(
                 width: _wMais,
                 child: AnimatedOpacity(
-                  duration: const Duration(milliseconds: 150),
+                  duration: daHoverDuration(context),
                   opacity: showMore ? 1 : 0,
                   child: MenuAnchor(
                     controller: _menu,

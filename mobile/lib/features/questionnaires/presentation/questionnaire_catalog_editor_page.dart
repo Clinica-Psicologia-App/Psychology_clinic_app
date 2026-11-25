@@ -1405,7 +1405,7 @@ class _IndexItemState extends State<_IndexItem> {
         behavior: HitTestBehavior.opaque,
         onTap: widget.onTap,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
+          duration: daHoverDuration(context),
           height: 36,
           alignment: Alignment.centerLeft,
           margin: const EdgeInsets.only(bottom: 2),
@@ -1413,9 +1413,9 @@ class _IndexItemState extends State<_IndexItem> {
           decoration: BoxDecoration(
             color: widget.active
                 ? t.rz
-                : (_hover ? t.hov2 : Colors.transparent),
+                : (_hover ? t.hov2 : daClear(t.hov2)),
             border:
-                Border.all(color: widget.active ? t.bd2 : Colors.transparent),
+                Border.all(color: widget.active ? t.bd2 : daClear(t.bd2)),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(widget.label,
@@ -1466,11 +1466,11 @@ class _QuestionRowState extends State<_QuestionRow> {
         behavior: HitTestBehavior.opaque,
         onTap: widget.editable ? widget.onOpen : null,
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
+          duration: daHoverDuration(context),
           constraints: BoxConstraints(minHeight: widget.minHeight),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           decoration: BoxDecoration(
-            color: _hover && widget.editable ? t.hov : Colors.transparent,
+            color: _hover && widget.editable ? t.hov : daClear(t.hov),
             border: Border(bottom: BorderSide(color: t.bd)),
           ),
           child: Row(children: [

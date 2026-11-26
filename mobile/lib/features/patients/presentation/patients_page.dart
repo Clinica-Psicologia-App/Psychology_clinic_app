@@ -15,6 +15,7 @@ import '../../../shared/widgets/brand_loading.dart';
 import '../../../shared/widgets/desktop_admin/desktop_admin_kit.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../initial_assessment/presentation/initial_assessment_routes.dart';
+import '../../patient_invitations/presentation/invitation_link.dart';
 import '../../patients/domain/psychologist_alert.dart';
 import '../../results/presentation/result_routes.dart';
 import '../../profile/domain/profile_role.dart';
@@ -45,6 +46,14 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  /// "Convidar": na volta, o link gerado aparece e é copiado.
+  Future<void> _invite() async {
+    final result = await context.push<Object?>(
+      PatientRoutes.invitationCreate(widget.role),
+    );
+    if (mounted) await showCreatedInvitation(context, result);
   }
 
   @override
@@ -114,8 +123,7 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
         totalAll: totalAll,
         alertCount: alertCount,
         showActions: profile != null && isStaff,
-        onInvite: () =>
-            context.push(PatientRoutes.invitationCreate(widget.role)),
+        onInvite: _invite,
         onNew: () => context.push(PatientRoutes.create(widget.role)),
         onRefresh: doRefresh,
         filters: [for (final f in _PatientFilter.values) f.label],
@@ -164,8 +172,7 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
                 showActions: profile != null && isStaff,
                 onBack: () => context.pop(),
                 onRefresh: doRefresh,
-                onInvite: () =>
-                    context.push(PatientRoutes.invitationCreate(widget.role)),
+                onInvite: _invite,
                 onNew: () => context.push(PatientRoutes.create(widget.role)),
               ),
             ),

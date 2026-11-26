@@ -272,9 +272,10 @@ class DaTag extends StatelessWidget {
         fg: d ? const Color(0xFF6EE7B7) : const Color(0xFF065F46));
   }
 
-  factory DaTag.az(BuildContext c, String label) {
+  factory DaTag.az(BuildContext c, String label, {IconData? icon}) {
     final d = DesktopAdminTokens.of(c).dark;
     return DaTag(label,
+        icon: icon,
         bg: d ? const Color(0xFF12384F) : const Color(0xFFE0F2FE),
         fg: d ? const Color(0xFF7DD3FC) : const Color(0xFF075985));
   }
@@ -421,7 +422,8 @@ Future<T?> showDesktopSlideOver<T>(
                         kind: DaButtonKind.ghost,
                         icon: Icons.close,
                         tooltip: 'Fechar',
-                        onPressed: () => Navigator.of(ctx).pop(),
+                        // maybePop: o conteúdo pode segurar o fechamento.
+                        onPressed: () => Navigator.of(ctx).maybePop(),
                       ),
                     ],
                   ),

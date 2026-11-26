@@ -18,6 +18,7 @@ import '../../coach/providers/coach_providers.dart';
 import '../../clinical_reports/presentation/clinical_report_routes.dart';
 import '../../patient_check_ins/presentation/patient_check_in_routes.dart';
 import '../../patient_invitations/domain/patient_invitation_draft.dart';
+import '../../patient_invitations/presentation/invitation_link.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../questionnaires/presentation/questionnaire_routes.dart';
 import '../../therapy_goals/presentation/therapy_goal_routes.dart';
@@ -180,11 +181,11 @@ class _PatientDetailsBody extends StatefulWidget {
 class _PatientDetailsBodyState extends State<_PatientDetailsBody> {
   bool _navigating = false;
 
-  Future<void> _push(String route, {Object? extra}) async {
-    if (_navigating || !mounted) return;
+  Future<Object?> _push(String route, {Object? extra}) async {
+    if (_navigating || !mounted) return null;
     setState(() => _navigating = true);
     try {
-      await context.push(route, extra: extra);
+      return await context.push<Object?>(route, extra: extra);
     } finally {
       if (mounted) setState(() => _navigating = false);
     }
@@ -201,9 +202,10 @@ class _PatientDetailsBodyState extends State<_PatientDetailsBody> {
         ),
       );
 
-  void _invite() {
+  /// Na volta, o link gerado aparece e é copiado.
+  Future<void> _invite() async {
     final patient = widget.patient;
-    _push(
+    final result = await _push(
       PatientRoutes.invitationCreate(widget.role),
       extra: PatientInvitationDraft(
         fullName: patient.fullName,
@@ -212,6 +214,7 @@ class _PatientDetailsBodyState extends State<_PatientDetailsBody> {
         responsiblePsychologistId: patient.responsiblePsychologistId,
       ),
     );
+    if (mounted) await showCreatedInvitation(context, result);
   }
 
   @override

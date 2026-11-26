@@ -10,7 +10,9 @@ import 'package:terapia_esquema/features/auth/providers/auth_providers.dart';
 import 'package:terapia_esquema/features/clinic_entitlements/domain/clinic_feature_entitlement.dart';
 import 'package:terapia_esquema/features/clinic_entitlements/providers/clinic_entitlements_providers.dart';
 import 'package:terapia_esquema/features/patient_invitations/domain/patient_invitation.dart';
+import 'package:terapia_esquema/features/patient_invitations/domain/patient_invitation_draft.dart';
 import 'package:terapia_esquema/features/patient_invitations/domain/patient_invitation_status.dart';
+import 'package:terapia_esquema/features/patient_invitations/presentation/create_patient_invitation_page.dart';
 import 'package:terapia_esquema/features/patient_invitations/presentation/patient_invitations_page.dart';
 import 'package:terapia_esquema/features/patient_invitations/providers/patient_invitations_providers.dart';
 import 'package:terapia_esquema/features/patients/domain/patient.dart';
@@ -150,25 +152,43 @@ class _FakePatients extends PatientsListNotifier {
   }
 }
 
+/// Convite fictício; o padrão é o pendente da carteira.
+PatientInvitation psiInvitation({
+  String id = 'inv-1',
+  String email = 'usuario7@example.com',
+  String? fullName = 'Convidada Fictícia',
+  PatientInvitationStatus status = PatientInvitationStatus.pending,
+  DateTime? acceptedAt,
+  String? responsible,
+}) =>
+    PatientInvitation(
+      id: id,
+      email: email,
+      fullName: fullName,
+      status: status,
+      acceptedAt: acceptedAt,
+      responsiblePsychologistName: responsible,
+      expiresAt: DateTime(2030, 1, 1),
+      createdAt: DateTime(2026, 1, 1),
+      invitedById: 'psi-1',
+      responsiblePsychologistId: 'psi-1',
+    );
+
 class _FakeInvitations extends PatientInvitationsListNotifier {
-  _FakeInvitations(this.loads);
+  _FakeInvitations(this.loads, this.source);
   final PsiLoads loads;
+  final Future<List<PatientInvitation>> Function()? source;
 
   @override
-  Future<List<PatientInvitation>> build() async {
+  Future<List<PatientInvitation>> build() {
     loads.invitations++;
-    return [
-      PatientInvitation(
-        id: 'inv-1',
-        email: 'usuario7@example.com',
-        fullName: 'Convidada Fictícia',
-        status: PatientInvitationStatus.pending,
-        expiresAt: DateTime(2030, 1, 1),
-        createdAt: DateTime(2026, 1, 1),
-        invitedById: 'psi-1',
-        responsiblePsychologistId: 'psi-1',
-      ),
-    ];
+    return source == null ? Future.value([psiInvitation()]) : source!();
+  }
+
+  @override
+  Future<void> refresh() async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(build);
   }
 }
 
@@ -301,7 +321,10 @@ GoRouter psiRouter(
                     GoRoute(
                         path: 'new',
                         builder: newInvitation ??
-                            (_, __) => _stub('Convite fictício')),
+                            (_, state) => CreatePatientInvitationPage(
+                                role: ProfileRole.psychologist,
+                                draft: state.extra
+                                    as PatientInvitationDraft?)),
                   ],
                 ),
                 GoRoute(
@@ -354,6 +377,7 @@ Widget psiApp(
   Map<String, PatientDataCompletion> completion = const {},
   Set<String> pendingRelease = const {'p5'},
   Future<ClinicFeatureEntitlements> Function()? entitlements,
+  Future<List<PatientInvitation>> Function()? invitations,
   List<Override> overrides = const [],
 }) {
   final count = loads ?? PsiLoads();
@@ -365,7 +389,7 @@ Widget psiApp(
       patientsListProvider
           .overrideWith(() => _FakePatients(count, patients)),
       patientInvitationsListProvider
-          .overrideWith(() => _FakeInvitations(count)),
+          .overrideWith(() => _FakeInvitations(count, invitations)),
       psychologistQuestionnairesProvider.overrideWith((ref) async {
         count.questionnaires++;
         return [

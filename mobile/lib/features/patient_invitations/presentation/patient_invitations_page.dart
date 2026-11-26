@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -10,13 +9,18 @@ import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../../shared/widgets/brand_loading.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_kit.dart';
+import '../../../shared/widgets/desktop_psychologist/desktop_psychologist_shell.dart';
 import '../../patients/presentation/widgets/staff_section_header.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/created_patient_invitation.dart';
 import '../domain/patient_invitation.dart';
 import '../domain/patient_invitation_status.dart';
 import '../providers/patient_invitations_providers.dart';
+import 'create_patient_invitation_page.dart';
+import 'invitation_link.dart';
 import 'patient_invitation_routes.dart';
+import 'widgets/desktop_invitations_view.dart';
 
 class PatientInvitationsPage extends ConsumerStatefulWidget {
   const PatientInvitationsPage({
@@ -66,6 +70,25 @@ class _PatientInvitationsPageState
             ),
           ]
         : null;
+
+    // Psicóloga a partir de 768 px: histórico em tabela e formulário em painel.
+    if (widget.role == ProfileRole.psychologist &&
+        inDesktopPsychologistShell(context)) {
+      final recent = _recentInvitation;
+      return DesktopInvitationsView(
+        items: items,
+        loading: listAsync.isLoading,
+        failed: !listAsync.isLoading && listAsync.hasError,
+        situation: _situation,
+        expiry: _formatShort,
+        recent: recent,
+        onNew: _openInvitationPanel,
+        onRefresh: () =>
+            ref.read(patientInvitationsListProvider.notifier).refresh(),
+        onCopy: () => copyInviteUrl(context, recent!.inviteUrl),
+        onDismiss: () => setState(() => _recentInvitation = null),
+      );
+    }
 
     return AppCanopyScaffold(
       body: RefreshIndicator(
@@ -141,9 +164,10 @@ class _PatientInvitationsPageState
                       AppSpacing.md,
                       0,
                     ),
-                    child: _RecentInvitationCard(
+                    child: RecentInvitationCard(
                       invitation: _recentInvitation!,
-                      onCopy: () => _copyInviteUrl(_recentInvitation!.inviteUrl),
+                      onCopy: () =>
+                          copyInviteUrl(context, _recentInvitation!.inviteUrl),
                       onDismiss: () => setState(() => _recentInvitation = null),
                     ),
                   ),
@@ -203,63 +227,23 @@ class _PatientInvitationsPageState
     );
   }
 
-  Future<void> _openCreateInvitation() async {
-    final result = await context.push(
-      PatientInvitationRoutes.create(widget.role),
-    );
+  Future<void> _openCreateInvitation() async => _received(
+        await context.push(PatientInvitationRoutes.create(widget.role)),
+      );
 
+  /// Desktop: o mesmo formulário, em painel lateral (Esc fecha).
+  Future<void> _openInvitationPanel() async => _received(
+        await showDesktopSlideOver<CreatedPatientInvitation>(
+          context,
+          title: 'Convidar paciente',
+          child: CreatePatientInvitationPage(role: widget.role, embedded: true),
+        ),
+      );
+
+  Future<void> _received(Object? result) async {
     if (!mounted || result is! CreatedPatientInvitation) return;
     setState(() => _recentInvitation = result);
-    await _copyInviteUrl(result.inviteUrl);
-  }
-
-  Future<void> _copyInviteUrl(String inviteUrl) async {
-    await Clipboard.setData(ClipboardData(text: inviteUrl));
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Link do convite copiado.'),
-      ),
-    );
-  }
-}
-
-class _RecentInvitationCard extends StatelessWidget {
-  const _RecentInvitationCard({
-    required this.invitation,
-    required this.onCopy,
-    required this.onDismiss,
-  });
-
-  final CreatedPatientInvitation invitation;
-  final VoidCallback onCopy;
-  final VoidCallback onDismiss;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppInfoCard(
-      title: 'Convite gerado',
-      body: invitation.invitation.email,
-      icon: Icons.link_outlined,
-      tone: AppInfoCardTone.success,
-      action: IconButton(
-        tooltip: 'Fechar',
-        onPressed: onDismiss,
-        icon: const Icon(Icons.close),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SelectableText(invitation.inviteUrl),
-          const SizedBox(height: AppSpacing.sm),
-          FilledButton.icon(
-            onPressed: onCopy,
-            icon: const Icon(Icons.copy_outlined),
-            label: const Text('Copiar link'),
-          ),
-        ],
-      ),
-    );
+    await copyInviteUrl(context, result.inviteUrl);
   }
 }
 
@@ -295,7 +279,7 @@ class _InvitationTile extends StatelessWidget {
               Text(
                 'Responsavel: ${invitation.responsiblePsychologistName}',
               ),
-            Text(_subtitle(invitation)),
+            Text(_situation(invitation)),
           ],
         ),
         trailing: DecoratedBox(
@@ -317,27 +301,29 @@ class _InvitationTile extends StatelessWidget {
       ),
     );
   }
+}
 
-  String _subtitle(PatientInvitation invitation) {
-    switch (invitation.status) {
-      case PatientInvitationStatus.pending:
-        return 'Expira em ${_formatShort(invitation.expiresAt)}';
-      case PatientInvitationStatus.accepted:
-        return invitation.acceptedAt == null
-            ? 'Convite aceito'
-            : 'Aceito em ${_formatShort(invitation.acceptedAt!)}';
-      case PatientInvitationStatus.expired:
-        return 'Expirou em ${_formatShort(invitation.expiresAt)}';
-      case PatientInvitationStatus.revoked:
-        return 'Convite revogado';
-    }
+/// Frase de situação do convite (celular e desktop).
+String _situation(PatientInvitation invitation) {
+  switch (invitation.status) {
+    case PatientInvitationStatus.pending:
+      return 'Expira em ${_formatShort(invitation.expiresAt)}';
+    case PatientInvitationStatus.accepted:
+      return invitation.acceptedAt == null
+          ? 'Convite aceito'
+          : 'Aceito em ${_formatShort(invitation.acceptedAt!)}';
+    case PatientInvitationStatus.expired:
+      return 'Expirou em ${_formatShort(invitation.expiresAt)}';
+    case PatientInvitationStatus.revoked:
+      return 'Convite revogado';
   }
+}
 
-  String _formatShort(DateTime date) {
-    final local = date.toLocal();
-    final day = local.day.toString().padLeft(2, '0');
-    final month = local.month.toString().padLeft(2, '0');
-    final year = local.year.toString();
-    return '$day/$month/$year';
-  }
+/// Data curta (dd/mm/aaaa).
+String _formatShort(DateTime date) {
+  final local = date.toLocal();
+  final day = local.day.toString().padLeft(2, '0');
+  final month = local.month.toString().padLeft(2, '0');
+  final year = local.year.toString();
+  return '$day/$month/$year';
 }

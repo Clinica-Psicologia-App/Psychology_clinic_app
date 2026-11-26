@@ -5,6 +5,7 @@ import '../../../../shared/widgets/app_motion.dart';
 import '../../../../shared/widgets/async_state_body.dart';
 import '../../../../shared/widgets/desktop_admin/desktop_admin_kit.dart';
 import '../../../../shared/widgets/desktop_psychologist/desktop_psychologist_shell.dart';
+import '../../../../shared/widgets/desktop_psychologist/desktop_table.dart';
 import '../../../../shared/widgets/loading_skeleton.dart';
 import '../../../profile/domain/profile_role.dart';
 import '../../../profile/presentation/widgets/user_avatar.dart';
@@ -216,7 +217,6 @@ class DesktopPatientsView extends StatelessWidget {
   }
 
   Widget _table(BuildContext context) {
-    final t = DesktopAdminTokens.of(context);
     final m = DesktopAdminMetrics.of(MediaQuery.sizeOf(context).width);
     return LayoutBuilder(
       builder: (context, box) {
@@ -230,7 +230,7 @@ class DesktopPatientsView extends StatelessWidget {
             ],
           );
         } else if (!hasPatients) {
-          content = const _Empty(
+          content = const DesktopTableEmpty(
             icon: Icons.people_outline,
             title: 'Nenhum paciente',
             lines: [
@@ -239,7 +239,7 @@ class DesktopPatientsView extends StatelessWidget {
             ],
           );
         } else if (rows.isEmpty) {
-          content = _Empty(
+          content = DesktopTableEmpty(
             icon: Icons.search_off_outlined,
             title: 'Nenhum resultado',
             lines: const ['Nenhum paciente corresponde à busca ou aos filtros.'],
@@ -262,25 +262,9 @@ class DesktopPatientsView extends StatelessWidget {
             ),
           );
         }
-        return Container(
-          decoration: BoxDecoration(
-            color: t.rz,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          // Por cima, para os cantos não ficarem cobertos pelo cabeçalho.
-          foregroundDecoration: BoxDecoration(
-            border: Border.all(color: t.bd2),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              _Header(cols: cols),
-              Flexible(child: content),
-            ],
-          ),
+        return DesktopTablePanel(
+          header: _Header(cols: cols),
+          child: content,
         );
       },
     );
@@ -319,33 +303,15 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = DesktopAdminTokens.of(context);
-    Widget h(String s, {double? w}) {
-      final text = Text(s,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: daText(context, t,
-              size: 12, weight: FontWeight.w500, color: t.tx3));
-      return w == null ? Expanded(child: text) : SizedBox(width: w, child: text);
-    }
-
-    return Container(
-      height: 38,
-      padding: const EdgeInsets.only(left: 18, right: 10),
-      decoration: BoxDecoration(
-        color: t.side,
-        border: Border(bottom: BorderSide(color: t.bd2)),
-      ),
-      child: Row(
-        children: [
-          h('Paciente'),
-          h('Status', w: cols.status),
-          h('Último check-in', w: cols.checkIn),
-          h('Semana', w: cols.week),
-          h('Adesão', w: cols.ring),
-          SizedBox(width: cols.end),
-        ],
-      ),
+    return DesktopTableHeader(
+      children: [
+        desktopColumnTitle(context, 'Paciente'),
+        desktopColumnTitle(context, 'Status', width: cols.status),
+        desktopColumnTitle(context, 'Último check-in', width: cols.checkIn),
+        desktopColumnTitle(context, 'Semana', width: cols.week),
+        desktopColumnTitle(context, 'Adesão', width: cols.ring),
+        SizedBox(width: cols.end),
+      ],
     );
   }
 }
@@ -809,61 +775,6 @@ class _SkeletonRow extends StatelessWidget {
           ),
           SizedBox(width: cols.end),
         ],
-      ),
-    );
-  }
-}
-
-/// Carteira vazia ou busca sem resultado, dentro do painel.
-class _Empty extends StatelessWidget {
-  const _Empty({
-    required this.icon,
-    required this.title,
-    required this.lines,
-    this.action,
-  });
-
-  final IconData icon;
-  final String title;
-  final List<String> lines;
-  final Widget? action;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = DesktopAdminTokens.of(context);
-    return SingleChildScrollView(
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 300),
-        padding: const EdgeInsets.all(24),
-        alignment: Alignment.center,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: t.bd2),
-              ),
-              child: Icon(icon, size: 24, color: t.tq),
-            ),
-            const SizedBox(height: 14),
-            Text(title,
-                style: daText(context, t, size: 15, weight: FontWeight.w600)),
-            for (final line in lines)
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(line,
-                    textAlign: TextAlign.center,
-                    style: daText(context, t, color: t.tx2)),
-              ),
-            if (action != null) ...[
-              const SizedBox(height: 16),
-              action!,
-            ],
-          ],
-        ),
       ),
     );
   }

@@ -26,6 +26,16 @@ InputDecoration desktopFieldDecoration(
   );
 }
 
+/// Texto digitado e opção escolhida no tamanho do desktop (o campo usa
+/// bodyLarge; o menu suspenso, titleMedium).
+ThemeData desktopFieldTheme(BuildContext context) {
+  final theme = Theme.of(context);
+  final text = daText(context, DesktopAdminTokens.of(context));
+  return theme.copyWith(
+    textTheme: theme.textTheme.copyWith(bodyLarge: text, titleMedium: text),
+  );
+}
+
 /// Corpo rolável em coluna de largura limitada, com a barra de ação no pé.
 class DesktopFormBody extends StatelessWidget {
   const DesktopFormBody({
@@ -69,14 +79,7 @@ class DesktopFormBody extends StatelessWidget {
         ),
       ),
     );
-    // Texto digitado e opção escolhida no tamanho do desktop (o campo usa
-    // bodyLarge; o menu suspenso, titleMedium).
-    final theme = Theme.of(context);
-    final fieldText = daText(context, t);
-    final fields = theme.copyWith(
-      textTheme: theme.textTheme
-          .copyWith(bodyLarge: fieldText, titleMedium: fieldText),
-    );
+    final fields = desktopFieldTheme(context);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

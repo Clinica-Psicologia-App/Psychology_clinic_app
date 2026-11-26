@@ -26,6 +26,7 @@ import 'package:terapia_esquema/features/patients/providers/patients_providers.d
 import 'package:terapia_esquema/features/profile/domain/profile_role.dart';
 import 'package:terapia_esquema/features/profile/domain/user_profile.dart';
 import 'package:terapia_esquema/features/questionnaires/domain/questionnaire.dart';
+import 'package:terapia_esquema/features/questionnaires/domain/reference_period.dart';
 import 'package:terapia_esquema/features/questionnaires/presentation/psychologist_questionnaires_page.dart';
 import 'package:terapia_esquema/features/questionnaires/providers/questionnaires_providers.dart';
 import 'package:terapia_esquema/shared/widgets/app_nav_shell.dart';
@@ -151,6 +152,52 @@ class _FakePatients extends PatientsListNotifier {
     state = await AsyncValue.guard(build);
   }
 }
+
+/// Catálogo fictício simples: seis instrumentos em validação.
+List<Questionnaire> psiCatalog() => [
+      for (var i = 1; i <= 6; i++)
+        Questionnaire(
+            id: 'q$i',
+            code: 'Q$i',
+            name: 'Instrumento fictício $i',
+            isActive: true),
+    ];
+
+/// Catálogo com tudo o que a lista pode informar.
+List<Questionnaire> psiCatalogDetalhado() => const [
+      Questionnaire(
+          id: 'd1',
+          code: 'FICT_A',
+          name: 'Inventário fictício completo',
+          description:
+              'Descrição fictícia do instrumento, longa o bastante para quebrar '
+              'em mais de uma linha numa tela estreita.',
+          isActive: true,
+          referencePeriod: ReferencePeriod.lastMonth,
+          authorName: 'Autora Exemplo',
+          instrumentVersion: 'v1.2',
+          licenseNotes: 'Licença pendente validação (texto fictício).',
+          clinicalStatus: QuestionnaireClinicalStatus.approved),
+      Questionnaire(
+          id: 'd2',
+          code: 'PARENTAL_STYLES_V1',
+          name: 'Estilos fictícios',
+          isActive: true,
+          referencePeriod: ReferencePeriod.lifetime,
+          licenseNotes: 'Uso autorizado (texto fictício).'),
+      Questionnaire(
+          id: 'd3',
+          code: 'FICT_C',
+          name: 'Instrumento suspenso fictício',
+          isActive: false,
+          clinicalStatus: QuestionnaireClinicalStatus.suspended),
+      Questionnaire(
+          id: 'd4',
+          code: 'FICT_D',
+          name: 'Rascunho fictício',
+          isActive: true,
+          clinicalStatus: QuestionnaireClinicalStatus.draft),
+    ];
 
 /// Convite fictício; o padrão é o pendente da carteira.
 PatientInvitation psiInvitation({
@@ -378,6 +425,7 @@ Widget psiApp(
   Set<String> pendingRelease = const {'p5'},
   Future<ClinicFeatureEntitlements> Function()? entitlements,
   Future<List<PatientInvitation>> Function()? invitations,
+  Future<List<Questionnaire>> Function()? questionnaires,
   List<Override> overrides = const [],
 }) {
   final count = loads ?? PsiLoads();
@@ -392,14 +440,7 @@ Widget psiApp(
           .overrideWith(() => _FakeInvitations(count, invitations)),
       psychologistQuestionnairesProvider.overrideWith((ref) async {
         count.questionnaires++;
-        return [
-          for (var i = 1; i <= 6; i++)
-            Questionnaire(
-                id: 'q$i',
-                code: 'Q$i',
-                name: 'Instrumento fictício $i',
-                isActive: true),
-        ];
+        return questionnaires == null ? psiCatalog() : await questionnaires();
       }),
       psychologistAlertsProvider.overrideWith((ref) {
         count.alerts++;

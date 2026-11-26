@@ -17,6 +17,7 @@ const desktopPsychologistFramedLocations = <String>{
   '$kPsychologistHomeLocation/patients',
   '$kPsychologistHomeLocation/patient-invitations',
   '$kPsychologistHomeLocation/patient-invitations/new',
+  '$kPsychologistHomeLocation/questionnaires',
 };
 
 /// Cadastro (`/new`), ficha (`/<id>`), edição e dados cadastrais de um

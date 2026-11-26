@@ -12,10 +12,13 @@ import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../../shared/widgets/brand_loading.dart';
 import '../../../shared/widgets/clinical_module_card.dart';
+import '../../../shared/widgets/desktop_psychologist/desktop_psychologist_shell.dart';
 import '../../patients/presentation/patient_routes.dart';
 import '../../patients/presentation/widgets/staff_section_header.dart';
 import '../../profile/domain/profile_role.dart';
+import '../domain/questionnaire.dart';
 import '../providers/questionnaires_providers.dart';
+import 'widgets/desktop_psychologist_catalog.dart';
 import 'widgets/questionnaire_list_tile.dart';
 
 class PsychologistQuestionnairesPage extends ConsumerWidget {
@@ -35,6 +38,30 @@ class PsychologistQuestionnairesPage extends ConsumerWidget {
             ),
           ]
         : null;
+
+    bool canApply(Questionnaire questionnaire) => questionnaire.canStart(
+          allowUnvalidated: EnvConfig.allowsUnvalidatedInstruments,
+        );
+    void release() => context.push(
+          PatientRoutes.list(ProfileRole.psychologist),
+          extra: PatientSelectionIntent.questionnaires,
+        );
+    void open() => context.push(
+          PatientRoutes.list(ProfileRole.psychologist),
+        );
+
+    // A partir de 768 px: atalho e catálogo em tabela.
+    if (inDesktopPsychologistShell(context)) {
+      return DesktopPsychologistCatalog(
+        items: items,
+        loading: listAsync.isLoading,
+        failed: !listAsync.isLoading && listAsync.hasError,
+        canApply: canApply,
+        onRelease: release,
+        onOpen: open,
+        onRefresh: () => ref.invalidate(psychologistQuestionnairesProvider),
+      );
+    }
 
     return AppCanopyScaffold(
       body: RefreshIndicator(
@@ -111,10 +138,7 @@ class PsychologistQuestionnairesPage extends ConsumerWidget {
                       subtitle:
                           'Escolha um paciente e libere os questionários.',
                       accentColor: AppColors.purple,
-                      onTap: () => context.push(
-                        PatientRoutes.list(ProfileRole.psychologist),
-                        extra: PatientSelectionIntent.questionnaires,
-                      ),
+                      onTap: release,
                     ),
                   ),
                 ),
@@ -161,19 +185,13 @@ class PsychologistQuestionnairesPage extends ConsumerWidget {
                     itemCount: items.length,
                     itemBuilder: (context, index) {
                       final questionnaire = items[index];
-                      final canApply = questionnaire.canStart(
-                        allowUnvalidated:
-                            EnvConfig.allowsUnvalidatedInstruments,
-                      );
                       return MotionReveal(
                         delay: staggerDelay(index),
                         child: QuestionnaireListTile(
                           questionnaire: questionnaire,
-                          enabled: canApply,
+                          enabled: canApply(questionnaire),
                           showStaffDetails: true,
-                          onTap: () => context.push(
-                            PatientRoutes.list(ProfileRole.psychologist),
-                          ),
+                          onTap: open,
                         ),
                       );
                     },

@@ -265,9 +265,10 @@ class DaTag extends StatelessWidget {
   final Color? bg;
   final IconData? icon;
 
-  factory DaTag.ok(BuildContext c, String label) {
+  factory DaTag.ok(BuildContext c, String label, {IconData? icon}) {
     final d = DesktopAdminTokens.of(c).dark;
     return DaTag(label,
+        icon: icon,
         bg: d ? const Color(0xFF0F3B30) : const Color(0xFFD1FAE5),
         fg: d ? const Color(0xFF6EE7B7) : const Color(0xFF065F46));
   }

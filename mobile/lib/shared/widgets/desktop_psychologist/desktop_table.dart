@@ -71,6 +71,61 @@ Widget desktopColumnTitle(BuildContext context, String label, {double? width}) {
       : SizedBox(width: width, child: text);
 }
 
+/// Título e descrição acima da tabela, com os números à direita.
+class DesktopTableHeading extends StatelessWidget {
+  const DesktopTableHeading({
+    super.key,
+    required this.title,
+    required this.subtitle,
+    this.counts = const [],
+  });
+
+  final String title;
+  final String subtitle;
+  final List<(int, String)> counts;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = DesktopAdminTokens.of(context);
+    final big = DesktopAdminMetrics.of(MediaQuery.sizeOf(context).width).size ==
+        DesktopAdminSize.desktop;
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(title,
+                  style: daText(context, t,
+                      size: big ? 16 : 15, weight: FontWeight.w600)),
+              Text(subtitle, style: daText(context, t, color: t.tx2)),
+            ],
+          ),
+        ),
+        for (final (value, label) in counts)
+          Container(
+            margin: const EdgeInsets.only(left: 8),
+            padding: const EdgeInsets.only(left: 16, right: 8),
+            decoration:
+                BoxDecoration(border: Border(left: BorderSide(color: t.bd2))),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('$value',
+                    style: daText(context, t, size: 15, weight: FontWeight.w700)
+                        .copyWith(height: 1.2)),
+                Text(label,
+                    style: daText(context, t, size: 11.5, color: t.tx3)
+                        .copyWith(height: 1.2)),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+}
+
 /// Lista vazia ou busca sem resultado, dentro do painel.
 class DesktopTableEmpty extends StatelessWidget {
   const DesktopTableEmpty({

@@ -45,7 +45,6 @@ class DesktopInvitationsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = DesktopAdminTokens.of(context);
     final m = DesktopAdminMetrics.of(MediaQuery.sizeOf(context).width);
     final big = m.size == DesktopAdminSize.desktop;
     final list = items;
@@ -89,30 +88,14 @@ class DesktopInvitationsView extends StatelessWidget {
                     ),
                     const SizedBox(height: 14),
                   ],
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Histórico de convites',
-                                style: daText(context, t,
-                                    size: big ? 16 : 15,
-                                    weight: FontWeight.w600)),
-                            Text('Status dos links enviados pela clínica.',
-                                style: daText(context, t, color: t.tx2)),
-                          ],
-                        ),
-                      ),
+                  DesktopTableHeading(
+                    title: 'Histórico de convites',
+                    subtitle: 'Status dos links enviados pela clínica.',
+                    counts: [
                       if (list != null) ...[
-                        _Count(
-                            value: count(PatientInvitationStatus.pending),
-                            label: 'Pendentes'),
-                        _Count(
-                            value: count(PatientInvitationStatus.accepted),
-                            label: 'Aceitos'),
-                        _Count(value: list.length, label: 'Total'),
+                        (count(PatientInvitationStatus.pending), 'Pendentes'),
+                        (count(PatientInvitationStatus.accepted), 'Aceitos'),
+                        (list.length, 'Total'),
                       ],
                     ],
                   ),
@@ -186,35 +169,6 @@ class DesktopInvitationsView extends StatelessWidget {
           child: content,
         );
       },
-    );
-  }
-}
-
-/// Um dos três números do histórico.
-class _Count extends StatelessWidget {
-  const _Count({required this.value, required this.label});
-
-  final int value;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = DesktopAdminTokens.of(context);
-    return Container(
-      margin: const EdgeInsets.only(left: 8),
-      padding: const EdgeInsets.only(left: 16, right: 8),
-      decoration: BoxDecoration(border: Border(left: BorderSide(color: t.bd2))),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text('$value',
-              style: daText(context, t, size: 15, weight: FontWeight.w700)
-                  .copyWith(height: 1.2)),
-          Text(label,
-              style: daText(context, t, size: 11.5, color: t.tx3)
-                  .copyWith(height: 1.2)),
-        ],
-      ),
     );
   }
 }

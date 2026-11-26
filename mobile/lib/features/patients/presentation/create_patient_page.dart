@@ -8,6 +8,10 @@ import '../../../shared/utils/input_formatters.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_kit.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_shell.dart';
+import '../../../shared/widgets/desktop_psychologist/desktop_form.dart';
+import '../../../shared/widgets/desktop_psychologist/desktop_psychologist_shell.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../profile/domain/profile_role.dart';
@@ -26,6 +30,10 @@ class CreatePatientPage extends ConsumerStatefulWidget {
   @override
   ConsumerState<CreatePatientPage> createState() => _CreatePatientPageState();
 }
+
+/// Decoração de um campo: a do celular leva o rótulo dentro; a de desktop, não.
+typedef _Deco = InputDecoration Function(String label,
+    {String? hint, String? helper});
 
 class _CreatePatientPageState extends ConsumerState<CreatePatientPage> {
   final _formKey = GlobalKey<FormState>();
@@ -133,6 +141,11 @@ class _CreatePatientPageState extends ConsumerState<CreatePatientPage> {
     final psychologistId = _isAdmin ? _selectedPsychologistId : profile?.id;
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
+    if (widget.role == ProfileRole.psychologist &&
+        inDesktopPsychologistShell(context)) {
+      return _desktop(context, profile, psychologistId);
+    }
+
     return AppScaffold(
       title: 'Novo paciente',
       accent: AppColors.blue,
@@ -154,91 +167,13 @@ class _CreatePatientPageState extends ConsumerState<CreatePatientPage> {
                     badgeBg: const Color(0xFFEAF3DE),
                     dotColor: AppColors.blue,
                     children: [
-                      TextFormField(
-                        controller: _fullNameController,
-                        decoration: _cardDecoration('Nome completo *'),
-                        textCapitalization: TextCapitalization.words,
-                        textInputAction: TextInputAction.next,
-                        validator: (v) => v == null || v.trim().isEmpty
-                            ? 'Informe o nome'
-                            : null,
-                      ),
+                      _nameField(_cardDecoration),
                       const SizedBox(height: _fieldSpacing),
-                      TextFormField(
-                        controller: _emailController,
-                        decoration: _cardDecoration(
-                          'E-mail de login *',
-                          hint: 'paciente@exemplo.com',
-                        ),
-                        keyboardType: TextInputType.emailAddress,
-                        autocorrect: false,
-                        textInputAction: TextInputAction.next,
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) {
-                            return 'Informe o e-mail';
-                          }
-                          if (!v.contains('@')) return 'E-mail inválido';
-                          return null;
-                        },
-                      ),
+                      _emailField(_cardDecoration),
                       const SizedBox(height: _fieldSpacing),
-                      TextFormField(
-                        controller: _passwordController,
-                        decoration: _cardDecoration(
-                          'Senha inicial *',
-                          helper: 'Mínimo 8 caracteres',
-                        ).copyWith(
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                            ),
-                            onPressed: () => setState(
-                                () => _obscurePassword = !_obscurePassword),
-                          ),
-                        ),
-                        obscureText: _obscurePassword,
-                        textInputAction: TextInputAction.next,
-                        validator: (v) {
-                          if (v == null || v.length < 8) {
-                            return 'Senha com pelo menos 8 caracteres';
-                          }
-                          return null;
-                        },
-                      ),
+                      _passwordField(_cardDecoration),
                       const SizedBox(height: _fieldSpacing),
-                      TextFormField(
-                        controller: _confirmPasswordController,
-                        decoration: _cardDecoration('Confirmar senha *').copyWith(
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscureConfirmPassword
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                            ),
-                            onPressed: () => setState(
-                              () => _obscureConfirmPassword =
-                                  !_obscureConfirmPassword,
-                            ),
-                          ),
-                        ),
-                        obscureText: _obscureConfirmPassword,
-                        textInputAction: TextInputAction.done,
-                        onFieldSubmitted: (_) {
-                          if (!_submitting &&
-                              profile != null &&
-                              psychologistId != null) {
-                            _submit(profile, psychologistId);
-                          }
-                        },
-                        validator: (v) {
-                          if (v != _passwordController.text) {
-                            return 'As senhas não coincidem';
-                          }
-                          return null;
-                        },
-                      ),
+                      _confirmField(_cardDecoration, profile, psychologistId),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.md),
@@ -264,169 +199,35 @@ class _CreatePatientPageState extends ConsumerState<CreatePatientPage> {
                     ),
                     children: _showOptionalFields
                         ? [
-                            _SimpleDropdownField(
-                              label: 'Gênero',
-                              value: _selectedGender,
-                              hint: 'Selecione',
-                              options: _genderOptions,
-                              onChanged: (value) =>
-                                  setState(() => _selectedGender = value),
-                              cardStyle: true,
-                            ),
+                            _genderField(),
                             const SizedBox(height: _fieldSpacing),
-                            InkWell(
-                              onTap: _pickBirthDate,
-                              borderRadius: BorderRadius.circular(4),
-                              child: InputDecorator(
-                                decoration: _cardDecoration(
-                                  'Data de nascimento',
-                                ).copyWith(
-                                  suffixIcon: IconButton(
-                                    icon: const Icon(
-                                        Icons.calendar_today_outlined),
-                                    onPressed: _pickBirthDate,
-                                  ),
-                                ),
-                                child: Text(
-                                  _birthDate == null
-                                      ? ''
-                                      : _formatDate(_birthDate!),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyLarge
-                                      ?.copyWith(
-                                        color: _birthDate == null
-                                            ? Theme.of(context)
-                                                .colorScheme
-                                                .onSurfaceVariant
-                                            : null,
-                                      ),
-                                ),
-                              ),
-                            ),
+                            _birthDateField(_cardDecoration),
                             if (_birthDate != null) ...[
                               const SizedBox(height: 4),
-                              Align(
-                                alignment: Alignment.centerLeft,
-                                child: TextButton.icon(
-                                  onPressed: () =>
-                                      setState(() => _birthDate = null),
-                                  icon: const Icon(Icons.clear, size: 16),
-                                  label: const Text('Limpar data'),
-                                  style: TextButton.styleFrom(
-                                    padding: EdgeInsets.zero,
-                                    tapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
-                                  ),
-                                ),
-                              ),
+                              _clearDateButton(),
                             ],
                             const SizedBox(height: _fieldSpacing),
-                            TextFormField(
-                              controller: _phoneController,
-                              decoration: _cardDecoration('Telefone',
-                                  hint: '(51) 99999-9999'),
-                              keyboardType: TextInputType.phone,
-                              textInputAction: TextInputAction.next,
-                              inputFormatters: [BrazilPhoneInputFormatter()],
-                              validator: validateOptionalPhone,
-                            ),
+                            _phoneField(_cardDecoration),
                             const SizedBox(height: _fieldSpacing),
-                            TextFormField(
-                              controller: _cpfController,
-                              decoration: _cardDecoration('CPF',
-                                  hint: '000.000.000-00'),
-                              keyboardType: TextInputType.number,
-                              textInputAction: TextInputAction.next,
-                              inputFormatters: [CpfInputFormatter()],
-                              validator: validateOptionalCpf,
-                            ),
+                            _cpfField(_cardDecoration),
                             const SizedBox(height: _fieldSpacing),
-                            _SimpleDropdownField(
-                              label: 'Estado civil',
-                              value: _selectedRelationshipStatus,
-                              hint: 'Selecione',
-                              options: _relationshipStatusOptions,
-                              onChanged: (value) => setState(
-                                  () => _selectedRelationshipStatus = value),
-                              cardStyle: true,
-                            ),
+                            _relationshipField(),
                             const SizedBox(height: _fieldSpacing),
-                            _SimpleDropdownField(
-                              label: 'Escolaridade',
-                              value: _selectedEducationLevel,
-                              hint: 'Selecione',
-                              options: _educationLevelOptions,
-                              onChanged: (value) => setState(
-                                  () => _selectedEducationLevel = value),
-                              cardStyle: true,
-                            ),
+                            _educationField(),
                             const SizedBox(height: _fieldSpacing),
-                            TextFormField(
-                              controller: _occupationController,
-                              decoration: _cardDecoration('Ocupação',
-                                  hint: 'Ex.: Jornalista'),
-                              textCapitalization: TextCapitalization.sentences,
-                              textInputAction: TextInputAction.next,
-                            ),
+                            _occupationField(_cardDecoration),
                             const SizedBox(height: _fieldSpacing),
-                            TextFormField(
-                              controller: _stateBirthController,
-                              decoration: _cardDecoration(
-                                  'Estado de nascimento',
-                                  hint: 'Ex.: Rio Grande do Sul'),
-                              textCapitalization: TextCapitalization.words,
-                              textInputAction: TextInputAction.next,
-                            ),
+                            _stateBirthField(_cardDecoration),
                             const SizedBox(height: _fieldSpacing),
-                            TextFormField(
-                              controller: _countryBirthController,
-                              decoration: _cardDecoration('País de nascimento',
-                                  hint: 'Ex.: Brasil'),
-                              textCapitalization: TextCapitalization.words,
-                              textInputAction: TextInputAction.next,
-                            ),
+                            _countryBirthField(_cardDecoration),
                             const SizedBox(height: _fieldSpacing),
-                            TextFormField(
-                              controller: _religiousOrientationController,
-                              decoration:
-                                  _cardDecoration('Orientação religiosa'),
-                              textCapitalization: TextCapitalization.words,
-                              textInputAction: TextInputAction.next,
-                            ),
+                            _religionField(_cardDecoration),
                             const SizedBox(height: _fieldSpacing),
-                            TextFormField(
-                              controller: _ethnicGroupController,
-                              decoration: _cardDecoration('Grupo étnico'),
-                              textCapitalization: TextCapitalization.words,
-                              textInputAction: TextInputAction.next,
-                            ),
+                            _ethnicField(_cardDecoration),
                             const SizedBox(height: _fieldSpacing),
-                            TextFormField(
-                              controller: _sexualOrientationController,
-                              decoration: _cardDecoration('Orientação sexual'),
-                              textCapitalization: TextCapitalization.sentences,
-                              textInputAction: TextInputAction.next,
-                            ),
+                            _sexualField(_cardDecoration),
                             const SizedBox(height: _fieldSpacing),
-                            _SimpleDropdownField(
-                              label: 'Possui filhos?',
-                              value: switch (_hasChildren) {
-                                true => 'Sim',
-                                false => 'Não',
-                                null => null,
-                              },
-                              hint: 'Selecione',
-                              options: const ['Sim', 'Não'],
-                              onChanged: (value) => setState(
-                                () => _hasChildren = switch (value) {
-                                  'Sim' => true,
-                                  'Não' => false,
-                                  _ => null,
-                                },
-                              ),
-                              cardStyle: true,
-                            ),
+                            _childrenField(),
                           ]
                         : const [],
                   ),
@@ -525,6 +326,388 @@ class _CreatePatientPageState extends ConsumerState<CreatePatientPage> {
     );
   }
 
+  // ── Desktop (>= 768 px, psicóloga) ────────────────────────────────────────
+
+  Widget _desktop(
+    BuildContext context,
+    UserProfile? profile,
+    String? psychologistId,
+  ) {
+    final t = DesktopAdminTokens.of(context);
+    InputDecoration deco(String label, {String? hint, String? helper}) =>
+        desktopFieldDecoration(context, hint: hint, helper: helper);
+    InputDecoration select() => desktopFieldDecoration(context);
+    Widget labeled(String label, Widget field) =>
+        DaLabeled(label, child: field);
+
+    return DesktopPsychologistFrame(
+      title: 'Novo paciente',
+      crumbs: [DaCrumb('Pacientes', PatientRoutes.list(widget.role))],
+      body: Form(
+        key: _formKey,
+        child: DesktopFormBody(
+          busy: _submitting,
+          actions: [
+            DaButton(
+              label: 'Cadastrar paciente',
+              icon: Icons.person_add_outlined,
+              kind: DaButtonKind.primary,
+              onPressed:
+                  _submitting || profile == null || psychologistId == null
+                      ? null
+                      : () => _submit(profile, psychologistId),
+            ),
+          ],
+          children: [
+            DesktopFormCard(
+              title: 'Essencial',
+              badge: DaTag.ok(context, 'obrigatório'),
+              child: DesktopFormGrid(
+                children: [
+                  labeled('Nome completo *', _nameField(deco)),
+                  labeled('E-mail de login *', _emailField(deco)),
+                  labeled('Senha inicial *', _passwordField(deco)),
+                  labeled('Confirmar senha *',
+                      _confirmField(deco, profile, psychologistId)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+            DesktopFormCard(
+              title: 'Perfil clínico',
+              dot: t.tx3,
+              badge: const DaTag('opcional'),
+              trailing: TextButton.icon(
+                onPressed: () => setState(
+                    () => _showOptionalFields = !_showOptionalFields),
+                iconAlignment: IconAlignment.end,
+                icon: Icon(
+                    _showOptionalFields
+                        ? Icons.expand_less
+                        : Icons.expand_more,
+                    size: 18),
+                label: Text(_showOptionalFields ? 'Recolher' : 'Expandir'),
+              ),
+              // Fechado, os campos saem da árvore (como no celular).
+              child: _showOptionalFields
+                  ? DesktopFormGrid(
+                      children: [
+                        labeled('Gênero', _genderField(decoration: select())),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            labeled(
+                                'Data de nascimento', _birthDateField(deco)),
+                            if (_birthDate != null) _clearDateButton(),
+                          ],
+                        ),
+                        labeled('Telefone', _phoneField(deco)),
+                        labeled('CPF', _cpfField(deco)),
+                        labeled('Estado civil',
+                            _relationshipField(decoration: select())),
+                        labeled('Escolaridade',
+                            _educationField(decoration: select())),
+                        labeled('Ocupação', _occupationField(deco)),
+                        labeled('Estado de nascimento', _stateBirthField(deco)),
+                        labeled('País de nascimento', _countryBirthField(deco)),
+                        labeled('Orientação religiosa', _religionField(deco)),
+                        labeled('Grupo étnico', _ethnicField(deco)),
+                        labeled('Orientação sexual', _sexualField(deco)),
+                        labeled('Possui filhos?',
+                            _childrenField(decoration: select())),
+                      ],
+                    )
+                  : null,
+            ),
+            if (profile != null) ...[
+              const SizedBox(height: 14),
+              DesktopFormCard(
+                title: 'Responsável',
+                child: Row(
+                  children: [
+                    const DaIconBox(Icons.psychology_outlined,
+                        color: DesktopAdminTokens.blue, size: 36),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Psicólogo responsável',
+                              style: daText(context, t,
+                                  size: 12, color: t.tx2)),
+                          Text(profile.fullName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: daText(context, t,
+                                  weight: FontWeight.w600)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Campos (celular e desktop) ────────────────────────────────────────────
+
+  Widget _nameField(_Deco deco) => TextFormField(
+    controller: _fullNameController,
+    decoration: deco('Nome completo *'),
+    textCapitalization: TextCapitalization.words,
+    textInputAction: TextInputAction.next,
+    validator: (v) => v == null || v.trim().isEmpty
+        ? 'Informe o nome'
+        : null,
+  );
+
+  Widget _emailField(_Deco deco) => TextFormField(
+    controller: _emailController,
+    decoration: deco(
+      'E-mail de login *',
+      hint: 'paciente@exemplo.com',
+    ),
+    keyboardType: TextInputType.emailAddress,
+    autocorrect: false,
+    textInputAction: TextInputAction.next,
+    validator: (v) {
+      if (v == null || v.trim().isEmpty) {
+        return 'Informe o e-mail';
+      }
+      if (!v.contains('@')) return 'E-mail inválido';
+      return null;
+    },
+  );
+
+  Widget _passwordField(_Deco deco) => TextFormField(
+    controller: _passwordController,
+    decoration: deco(
+      'Senha inicial *',
+      helper: 'Mínimo 8 caracteres',
+    ).copyWith(
+      suffixIcon: IconButton(
+        icon: Icon(
+          _obscurePassword
+              ? Icons.visibility_off_outlined
+              : Icons.visibility_outlined,
+        ),
+        onPressed: () => setState(
+            () => _obscurePassword = !_obscurePassword),
+      ),
+    ),
+    obscureText: _obscurePassword,
+    textInputAction: TextInputAction.next,
+    validator: (v) {
+      if (v == null || v.length < 8) {
+        return 'Senha com pelo menos 8 caracteres';
+      }
+      return null;
+    },
+  );
+
+  Widget _confirmField(
+      _Deco deco, UserProfile? profile, String? psychologistId) => TextFormField(
+    controller: _confirmPasswordController,
+    decoration: deco('Confirmar senha *').copyWith(
+      suffixIcon: IconButton(
+        icon: Icon(
+          _obscureConfirmPassword
+              ? Icons.visibility_off_outlined
+              : Icons.visibility_outlined,
+        ),
+        onPressed: () => setState(
+          () => _obscureConfirmPassword =
+              !_obscureConfirmPassword,
+        ),
+      ),
+    ),
+    obscureText: _obscureConfirmPassword,
+    textInputAction: TextInputAction.done,
+    onFieldSubmitted: (_) {
+      if (!_submitting &&
+          profile != null &&
+          psychologistId != null) {
+        _submit(profile, psychologistId);
+      }
+    },
+    validator: (v) {
+      if (v != _passwordController.text) {
+        return 'As senhas não coincidem';
+      }
+      return null;
+    },
+  );
+
+  Widget _genderField({InputDecoration? decoration}) => _SimpleDropdownField(
+    label: 'Gênero',
+    value: _selectedGender,
+    hint: 'Selecione',
+    options: _genderOptions,
+    onChanged: (value) =>
+        setState(() => _selectedGender = value),
+    cardStyle: true,
+    decoration: decoration,
+  );
+
+  Widget _birthDateField(_Deco deco) => InkWell(
+    onTap: _pickBirthDate,
+    borderRadius: BorderRadius.circular(4),
+    child: InputDecorator(
+      decoration: deco(
+        'Data de nascimento',
+      ).copyWith(
+        suffixIcon: IconButton(
+          icon: const Icon(
+              Icons.calendar_today_outlined),
+          onPressed: _pickBirthDate,
+        ),
+      ),
+      child: Text(
+        _birthDate == null
+            ? ''
+            : _formatDate(_birthDate!),
+        style: Theme.of(context)
+            .textTheme
+            .bodyLarge
+            ?.copyWith(
+              color: _birthDate == null
+                  ? Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant
+                  : null,
+            ),
+      ),
+    ),
+  );
+
+  Widget _clearDateButton() => Align(
+    alignment: Alignment.centerLeft,
+    child: TextButton.icon(
+      onPressed: () =>
+          setState(() => _birthDate = null),
+      icon: const Icon(Icons.clear, size: 16),
+      label: const Text('Limpar data'),
+      style: TextButton.styleFrom(
+        padding: EdgeInsets.zero,
+        tapTargetSize:
+            MaterialTapTargetSize.shrinkWrap,
+      ),
+    ),
+  );
+
+  Widget _phoneField(_Deco deco) => TextFormField(
+    controller: _phoneController,
+    decoration: deco('Telefone',
+        hint: '(51) 99999-9999'),
+    keyboardType: TextInputType.phone,
+    textInputAction: TextInputAction.next,
+    inputFormatters: [BrazilPhoneInputFormatter()],
+    validator: validateOptionalPhone,
+  );
+
+  Widget _cpfField(_Deco deco) => TextFormField(
+    controller: _cpfController,
+    decoration: deco('CPF',
+        hint: '000.000.000-00'),
+    keyboardType: TextInputType.number,
+    textInputAction: TextInputAction.next,
+    inputFormatters: [CpfInputFormatter()],
+    validator: validateOptionalCpf,
+  );
+
+  Widget _relationshipField({InputDecoration? decoration}) => _SimpleDropdownField(
+    label: 'Estado civil',
+    value: _selectedRelationshipStatus,
+    hint: 'Selecione',
+    options: _relationshipStatusOptions,
+    onChanged: (value) => setState(
+        () => _selectedRelationshipStatus = value),
+    cardStyle: true,
+    decoration: decoration,
+  );
+
+  Widget _educationField({InputDecoration? decoration}) => _SimpleDropdownField(
+    label: 'Escolaridade',
+    value: _selectedEducationLevel,
+    hint: 'Selecione',
+    options: _educationLevelOptions,
+    onChanged: (value) => setState(
+        () => _selectedEducationLevel = value),
+    cardStyle: true,
+    decoration: decoration,
+  );
+
+  Widget _occupationField(_Deco deco) => TextFormField(
+    controller: _occupationController,
+    decoration: deco('Ocupação',
+        hint: 'Ex.: Jornalista'),
+    textCapitalization: TextCapitalization.sentences,
+    textInputAction: TextInputAction.next,
+  );
+
+  Widget _stateBirthField(_Deco deco) => TextFormField(
+    controller: _stateBirthController,
+    decoration: deco(
+        'Estado de nascimento',
+        hint: 'Ex.: Rio Grande do Sul'),
+    textCapitalization: TextCapitalization.words,
+    textInputAction: TextInputAction.next,
+  );
+
+  Widget _countryBirthField(_Deco deco) => TextFormField(
+    controller: _countryBirthController,
+    decoration: deco('País de nascimento',
+        hint: 'Ex.: Brasil'),
+    textCapitalization: TextCapitalization.words,
+    textInputAction: TextInputAction.next,
+  );
+
+  Widget _religionField(_Deco deco) => TextFormField(
+    controller: _religiousOrientationController,
+    decoration:
+        deco('Orientação religiosa'),
+    textCapitalization: TextCapitalization.words,
+    textInputAction: TextInputAction.next,
+  );
+
+  Widget _ethnicField(_Deco deco) => TextFormField(
+    controller: _ethnicGroupController,
+    decoration: deco('Grupo étnico'),
+    textCapitalization: TextCapitalization.words,
+    textInputAction: TextInputAction.next,
+  );
+
+  Widget _sexualField(_Deco deco) => TextFormField(
+    controller: _sexualOrientationController,
+    decoration: deco('Orientação sexual'),
+    textCapitalization: TextCapitalization.sentences,
+    textInputAction: TextInputAction.next,
+  );
+
+  Widget _childrenField({InputDecoration? decoration}) => _SimpleDropdownField(
+    label: 'Possui filhos?',
+    value: switch (_hasChildren) {
+      true => 'Sim',
+      false => 'Não',
+      null => null,
+    },
+    hint: 'Selecione',
+    options: const ['Sim', 'Não'],
+    onChanged: (value) => setState(
+      () => _hasChildren = switch (value) {
+        'Sim' => true,
+        'Não' => false,
+        _ => null,
+      },
+    ),
+    cardStyle: true,
+    decoration: decoration,
+  );
+
   Future<void> _pickBirthDate() async {
     final now = DateTime.now();
     final picked = await showDatePicker(
@@ -615,7 +798,11 @@ class _SimpleDropdownField extends StatelessWidget {
     required this.options,
     required this.onChanged,
     this.cardStyle = false,
+    this.decoration,
   });
+
+  /// Substitui a decoração do celular (desktop: rótulo acima).
+  final InputDecoration? decoration;
 
   final String label;
   final String? value;
@@ -626,7 +813,7 @@ class _SimpleDropdownField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final InputDecoration deco = cardStyle
+    final InputDecoration deco = decoration ?? (cardStyle
         ? InputDecoration(
             labelText: label,
             border: const UnderlineInputBorder(),
@@ -652,7 +839,7 @@ class _SimpleDropdownField extends StatelessWidget {
                 .colorScheme
                 .surfaceContainerHighest
                 .withValues(alpha: 0.35),
-          );
+          ));
     return DropdownButtonFormField<String>(
       initialValue: value,
       isExpanded: true,

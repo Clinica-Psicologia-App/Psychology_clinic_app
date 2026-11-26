@@ -17,6 +17,8 @@ import 'package:terapia_esquema/features/patients/domain/patient.dart';
 import 'package:terapia_esquema/features/patients/domain/patient_data_completion.dart';
 import 'package:terapia_esquema/features/patients/domain/patient_vitals.dart';
 import 'package:terapia_esquema/features/patients/domain/psychologist_alert.dart';
+import 'package:terapia_esquema/features/patients/domain/psychologist_option.dart';
+import 'package:terapia_esquema/features/patients/presentation/create_patient_page.dart';
 import 'package:terapia_esquema/features/patients/presentation/patients_page.dart';
 import 'package:terapia_esquema/features/patients/providers/patients_providers.dart';
 import 'package:terapia_esquema/features/profile/domain/profile_role.dart';
@@ -193,6 +195,41 @@ Patient psiMarina({
 const psiVitals = PatientVitals(
     lastCheckinDays: 2, activeGoals: 3, pendingQuestionnaires: 1);
 
+/// A mesma paciente com os dados cadastrais preenchidos.
+Patient psiMarinaCompleta({
+  bool active = true,
+  String? profileId,
+  PatientAccessStatus? access = PatientAccessStatus.active,
+}) =>
+    Patient(
+      id: 'p3',
+      fullName: 'Marina Exemplo',
+      email: 'usuario3@example.com',
+      phone: '11999990000',
+      cpf: '12345678909',
+      birthDate: DateTime(1992, 4, 12),
+      gender: 'female',
+      relationshipStatus: 'single',
+      educationLevel: 'graduate',
+      occupation: 'Designer',
+      stateBirth: 'Estado Fictício',
+      countryBirth: 'Brasil',
+      religiousOrientation: 'Não informada',
+      ethnicGroup: 'Não informado',
+      sexualOrientation: 'heterosexual',
+      hasChildren: false,
+      responsiblePsychologistId: 'psi-1',
+      responsiblePsychologistName: 'Dra. Helena Exemplo',
+      profileId: profileId,
+      accessStatus: access,
+      isActive: active,
+    );
+
+const psiPsychologists = [
+  PsychologistOption(id: 'psi-1', fullName: 'Dra. Helena Exemplo'),
+  PsychologistOption(id: 'psi-2', fullName: 'Dr. Paulo Modelo'),
+];
+
 /// Plano que bloqueia questionários, relatórios e recursos.
 const psiBlocked = ClinicFeatureEntitlements({
   'questionnaires': ClinicFeatureEntitlement(
@@ -276,7 +313,8 @@ GoRouter psiRouter(
                     GoRoute(
                         path: 'new',
                         builder: newPatient ??
-                            (_, __) => _stub('Cadastro fictício')),
+                            (_, __) => const CreatePatientPage(
+                                role: ProfileRole.psychologist)),
                     GoRoute(
                       path: ':patientId',
                       builder: ficha ??

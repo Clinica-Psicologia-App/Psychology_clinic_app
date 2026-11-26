@@ -15,6 +15,11 @@ import 'future_modules_section.dart';
 import 'patient_list_tile.dart';
 import 'patient_registration_widgets.dart';
 
+/// Etiqueta do acesso ao app no desktop: ao lado de "PACIENTE ATIVO", o acesso
+/// ativo diz "App ativo"; os outros estados, como no celular.
+String? desktopAccessLabel(PatientAccessStatus? status) =>
+    status == PatientAccessStatus.active ? 'App ativo' : status?.label;
+
 /// Moldura da ficha em desktop: a trilha "Pacientes ›" leva à lista.
 class DesktopPatientFileFrame extends StatelessWidget {
   const DesktopPatientFileFrame({
@@ -88,12 +93,8 @@ class DesktopPatientFile extends StatelessWidget {
     final status = patient.isActive ? 'PACIENTE ATIVO' : 'PACIENTE INATIVO';
     final statusTag =
         patient.isActive ? DaTag.ok(context, status) : DaTag(status);
-    // Ao lado de "PACIENTE ATIVO", o acesso ativo diz "App ativo" (só no
-    // desktop); os outros estados, como no celular.
     final accessStatus = patient.accessStatus;
-    final access = accessStatus == PatientAccessStatus.active
-        ? 'App ativo'
-        : accessStatus?.label;
+    final access = desktopAccessLabel(accessStatus);
     final psychologist = patient.responsiblePsychologistName?.trim() ?? '';
     // "Sem acesso ao app" só cabe ao lado da psicóloga em telas largas.
     final accessInBar = roomy &&

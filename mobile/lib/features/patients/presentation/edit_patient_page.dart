@@ -7,6 +7,10 @@ import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_kit.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_shell.dart';
+import '../../../shared/widgets/desktop_psychologist/desktop_form.dart';
+import '../../../shared/widgets/desktop_psychologist/desktop_psychologist_shell.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/patient.dart';
@@ -14,6 +18,7 @@ import '../domain/psychologist_option.dart';
 import '../domain/update_patient_credentials_request.dart';
 import '../domain/update_patient_request.dart';
 import '../providers/patients_providers.dart';
+import 'patient_routes.dart';
 
 class EditPatientPage extends ConsumerStatefulWidget {
   const EditPatientPage({
@@ -28,6 +33,19 @@ class EditPatientPage extends ConsumerStatefulWidget {
   @override
   ConsumerState<EditPatientPage> createState() => _EditPatientPageState();
 }
+
+/// Decoração de um campo: a do celular leva o rótulo dentro; a de desktop, não.
+typedef _Deco = InputDecoration Function(String label,
+    {String? helper, Widget? suffix});
+
+/// Decoração dos campos no celular.
+InputDecoration _outline(String label, {String? helper, Widget? suffix}) =>
+    InputDecoration(
+      labelText: label,
+      helperText: helper,
+      border: const OutlineInputBorder(),
+      suffixIcon: suffix,
+    );
 
 class _EditPatientPageState extends ConsumerState<EditPatientPage> {
   final _formKey = GlobalKey<FormState>();
@@ -108,12 +126,360 @@ class _EditPatientPageState extends ConsumerState<EditPatientPage> {
     } catch (_) {}
   }
 
+  static String _saveError(Object? error) => error is AppException
+      ? error.message
+      : 'Erro ao salvar. Tente novamente.';
+
+  // ── Desktop (>= 768 px, psicóloga) ────────────────────────────────────────
+
+  static const _sections = [
+    'Dados pessoais',
+    'Origem',
+    'Diversidade',
+    'Responsabilidade',
+    'Acesso do paciente',
+  ];
+
+  final _sectionKeys = List.generate(_sections.length, (_) => GlobalKey());
+  int _section = 0;
+
+  void _goToSection(int i) {
+    setState(() => _section = i);
+    final target = _sectionKeys[i].currentContext;
+    if (target == null) return;
+    Scrollable.ensureVisible(
+      target,
+      duration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  Widget _desktop(
+    BuildContext context,
+    AsyncValue<void> updateState,
+    AsyncValue<List<PsychologistOption>> psychologistsAsync,
+    ThemeData theme,
+    MaterialLocalizations loc,
+  ) {
+    final t = DesktopAdminTokens.of(context);
+    final m = DesktopAdminMetrics.of(MediaQuery.sizeOf(context).width);
+    final patient = widget.patient;
+    InputDecoration deco(String label, {String? helper, Widget? suffix}) =>
+        desktopFieldDecoration(context, helper: helper, suffix: suffix);
+    InputDecoration select() => desktopFieldDecoration(context);
+    Widget labeled(String label, Widget field) =>
+        DaLabeled(label, child: field);
+    Widget section(int i, Widget child) => Padding(
+          key: _sectionKeys[i],
+          padding: const EdgeInsets.only(bottom: 24),
+          child: DesktopFormSection(title: _sections[i], child: child),
+        );
+
+    return DesktopPsychologistFrame(
+      title: 'Editar paciente',
+      subtitle:
+          'Atualize dados pessoais, contexto de origem, diversidade e responsabilidade clínica.',
+      crumbs: [
+        DaCrumb('Pacientes', PatientRoutes.list(widget.role)),
+        DaCrumb(patient.fullName,
+            PatientRoutes.detail(widget.role, patient.id)),
+      ],
+      body: Form(
+        key: _formKey,
+        child: DesktopFormBody(
+          busy: updateState.isLoading,
+          // Índice das seções (some no tablet).
+          leading: m.tablet
+              ? null
+              : Container(
+                  width: m.size == DesktopAdminSize.desktop ? 260 : 220,
+                  padding: const EdgeInsets.fromLTRB(12, 16, 12, 16),
+                  decoration: BoxDecoration(
+                      border: Border(right: BorderSide(color: t.bd))),
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        for (var i = 0; i < _sections.length; i++)
+                          DaIndexItem(
+                            label: _sections[i],
+                            active: i == _section,
+                            onTap: () => _goToSection(i),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+          actions: [
+            DaButton(
+              label: 'Salvar alterações',
+              kind: DaButtonKind.primary,
+              onPressed: updateState.isLoading ? null : _submit,
+            ),
+          ],
+          children: [
+            DesktopFormTags(children: [
+              DaTag.az(context, patient.fullName),
+              if (patient.isActive)
+                DaTag.ok(context, 'Ativo')
+              else
+                const DaTag('Inativo'),
+            ]),
+            const SizedBox(height: 20),
+            if (updateState.hasError)
+              Container(
+                margin: const EdgeInsets.only(bottom: 20),
+                padding: const EdgeInsets.fromLTRB(14, 8, 8, 8),
+                decoration: BoxDecoration(
+                  border: Border.all(color: t.err),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(_saveError(updateState.error),
+                          style: daText(context, t, color: t.err)),
+                    ),
+                    DaButton(
+                      label: 'OK',
+                      kind: DaButtonKind.ghost,
+                      onPressed: () => ref.invalidate(updatePatientProvider),
+                    ),
+                  ],
+                ),
+              ),
+            section(
+              0,
+              DesktopFormGrid(children: [
+                labeled('Nome completo *', _nameField(deco)),
+                labeled('Telefone', _phoneField(deco)),
+                labeled('Data de nascimento',
+                    _birthDateField(deco, theme, loc)),
+                labeled('Gênero', _genderField(decoration: select())),
+                labeled(
+                    'Estado civil', _relationshipField(decoration: select())),
+                labeled('Escolaridade', _educationField(decoration: select())),
+                labeled('Ocupação', _occupationField(deco)),
+              ]),
+            ),
+            section(
+              1,
+              DesktopFormGrid(children: [
+                labeled('Estado de nascimento', _stateBirthField(deco)),
+                labeled('País de nascimento', _countryBirthField(deco)),
+              ]),
+            ),
+            section(
+              2,
+              DesktopFormGrid(children: [
+                labeled('Orientação religiosa', _religionField(deco)),
+                labeled('Grupo étnico', _ethnicField(deco)),
+                labeled('Orientação sexual',
+                    _sexualField(decoration: select())),
+                labeled('Filhos', _childrenField(decoration: select())),
+              ]),
+            ),
+            section(
+              3,
+              DesktopFormGrid(children: [
+                labeled(
+                  'Psicólogo responsável',
+                  _responsibleField(psychologistsAsync, decoration: select()),
+                ),
+              ]),
+            ),
+            KeyedSubtree(
+              key: _sectionKeys[4],
+              child: PatientAccessSection(patient: patient, desktop: true),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ── Campos (celular e desktop) ────────────────────────────────────────────
+
+  Widget _nameField(_Deco deco) => TextFormField(
+    controller: _fullName,
+    decoration: deco('Nome completo *'),
+    textCapitalization: TextCapitalization.words,
+    validator: (v) =>
+        (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
+  );
+
+  Widget _phoneField(_Deco deco) => TextFormField(
+    controller: _phone,
+    decoration: deco('Telefone'),
+    keyboardType: TextInputType.phone,
+  );
+
+  Widget _occupationField(_Deco deco) => TextFormField(
+    controller: _occupation,
+    decoration: deco('Ocupação'),
+    textCapitalization: TextCapitalization.sentences,
+  );
+
+  Widget _stateBirthField(_Deco deco) => TextFormField(
+    controller: _stateBirth,
+    decoration: deco('Estado de nascimento'),
+  );
+
+  Widget _countryBirthField(_Deco deco) => TextFormField(
+    controller: _countryBirth,
+    decoration: deco('País de nascimento'),
+  );
+
+  Widget _religionField(_Deco deco) => TextFormField(
+    controller: _religiousOrientation,
+    decoration: deco('Orientação religiosa'),
+    textCapitalization: TextCapitalization.sentences,
+  );
+
+  Widget _ethnicField(_Deco deco) => TextFormField(
+    controller: _ethnicGroup,
+    decoration: deco('Grupo étnico'),
+    textCapitalization: TextCapitalization.sentences,
+  );
+
+  Widget _birthDateField(
+      _Deco deco, ThemeData theme, MaterialLocalizations loc) => InkWell(
+    onTap: () async {
+      final picked = await showDatePicker(
+        context: context,
+        initialDate: _birthDate ?? DateTime(1990),
+        firstDate: DateTime(1900),
+        lastDate: DateTime.now(),
+      );
+      if (picked != null) setState(() => _birthDate = picked);
+    },
+    child: InputDecorator(
+      decoration: deco('Data de nascimento', suffix: const Icon(Icons.calendar_today_outlined)),
+      child: Text(
+        _birthDate != null
+            ? loc.formatFullDate(_birthDate!)
+            : 'Selecionar data',
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: _birthDate == null
+              ? theme.colorScheme.onSurfaceVariant
+              : null,
+        ),
+      ),
+    ),
+  );
+
+  Widget _genderField({InputDecoration? decoration}) => _DropdownField<String>(
+    label: 'Gênero',
+    value: _gender,
+    items: const [
+      DropdownMenuItem(value: 'female', child: Text('Feminino')),
+      DropdownMenuItem(value: 'male', child: Text('Masculino')),
+      DropdownMenuItem(
+          value: 'non_binary', child: Text('Não binário')),
+      DropdownMenuItem(value: 'other', child: Text('Outro')),
+      DropdownMenuItem(
+          value: 'nao_informado', child: Text('Não informado')),
+    ],
+    decoration: decoration,
+    onChanged: (v) => setState(() => _gender = v),
+  );
+
+  Widget _relationshipField({InputDecoration? decoration}) => _DropdownField<String>(
+    label: 'Estado civil',
+    value: _relationshipStatus,
+    items: const [
+      DropdownMenuItem(value: 'single', child: Text('Solteiro(a)')),
+      DropdownMenuItem(value: 'married', child: Text('Casado(a)')),
+      DropdownMenuItem(
+          value: 'divorced', child: Text('Divorciado(a)')),
+      DropdownMenuItem(value: 'widowed', child: Text('Viúvo(a)')),
+      DropdownMenuItem(
+          value: 'stable_union', child: Text('União estável')),
+      DropdownMenuItem(
+          value: 'nao_informado', child: Text('Não informado')),
+    ],
+    decoration: decoration,
+    onChanged: (v) => setState(() => _relationshipStatus = v),
+  );
+
+  Widget _educationField({InputDecoration? decoration}) => _DropdownField<String>(
+    label: 'Escolaridade',
+    value: _educationLevel,
+    items: const [
+      DropdownMenuItem(
+          value: 'elementary', child: Text('Ensino fundamental')),
+      DropdownMenuItem(
+          value: 'high_school', child: Text('Ensino médio')),
+      DropdownMenuItem(
+          value: 'undergraduate', child: Text('Ensino superior')),
+      DropdownMenuItem(
+          value: 'graduate', child: Text('Pós-graduação')),
+      DropdownMenuItem(
+          value: 'nao_informado', child: Text('Não informado')),
+    ],
+    decoration: decoration,
+    onChanged: (v) => setState(() => _educationLevel = v),
+  );
+
+  Widget _sexualField({InputDecoration? decoration}) => _DropdownField<String>(
+    label: 'Orientação sexual',
+    value: _sexualOrientation,
+    items: const [
+      DropdownMenuItem(
+          value: 'heterosexual', child: Text('Heterossexual')),
+      DropdownMenuItem(
+          value: 'homosexual', child: Text('Homossexual')),
+      DropdownMenuItem(value: 'bisexual', child: Text('Bissexual')),
+      DropdownMenuItem(value: 'asexual', child: Text('Assexual')),
+      DropdownMenuItem(
+          value: 'pansexual', child: Text('Pansexual')),
+      DropdownMenuItem(
+          value: 'nao_informado', child: Text('Não informado')),
+    ],
+    decoration: decoration,
+    onChanged: (v) => setState(() => _sexualOrientation = v),
+  );
+
+  Widget _childrenField({InputDecoration? decoration}) => _DropdownField<bool>(
+    label: 'Filhos',
+    value: _hasChildren,
+    items: const [
+      DropdownMenuItem(value: true, child: Text('Sim')),
+      DropdownMenuItem(value: false, child: Text('Não')),
+    ],
+    decoration: decoration,
+    onChanged: (v) => setState(() => _hasChildren = v),
+  );
+
+  Widget _responsibleField(
+      AsyncValue<List<PsychologistOption>> psychologistsAsync,
+      {InputDecoration? decoration}) => psychologistsAsync.when(
+    loading: () => const LinearProgressIndicator(),
+    error: (_, __) => const Text(
+      'Não foi possível carregar os psicólogos.',
+    ),
+    data: (psychologists) => _PsychologistDropdown(
+      psychologists: psychologists,
+      selectedId: _responsiblePsychologistId,
+      decoration: decoration,
+        onChanged: (id) =>
+          setState(() => _responsiblePsychologistId = id),
+    ),
+  );
+
   @override
   Widget build(BuildContext context) {
     final updateState = ref.watch(updatePatientProvider);
     final psychologistsAsync = ref.watch(psychologistsOptionsProvider);
     final theme = Theme.of(context);
     final loc = MaterialLocalizations.of(context);
+
+    if (widget.role == ProfileRole.psychologist &&
+        inDesktopPsychologistShell(context)) {
+      return _desktop(context, updateState, psychologistsAsync, theme, loc);
+    }
 
     return AppScaffold(
       title: widget.patient.fullName,
@@ -159,11 +525,7 @@ class _EditPatientPageState extends ConsumerState<EditPatientPage> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.md),
                   child: MaterialBanner(
-                    content: Text(
-                      updateState.error is AppException
-                          ? (updateState.error as AppException).message
-                          : 'Erro ao salvar. Tente novamente.',
-                    ),
+                    content: Text(_saveError(updateState.error)),
                     actions: [
                       TextButton(
                         onPressed: () => ref.invalidate(updatePatientProvider),
@@ -176,212 +538,57 @@ class _EditPatientPageState extends ConsumerState<EditPatientPage> {
               const _SectionHeader('Dados pessoais'),
               const SizedBox(height: 12),
 
-              TextFormField(
-                controller: _fullName,
-                decoration: const InputDecoration(
-                  labelText: 'Nome completo *',
-                  border: OutlineInputBorder(),
-                ),
-                textCapitalization: TextCapitalization.words,
-                validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'Obrigatório' : null,
-              ),
+              _nameField(_outline),
               const SizedBox(height: 16),
 
-              TextFormField(
-                controller: _phone,
-                decoration: const InputDecoration(
-                  labelText: 'Telefone',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.phone,
-              ),
+              _phoneField(_outline),
               const SizedBox(height: 16),
 
               // Birth date picker
-              InkWell(
-                onTap: () async {
-                  final picked = await showDatePicker(
-                    context: context,
-                    initialDate: _birthDate ?? DateTime(1990),
-                    firstDate: DateTime(1900),
-                    lastDate: DateTime.now(),
-                  );
-                  if (picked != null) setState(() => _birthDate = picked);
-                },
-                child: InputDecorator(
-                  decoration: const InputDecoration(
-                    labelText: 'Data de nascimento',
-                    border: OutlineInputBorder(),
-                    suffixIcon: Icon(Icons.calendar_today_outlined),
-                  ),
-                  child: Text(
-                    _birthDate != null
-                        ? loc.formatFullDate(_birthDate!)
-                        : 'Selecionar data',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: _birthDate == null
-                          ? theme.colorScheme.onSurfaceVariant
-                          : null,
-                    ),
-                  ),
-                ),
-              ),
+              _birthDateField(_outline, theme, loc),
               const SizedBox(height: 16),
 
-              _DropdownField<String>(
-                label: 'Gênero',
-                value: _gender,
-                items: const [
-                  DropdownMenuItem(value: 'female', child: Text('Feminino')),
-                  DropdownMenuItem(value: 'male', child: Text('Masculino')),
-                  DropdownMenuItem(
-                      value: 'non_binary', child: Text('Não binário')),
-                  DropdownMenuItem(value: 'other', child: Text('Outro')),
-                  DropdownMenuItem(
-                      value: 'nao_informado', child: Text('Não informado')),
-                ],
-                onChanged: (v) => setState(() => _gender = v),
-              ),
+              _genderField(),
               const SizedBox(height: 16),
 
-              _DropdownField<String>(
-                label: 'Estado civil',
-                value: _relationshipStatus,
-                items: const [
-                  DropdownMenuItem(value: 'single', child: Text('Solteiro(a)')),
-                  DropdownMenuItem(value: 'married', child: Text('Casado(a)')),
-                  DropdownMenuItem(
-                      value: 'divorced', child: Text('Divorciado(a)')),
-                  DropdownMenuItem(value: 'widowed', child: Text('Viúvo(a)')),
-                  DropdownMenuItem(
-                      value: 'stable_union', child: Text('União estável')),
-                  DropdownMenuItem(
-                      value: 'nao_informado', child: Text('Não informado')),
-                ],
-                onChanged: (v) => setState(() => _relationshipStatus = v),
-              ),
+              _relationshipField(),
               const SizedBox(height: 16),
 
-              _DropdownField<String>(
-                label: 'Escolaridade',
-                value: _educationLevel,
-                items: const [
-                  DropdownMenuItem(
-                      value: 'elementary', child: Text('Ensino fundamental')),
-                  DropdownMenuItem(
-                      value: 'high_school', child: Text('Ensino médio')),
-                  DropdownMenuItem(
-                      value: 'undergraduate', child: Text('Ensino superior')),
-                  DropdownMenuItem(
-                      value: 'graduate', child: Text('Pós-graduação')),
-                  DropdownMenuItem(
-                      value: 'nao_informado', child: Text('Não informado')),
-                ],
-                onChanged: (v) => setState(() => _educationLevel = v),
-              ),
+              _educationField(),
               const SizedBox(height: 16),
 
-              TextFormField(
-                controller: _occupation,
-                decoration: const InputDecoration(
-                  labelText: 'Ocupação',
-                  border: OutlineInputBorder(),
-                ),
-                textCapitalization: TextCapitalization.sentences,
-              ),
+              _occupationField(_outline),
               const SizedBox(height: 24),
 
               const _SectionHeader('Origem'),
               const SizedBox(height: 12),
 
-              TextFormField(
-                controller: _stateBirth,
-                decoration: const InputDecoration(
-                  labelText: 'Estado de nascimento',
-                  border: OutlineInputBorder(),
-                ),
-              ),
+              _stateBirthField(_outline),
               const SizedBox(height: 16),
 
-              TextFormField(
-                controller: _countryBirth,
-                decoration: const InputDecoration(
-                  labelText: 'País de nascimento',
-                  border: OutlineInputBorder(),
-                ),
-              ),
+              _countryBirthField(_outline),
               const SizedBox(height: 24),
 
               const _SectionHeader('Diversidade'),
               const SizedBox(height: 12),
 
-              TextFormField(
-                controller: _religiousOrientation,
-                decoration: const InputDecoration(
-                  labelText: 'Orientação religiosa',
-                  border: OutlineInputBorder(),
-                ),
-                textCapitalization: TextCapitalization.sentences,
-              ),
+              _religionField(_outline),
               const SizedBox(height: 16),
 
-              TextFormField(
-                controller: _ethnicGroup,
-                decoration: const InputDecoration(
-                  labelText: 'Grupo étnico',
-                  border: OutlineInputBorder(),
-                ),
-                textCapitalization: TextCapitalization.sentences,
-              ),
+              _ethnicField(_outline),
               const SizedBox(height: 16),
 
-              _DropdownField<String>(
-                label: 'Orientação sexual',
-                value: _sexualOrientation,
-                items: const [
-                  DropdownMenuItem(
-                      value: 'heterosexual', child: Text('Heterossexual')),
-                  DropdownMenuItem(
-                      value: 'homosexual', child: Text('Homossexual')),
-                  DropdownMenuItem(value: 'bisexual', child: Text('Bissexual')),
-                  DropdownMenuItem(value: 'asexual', child: Text('Assexual')),
-                  DropdownMenuItem(
-                      value: 'pansexual', child: Text('Pansexual')),
-                  DropdownMenuItem(
-                      value: 'nao_informado', child: Text('Não informado')),
-                ],
-                onChanged: (v) => setState(() => _sexualOrientation = v),
-              ),
+              _sexualField(),
               const SizedBox(height: 16),
 
-              _DropdownField<bool>(
-                label: 'Filhos',
-                value: _hasChildren,
-                items: const [
-                  DropdownMenuItem(value: true, child: Text('Sim')),
-                  DropdownMenuItem(value: false, child: Text('Não')),
-                ],
-                onChanged: (v) => setState(() => _hasChildren = v),
-              ),
+              _childrenField(),
               const SizedBox(height: 24),
 
               if (widget.role == ProfileRole.platformAdmin ||
                   widget.role == ProfileRole.psychologist) ...[
                 const _SectionHeader('Responsabilidade'),
                 const SizedBox(height: 12),
-                psychologistsAsync.when(
-                  loading: () => const LinearProgressIndicator(),
-                  error: (_, __) => const Text(
-                    'Não foi possível carregar os psicólogos.',
-                  ),
-                  data: (psychologists) => _PsychologistDropdown(
-                    psychologists: psychologists,
-                    selectedId: _responsiblePsychologistId,
-                    onChanged: (id) =>
-                        setState(() => _responsiblePsychologistId = id),
-                  ),
-                ),
+                _responsibleField(psychologistsAsync),
                 const SizedBox(height: 24),
               ],
 
@@ -432,12 +639,16 @@ class _DropdownField<T> extends StatelessWidget {
     required this.value,
     required this.items,
     required this.onChanged,
+    this.decoration,
   });
 
   final String label;
   final T? value;
   final List<DropdownMenuItem<T>> items;
   final ValueChanged<T?> onChanged;
+
+  /// Substitui a decoração do celular (desktop: rótulo acima).
+  final InputDecoration? decoration;
 
   @override
   Widget build(BuildContext context) {
@@ -457,10 +668,11 @@ class _DropdownField<T> extends StatelessWidget {
 
     return DropdownButtonFormField<T>(
       initialValue: value,
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-      ),
+      decoration: decoration ??
+          InputDecoration(
+            labelText: label,
+            border: const OutlineInputBorder(),
+          ),
       items: effectiveItems,
       onChanged: onChanged,
     );
@@ -472,7 +684,10 @@ class _PsychologistDropdown extends StatelessWidget {
     required this.psychologists,
     required this.selectedId,
     required this.onChanged,
+    this.decoration,
   });
+
+  final InputDecoration? decoration;
 
   final List<PsychologistOption> psychologists;
   final String? selectedId;
@@ -482,10 +697,11 @@ class _PsychologistDropdown extends StatelessWidget {
   Widget build(BuildContext context) {
     return DropdownButtonFormField<String>(
       initialValue: selectedId,
-      decoration: const InputDecoration(
-        labelText: 'Psicólogo responsável',
-        border: OutlineInputBorder(),
-      ),
+      decoration: decoration ??
+          const InputDecoration(
+            labelText: 'Psicólogo responsável',
+            border: OutlineInputBorder(),
+          ),
       items: psychologists
           .map(
             (p) => DropdownMenuItem(
@@ -503,9 +719,16 @@ class _PsychologistDropdown extends StatelessWidget {
 /// Só aparece para a equipe (a página decide). Tem formulário e botão próprios,
 /// separados do "Salvar alterações" dos dados pessoais.
 class PatientAccessSection extends ConsumerStatefulWidget {
-  const PatientAccessSection({super.key, required this.patient});
+  const PatientAccessSection({
+    super.key,
+    required this.patient,
+    this.desktop = false,
+  });
 
   final Patient patient;
+
+  /// Campos com rótulo acima, em 2 colunas.
+  final bool desktop;
 
   @override
   ConsumerState<PatientAccessSection> createState() =>
@@ -600,8 +823,115 @@ class _PatientAccessSectionState extends ConsumerState<PatientAccessSection> {
     }
   }
 
+  static const _noAccount = 'Este paciente ainda não aceitou o convite. '
+      'Reenvie o convite com o e-mail correto.';
+
+  static const _emailWarning =
+      'O paciente passará a entrar com o novo e-mail. '
+      'O e-mail da ficha também será trocado. '
+      'Quem já estiver conectado continua até sair do app.';
+
+  Widget _desktop(BuildContext context) {
+    final t = DesktopAdminTokens.of(context);
+    InputDecoration deco(String label, {String? helper, Widget? suffix}) =>
+        desktopFieldDecoration(context, helper: helper, suffix: suffix);
+    Widget labeled(String label, Widget field) =>
+        DaLabeled(label, child: field);
+    Widget box(String text, Color color) => Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: color,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(text, style: daText(context, t)),
+        );
+
+    if (widget.patient.profileId == null) {
+      return DesktopFormSection(
+        title: 'Acesso do paciente',
+        child: box(_noAccount, t.hov),
+      );
+    }
+    return Form(
+      key: _formKey,
+      child: DesktopFormSection(
+        title: 'Acesso do paciente',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            box(_emailWarning, t.sel),
+            const SizedBox(height: 14),
+            DesktopFormGrid(children: [
+              labeled('E-mail de acesso', _emailField(deco)),
+            ]),
+            const SizedBox(height: 14),
+            DesktopFormGrid(children: [
+              labeled('Nova senha', _passwordField(deco)),
+              labeled('Confirmar nova senha', _confirmField(deco)),
+            ]),
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Text(_error!, style: daText(context, t, color: t.err)),
+            ],
+            if (_done != null) ...[
+              const SizedBox(height: 12),
+              Text(_done!, style: daText(context, t)),
+            ],
+            const SizedBox(height: 14),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: DaButton(
+                label: 'Atualizar acesso',
+                onPressed: _saving ? null : _submit,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _emailField(_Deco deco) => TextFormField(
+    controller: _email,
+    decoration: deco('E-mail de acesso'),
+    keyboardType: TextInputType.emailAddress,
+    autocorrect: false,
+    validator: (v) {
+      final t = (v ?? '').trim();
+      if (t.isEmpty) return null;
+      return _emailRe.hasMatch(t) ? null : 'E-mail inválido';
+    },
+  );
+
+  Widget _passwordField(_Deco deco) => TextFormField(
+    controller: _password,
+    decoration: deco('Nova senha', helper: 'De 8 a 72 caracteres.'),
+    obscureText: true,
+    enableSuggestions: false,
+    autocorrect: false,
+    validator: (v) {
+      final t = v ?? '';
+      if (t.isEmpty) return null;
+      if (t.length < 8 || t.length > 72) {
+        return 'A senha deve ter de 8 a 72 caracteres';
+      }
+      return null;
+    },
+  );
+
+  Widget _confirmField(_Deco deco) => TextFormField(
+    controller: _confirm,
+    decoration: deco('Confirmar nova senha'),
+    obscureText: true,
+    enableSuggestions: false,
+    autocorrect: false,
+    validator: (v) =>
+        (v ?? '') == _password.text ? null : 'As senhas não são iguais',
+  );
+
   @override
   Widget build(BuildContext context) {
+    if (widget.desktop) return _desktop(context);
     final theme = Theme.of(context);
     final header = const _SectionHeader('Acesso do paciente');
 
@@ -612,8 +942,7 @@ class _PatientAccessSectionState extends ConsumerState<PatientAccessSection> {
           header,
           const SizedBox(height: 12),
           Text(
-            'Este paciente ainda não aceitou o convite. '
-            'Reenvie o convite com o e-mail correto.',
+            _noAccount,
             style: theme.textTheme.bodyMedium,
           ),
         ],
@@ -633,60 +962,14 @@ class _PatientAccessSectionState extends ConsumerState<PatientAccessSection> {
               color: theme.colorScheme.primaryContainer.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Text(
-              'O paciente passará a entrar com o novo e-mail. '
-              'O e-mail da ficha também será trocado. '
-              'Quem já estiver conectado continua até sair do app.',
-            ),
+            child: const Text(_emailWarning),
           ),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: _email,
-            decoration: const InputDecoration(
-              labelText: 'E-mail de acesso',
-              border: OutlineInputBorder(),
-            ),
-            keyboardType: TextInputType.emailAddress,
-            autocorrect: false,
-            validator: (v) {
-              final t = (v ?? '').trim();
-              if (t.isEmpty) return null;
-              return _emailRe.hasMatch(t) ? null : 'E-mail inválido';
-            },
-          ),
+          _emailField(_outline),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: _password,
-            decoration: const InputDecoration(
-              labelText: 'Nova senha',
-              helperText: 'De 8 a 72 caracteres.',
-              border: OutlineInputBorder(),
-            ),
-            obscureText: true,
-            enableSuggestions: false,
-            autocorrect: false,
-            validator: (v) {
-              final t = v ?? '';
-              if (t.isEmpty) return null;
-              if (t.length < 8 || t.length > 72) {
-                return 'A senha deve ter de 8 a 72 caracteres';
-              }
-              return null;
-            },
-          ),
+          _passwordField(_outline),
           const SizedBox(height: 16),
-          TextFormField(
-            controller: _confirm,
-            decoration: const InputDecoration(
-              labelText: 'Confirmar nova senha',
-              border: OutlineInputBorder(),
-            ),
-            obscureText: true,
-            enableSuggestions: false,
-            autocorrect: false,
-            validator: (v) =>
-                (v ?? '') == _password.text ? null : 'As senhas não são iguais',
-          ),
+          _confirmField(_outline),
           if (_error != null) ...[
             const SizedBox(height: 12),
             Text(

@@ -17,14 +17,15 @@ const desktopPsychologistFramedLocations = <String>{
   '$kPsychologistHomeLocation/patients',
 };
 
-/// Ficha de um paciente (`/psychologist/patients/<id>`); "new" é o cadastro.
-final _patientFileLocation =
-    RegExp('^$kPsychologistHomeLocation/patients/(?!new\$)[^/]+\$');
+/// Cadastro (`/new`), ficha (`/<id>`), edição e dados cadastrais de um
+/// paciente: todas com barra própria.
+final _patientPageLocation = RegExp(
+    '^$kPsychologistHomeLocation/patients/[^/]+(/(edit|registration))?\$');
 
 /// A tela aberta em [state] tem a barra própria? A escolha de paciente (a
 /// lista aberta por um atalho, com intenção) continua sendo a do celular.
 bool isDesktopPsychologistFramed(GoRouterState state) {
-  if (_patientFileLocation.hasMatch(state.matchedLocation)) return true;
+  if (_patientPageLocation.hasMatch(state.matchedLocation)) return true;
   final extra = state.extra;
   return desktopPsychologistFramedLocations.contains(state.matchedLocation) &&
       (extra == null || extra == PatientSelectionIntent.none);
@@ -159,6 +160,11 @@ class _DesktopPsychologistShellState extends State<DesktopPsychologistShell> {
     );
   }
 }
+
+/// A tela está dentro da casca de desktop da psicóloga?
+bool inDesktopPsychologistShell(BuildContext context) =>
+    context.dependOnInheritedWidgetOfExactType<_PsychologistContentScope>() !=
+    null;
 
 /// Marca as telas abertas dentro da área de conteúdo da casca.
 class _PsychologistContentScope extends InheritedWidget {

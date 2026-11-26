@@ -328,13 +328,12 @@ class _Segmented extends StatelessWidget {
                 child: MouseRegion(
                   cursor: SystemMouseCursors.click,
                   child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    curve: Curves.easeOutCubic,
+                    duration: daHoverDuration(context),
                     padding: const EdgeInsets.symmetric(horizontal: 14),
                     decoration: BoxDecoration(
-                      color: it.$1 == value ? t.rz : Colors.transparent,
+                      color: it.$1 == value ? t.rz : daClear(t.rz),
                       border: Border.all(
-                          color: it.$1 == value ? t.bd2 : Colors.transparent),
+                          color: it.$1 == value ? t.bd2 : daClear(t.bd2)),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Row(

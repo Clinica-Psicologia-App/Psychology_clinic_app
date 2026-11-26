@@ -19,6 +19,7 @@ import 'package:terapia_esquema/features/user_management/domain/clinic_user.dart
 import 'package:terapia_esquema/features/user_management/presentation/user_management_page.dart';
 import 'package:terapia_esquema/features/user_management/providers/user_management_providers.dart';
 import 'package:terapia_esquema/shared/widgets/app_nav_shell.dart';
+import 'package:terapia_esquema/shared/widgets/desktop_admin/desktop_admin_kit.dart';
 import 'package:terapia_esquema/shared/widgets/desktop_admin/desktop_admin_shell.dart';
 
 import 'desktop_admin_hover_helper.dart';
@@ -264,7 +265,7 @@ void main() {
       expect(find.text('Atendimento'), findsOneWidget);
       expect(find.text('Estrutura da plataforma'), findsOneWidget);
       expect(find.text('Planos e permissões'), findsWidgets);
-      expect(find.text('PLATAFORMA'), findsOneWidget);
+      expect(find.text('GESTÃO'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -289,10 +290,10 @@ void main() {
       await tester.tap(find.text('Recolher menu'));
       await _settle(tester);
       expect(desktopAdminMenuCollapsed.value, isTrue);
-      expect(find.text('PLATAFORMA'), findsNothing);
+      expect(find.text('GESTÃO'), findsNothing);
       desktopAdminMenuCollapsed.value = false;
       await _settle(tester);
-      expect(find.text('PLATAFORMA'), findsOneWidget);
+      expect(find.text('GESTÃO'), findsOneWidget);
     });
   });
 
@@ -311,7 +312,7 @@ void main() {
     testWidgets('≥768: menu, barra e fio ficam parados na troca de rota',
         (tester) async {
       await _pump(tester, desk, '/platform');
-      final menuPos = tester.getTopLeft(find.text('PLATAFORMA'));
+      final menuPos = tester.getTopLeft(find.text('GESTÃO'));
       final recolherPos = tester.getTopLeft(find.text('Recolher menu'));
       await tester.tap(find.text('Usuários').first); // item do menu
       // Em pleno meio da transição (a tela antiga ainda existe por baixo):
@@ -319,7 +320,7 @@ void main() {
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 60));
       for (final (f, expected) in [
-        (find.text('PLATAFORMA'), menuPos),
+        (find.text('GESTÃO'), menuPos),
         (find.text('Recolher menu'), recolherPos),
       ]) {
         for (final e in f.evaluate()) {
@@ -335,7 +336,7 @@ void main() {
       }
       await _settle(tester, 8);
       expect(find.text('Separação por vínculo'), findsOneWidget);
-      expect(tester.getTopLeft(find.text('PLATAFORMA')), menuPos);
+      expect(tester.getTopLeft(find.text('GESTÃO')), menuPos);
     });
 
     // Entrada do conteúdo da tela cujo corpo contém [f].
@@ -365,7 +366,7 @@ void main() {
             inExclusiveRange(0.0, kDaContentEntranceRise));
         final midContent = tester.getTopLeft(users);
         // Botão da barra superior da tela nova: fora da animação.
-        final action = find.text('Novo acesso');
+        final action = find.widgetWithText(DaButton, 'Novo acesso');
         expect(entranceOf(action), findsNothing);
         final midAction = tester.getTopLeft(action);
 
@@ -396,7 +397,7 @@ void main() {
         (tester) async {
       final home = find.text('Estrutura da plataforma');
       await _pump(tester, desk, '/platform');
-      final menuPos = tester.getTopLeft(find.text('PLATAFORMA'));
+      final menuPos = tester.getTopLeft(find.text('GESTÃO'));
       await tester.tap(find.text('Usuários').first);
       await _settle(tester, 8);
       await tester.tap(find.text('Início').first);
@@ -412,7 +413,7 @@ void main() {
       expect(
           leaving.evaluate().map((e) => (e.widget as Opacity).opacity),
           contains(0.0));
-      for (final e in find.text('PLATAFORMA').evaluate()) {
+      for (final e in find.text('GESTÃO').evaluate()) {
         final box = e.renderObject! as RenderBox;
         expect(box.localToGlobal(Offset.zero), menuPos);
       }
@@ -476,7 +477,7 @@ void main() {
         await _pump(tester, desk, '/platform');
         await tester.tap(find.text('Usuários').first);
         await _settle(tester, 8);
-        final novoAcesso = tester.getCenter(find.text('Novo acesso'));
+        final novoAcesso = tester.getCenter(find.widgetWithText(DaButton, 'Novo acesso'));
         await Navigator.of(tester.element(users)).maybePop();
         await tester.pump();
         await tester.pump(espera);
@@ -526,7 +527,7 @@ void main() {
       expect(location(), '/platform/users');
 
       // A tela continua recebendo toque.
-      await tester.tap(find.text('Novo acesso'));
+      await tester.tap(find.widgetWithText(DaButton, 'Novo acesso'));
       await parada();
       expect(find.text('Criar usuário'), findsOneWidget);
     });
@@ -638,7 +639,7 @@ void main() {
     testWidgets('"Novo acesso" abre o formulário no painel lateral',
         (tester) async {
       await _pump(tester, desk, '/platform/users');
-      await tester.tap(find.text('Novo acesso'));
+      await tester.tap(find.widgetWithText(DaButton, 'Novo acesso'));
       await _settle(tester);
       expect(find.text('Novo usuário'), findsOneWidget);
       expect(find.text('Criar usuário'), findsOneWidget);
@@ -700,35 +701,11 @@ void main() {
       await expectSmoothRowHover(tester, find.byIcon(Icons.more_horiz).at(3));
     });
 
-    for (final (nome, size) in [('menu lateral', desk), ('trilho', tablet)]) {
-      testWidgets('item do $nome: sem piscada', (tester) async {
-        await _pump(tester, size, '/platform/users');
-        await expectSmoothRowHover(tester, find.text('Clínicas').first);
-        expect(tester.takeException(), isNull);
-      });
-    }
-
     testWidgets('trilha da barra superior: sem piscada', (tester) async {
       await _pump(tester, desk, '/platform/users');
       final crumb = find.text('Início').last;
       expect(tester.getTopLeft(crumb).dx, greaterThan(256)); // fora do menu
       await expectSmoothRowHover(tester, crumb);
-    });
-
-    testWidgets('"Recolher menu": sem piscada', (tester) async {
-      await _pump(tester, desk, '/platform/users');
-      await expectSmoothRowHover(tester, find.text('Recolher menu'));
-      expect(desktopAdminMenuCollapsed.value, isFalse);
-    });
-
-    testWidgets('menu com disableAnimations: instantâneo', (tester) async {
-      tester.platformDispatcher.accessibilityFeaturesTestValue =
-          const FakeAccessibilityFeatures(disableAnimations: true);
-      addTearDown(
-          tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
-      await _pump(tester, desk, '/platform/users');
-      await expectSmoothRowHover(tester, find.text('Clínicas').first,
-          reduced: true);
     });
 
     testWidgets('com disableAnimations o realce é instantâneo', (tester) async {
@@ -739,6 +716,90 @@ void main() {
       await _pump(tester, desk, '/platform/users');
       await expectSmoothRowHover(tester, find.text('Dr. Paulo Modelo'),
           reduced: true);
+    });
+  });
+
+  group('Filtro segmentado de Usuários', () {
+    /// Fundo e borda do segmento com o rótulo [label].
+    (Color, Color) pintura(WidgetTester tester, String label) {
+      final box = find
+          .descendant(
+              of: find
+                  .ancestor(
+                      of: find.text(label),
+                      matching: find.byType(AnimatedContainer))
+                  .first,
+              matching: find.byType(DecoratedBox))
+          .first;
+      final d = tester.widget<DecoratedBox>(box).decoration as BoxDecoration;
+      return (d.color!, (d.border! as Border).top.color);
+    }
+
+    for (final size in [desk, tablet]) {
+      testWidgets('clique sem piscada no fundo e na borda (${size.width})',
+          (tester) async {
+        await _pump(tester, size, '/platform/users');
+        final base =
+            DesktopAdminTokens.of(tester.element(find.text('Todos'))).hov;
+        var antes = 'Todos';
+        for (final label in ['Psicólogos', 'Admins', 'Todos']) {
+          final segmentos = [label, antes];
+          final inicio = [for (final l in segmentos) pintura(tester, l)];
+          await tester.tap(find.text(label));
+          await tester.pump();
+          final amostras = <List<(Color, Color)>>[];
+          for (var i = 0; i <= 10; i++) {
+            amostras.add([for (final l in segmentos) pintura(tester, l)]);
+            await tester.pump(const Duration(milliseconds: 20));
+          }
+          final fim = amostras.last;
+          for (var k = 0; k < segmentos.length; k++) {
+            for (final parte in [
+              (((Color, Color) p) => p.$1),
+              (((Color, Color) p) => p.$2),
+            ]) {
+              final a = Color.alphaBlend(parte(inicio[k]), base);
+              final b = Color.alphaBlend(parte(fim[k]), base);
+              expect(a, isNot(b), reason: '${segmentos[k]} não mudou');
+              for (final amostra in amostras) {
+                final c = Color.alphaBlend(parte(amostra[k]), base);
+                for (final (v, x, y) in [
+                  (c.r, a.r, b.r),
+                  (c.g, a.g, b.g),
+                  (c.b, a.b, b.b),
+                ]) {
+                  const tol = 1.5 / 255;
+                  expect(v, greaterThanOrEqualTo((x < y ? x : y) - tol),
+                      reason: 'piscada escura em ${segmentos[k]}');
+                  expect(v, lessThanOrEqualTo((x > y ? x : y) + tol),
+                      reason: 'piscada clara em ${segmentos[k]}');
+                }
+              }
+              // Há fade, pronto entre 120 e 150 ms.
+              expect(parte(amostras[3][k]), isNot(parte(inicio[k])));
+              expect(parte(amostras[3][k]), isNot(parte(fim[k])));
+              expect(parte(amostras[5][k]), isNot(parte(fim[k])));
+              expect(parte(amostras[8][k]), parte(fim[k]));
+            }
+          }
+          antes = label;
+        }
+        expect(tester.takeException(), isNull);
+      });
+    }
+
+    testWidgets('com disableAnimations troca na hora', (tester) async {
+      tester.platformDispatcher.accessibilityFeaturesTestValue =
+          const FakeAccessibilityFeatures(disableAnimations: true);
+      addTearDown(
+          tester.platformDispatcher.clearAccessibilityFeaturesTestValue);
+      await _pump(tester, desk, '/platform/users');
+      final selecionado = pintura(tester, 'Todos');
+      final solto = pintura(tester, 'Admins');
+      await tester.tap(find.text('Admins'));
+      await tester.pump();
+      expect(pintura(tester, 'Admins'), selecionado);
+      expect(pintura(tester, 'Todos'), solto);
     });
   });
 

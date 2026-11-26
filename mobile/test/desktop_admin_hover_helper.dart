@@ -16,6 +16,7 @@ Future<void> expectSmoothRowHover(
   WidgetTester tester,
   Finder cell, {
   bool reduced = false,
+  List<Color>? bases, // fundos sobre os quais compor (padrão: os claros)
 }) async {
   final row = find
       .ancestor(of: cell, matching: find.byType(AnimatedContainer))
@@ -49,7 +50,7 @@ Future<void> expectSmoothRowHover(
       }
     }
     final end = samples.last;
-    for (final base in [tokens.rz, tokens.bg, tokens.side]) {
+    for (final base in bases ?? [tokens.rz, tokens.bg, tokens.side]) {
       final a = Color.alphaBlend(from, base);
       final b = Color.alphaBlend(end, base);
       expect(a, isNot(b), reason: 'o hover não mudou o fundo');

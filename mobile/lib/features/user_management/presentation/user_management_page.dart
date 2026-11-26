@@ -28,6 +28,11 @@ import 'widgets/desktop_users_view.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 import '../../../shared/widgets/brand_loading.dart';
 
+/// Atalho "Novo acesso" fora desta tela (menu do admin desktop): o mesmo
+/// formulário e a mesma gravação.
+Future<void> showNewAccessForm(BuildContext context, WidgetRef ref) =>
+    const UserManagementPage()._showCreateUserSheet(context, ref);
+
 class UserManagementPage extends ConsumerWidget {
   const UserManagementPage({super.key});
 

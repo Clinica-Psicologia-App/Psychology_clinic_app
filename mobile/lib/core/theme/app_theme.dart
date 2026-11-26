@@ -600,6 +600,12 @@ bool _isDesktopAdminRoute(PageRoute<dynamic> route, BuildContext context) {
   if (MediaQuery.sizeOf(context).width < 768) return false;
   final settings = route.settings;
   if (settings is! Page) return false;
+  // name do GoRoute explícito começando em /platform: identifica a rota
+  // sem estado global (cobre rotas imperativas com campo `name` configurado).
+  final name = settings.name;
+  if (name != null && name.startsWith('/platform')) return true;
+  // Fallback para rotas sem name explícito (go_router coloca o segmento curto,
+  // ex. 'users'): usa o pageKey declarativo (ValueKey('/platform/...')).
   final key = settings.key;
   return key is ValueKey<String> && key.value.startsWith('/platform');
 }

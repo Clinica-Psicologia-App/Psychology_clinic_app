@@ -14,14 +14,17 @@ List<RouteBase> adminLibraryRoutes() {
   return [
     GoRoute(
       path: 'library',
+      name: AdminLibraryRoutes.catalog,
       builder: (_, __) => const AdminLibraryCatalogPage(),
       routes: [
         GoRoute(
           path: 'new',
+          name: AdminLibraryRoutes.newWork,
           builder: (_, __) => const AdminLibraryEditorPage(),
         ),
         GoRoute(
           path: ':workId',
+          name: '/platform/library/:workId',
           builder: (_, state) => AdminLibraryEditorPage(
             workId: state.pathParameters['workId'],
           ),

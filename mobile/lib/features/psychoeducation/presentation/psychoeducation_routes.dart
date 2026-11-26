@@ -93,14 +93,17 @@ List<RouteBase> psychoeducationAdminRoutes() {
   return [
     GoRoute(
       path: 'psychoeducation',
+      name: PsychoeducationRoutes.adminCatalog,
       builder: (_, __) => const AdminPsychoeducationCatalogPage(),
       routes: [
         GoRoute(
           path: 'new',
+          name: PsychoeducationRoutes.adminNew,
           builder: (_, __) => const AdminPsychoeducationEditorPage(),
         ),
         GoRoute(
           path: ':moduleId',
+          name: '/platform/psychoeducation/:moduleId',
           builder: (_, state) => AdminPsychoeducationEditorPage(
             moduleId: state.pathParameters['moduleId'],
           ),

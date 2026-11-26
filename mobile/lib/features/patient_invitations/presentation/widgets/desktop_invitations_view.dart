@@ -11,7 +11,7 @@ import '../../domain/patient_invitation.dart';
 import '../../domain/patient_invitation_status.dart';
 
 /// Convites da psicóloga a partir de 768 px: "Novo convite" na barra, o convite
-/// recém-gerado e o histórico em tabela. Os convites não têm ação na linha.
+/// recém-gerado e o histórico em tabela, com o menu ⋯ nos pendentes.
 class DesktopInvitationsView extends StatelessWidget {
   const DesktopInvitationsView({
     super.key,
@@ -25,6 +25,7 @@ class DesktopInvitationsView extends StatelessWidget {
     required this.onRefresh,
     required this.onCopy,
     required this.onDismiss,
+    required this.menu,
   });
 
   /// Nulo enquanto carrega ou com erro.
@@ -42,6 +43,9 @@ class DesktopInvitationsView extends StatelessWidget {
   final VoidCallback onRefresh;
   final VoidCallback onCopy;
   final VoidCallback onDismiss;
+
+  /// Menu ⋯ do convite pendente (nulo nos demais).
+  final Widget? Function(PatientInvitation) menu;
 
   @override
   Widget build(BuildContext context) {
@@ -123,6 +127,7 @@ class DesktopInvitationsView extends StatelessWidget {
         final narrow = box.maxWidth < 700;
         final expiryWidth = narrow ? 170.0 : 220.0;
         final statusWidth = narrow ? 100.0 : 140.0;
+        const endWidth = 44.0;
         final Widget content;
         if (loading) {
           content = ListView(
@@ -130,7 +135,10 @@ class DesktopInvitationsView extends StatelessWidget {
             children: [
               for (var i = 0; i < 3; i++)
                 _SkeletonRow(
-                    m: m, expiryWidth: expiryWidth, statusWidth: statusWidth),
+                    m: m,
+                    expiryWidth: expiryWidth,
+                    statusWidth: statusWidth,
+                    endWidth: endWidth),
             ],
           );
         } else if (list == null || list.isEmpty) {
@@ -153,6 +161,8 @@ class DesktopInvitationsView extends StatelessWidget {
               expiry: expiry(list[i].expiresAt),
               expiryWidth: expiryWidth,
               statusWidth: statusWidth,
+              endWidth: endWidth,
+              menu: menu(list[i]),
               m: m,
               last: i == list.length - 1,
             ),
@@ -164,6 +174,7 @@ class DesktopInvitationsView extends StatelessWidget {
               desktopColumnTitle(context, 'Destinatário'),
               desktopColumnTitle(context, 'Expira em', width: expiryWidth),
               desktopColumnTitle(context, 'Status', width: statusWidth),
+              const SizedBox(width: endWidth),
             ],
           ),
           child: content,
@@ -199,6 +210,8 @@ class _Row extends StatefulWidget {
     required this.expiry,
     required this.expiryWidth,
     required this.statusWidth,
+    required this.endWidth,
+    required this.menu,
     required this.m,
     required this.last,
   });
@@ -208,6 +221,8 @@ class _Row extends StatefulWidget {
   final String expiry;
   final double expiryWidth;
   final double statusWidth;
+  final double endWidth;
+  final Widget? menu;
   final DesktopAdminMetrics m;
   final bool last;
 
@@ -285,6 +300,12 @@ class _RowState extends State<_Row> {
                 child: _statusTag(context, i.status),
               ),
             ),
+            SizedBox(
+              width: widget.endWidth,
+              // Cabe na altura da linha (respiro e divisória descontados).
+              height: widget.menu == null ? null : widget.m.row - 18,
+              child: widget.menu,
+            ),
           ],
         ),
       ),
@@ -297,11 +318,13 @@ class _SkeletonRow extends StatelessWidget {
     required this.m,
     required this.expiryWidth,
     required this.statusWidth,
+    required this.endWidth,
   });
 
   final DesktopAdminMetrics m;
   final double expiryWidth;
   final double statusWidth;
+  final double endWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -331,6 +354,7 @@ class _SkeletonRow extends StatelessWidget {
           ),
           bar(80, expiryWidth),
           bar(60, statusWidth),
+          SizedBox(width: endWidth),
         ],
       ),
     );

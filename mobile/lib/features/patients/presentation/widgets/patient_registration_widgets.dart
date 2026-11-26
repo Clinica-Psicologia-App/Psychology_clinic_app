@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../shared/widgets/app_page_header.dart';
+import '../../../../shared/widgets/desktop_admin/desktop_admin_kit.dart';
+import '../../../../shared/widgets/desktop_psychologist/desktop_form.dart';
 import '../../../../shared/widgets/error_banner.dart';
 import '../../domain/patient.dart';
 import '../../providers/patients_providers.dart';
@@ -98,82 +100,116 @@ class PatientRegistrationDataCard extends StatelessWidget {
 
   final Patient patient;
 
+  static const title = 'Dados do paciente';
+  static const subtitle =
+      'Informações principais para identificação, contato e contexto clínico.';
+
+  /// As linhas de dados (celular e desktop); cada uma some se estiver vazia.
+  static List<Widget> rows(BuildContext context, Patient patient) {
+    final dateFormat = MaterialLocalizations.of(context);
+    return [
+      PatientInfoRow(
+          icon: Icons.mail_outline, label: 'E-mail', value: patient.email),
+      PatientSensitiveInfoRow(
+        icon: Icons.phone_outlined,
+        label: 'Telefone',
+        value: patient.phone,
+        maskedValue: maskPhone(patient.phone),
+      ),
+      PatientSensitiveInfoRow(
+        icon: Icons.badge_outlined,
+        label: 'CPF',
+        value: patient.cpf,
+        maskedValue: maskCpf(patient.cpf),
+      ),
+      PatientInfoRow(
+        icon: Icons.cake_outlined,
+        label: 'Nascimento',
+        value: patient.birthDate != null
+            ? dateFormat.formatFullDate(patient.birthDate!)
+            : null,
+        copyText: patient.birthDate != null
+            ? dateFormat.formatCompactDate(patient.birthDate!)
+            : null,
+      ),
+      PatientInfoRow(
+          icon: Icons.wc_outlined,
+          label: 'Gênero',
+          value: patient.displayGender),
+      PatientInfoRow(
+        icon: Icons.favorite_border,
+        label: 'Estado civil',
+        value: patient.displayRelationshipStatus,
+      ),
+      PatientInfoRow(
+        icon: Icons.school_outlined,
+        label: 'Escolaridade',
+        value: patient.displayEducationLevel,
+      ),
+      PatientInfoRow(
+          icon: Icons.work_outline,
+          label: 'Ocupação',
+          value: patient.occupation),
+      PatientInfoRow(
+          icon: Icons.place_outlined,
+          label: 'Naturalidade',
+          value: patientBirthPlace(patient)),
+      PatientInfoRow(
+        icon: Icons.self_improvement_outlined,
+        label: 'Religião',
+        value: patient.religiousOrientation,
+      ),
+      PatientInfoRow(
+          icon: Icons.groups_outlined,
+          label: 'Grupo étnico',
+          value: patient.displayEthnicGroup),
+      PatientInfoRow(
+        icon: Icons.diversity_1_outlined,
+        label: 'Orient. sexual',
+        value: patient.displaySexualOrientation,
+      ),
+      PatientInfoRow(
+        icon: Icons.child_care_outlined,
+        label: 'Filhos',
+        value: patientHasChildrenLabel(patient.hasChildren),
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
-    final dateFormat = MaterialLocalizations.of(context);
     return PatientDataSectionCard(
-      title: 'Dados do paciente',
-      subtitle:
-          'Informações principais para identificação, contato e contexto clínico.',
-      children: [
-        PatientInfoRow(
-            icon: Icons.mail_outline, label: 'E-mail', value: patient.email),
-        PatientSensitiveInfoRow(
-          icon: Icons.phone_outlined,
-          label: 'Telefone',
-          value: patient.phone,
-          maskedValue: maskPhone(patient.phone),
-        ),
-        PatientSensitiveInfoRow(
-          icon: Icons.badge_outlined,
-          label: 'CPF',
-          value: patient.cpf,
-          maskedValue: maskCpf(patient.cpf),
-        ),
-        PatientInfoRow(
-          icon: Icons.cake_outlined,
-          label: 'Nascimento',
-          value: patient.birthDate != null
-              ? dateFormat.formatFullDate(patient.birthDate!)
-              : null,
-          copyText: patient.birthDate != null
-              ? dateFormat.formatCompactDate(patient.birthDate!)
-              : null,
-        ),
-        PatientInfoRow(
-            icon: Icons.wc_outlined,
-            label: 'Gênero',
-            value: patient.displayGender),
-        PatientInfoRow(
-          icon: Icons.favorite_border,
-          label: 'Estado civil',
-          value: patient.displayRelationshipStatus,
-        ),
-        PatientInfoRow(
-          icon: Icons.school_outlined,
-          label: 'Escolaridade',
-          value: patient.displayEducationLevel,
-        ),
-        PatientInfoRow(
-            icon: Icons.work_outline,
-            label: 'Ocupação',
-            value: patient.occupation),
-        PatientInfoRow(
-            icon: Icons.place_outlined,
-            label: 'Naturalidade',
-            value: patientBirthPlace(patient)),
-        PatientInfoRow(
-          icon: Icons.self_improvement_outlined,
-          label: 'Religião',
-          value: patient.religiousOrientation,
-        ),
-        PatientInfoRow(
-            icon: Icons.groups_outlined,
-            label: 'Grupo étnico',
-            value: patient.displayEthnicGroup),
-        PatientInfoRow(
-          icon: Icons.diversity_1_outlined,
-          label: 'Orient. sexual',
-          value: patient.displaySexualOrientation,
-        ),
-        PatientInfoRow(
-          icon: Icons.child_care_outlined,
-          label: 'Filhos',
-          value: patientHasChildrenLabel(patient.hasChildren),
-        ),
-      ],
+      title: title,
+      subtitle: subtitle,
+      children: rows(context, patient),
     );
   }
+}
+
+/// Idade, nascimento, ocupação e estado civil (só os preenchidos), para a
+/// ficha do celular e a de desktop.
+List<(IconData, String, String)> patientIdentificationItems(
+  BuildContext context,
+  Patient patient, {
+  DateTime? now,
+}) {
+  final localizations = MaterialLocalizations.of(context);
+  final birth = patient.birthDate;
+  final age =
+      birth == null ? null : patientAgeYears(birth, now ?? DateTime.now());
+  return [
+    if (age != null) (Icons.hourglass_bottom_outlined, 'Idade', '$age anos'),
+    if (birth != null)
+      (Icons.cake_outlined, 'Nascimento', localizations.formatShortDate(birth)),
+    if ((patient.occupation ?? '').trim().isNotEmpty)
+      (Icons.work_outline, 'Ocupação', patient.occupation!.trim()),
+    if ((patient.displayRelationshipStatus ?? '').trim().isNotEmpty)
+      (
+        Icons.favorite_border,
+        'Estado civil',
+        patient.displayRelationshipStatus!.trim()
+      ),
+  ];
 }
 
 /// Identificação resumida do paciente, na abertura da ficha: idade, data de
@@ -193,24 +229,7 @@ class PatientIdentificationSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = MaterialLocalizations.of(context);
-    final birth = patient.birthDate;
-    final age =
-        birth == null ? null : patientAgeYears(birth, now ?? DateTime.now());
-    final items = <(IconData, String, String)>[
-      if (age != null)
-        (Icons.hourglass_bottom_outlined, 'Idade', '$age anos'),
-      if (birth != null)
-        (Icons.cake_outlined, 'Nascimento', localizations.formatShortDate(birth)),
-      if ((patient.occupation ?? '').trim().isNotEmpty)
-        (Icons.work_outline, 'Ocupação', patient.occupation!.trim()),
-      if ((patient.displayRelationshipStatus ?? '').trim().isNotEmpty)
-        (
-          Icons.favorite_border,
-          'Estado civil',
-          patient.displayRelationshipStatus!.trim()
-        ),
-    ];
+    final items = patientIdentificationItems(context, patient, now: now);
     if (items.isEmpty) return const SizedBox.shrink();
 
     final theme = Theme.of(context);
@@ -439,9 +458,16 @@ class _PatientSensitiveInfoRowState extends State<PatientSensitiveInfoRow> {
 /// Situação do acompanhamento: inativar ou reativar o acesso. Inativar
 /// bloqueia o acesso do paciente e preserva todo o prontuário e histórico.
 class PatientLifecycleCard extends ConsumerStatefulWidget {
-  const PatientLifecycleCard({super.key, required this.patient});
+  const PatientLifecycleCard({
+    super.key,
+    required this.patient,
+    this.desktop = false,
+  });
 
   final Patient patient;
+
+  /// Cartão no padrão de desktop (mesmos textos e ações).
+  final bool desktop;
 
   @override
   ConsumerState<PatientLifecycleCard> createState() =>
@@ -456,6 +482,33 @@ class _PatientLifecycleCardState extends ConsumerState<PatientLifecycleCard> {
     final patient = widget.patient;
     final isActive = patient.isActive;
     final colors = Theme.of(context).colorScheme;
+    final title = isActive ? 'Paciente ativo' : 'Paciente inativo';
+    final explanation = isActive
+        ? 'A inativação bloqueia o acesso do paciente, mas preserva todo o prontuário e histórico clínico.'
+        : 'O prontuário permanece preservado e disponível para consulta. Reative para restaurar o acesso do paciente.';
+
+    if (widget.desktop) {
+      final t = DesktopAdminTokens.of(context);
+      return DesktopFormCard(
+        title: title,
+        dot: isActive ? t.ok : t.err,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(explanation, style: daText(context, t, color: t.tx2)),
+            const SizedBox(height: 14),
+            DaButton(
+              label: isActive ? 'Inativar acesso' : 'Reativar acesso',
+              icon: isActive
+                  ? Icons.person_off_outlined
+                  : Icons.person_add_alt_1_outlined,
+              kind: isActive ? DaButtonKind.outline : DaButtonKind.primary,
+              onPressed: _updating ? null : _confirmStatusChange,
+            ),
+          ],
+        ),
+      );
+    }
 
     return ClayCard(
       color: isActive ? null : colors.errorContainer.withValues(alpha: 0.35),
@@ -475,7 +528,7 @@ class _PatientLifecycleCardState extends ConsumerState<PatientLifecycleCard> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
-                    isActive ? 'Paciente ativo' : 'Paciente inativo',
+                    title,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
@@ -485,9 +538,7 @@ class _PatientLifecycleCardState extends ConsumerState<PatientLifecycleCard> {
             ),
             const SizedBox(height: 8),
             Text(
-              isActive
-                  ? 'A inativação bloqueia o acesso do paciente, mas preserva todo o prontuário e histórico clínico.'
-                  : 'O prontuário permanece preservado e disponível para consulta. Reative para restaurar o acesso do paciente.',
+              explanation,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: colors.onSurfaceVariant,
                   ),

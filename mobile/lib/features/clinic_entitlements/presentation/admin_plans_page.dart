@@ -6,6 +6,9 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/clay_card.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_kit.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_shell.dart';
+import 'widgets/desktop_plans_view.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../../clinics/domain/clinic_summary.dart';
 import '../../clinics/providers/clinics_providers.dart';
@@ -23,6 +26,33 @@ class AdminPlansPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final clinicsAsync = ref.watch(clinicsProvider);
+
+    // A partir de 768 px: mestre-detalhe com a casca de desktop.
+    if (isDesktopAdminWidth(context)) {
+      return DesktopAdminShell(
+        nav: DesktopAdminNav.home,
+        title: 'Planos e permissões',
+        subtitle: 'Liberar módulos por clínica',
+        actions: [
+          DaButton(
+            kind: DaButtonKind.ghost,
+            icon: Icons.refresh,
+            tooltip: 'Atualizar',
+            onPressed: () => ref.read(clinicsProvider.notifier).refresh(),
+          ),
+        ],
+        body: clinicsAsync.when(
+          loading: () => const Center(child: BrandLoader()),
+          error: (e, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.xl),
+              child: Text(_message(e), textAlign: TextAlign.center),
+            ),
+          ),
+          data: (clinics) => DesktopPlansView(clinics: clinics),
+        ),
+      );
+    }
 
     return AppSectionScaffold(
       title: 'Planos e permissões',

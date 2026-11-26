@@ -12,6 +12,8 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_kit.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_shell.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../auth/providers/auth_providers.dart';
@@ -22,8 +24,14 @@ import '../../profile/presentation/widgets/user_avatar.dart';
 import '../domain/clinic_user.dart';
 import '../domain/create_clinic_user_request.dart';
 import '../providers/user_management_providers.dart';
+import 'widgets/desktop_users_view.dart';
 import 'package:terapia_esquema/shared/widgets/clay_card.dart';
 import '../../../shared/widgets/brand_loading.dart';
+
+/// Atalho "Novo acesso" fora desta tela (menu do admin desktop): o mesmo
+/// formulário e a mesma gravação.
+Future<void> showNewAccessForm(BuildContext context, WidgetRef ref) =>
+    const UserManagementPage()._showCreateUserSheet(context, ref);
 
 class UserManagementPage extends ConsumerWidget {
   const UserManagementPage({super.key});
@@ -38,6 +46,57 @@ class UserManagementPage extends ConsumerWidget {
     final loaded = usersState.hasValue;
     final active = users.where((u) => u.isActive).length;
     final personal = users.where((u) => u.isPersonalClinic).length;
+
+    // A partir de 768 px: tabela em painel com a casca de desktop (mesmas
+    // ações e textos). Abaixo disso, a tela do celular, sem alteração.
+    if (isDesktopAdminWidth(context)) {
+      return DesktopAdminShell(
+        nav: DesktopAdminNav.users,
+        title: 'Usuários',
+        subtitle:
+            'Quem acessa a plataforma, por clínica ou consultório individual.',
+        actions: [
+          DaButton(
+            kind: DaButtonKind.primary,
+            icon: Icons.person_add_alt_1_outlined,
+            label: 'Novo acesso',
+            onPressed: () => _showCreateUserSheet(context, ref),
+          ),
+          DaButton(
+            kind: DaButtonKind.ghost,
+            icon: Icons.refresh,
+            tooltip: 'Atualizar',
+            onPressed: () => ref.read(clinicUsersProvider.notifier).refresh(),
+          ),
+        ],
+        body: usersState.when(
+          loading: () => const Center(child: BrandLoader()),
+          error: (e, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Text(
+                e is AppException
+                    ? userMessageFor(e)
+                    : 'Erro ao carregar usuários.',
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+          data: (users) => DesktopUsersView(
+            users: users,
+            currentProfileId: profile?.id,
+            isPlatformAdmin: isPlatformAdmin,
+            actions: DesktopUserActions(
+              toggleActive: (user) => _toggleActive(context, ref, user),
+              updateAccess: (user) =>
+                  _updatePsychologistAccess(context, ref, user),
+              changeRole: (user) => _changeRole(context, ref, user),
+              delete: (user) => _deleteUser(context, ref, user),
+            ),
+          ),
+        ),
+      );
+    }
 
     return AppSectionScaffold(
       title: 'Usuários',
@@ -286,17 +345,29 @@ class UserManagementPage extends ConsumerWidget {
     final isPlatformAdmin =
         ref.read(authControllerProvider).valueOrNull?.role ==
             ProfileRole.platformAdmin;
-    final request = await showModalBottomSheet<CreateClinicUserRequest>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      backgroundColor: Colors.transparent,
-      barrierColor: AppColors.navy.withValues(alpha: 0.36),
-      builder: (_) => UncontrolledProviderScope(
-        container: ProviderScope.containerOf(context),
-        child: _CreateUserSheet(isPlatformAdmin: isPlatformAdmin),
-      ),
-    );
+    final request = isDesktopAdminWidth(context)
+        ? await showDesktopSlideOver<CreateClinicUserRequest>(
+            context,
+            title: 'Novo usuário',
+            child: UncontrolledProviderScope(
+              container: ProviderScope.containerOf(context),
+              child: _CreateUserSheet(
+                isPlatformAdmin: isPlatformAdmin,
+                embedded: true,
+              ),
+            ),
+          )
+        : await showModalBottomSheet<CreateClinicUserRequest>(
+            context: context,
+            isScrollControlled: true,
+            useSafeArea: true,
+            backgroundColor: Colors.transparent,
+            barrierColor: AppColors.navy.withValues(alpha: 0.36),
+            builder: (_) => UncontrolledProviderScope(
+              container: ProviderScope.containerOf(context),
+              child: _CreateUserSheet(isPlatformAdmin: isPlatformAdmin),
+            ),
+          );
 
     if (request == null || !context.mounted) return;
 
@@ -1040,7 +1111,11 @@ class _PsychologistAccessDialogState extends State<_PsychologistAccessDialog> {
 }
 
 class _CreateUserSheet extends ConsumerStatefulWidget {
-  const _CreateUserSheet({required this.isPlatformAdmin});
+  const _CreateUserSheet({required this.isPlatformAdmin, this.embedded = false});
+
+  /// true = dentro do painel lateral do desktop (sem alça, título nem moldura
+  /// de bottom sheet; o título fica no cabeçalho do painel).
+  final bool embedded;
 
   @override
   ConsumerState<_CreateUserSheet> createState() => _CreateUserSheetState();
@@ -1070,6 +1145,18 @@ class _CreateUserSheetState extends ConsumerState<_CreateUserSheet> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.embedded) {
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(22),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: _fields(context, embedded: true),
+          ),
+        ),
+      );
+    }
     final mediaQuery = MediaQuery.of(context);
     final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     final availableHeight = mediaQuery.size.height - mediaQuery.padding.top;
@@ -1104,7 +1191,20 @@ class _CreateUserSheetState extends ConsumerState<_CreateUserSheet> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
+                    children: _fields(context, embedded: false),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _fields(BuildContext context, {required bool embedded}) {
+    return [
+      if (!embedded) ...[
                       Center(
                         child: Container(
                           width: 32,
@@ -1124,6 +1224,7 @@ class _CreateUserSheetState extends ConsumerState<_CreateUserSheet> {
                             ?.copyWith(fontWeight: FontWeight.w700),
                       ),
                       const SizedBox(height: AppSpacing.xs),
+      ],
                       Text(
                         'Escolha a clínica e crie o acesso do psicólogo.',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -1221,15 +1322,7 @@ class _CreateUserSheetState extends ConsumerState<_CreateUserSheet> {
                           label: const Text('Criar usuário'),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
+    ];
   }
 
   void _submit() {

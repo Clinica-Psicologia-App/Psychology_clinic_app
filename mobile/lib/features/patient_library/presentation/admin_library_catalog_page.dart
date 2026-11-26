@@ -6,6 +6,9 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/clay_card.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_kit.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_shell.dart';
+import 'widgets/desktop_library_catalog_view.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../data/admin_library_repository.dart';
 import '../providers/admin_library_providers.dart';
@@ -32,6 +35,58 @@ class _AdminLibraryCatalogPageState
   @override
   Widget build(BuildContext context) {
     final listAsync = ref.watch(adminLibraryListProvider(_queryArg));
+
+    // A partir de 768 px: tabela com miniatura na casca de desktop. Abaixo
+    // disso, a tela do celular, sem alteração.
+    if (isDesktopAdminWidth(context)) {
+      return DesktopAdminShell(
+        nav: DesktopAdminNav.home,
+        title: 'Catálogo da Biblioteca',
+        subtitle: 'Curadoria de filmes e séries · liberação para os psicólogos',
+        actions: [
+          DaButton(
+            kind: DaButtonKind.primary,
+            icon: Icons.add,
+            label: 'Nova obra',
+            onPressed: () => context.push(AdminLibraryRoutes.newWork),
+          ),
+          DaButton(
+            kind: DaButtonKind.ghost,
+            icon: Icons.refresh,
+            tooltip: 'Atualizar',
+            onPressed: () => ref.invalidate(adminLibraryListProvider),
+          ),
+        ],
+        body: DesktopLibraryCatalogView(
+          onSearch: (v) => setState(() => _query = v),
+          body: listAsync.when(
+            loading: () => const BrandLoader(),
+            error: (error, _) => _Error(
+              message: _message(error),
+              onRetry: () => ref.invalidate(adminLibraryListProvider),
+            ),
+            data: (items) => DesktopLibraryTable(
+              items: items,
+              onOpen: (w) => context.push(AdminLibraryRoutes.work(w.id)),
+              onTogglePublished: (w, v) async {
+                try {
+                  await ref
+                      .read(libraryCatalogMutationProvider.notifier)
+                      .setPublished(w.id, v);
+                  ref.invalidate(adminLibraryListProvider);
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(_message(e))),
+                    );
+                  }
+                }
+              },
+            ),
+          ),
+        ),
+      );
+    }
 
     return AppSectionScaffold(
       title: 'Catálogo da Biblioteca',

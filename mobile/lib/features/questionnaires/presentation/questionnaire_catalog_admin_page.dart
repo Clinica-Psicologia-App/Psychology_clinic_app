@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_kit.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_shell.dart';
+import 'widgets/desktop_questionnaires_views.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../domain/questionnaire_catalog_admin.dart';
 import '../providers/questionnaire_catalog_admin_providers.dart';
@@ -18,6 +21,53 @@ class QuestionnaireCatalogAdminPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final catalog = ref.watch(questionnaireCatalogAdminListProvider);
+
+    // A partir de 768 px: tabela na aba Catálogo (a aba Permissões leva à
+    // tela de acesso). Abaixo disso, a tela do celular, sem alteração.
+    if (isDesktopAdminWidth(context)) {
+      return DesktopAdminShell(
+        nav: DesktopAdminNav.home,
+        title: 'Questionários',
+        subtitle: 'Catálogo, edição e permissões',
+        actions: [
+          DaButton(
+            kind: DaButtonKind.primary,
+            icon: Icons.add,
+            label: 'Novo questionário',
+            onPressed: () => context.push(QuestionnaireRoutes.adminCatalogNew),
+          ),
+          DaButton(
+            kind: DaButtonKind.ghost,
+            icon: Icons.refresh,
+            tooltip: 'Atualizar',
+            onPressed: () =>
+                ref.invalidate(questionnaireCatalogAdminListProvider),
+          ),
+        ],
+        tabs: DaTabs(
+          items: const [
+            (Icons.fact_check_outlined, 'Catálogo'),
+            (Icons.assignment_ind_outlined, 'Permissões'),
+          ],
+          selected: 0,
+          onChanged: (_) => context.go(QuestionnaireRoutes.adminAccess),
+        ),
+        body: catalog.when(
+          loading: () => const BrandLoader(),
+          error: (error, _) => _CatalogError(
+            message: _message(error),
+            onRetry: () =>
+                ref.invalidate(questionnaireCatalogAdminListProvider),
+          ),
+          data: (items) => DesktopQuestionnaireCatalogView(
+            items: items,
+            onOpen: (item) => context
+                .push(QuestionnaireRoutes.adminCatalogDetail(item.id)),
+          ),
+        ),
+      );
+    }
+
     return AppSectionScaffold(
       title: 'Catálogo de questionários',
       subtitle: 'Instrumentos, versões e governança clínica',

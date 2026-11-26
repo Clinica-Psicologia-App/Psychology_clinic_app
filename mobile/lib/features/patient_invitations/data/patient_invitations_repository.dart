@@ -90,6 +90,26 @@ responsible_psychologist_profile:profiles!patient_invitations_responsible_psycho
     }
   }
 
+  /// Cancela um convite pendente: o link deixa de funcionar.
+  Future<void> revokeInvitation(String invitationId) async {
+    try {
+      await _edgeApi.invoke(
+        'revoke-patient-invitation',
+        body: {'invitation_id': invitationId},
+        errorOverride: (error, status) =>
+            status == 409 || error['code'] == AppExceptionCodes.conflict
+                ? AppException(
+                    code: AppExceptionCodes.conflict,
+                    message:
+                        'Este convite já foi aceito, expirou ou foi cancelado.',
+                  )
+                : null,
+      );
+    } catch (e) {
+      throw mapToAppException(e);
+    }
+  }
+
   Future<void> acceptInvitation(
     AcceptPatientInvitationRequest request,
   ) async {

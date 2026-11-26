@@ -9,6 +9,11 @@ import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_kit.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_shell.dart';
+import 'package:go_router/go_router.dart';
+import 'questionnaire_routes.dart';
+import 'widgets/desktop_questionnaires_views.dart';
 import '../../../shared/widgets/status_chip.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../profile/domain/profile_role.dart';
@@ -35,6 +40,46 @@ class _QuestionnaireAccessManagementPageState
 
   @override
   Widget build(BuildContext context) {
+    // A partir de 768 px: casca de desktop com as abas Catálogo | Permissões
+    // (Catálogo leva à lista do catálogo). Abaixo disso, a tela do celular.
+    if (isDesktopAdminWidth(context)) {
+      return DesktopAdminShell(
+        nav: DesktopAdminNav.home,
+        title: 'Questionários',
+        subtitle: 'Catálogo, edição e permissões',
+        actions: [
+          DaButton(
+            kind: DaButtonKind.ghost,
+            icon: Icons.refresh,
+            tooltip: 'Atualizar',
+            onPressed: () {
+              ref.invalidate(questionnaireAdminCatalogProvider);
+              ref.invalidate(questionnaireStaffOptionsProvider);
+              final professionalId = _selectedProfessionalId;
+              if (professionalId != null) {
+                ref.invalidate(
+                  questionnaireAccessManagementProvider(professionalId),
+                );
+              }
+            },
+          ),
+        ],
+        tabs: DaTabs(
+          items: const [
+            (Icons.fact_check_outlined, 'Catálogo'),
+            (Icons.assignment_ind_outlined, 'Permissões'),
+          ],
+          selected: 1,
+          onChanged: (_) => context.go(QuestionnaireRoutes.adminCatalog),
+        ),
+        body: DesktopQuestionnaireAccessView(
+          selectedId: _selectedProfessionalId,
+          saving: _savingAccess,
+          onSelect: (id) => setState(() => _selectedProfessionalId = id),
+          onToggle: _toggleAccess,
+        ),
+      );
+    }
     return DefaultTabController(
       length: 2,
       child: AppSectionScaffold(

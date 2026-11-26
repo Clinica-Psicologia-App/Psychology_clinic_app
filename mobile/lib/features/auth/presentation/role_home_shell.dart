@@ -19,6 +19,9 @@ import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/clay_card.dart';
 import '../../../shared/widgets/clinical_module_card.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_home.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_kit.dart';
+import '../../../shared/widgets/desktop_psychologist/desktop_psychologist_home.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../../clinic_entitlements/domain/clinic_feature_entitlement.dart';
 import '../../clinic_entitlements/providers/clinic_entitlements_providers.dart';
@@ -35,12 +38,14 @@ import '../../personality_assessment/providers/personality_assessment_providers.
 import '../../patient_invitations/domain/patient_invitation.dart';
 import '../../patient_invitations/providers/patient_invitations_providers.dart';
 import '../../patient_invitations/presentation/patient_invitation_routes.dart';
+import '../../patients/domain/patient.dart';
 import '../../patients/domain/psychologist_alert.dart';
 import '../../patients/providers/patients_providers.dart';
 import '../../patients/presentation/patient_routes.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../profile/domain/user_profile.dart';
 import '../../profile/presentation/profile_routes.dart';
+import '../../questionnaires/domain/questionnaire.dart';
 import '../../questionnaires/domain/questionnaire_patient_status.dart';
 import '../../questionnaires/presentation/questionnaire_routes.dart';
 import '../../questionnaires/providers/questionnaires_providers.dart';
@@ -80,28 +85,33 @@ class RoleHomeShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final authState = ref.watch(authControllerProvider);
     final profile = authState.valueOrNull;
+    // A psicóloga a partir de 768 px tem o Início em linguagem de desktop,
+    // com a própria barra (sem o fundo do celular).
+    final desktop =
+        role == ProfileRole.psychologist && isDesktopAdminWidth(context);
+    Widget plain(Widget child) => desktop ? Scaffold(body: child) : child;
 
-    return AppCanopyScaffold(
-      body: authState.when(
-        loading: () => const BrandLoader(),
-        error: (e, _) => Center(
-          child: Text(
-            e is AppException ? userMessageFor(e) : 'Erro ao carregar perfil.',
-          ),
+    final body = authState.when(
+      loading: () => plain(const BrandLoader()),
+      error: (e, _) => plain(Center(
+        child: Text(
+          e is AppException ? userMessageFor(e) : 'Erro ao carregar perfil.',
         ),
-        data: (p) {
-          final user = p ?? profile;
-          if (user == null) {
-            return const Center(child: Text('Perfil não carregado.'));
-          }
-          return _HomeBody(
-            profile: user,
-            role: role,
-            entitlementsAsync: ref.watch(currentClinicEntitlementsProvider),
-          );
-        },
-      ),
+      )),
+      data: (p) {
+        final user = p ?? profile;
+        if (user == null) {
+          return plain(const Center(child: Text('Perfil não carregado.')));
+        }
+        return _HomeBody(
+          profile: user,
+          role: role,
+          entitlementsAsync: ref.watch(currentClinicEntitlementsProvider),
+        );
+      },
     );
+
+    return desktop ? body : AppCanopyScaffold(body: body);
   }
 }
 
@@ -243,6 +253,16 @@ class _HomeBodyState extends ConsumerState<_HomeBody> {
               data: (list) => list.isNotEmpty,
               orElse: () => false,
             );
+
+    if (widget.role == ProfileRole.psychologist &&
+        isDesktopAdminWidth(context)) {
+      return _PsychologistDesktopHome(
+        profile: widget.profile,
+        patientsCardKey: _patientsCardKey,
+        assessmentSectionKey: _assessmentSectionKey,
+        onHelpTap: _replayTour,
+      );
+    }
 
     // Canopy full-bleed no topo (ele reserva o inset da status bar); o
     // conteúdo flui abaixo, com a largura máxima responsiva de sempre.
@@ -439,9 +459,6 @@ class _PsychologistWorkspaceState
   void _toggle(_HomeMenu menu) =>
       setState(() => _open = _open == menu ? null : menu);
 
-  static String _count(int n, String singular, String plural) =>
-      n == 1 ? '1 $singular' : '$n $plural';
-
   @override
   Widget build(BuildContext context) {
     final patients = ref.watch(patientsListProvider).valueOrNull;
@@ -449,15 +466,8 @@ class _PsychologistWorkspaceState
     final questionnaires =
         ref.watch(psychologistQuestionnairesProvider).valueOrNull;
 
-    final patientsSubtitle = (patients == null || invitations == null)
-        ? 'Pacientes, convites e novo paciente'
-        : '${_count(patients.where((p) => p.isActive).length, 'paciente', 'pacientes')}'
-            ' · ${_count(invitations.where((i) => i.isPending).length, 'convite', 'convites')}';
-    final assessmentSubtitle = questionnaires == null
-        ? 'Questionários, resultados e recursos terapêuticos'
-        : questionnaires.length == 1
-            ? '1 questionário liberado'
-            : '${questionnaires.length} questionários liberados';
+    final patientsSubtitle = _patientsMenuSubtitle(patients, invitations);
+    final assessmentSubtitle = _assessmentMenuSubtitle(questionnaires);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -474,32 +484,7 @@ class _PsychologistWorkspaceState
               subtitle: patientsSubtitle,
               expanded: _open == _HomeMenu.patients,
               onToggle: () => _toggle(_HomeMenu.patients),
-              items: [
-                _HomeMenuItem(
-                  icon: Icons.people_outline,
-                  title: 'Pacientes',
-                  subtitle: 'Carteira e plano terapêutico',
-                  onTap: () => context.push(
-                    PatientRoutes.list(ProfileRole.psychologist),
-                  ),
-                ),
-                _HomeMenuItem(
-                  icon: Icons.mark_email_unread_outlined,
-                  title: 'Convites',
-                  subtitle: 'Enviar e acompanhar o aceite',
-                  onTap: () => context.push(
-                    PatientInvitationRoutes.list(ProfileRole.psychologist),
-                  ),
-                ),
-                _HomeMenuItem(
-                  icon: Icons.person_add_alt_1_outlined,
-                  title: 'Novo paciente',
-                  subtitle: 'Cadastrar um paciente',
-                  onTap: () => context.push(
-                    PatientRoutes.create(ProfileRole.psychologist),
-                  ),
-                ),
-              ],
+              items: _patientsMenuItems(context),
             ),
           ),
         ),
@@ -515,36 +500,212 @@ class _PsychologistWorkspaceState
               subtitle: assessmentSubtitle,
               expanded: _open == _HomeMenu.assessment,
               onToggle: () => _toggle(_HomeMenu.assessment),
-              items: [
-                _HomeMenuItem(
-                  icon: Icons.assignment_outlined,
-                  title: 'Questionários',
-                  subtitle: 'Instrumentos e liberação',
-                  onTap: () => context.push(
-                    QuestionnaireRoutes.psychologistCatalog,
-                  ),
-                ),
-                _HomeMenuItem(
-                  icon: Icons.insights_outlined,
-                  title: 'Resultados',
-                  subtitle: 'Respostas e revisão',
-                  onTap: () => context.push(
-                    PatientRoutes.list(ProfileRole.psychologist),
-                    extra: PatientSelectionIntent.results,
-                  ),
-                ),
-                _HomeMenuItem(
-                  icon: Icons.library_books_outlined,
-                  title: 'Recursos terapêuticos',
-                  subtitle: 'Materiais e exercícios',
-                  onTap: () => context.push(
-                    PatientRoutes.list(ProfileRole.psychologist),
-                    extra: PatientSelectionIntent.therapyResources,
-                  ),
-                ),
-              ],
+              items: _assessmentMenuItems(context),
             ),
           ),
+        ),
+      ],
+    );
+  }
+}
+
+// Textos e destinos dos dois menus da home do psicólogo (celular e desktop).
+
+String _count(int n, String singular, String plural) =>
+    n == 1 ? '1 $singular' : '$n $plural';
+
+String _patientsMenuSubtitle(
+  List<Patient>? patients,
+  List<PatientInvitation>? invitations,
+) =>
+    (patients == null || invitations == null)
+        ? 'Pacientes, convites e novo paciente'
+        : '${_count(patients.where((p) => p.isActive).length, 'paciente', 'pacientes')}'
+            ' · ${_count(invitations.where((i) => i.isPending).length, 'convite', 'convites')}';
+
+String _assessmentMenuSubtitle(List<Questionnaire>? questionnaires) =>
+    questionnaires == null
+        ? 'Questionários, resultados e recursos terapêuticos'
+        : questionnaires.length == 1
+            ? '1 questionário liberado'
+            : '${questionnaires.length} questionários liberados';
+
+List<_HomeMenuItem> _patientsMenuItems(BuildContext context) => [
+      _HomeMenuItem(
+        icon: Icons.people_outline,
+        title: 'Pacientes',
+        subtitle: 'Carteira e plano terapêutico',
+        onTap: () => context.push(
+          PatientRoutes.list(ProfileRole.psychologist),
+        ),
+      ),
+      _HomeMenuItem(
+        icon: Icons.mark_email_unread_outlined,
+        title: 'Convites',
+        subtitle: 'Enviar e acompanhar o aceite',
+        onTap: () => context.push(
+          PatientInvitationRoutes.list(ProfileRole.psychologist),
+        ),
+      ),
+      _HomeMenuItem(
+        icon: Icons.person_add_alt_1_outlined,
+        title: 'Novo paciente',
+        subtitle: 'Cadastrar um paciente',
+        onTap: () => context.push(
+          PatientRoutes.create(ProfileRole.psychologist),
+        ),
+      ),
+    ];
+
+List<_HomeMenuItem> _assessmentMenuItems(BuildContext context) => [
+      _HomeMenuItem(
+        icon: Icons.assignment_outlined,
+        title: 'Questionários',
+        subtitle: 'Instrumentos e liberação',
+        onTap: () => context.push(
+          QuestionnaireRoutes.psychologistCatalog,
+        ),
+      ),
+      _HomeMenuItem(
+        icon: Icons.insights_outlined,
+        title: 'Resultados',
+        subtitle: 'Respostas e revisão',
+        onTap: () => context.push(
+          PatientRoutes.list(ProfileRole.psychologist),
+          extra: PatientSelectionIntent.results,
+        ),
+      ),
+      _HomeMenuItem(
+        icon: Icons.library_books_outlined,
+        title: 'Recursos terapêuticos',
+        subtitle: 'Materiais e exercícios',
+        onTap: () => context.push(
+          PatientRoutes.list(ProfileRole.psychologist),
+          extra: PatientSelectionIntent.therapyResources,
+        ),
+      ),
+    ];
+
+/// Início da psicóloga a partir de 768 px: os mesmos dados, textos e destinos
+/// do celular, no painel de desktop.
+class _PsychologistDesktopHome extends ConsumerWidget {
+  const _PsychologistDesktopHome({
+    required this.profile,
+    required this.patientsCardKey,
+    required this.assessmentSectionKey,
+    required this.onHelpTap,
+  });
+
+  final UserProfile profile;
+  final Key patientsCardKey;
+  final Key assessmentSectionKey;
+  final VoidCallback onHelpTap;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final patients = ref.watch(patientsListProvider).valueOrNull;
+    final invitations = ref.watch(patientInvitationsListProvider).valueOrNull;
+    final questionnaires =
+        ref.watch(psychologistQuestionnairesProvider).valueOrNull;
+    final alertsAsync = ref.watch(psychologistAlertsProvider);
+
+    final active = patients?.where((p) => p.isActive).length;
+    final pending = invitations?.where((i) => i.isPending).length;
+    final released = questionnaires?.length;
+    String label(int? n, String singular, String plural) =>
+        n == 1 ? singular : plural;
+
+    DesktopAdminShortcut shortcut(_HomeMenuItem item, Color color,
+            [int? count]) =>
+        DesktopAdminShortcut(
+          icon: item.icon,
+          color: color,
+          title: item.title,
+          subtitle: item.subtitle,
+          count: count,
+          onTap: item.onTap,
+        );
+
+    final patientItems = _patientsMenuItems(context);
+    final assessmentItems = _assessmentMenuItems(context);
+    final patientCounts = [active, pending, null];
+    final patientColors = [
+      DesktopAdminTokens.blue,
+      DesktopAdminTokens.purple,
+      const Color(0xFF00A39B),
+    ];
+    final assessmentCounts = [released, null, null];
+    final hour = DateTime.now().hour;
+
+    return DesktopPsychologistHome(
+      name: profile.fullName,
+      greeting: _CupolaHeader._greeting(hour).toUpperCase(),
+      contextLine: _ProfileHeader._contextLine(
+        patients == null ? null : active,
+        invitations,
+      ),
+      avatar: MouseRegion(
+        cursor: SystemMouseCursors.click,
+        child: GestureDetector(
+          onTap: () => context.push(ProfileRoutes.me),
+          child: UserAvatar(profile: profile, size: 44),
+        ),
+      ),
+      areaLabel: 'Profissional',
+      onHelp: onHelpTap,
+      kpis: [
+        (
+          Icons.people_outline,
+          DesktopAdminTokens.blue,
+          active,
+          label(active, 'paciente', 'pacientes'),
+        ),
+        (
+          Icons.mark_email_unread_outlined,
+          DesktopAdminTokens.purple,
+          pending,
+          label(pending, 'convite', 'convites'),
+        ),
+        (
+          Icons.assignment_outlined,
+          const Color(0xFF00A39B),
+          released,
+          label(released, 'questionário liberado', 'questionários liberados'),
+        ),
+      ],
+      alertsLoading: alertsAsync.isLoading && !alertsAsync.hasValue,
+      alerts: [
+        for (final alert in alertsAsync.valueOrNull ?? <PsychologistAlert>[])
+          DesktopPsychologistAlert(
+            icon: _alertStyle(alert.kind).icon,
+            color: _alertStyle(alert.kind).fg,
+            background: _alertStyle(alert.kind).bg,
+            title: alert.patientName,
+            subtitle: alert.subtitleLabel,
+            pill: alert.pillLabel,
+            semanticsLabel: alert.message,
+            onTap: () => _openAlert(context, alert),
+          ),
+      ],
+      sections: [
+        DesktopPsychologistSection(
+          anchor: patientsCardKey,
+          title: 'Meus pacientes',
+          subtitle: _patientsMenuSubtitle(patients, invitations),
+          items: [
+            for (var i = 0; i < patientItems.length; i++)
+              shortcut(patientItems[i], patientColors[i], patientCounts[i]),
+          ],
+        ),
+        DesktopPsychologistSection(
+          anchor: assessmentSectionKey,
+          title: 'Avaliação e recursos',
+          subtitle: _assessmentMenuSubtitle(questionnaires),
+          items: [
+            for (var i = 0; i < assessmentItems.length; i++)
+              shortcut(assessmentItems[i], const Color(0xFFD97706),
+                  assessmentCounts[i]),
+          ],
         ),
       ],
     );
@@ -952,9 +1113,9 @@ class _AlertRow extends StatelessWidget {
       label: alert.message,
       excludeSemantics: true,
       button: true,
-      onTap: () => _navigate(context),
+      onTap: () => _openAlert(context, alert),
       child: InkWell(
-        onTap: () => _navigate(context),
+        onTap: () => _openAlert(context, alert),
         child: Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.lg,
@@ -1026,44 +1187,45 @@ class _AlertRow extends StatelessWidget {
       ),
     );
   }
+}
 
-  void _navigate(BuildContext context) {
-    switch (alert.kind) {
-      case PsychologistAlertKind.missingCheckin:
-        if (alert.patientId != null) {
-          context.push(
-            PatientRoutes.detail(ProfileRole.psychologist, alert.patientId!),
-          );
-        }
-      case PsychologistAlertKind.expiringInvitation:
-        context.push(PatientInvitationRoutes.list(ProfileRole.psychologist));
-      case PsychologistAlertKind.staleQuestionnaire:
-        if (alert.patientId != null) {
-          context.push(
-            PatientRoutes.detail(ProfileRole.psychologist, alert.patientId!),
-          );
-        }
-      case PsychologistAlertKind.pendingResultsRelease:
-        // Leva à tela de Questionários do paciente (aba Panorama), onde agora
-        // vive o botão de liberar resultados — poupa um toque a mais.
-        if (alert.patientId != null) {
-          context.push(
-            QuestionnaireRoutes.list(
-              role: ProfileRole.psychologist,
-              patientId: alert.patientId!,
-            ),
-          );
-        }
-      case PsychologistAlertKind.recentCheckin:
-        if (alert.patientId != null) {
-          context.push(
-            PatientCheckInRoutes.staffList(
-              role: ProfileRole.psychologist,
-              patientId: alert.patientId!,
-            ),
-          );
-        }
-    }
+/// Para onde cada notificação leva.
+void _openAlert(BuildContext context, PsychologistAlert alert) {
+  switch (alert.kind) {
+    case PsychologistAlertKind.missingCheckin:
+      if (alert.patientId != null) {
+        context.push(
+          PatientRoutes.detail(ProfileRole.psychologist, alert.patientId!),
+        );
+      }
+    case PsychologistAlertKind.expiringInvitation:
+      context.push(PatientInvitationRoutes.list(ProfileRole.psychologist));
+    case PsychologistAlertKind.staleQuestionnaire:
+      if (alert.patientId != null) {
+        context.push(
+          PatientRoutes.detail(ProfileRole.psychologist, alert.patientId!),
+        );
+      }
+    case PsychologistAlertKind.pendingResultsRelease:
+      // Leva à tela de Questionários do paciente (aba Panorama), onde agora
+      // vive o botão de liberar resultados — poupa um toque a mais.
+      if (alert.patientId != null) {
+        context.push(
+          QuestionnaireRoutes.list(
+            role: ProfileRole.psychologist,
+            patientId: alert.patientId!,
+          ),
+        );
+      }
+    case PsychologistAlertKind.recentCheckin:
+      if (alert.patientId != null) {
+        context.push(
+          PatientCheckInRoutes.staffList(
+            role: ProfileRole.psychologist,
+            patientId: alert.patientId!,
+          ),
+        );
+      }
   }
 }
 

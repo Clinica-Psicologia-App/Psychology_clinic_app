@@ -2,6 +2,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -10,10 +11,13 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_kit.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../../shared/widgets/gradient_progress_indicator.dart';
+import '../../../shared/widgets/leave_guard.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/parental_contexts.dart';
+import '../domain/questionnaire_question.dart';
 import '../domain/questionnaire_response_context.dart';
 import '../domain/questionnaire_session.dart';
 import '../providers/questionnaires_providers.dart';
@@ -101,7 +105,12 @@ class _QuestionnaireAnswerPageState
         !_isParentalFlow || _currentContextIndex == session.contexts.length - 1;
     final isLast = isLastQuestion && isLastContext;
 
-    return PopScope(
+    // Prévia do admin a partir de 768 px: tela cheia, bloco de 720 px.
+    if (_isPreview && isDesktopAdminWidth(context)) {
+      return _buildDesktopPreview(question, progress, isLast);
+    }
+
+    final page = PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
@@ -348,6 +357,211 @@ class _QuestionnaireAnswerPageState
               ),
             ),
           ],
+        ),
+      ),
+    );
+    return LeaveGuard(
+      // Menu lateral (desktop): mesma pergunta; quem perguntou navega.
+      confirmLeave: _confirmLeave,
+      child: page,
+    );
+  }
+
+  Widget _buildDesktopPreview(
+      QuestionnaireQuestion question, double progress, bool isLast) {
+    final t = DesktopAdminTokens.of(context);
+    final m = DesktopAdminMetrics.of(MediaQuery.sizeOf(context).width);
+    final total = session.questions.length;
+    return CallbackShortcuts(
+      bindings: {
+        const SingleActivator(LogicalKeyboardKey.escape): () {
+          if (context.canPop()) context.pop();
+        },
+      },
+      child: Focus(
+        autofocus: true,
+        child: Scaffold(
+          backgroundColor: t.bg,
+          body: DefaultTextStyle(
+            style: daText(context, t),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Container(
+                  height: m.tb,
+                  padding: EdgeInsets.symmetric(horizontal: m.pad),
+                  alignment: Alignment.centerLeft,
+                  decoration: BoxDecoration(
+                    border: Border(bottom: BorderSide(color: t.bd)),
+                  ),
+                  child: Row(children: [
+                    DaButton(
+                      kind: DaButtonKind.ghost,
+                      icon: Icons.arrow_back,
+                      tooltip: 'Voltar',
+                      onPressed: () {
+                        if (context.canPop()) context.pop();
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(session.questionnaire.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: daText(context, t,
+                              size: 16, weight: FontWeight.w600)),
+                    ),
+                  ]),
+                ),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: EdgeInsets.all(m.pad),
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 720),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 10),
+                              decoration: BoxDecoration(
+                                color: t.sel,
+                                border: Border.all(color: t.bd),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Row(children: [
+                                Icon(Icons.visibility_outlined,
+                                    size: 16, color: t.tq),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Text(
+                                    'Pré-visualização: as respostas não serão salvas.',
+                                    style: daText(context, t, color: t.tx2),
+                                  ),
+                                ),
+                              ]),
+                            ),
+                            const SizedBox(height: 18),
+                            Row(children: [
+                              Expanded(
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(3),
+                                  child: TweenAnimationBuilder<double>(
+                                    tween: Tween(end: progress),
+                                    duration: const Duration(milliseconds: 300),
+                                    builder: (_, v, __) => Container(
+                                      height: 6,
+                                      color: t.hov2,
+                                      alignment: Alignment.centerLeft,
+                                      child: FractionallySizedBox(
+                                        widthFactor: v,
+                                        child: const DecoratedBox(
+                                          decoration: BoxDecoration(
+                                            gradient: DesktopAdminTokens
+                                                .brandGradient,
+                                          ),
+                                          child: SizedBox.expand(),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text('${_currentIndex + 1}/$total',
+                                  style: daText(context, t,
+                                      weight: FontWeight.w600, color: t.tx2)),
+                            ]),
+                            const SizedBox(height: 24),
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 200),
+                              transitionBuilder: (child, animation) =>
+                                  FadeTransition(
+                                opacity: animation,
+                                child: SlideTransition(
+                                  position: Tween<Offset>(
+                                    begin: Offset(0.03 * _direction, 0),
+                                    end: Offset.zero,
+                                  ).animate(animation),
+                                  child: child,
+                                ),
+                              ),
+                              child: Column(
+                                key: ValueKey('p$_currentIndex'),
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const DaIconBox(Icons.help_outline,
+                                          color: DesktopAdminTokens.cyan,
+                                          size: 44,
+                                          radius: 12),
+                                      const SizedBox(width: 14),
+                                      Expanded(
+                                        child: Padding(
+                                          padding:
+                                              const EdgeInsets.only(top: 8),
+                                          child: Text(question.text,
+                                              style: daText(context, t,
+                                                  size: 17,
+                                                  weight: FontWeight.w600)),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 24),
+                                  QuestionInputWidget(
+                                    question: question,
+                                    questionnaireCode:
+                                        session.questionnaire.code,
+                                    scaleLabels: session.questionnaire
+                                        .patientContent.scaleLabels,
+                                    value: _answers[_currentAnswerKey],
+                                    errorText: _fieldError,
+                                    onChanged: (v) {
+                                      setState(() {
+                                        _answers[_currentAnswerKey] = v;
+                                        _fieldError = null;
+                                      });
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 28),
+                            Row(children: [
+                              if (_currentIndex > 0)
+                                DaButton(
+                                  label: 'Anterior',
+                                  onPressed: _saving || _finishing
+                                      ? null
+                                      : () => setState(() {
+                                            _direction = -1;
+                                            _currentIndex--;
+                                            _fieldError = null;
+                                          }),
+                                ),
+                              const Spacer(),
+                              DaButton(
+                                kind: DaButtonKind.primary,
+                                label: isLast ? 'Finalizar' : 'Próxima',
+                                onPressed: _saving || _finishing
+                                    ? null
+                                    : () => isLast ? _finish() : _saveAndNext(),
+                              ),
+                            ]),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

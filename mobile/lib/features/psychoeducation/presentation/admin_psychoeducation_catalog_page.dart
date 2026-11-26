@@ -6,6 +6,9 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/clay_card.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_kit.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_shell.dart';
+import 'widgets/desktop_psycho_catalog_view.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../data/admin_psychoeducation_repository.dart';
 import '../providers/psychoeducation_providers.dart';
@@ -19,6 +22,56 @@ class AdminPsychoeducationCatalogPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final async = ref.watch(adminPsychoListProvider);
+
+    // A partir de 768 px: tabela de módulos na casca de desktop. Abaixo
+    // disso, a tela do celular, sem alteração.
+    if (isDesktopAdminWidth(context)) {
+      return DesktopAdminShell(
+        nav: DesktopAdminNav.home,
+        title: 'Psicoeducação',
+        subtitle: 'Módulos da Biblioteca · liberação aos psicólogos e pacientes',
+        actions: [
+          DaButton(
+            kind: DaButtonKind.primary,
+            icon: Icons.add,
+            label: 'Novo módulo',
+            onPressed: () => context.push(PsychoeducationRoutes.adminNew),
+          ),
+          DaButton(
+            kind: DaButtonKind.ghost,
+            icon: Icons.refresh,
+            tooltip: 'Atualizar',
+            onPressed: () => ref.invalidate(adminPsychoListProvider),
+          ),
+        ],
+        body: async.when(
+          loading: () => const BrandLoader(),
+          error: (e, _) => _Error(
+            message: _message(e),
+            onRetry: () => ref.invalidate(adminPsychoListProvider),
+          ),
+          data: (modules) => DesktopPsychoCatalogView(
+            modules: modules,
+            onOpen: (m) =>
+                context.push(PsychoeducationRoutes.adminModule(m.id)),
+            onTogglePublished: (m, v) async {
+              try {
+                await ref
+                    .read(psychoMutationProvider.notifier)
+                    .setPublished(m.id, v);
+                ref.invalidate(adminPsychoListProvider);
+              } catch (e) {
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(_message(e))),
+                  );
+                }
+              }
+            },
+          ),
+        ),
+      );
+    }
 
     return AppSectionScaffold(
       title: 'Psicoeducação',

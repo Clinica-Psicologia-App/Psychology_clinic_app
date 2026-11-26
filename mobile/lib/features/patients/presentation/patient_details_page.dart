@@ -11,12 +11,14 @@ import '../../../core/errors/app_exception.dart';
 import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_kit.dart';
 import '../../coach/domain/coach_step.dart';
 import '../../coach/domain/coach_tour.dart';
 import '../../coach/providers/coach_providers.dart';
 import '../../clinical_reports/presentation/clinical_report_routes.dart';
 import '../../patient_check_ins/presentation/patient_check_in_routes.dart';
 import '../../patient_invitations/domain/patient_invitation_draft.dart';
+import '../../patient_invitations/presentation/invitation_link.dart';
 import '../../profile/domain/profile_role.dart';
 import '../../questionnaires/presentation/questionnaire_routes.dart';
 import '../../therapy_goals/presentation/therapy_goal_routes.dart';
@@ -24,6 +26,7 @@ import '../domain/patient.dart';
 import '../domain/patient_vitals.dart';
 import '../providers/patients_providers.dart';
 import 'patient_routes.dart';
+import 'widgets/desktop_patient_file.dart';
 import 'widgets/future_modules_section.dart';
 import 'widgets/patient_context_header.dart';
 import 'widgets/patient_registration_widgets.dart';
@@ -109,10 +112,15 @@ class _PatientDetailsPageState extends ConsumerState<PatientDetailsPage> {
       WidgetsBinding.instance.addPostFrameCallback((_) => _startTour());
     }
 
-    return AppCanopyScaffold(
-      body: asyncPatient.when(
-        loading: () => const Center(child: BrandLoader()),
-        error: (e, _) => Center(
+    // Psicóloga a partir de 768 px: a ficha de desktop, com a própria barra.
+    final desktop = widget.role == ProfileRole.psychologist &&
+        isDesktopAdminWidth(context);
+    Widget plain(Widget child) =>
+        desktop ? DesktopPatientFileFrame(body: child) : child;
+
+    final content = asyncPatient.when(
+        loading: () => plain(const Center(child: BrandLoader())),
+        error: (e, _) => plain(Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -128,10 +136,11 @@ class _PatientDetailsPageState extends ConsumerState<PatientDetailsPage> {
               ],
             ),
           ),
-        ),
+        )),
         data: (patient) {
           if (patient == null) {
-            return const Center(child: Text('Paciente não encontrado.'));
+            return plain(
+                const Center(child: Text('Paciente não encontrado.')));
           }
           return _PatientDetailsBody(
             patient: patient,
@@ -142,8 +151,9 @@ class _PatientDetailsPageState extends ConsumerState<PatientDetailsPage> {
             onTourTap: _tourEnabled ? () => _startTour(force: true) : null,
           );
         },
-      ),
-    );
+      );
+
+    return desktop ? content : AppCanopyScaffold(body: content);
   }
 }
 
@@ -171,14 +181,40 @@ class _PatientDetailsBody extends StatefulWidget {
 class _PatientDetailsBodyState extends State<_PatientDetailsBody> {
   bool _navigating = false;
 
-  Future<void> _push(String route, {Object? extra}) async {
-    if (_navigating || !mounted) return;
+  Future<Object?> _push(String route, {Object? extra}) async {
+    if (_navigating || !mounted) return null;
     setState(() => _navigating = true);
     try {
-      await context.push(route, extra: extra);
+      return await context.push<Object?>(route, extra: extra);
     } finally {
       if (mounted) setState(() => _navigating = false);
     }
+  }
+
+  void _openRegistration() => _push(
+        PatientRoutes.registration(widget.role, widget.patient.id),
+      );
+
+  void _openReport() => _push(
+        ClinicalReportRoutes.staffOptions(
+          role: widget.role,
+          patientId: widget.patient.id,
+        ),
+      );
+
+  /// Na volta, o link gerado aparece e é copiado.
+  Future<void> _invite() async {
+    final patient = widget.patient;
+    final result = await _push(
+      PatientRoutes.invitationCreate(widget.role),
+      extra: PatientInvitationDraft(
+        fullName: patient.fullName,
+        email: patient.email,
+        phone: patient.phone,
+        responsiblePsychologistId: patient.responsiblePsychologistId,
+      ),
+    );
+    if (mounted) await showCreatedInvitation(context, result);
   }
 
   @override
@@ -192,6 +228,33 @@ class _PatientDetailsBodyState extends State<_PatientDetailsBody> {
     final canEdit = role == ProfileRole.psychologist ||
         role == ProfileRole.platformAdmin;
     final isWide = AppBreakpoints.isWide(context);
+    final needsInvite = patient.isActive &&
+        patient.accessStatus == PatientAccessStatus.noAppAccess;
+
+    if (role == ProfileRole.psychologist && isDesktopAdminWidth(context)) {
+      return Consumer(
+        builder: (context, ref, _) => DesktopPatientFile(
+          patient: patient,
+          vitals: ref.watch(patientVitalsProvider(patient.id)).valueOrNull,
+          reportKey: reportKey,
+          vitalsKey: vitalsKey,
+          onTour: onTourTap,
+          onRegistration: _openRegistration,
+          onReport: _navigating ? null : _openReport,
+          onInvite: needsInvite ? _invite : null,
+          onCheckIns: () => _push(_checkInsRoute(role, patient.id)),
+          onGoals: () => _push(_goalsRoute(role, patient.id)),
+          onQuestionnaires: () =>
+              _push(_questionnairesRoute(role, patient.id)),
+          modules: FutureModulesSection(
+            key: genogramKey,
+            role: role,
+            patientId: patient.id,
+            layout: (groups) => DesktopModuleBoard(groups: groups),
+          ),
+        ),
+      );
+    }
 
     return MotionReveal(
       child: CustomScrollView(
@@ -211,9 +274,7 @@ class _PatientDetailsBodyState extends State<_PatientDetailsBody> {
                     icon: Icons.badge_outlined,
                     solid: true,
                     flex: 2,
-                    onTap: () => _push(
-                      PatientRoutes.registration(role, patient.id),
-                    ),
+                    onTap: _openRegistration,
                   )
                 else if (canEdit)
                   PatientHeaderActionBtn(
@@ -255,8 +316,7 @@ class _PatientDetailsBodyState extends State<_PatientDetailsBody> {
             // cabeçalho; o resto dos dados fica em "Dados cadastrais".
             PatientIdentificationSummary(patient: patient),
             const SizedBox(height: AppSpacing.md),
-            if (patient.isActive &&
-                patient.accessStatus == PatientAccessStatus.noAppAccess) ...[
+            if (needsInvite) ...[
               AppInfoCard(
                 icon: Icons.mark_email_unread_outlined,
                 title: 'Convidar paciente',
@@ -264,18 +324,7 @@ class _PatientDetailsBodyState extends State<_PatientDetailsBody> {
                     'Gere um link para o paciente criar senha e concluir o primeiro acesso.',
                 action: IconButton(
                   tooltip: 'Convidar paciente',
-                  onPressed: _navigating
-                      ? null
-                      : () => _push(
-                            PatientRoutes.invitationCreate(role),
-                            extra: PatientInvitationDraft(
-                              fullName: patient.fullName,
-                              email: patient.email,
-                              phone: patient.phone,
-                              responsiblePsychologistId:
-                                  patient.responsiblePsychologistId,
-                            ),
-                          ),
+                  onPressed: _navigating ? null : _invite,
                   icon: const Icon(Icons.arrow_forward_rounded),
                 ),
               ),
@@ -283,14 +332,7 @@ class _PatientDetailsBodyState extends State<_PatientDetailsBody> {
             ],
             _SummaryHeading(
               reportKey: reportKey,
-              onReport: _navigating
-                  ? null
-                  : () => _push(
-                        ClinicalReportRoutes.staffOptions(
-                          role: role,
-                          patientId: patient.id,
-                        ),
-                      ),
+              onReport: _navigating ? null : _openReport,
             ),
             const SizedBox(height: AppSpacing.xs),
             _PatientVitalsSummary(
@@ -318,6 +360,16 @@ class _PatientDetailsBodyState extends State<_PatientDetailsBody> {
 // ---------------------------------------------------------------------------
 // Resumo vital do paciente
 // ---------------------------------------------------------------------------
+
+// Para onde cada número do resumo leva (celular e desktop).
+String _checkInsRoute(ProfileRole role, String patientId) =>
+    PatientCheckInRoutes.staffList(role: role, patientId: patientId);
+
+String _goalsRoute(ProfileRole role, String patientId) =>
+    TherapyGoalRoutes.staffList(role: role, patientId: patientId);
+
+String _questionnairesRoute(ProfileRole role, String patientId) =>
+    QuestionnaireRoutes.list(role: role, patientId: patientId);
 
 /// Painel de três métricas que dá ao psicólogo um panorama imediato
 /// antes de entrar nos módulos: último check-in, metas ativas e
@@ -434,12 +486,7 @@ class _VitalsPanelState extends State<_VitalsPanel> {
                     daysCount: vitals.lastCheckinDays,
                     onTap: _navigating
                         ? null
-                        : () => _push(
-                              PatientCheckInRoutes.staffList(
-                                role: role,
-                                patientId: patient.id,
-                              ),
-                            ),
+                        : () => _push(_checkInsRoute(role, patient.id)),
                   ),
                 ),
                 Container(width: 1, height: 52, color: Theme.of(context).colorScheme.outline),
@@ -451,12 +498,7 @@ class _VitalsPanelState extends State<_VitalsPanel> {
                     value: '${vitals.activeGoals}',
                     onTap: _navigating
                         ? null
-                        : () => _push(
-                              TherapyGoalRoutes.staffList(
-                                role: role,
-                                patientId: patient.id,
-                              ),
-                            ),
+                        : () => _push(_goalsRoute(role, patient.id)),
                   ),
                 ),
                 Container(width: 1, height: 52, color: Theme.of(context).colorScheme.outline),
@@ -472,11 +514,7 @@ class _VitalsPanelState extends State<_VitalsPanel> {
                     onTap: _navigating
                         ? null
                         : () => _push(
-                              QuestionnaireRoutes.list(
-                                role: role,
-                                patientId: patient.id,
-                              ),
-                            ),
+                            _questionnairesRoute(role, patient.id)),
                   ),
                 ),
               ],

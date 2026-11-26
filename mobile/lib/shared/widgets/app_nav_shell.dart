@@ -5,6 +5,9 @@ import '../../core/theme/app_branding_assets.dart';
 import '../../core/theme/app_breakpoints.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import 'desktop_admin/desktop_admin_kit.dart';
+import 'desktop_admin/desktop_admin_shell.dart';
+import 'desktop_psychologist/desktop_psychologist_shell.dart';
 
 /// Destino de navegação do shell lateral.
 class AppNavDestination {
@@ -49,9 +52,20 @@ class AppNavShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Psicóloga a partir de 768 px: casca própria, com o menu marinho.
+    if (isDesktopAdminWidth(context)) {
+      final location = GoRouterState.of(context).matchedLocation;
+      if (isPsychologistLocation(location)) {
+        return DesktopPsychologistShell(location: location, child: child);
+      }
+    }
     if (!AppBreakpoints.isWide(context)) return child;
 
     final location = GoRouterState.of(context).matchedLocation;
+    // Telas do admin já na casca de desktop trazem o próprio menu lateral.
+    if (desktopAdminOwnsLayout(location, MediaQuery.sizeOf(context).width)) {
+      return child;
+    }
     var selectedIndex =
         destinations.indexWhere((d) => !d.exactMatch && d.matches(location));
     if (selectedIndex < 0) {

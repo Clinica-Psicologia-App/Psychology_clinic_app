@@ -386,39 +386,48 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: AppRoutes.platformHome,
+            name: AppRoutes.platformHome,
             builder: (_, __) => const PlatformAdminHomePage(),
             routes: [
               GoRoute(
                 path: ClinicRoutes.platformList.replaceFirst('/platform/', ''),
+                name: ClinicRoutes.platformList,
                 builder: (_, __) => const ClinicsPage(),
               ),
               GoRoute(
                 path: UserManagementRoutes.platformList
                     .replaceFirst('/platform/', ''),
+                name: UserManagementRoutes.platformList,
                 builder: (_, __) => const UserManagementPage(),
               ),
               GoRoute(
                 path: QuestionnaireRoutes.adminAccess
                     .replaceFirst('/platform/', ''),
+                name: QuestionnaireRoutes.adminAccess,
                 builder: (_, __) => const QuestionnaireAccessManagementPage(),
               ),
               GoRoute(
                 path: QuestionnaireRoutes.adminCatalog
                     .replaceFirst('/platform/', ''),
+                name: QuestionnaireRoutes.adminCatalog,
                 builder: (_, __) => const QuestionnaireCatalogAdminPage(),
                 routes: [
                   GoRoute(
                     path: 'new',
+                    name: QuestionnaireRoutes.adminCatalogNew,
                     builder: (_, __) => const QuestionnaireCatalogEditorPage(),
                   ),
                   GoRoute(
                     path: ':questionnaireId',
+                    name: '/platform/questionnaire-catalog/:questionnaireId',
                     builder: (_, state) => QuestionnaireCatalogEditorPage(
                       questionnaireId: state.pathParameters['questionnaireId']!,
                     ),
                     routes: [
                       GoRoute(
                         path: 'preview',
+                        name:
+                            '/platform/questionnaire-catalog/:questionnaireId/preview',
                         builder: (_, state) {
                           final session = state.extra;
                           if (session is! QuestionnaireSession) {
@@ -447,12 +456,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               // clínica. O admin usa a visão agregada abaixo.
               GoRoute(
                 path: 'patient-overview',
+                name: '/platform/patient-overview',
                 builder: (_, __) => const PatientOverviewPage(),
               ),
               ...adminLibraryRoutes(),
               ...psychoeducationAdminRoutes(),
               GoRoute(
                 path: 'plans',
+                name: '/platform/plans',
                 builder: (_, __) => const AdminPlansPage(),
               ),
             ],

@@ -6,6 +6,7 @@ import 'app_animations.dart';
 import 'app_radius.dart';
 import 'app_spacing.dart';
 import 'app_typography.dart';
+import '../../shared/widgets/desktop_psychologist/desktop_psychologist_shell.dart';
 
 // Superfícies dark — tom slate-azul (menos navy/preto, mais cinza-azulado)
 abstract final class _Dark {
@@ -596,6 +597,20 @@ abstract final class AppTheme {
   }
 }
 
+bool _isDesktopAdminRoute(PageRoute<dynamic> route, BuildContext context) {
+  if (MediaQuery.sizeOf(context).width < 768) return false;
+  final settings = route.settings;
+  if (settings is! Page) return false;
+  // name do GoRoute explícito começando em /platform: identifica a rota
+  // sem estado global (cobre rotas imperativas com campo `name` configurado).
+  final name = settings.name;
+  if (name != null && name.startsWith('/platform')) return true;
+  // Fallback para rotas sem name explícito (go_router coloca o segmento curto,
+  // ex. 'users'): usa o pageKey declarativo (ValueKey('/platform/...')).
+  final key = settings.key;
+  return key is ValueKey<String> && key.value.startsWith('/platform');
+}
+
 class _AppPageTransitionsBuilder extends PageTransitionsBuilder {
   const _AppPageTransitionsBuilder();
 
@@ -607,10 +622,20 @@ class _AppPageTransitionsBuilder extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
+    // Psicóloga em desktop (telas dentro da casca): o menu fica parado e só o
+    // conteúdo entra; vale também com "reduzir movimento" (sem animação).
+    final psychologist = desktopPsychologistTransition(route, context, child);
+    if (psychologist != null) return psychologist;
+
     if (route.settings.name == Navigator.defaultRouteName ||
         !AppAnimations.shouldAnimate(context)) {
       return child;
     }
+
+    // Admin em desktop (>= 768 px, rotas /platform*): a casca (menu lateral,
+    // barra e fio de gradiente) fica parada na troca de tela. A transição de
+    // página ficava acima da casca e movia tudo, então aqui não há transição.
+    if (_isDesktopAdminRoute(route, context)) return child;
 
     final curved = CurvedAnimation(
       parent: animation,

@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../shared/widgets/app_scaffold.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_kit.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_shell.dart';
 import '../domain/question_answer_type.dart';
 import '../domain/questionnaire.dart';
 import '../domain/questionnaire_catalog_admin.dart';
@@ -66,6 +68,9 @@ class _QuestionnaireCatalogEditorPageState
         : ref
             .watch(questionnaireCatalogAdminDetailProvider(id))
             .whenData((v) => v);
+    // A partir de 768 px: casca de desktop com índice + edição em duas
+    // colunas. Abaixo disso, a tela do celular, sem alteração.
+    if (isDesktopAdminWidth(context)) return _buildDesktop(id, detailAsync);
     return AppSectionScaffold(
       title: id == null ? 'Novo questionário' : 'Editor do questionário',
       subtitle: 'Rascunho, perguntas e publicação',
@@ -254,6 +259,508 @@ class _QuestionnaireCatalogEditorPageState
     );
   }
 
+
+  // ---------------------------------------------------------------------
+  // Desktop (>= 768 px): casca + barra de ações fixa + índice e edição em
+  // duas colunas. Usa os mesmos controllers, validações e métodos acima.
+  // ---------------------------------------------------------------------
+  final _secKeys = [GlobalKey(), GlobalKey(), GlobalKey()];
+  int _activeSec = 0;
+
+  Widget _buildDesktop(String? id,
+      AsyncValue<QuestionnaireCatalogDetail?> detailAsync) {
+    final t = DesktopAdminTokens.of(context);
+    return DesktopAdminShell(
+      nav: DesktopAdminNav.home,
+      crumbs: const [
+        DaCrumb('Início', '/platform'),
+        DaCrumb('Questionários', QuestionnaireRoutes.adminCatalog),
+      ],
+      title: id == null ? 'Novo questionário' : 'Editor do questionário',
+      subtitle: 'Rascunho, perguntas e publicação',
+      body: detailAsync.when(
+        loading: () => const BrandLoader(),
+        error: (error, _) => Center(
+            child: Text(_message(error),
+                style: daText(context, t, color: t.err))),
+        data: (detail) {
+          if (detail != null && _loadedId != id) _load(detail);
+          return _desktopBody(detail);
+        },
+      ),
+    );
+  }
+
+  InputDecoration _dDeco(DesktopAdminTokens t, {String? hint}) {
+    OutlineInputBorder b(Color c, [double w = 1]) => OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: c, width: w));
+    return InputDecoration(
+      isDense: true,
+      filled: true,
+      fillColor: t.rz,
+      hintText: hint,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+      border: b(t.bd2),
+      enabledBorder: b(t.bd2),
+      disabledBorder: b(t.bd),
+      focusedBorder: b(t.foc, 1.5),
+      errorBorder: b(t.err),
+      focusedErrorBorder: b(t.err, 1.5),
+    );
+  }
+
+  Widget _dLabeled(String label, Widget field) {
+    final t = DesktopAdminTokens.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 6),
+          child: Text(label,
+              style: daText(context, t,
+                  size: 12.5, weight: FontWeight.w500, color: t.tx2)),
+        ),
+        field,
+      ],
+    );
+  }
+
+  Widget _dField(String label, TextEditingController c,
+      {required bool enabled,
+      String? Function(String?)? validator,
+      int maxLines = 1,
+      TextInputType? keyboard,
+      TextCapitalization caps = TextCapitalization.none}) {
+    final t = DesktopAdminTokens.of(context);
+    return _dLabeled(
+      label,
+      TextFormField(
+        controller: c,
+        enabled: enabled,
+        maxLines: maxLines,
+        keyboardType: keyboard,
+        textCapitalization: caps,
+        validator: validator,
+        style: daText(context, t, color: enabled ? t.tx : t.tx3),
+        cursorColor: t.foc,
+        decoration: _dDeco(t),
+      ),
+    );
+  }
+
+  /// Grade de 2 colunas; `full` ocupa a linha inteira.
+  Widget _dGrid(List<(Widget, bool)> cells) => LayoutBuilder(
+        builder: (context, c) {
+          final half = (c.maxWidth - 16) / 2;
+          return Wrap(
+            spacing: 16,
+            runSpacing: 14,
+            children: [
+              for (final cell in cells)
+                SizedBox(
+                    width: cell.$2 || c.maxWidth < 520 ? c.maxWidth : half,
+                    child: cell.$1),
+            ],
+          );
+        },
+      );
+
+  Widget _dSection(int i, String title, Widget child, {Widget? trailing}) {
+    final t = DesktopAdminTokens.of(context);
+    return Padding(
+      key: _secKeys[i],
+      padding: const EdgeInsets.only(bottom: 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(children: [
+            Expanded(
+              child: Text(title,
+                  style: daText(context, t, size: 15, weight: FontWeight.w600)),
+            ),
+            if (trailing != null) trailing,
+          ]),
+          const SizedBox(height: 14),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _desktopBody(QuestionnaireCatalogDetail? detail) {
+    final t = DesktopAdminTokens.of(context);
+    final m = DesktopAdminMetrics.of(MediaQuery.sizeOf(context).width);
+    final editable = detail?.isEditable ?? true;
+    final entries = [
+      'Identificação',
+      'Escala padrão',
+      if (detail != null) 'Perguntas (${detail.questions.length})',
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (detail != null) _dActionBar(detail),
+        if (!editable)
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: m.pad, vertical: 10),
+            decoration: BoxDecoration(
+              color: t.sel,
+              border: Border(bottom: BorderSide(color: t.bd)),
+            ),
+            child: Row(children: [
+              Icon(Icons.lock_outline, size: 16, color: t.tq),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                    'Esta versão está publicada e protegida. Use "Editar — criar '
+                    'nova versão" para alterar perguntas sem afetar respostas já '
+                    'registradas.',
+                    style: daText(context, t, color: t.tx2)),
+              ),
+            ]),
+          ),
+        Expanded(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Container(
+                width: 220,
+                padding: const EdgeInsets.fromLTRB(12, 18, 12, 12),
+                decoration: BoxDecoration(
+                    border: Border(right: BorderSide(color: t.bd))),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (var i = 0; i < entries.length; i++)
+                      _IndexItem(
+                        label: entries[i],
+                        active: i == _activeSec,
+                        onTap: () {
+                          setState(() => _activeSec = i);
+                          final ctx = _secKeys[i].currentContext;
+                          if (ctx != null) {
+                            Scrollable.ensureVisible(ctx,
+                                duration: const Duration(milliseconds: 250),
+                                curve: Curves.easeOutCubic);
+                          }
+                        },
+                      ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: EdgeInsets.fromLTRB(m.pad + 4, 24, m.pad + 4, 32),
+                  child: Align(
+                    alignment: Alignment.topLeft,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 860),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Form(
+                            key: _formKey,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                _dSection(
+                                  0,
+                                  'Identificação',
+                                  _dGrid([
+                                    (
+                                      _dField('Nome *', _name,
+                                          enabled: editable,
+                                          validator: _required),
+                                      true
+                                    ),
+                                    (
+                                      _dField('Código *', _code,
+                                          enabled: editable,
+                                          validator: _required,
+                                          caps: TextCapitalization.characters),
+                                      false
+                                    ),
+                                    (
+                                      _dField('Versão *', _version,
+                                          enabled: editable,
+                                          validator: _required),
+                                      false
+                                    ),
+                                    (
+                                      _dField('Descrição', _description,
+                                          enabled: editable, maxLines: 3),
+                                      true
+                                    ),
+                                    (
+                                      _dField('Autor / fonte', _author,
+                                          enabled: editable),
+                                      true
+                                    ),
+                                    (
+                                      _dField('Referência bibliográfica',
+                                          _citation,
+                                          enabled: editable, maxLines: 2),
+                                      false
+                                    ),
+                                    (
+                                      _dField('Licença e observações legais',
+                                          _license,
+                                          enabled: editable, maxLines: 2),
+                                      false
+                                    ),
+                                  ]),
+                                ),
+                                _dSection(
+                                  1,
+                                  'Escala padrão',
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.stretch,
+                                    children: [
+                                      _dGrid([
+                                        (
+                                          _dField('Mínimo', _scaleMin,
+                                              enabled: editable,
+                                              validator: _integer,
+                                              keyboard: TextInputType.number),
+                                          false
+                                        ),
+                                        (
+                                          _dField('Máximo', _scaleMax,
+                                              enabled: editable,
+                                              validator: _integer,
+                                              keyboard: TextInputType.number),
+                                          false
+                                        ),
+                                        (
+                                          _dLabeled(
+                                            'Período de referência',
+                                            DropdownButtonFormField<String>(
+                                              initialValue: _referencePeriod,
+                                              isExpanded: true,
+                                              decoration: _dDeco(t),
+                                              style: daText(context, t),
+                                              items: const [
+                                                DropdownMenuItem(
+                                                    value: 'unspecified',
+                                                    child: Text(
+                                                        'Não especificado')),
+                                                DropdownMenuItem(
+                                                    value: 'last_month',
+                                                    child:
+                                                        Text('Último mês')),
+                                                DropdownMenuItem(
+                                                    value: 'last_year',
+                                                    child:
+                                                        Text('Último ano')),
+                                                DropdownMenuItem(
+                                                    value: 'lifetime',
+                                                    child:
+                                                        Text('Toda a vida')),
+                                              ],
+                                              onChanged: editable
+                                                  ? (value) => setState(() =>
+                                                      _referencePeriod =
+                                                          value!)
+                                                  : null,
+                                            ),
+                                          ),
+                                          false
+                                        ),
+                                      ]),
+                                      if (editable) ...[
+                                        const SizedBox(height: 16),
+                                        Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: DaButton(
+                                            kind: DaButtonKind.primary,
+                                            icon: Icons.save_outlined,
+                                            label: _busy
+                                                ? 'Salvando...'
+                                                : 'Salvar rascunho',
+                                            onPressed: _busy
+                                                ? null
+                                                : () => _save(detail),
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (detail != null)
+                            _dSection(
+                              2,
+                              'Perguntas (${detail.questions.length})',
+                              _dQuestions(detail, editable),
+                              trailing: editable
+                                  ? DaButton(
+                                      kind: DaButtonKind.ghost,
+                                      icon: Icons.add,
+                                      tooltip: 'Adicionar pergunta',
+                                      onPressed: _busy
+                                          ? null
+                                          : () => _editQuestion(detail),
+                                    )
+                                  : null,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _dQuestions(QuestionnaireCatalogDetail detail, bool editable) {
+    final t = DesktopAdminTokens.of(context);
+    final m = DesktopAdminMetrics.of(MediaQuery.sizeOf(context).width);
+    if (detail.questions.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(24),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: t.rz,
+          border: Border.all(color: t.bd2),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text('Adicione ao menos uma pergunta para publicar.',
+            style: daText(context, t, color: t.tx3)),
+      );
+    }
+    return Container(
+      decoration: BoxDecoration(
+        color: t.rz,
+        border: Border.all(color: t.bd2),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        children: [
+          for (final q in detail.questions)
+            _QuestionRow(
+              question: q,
+              minHeight: m.row,
+              editable: editable,
+              onOpen: () => _editQuestion(detail, q),
+              onDelete: () => _deleteQuestion(detail, q),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _dActionBar(QuestionnaireCatalogDetail detail) {
+    final t = DesktopAdminTokens.of(context);
+    final m = DesktopAdminMetrics.of(MediaQuery.sizeOf(context).width);
+    final editable = detail.isEditable;
+    final approved = detail.questionnaire['clinical_status'] == 'approved';
+    final editingNewVersion = editable && detail.isPublished;
+    final text = editingNewVersion
+        ? 'Editando rascunho da versão ${detail.versionLabel ?? ''} — '
+            'a versão ${detail.activeVersionLabel ?? 'ativa'} continua '
+            'sendo aplicada aos pacientes até você publicar.'
+        : editable
+            ? 'A publicação homologa o instrumento e bloqueia alterações estruturais.'
+            : 'Edições criam uma nova versão: respostas já registradas '
+                'permanecem fixadas na versão em que foram respondidas.';
+    final preview = DaButton(
+      icon: Icons.visibility_outlined,
+      label: 'Pré-visualizar sem gravar',
+      onPressed: detail.questions.isEmpty ? null : () => _preview(detail),
+    );
+    final buttons = <Widget>[
+      if (editable) ...[
+        if (editingNewVersion)
+          DaButton(
+            kind: DaButtonKind.ghost,
+            icon: Icons.undo_outlined,
+            label: 'Descartar rascunho da nova versão',
+            onPressed: _busy ? null : () => _discardDraftVersion(detail),
+          )
+        else
+          DaButton(
+            kind: DaButtonKind.ghost,
+            icon: Icons.delete_outline,
+            label: 'Excluir rascunho',
+            onPressed: _busy ? null : () => _deleteDraft(detail),
+          ),
+        preview,
+        DaButton(
+          kind: DaButtonKind.primary,
+          icon: Icons.verified_outlined,
+          label:
+              editingNewVersion ? 'Publicar nova versão' : 'Homologar e publicar',
+          onPressed:
+              _busy || detail.questions.isEmpty ? null : () => _publish(detail),
+        ),
+      ] else ...[
+        if (approved)
+          DaButton(
+            kind: DaButtonKind.ghost,
+            icon: Icons.archive_outlined,
+            label: 'Arquivar instrumento',
+            onPressed: _busy ? null : () => _archive(detail),
+          ),
+        preview,
+        DaButton(
+          icon: Icons.copy_outlined,
+          label: 'Duplicar como novo instrumento',
+          onPressed: _busy ? null : () => _duplicate(detail),
+        ),
+        if (detail.canCreateDraftVersion)
+          DaButton(
+            kind: DaButtonKind.primary,
+            icon: Icons.edit_outlined,
+            label: 'Editar — criar nova versão',
+            onPressed: _busy ? null : () => _createDraftVersion(detail),
+          ),
+      ],
+    ];
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: m.pad, vertical: 12),
+      decoration:
+          BoxDecoration(border: Border(bottom: BorderSide(color: t.bd))),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            flex: 5,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Governança',
+                    style: daText(context, t, weight: FontWeight.w600)),
+                Text(text, style: daText(context, t, size: 12.5, color: t.tx2)),
+              ],
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            flex: 7,
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                alignment: WrapAlignment.end,
+                children: buttons,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _actionPanel(QuestionnaireCatalogDetail detail) {
     final editable = detail.isEditable;
     final approved = detail.questionnaire['clinical_status'] == 'approved';
@@ -439,10 +946,17 @@ class _QuestionnaireCatalogEditorPageState
 
   Future<void> _editQuestion(QuestionnaireCatalogDetail detail,
       [QuestionnaireCatalogQuestion? question]) async {
-    final input = await showDialog<_QuestionInput>(
-        context: context,
-        builder: (_) => _QuestionDialog(
-            question: question, nextOrder: detail.questions.length));
+    final input = isDesktopAdminWidth(context)
+        ? await showDesktopSlideOver<_QuestionInput>(context,
+            title: question == null ? 'Nova pergunta' : 'Editar pergunta',
+            child: _QuestionDialog(
+                question: question,
+                nextOrder: detail.questions.length,
+                embedded: true))
+        : await showDialog<_QuestionInput>(
+            context: context,
+            builder: (_) => _QuestionDialog(
+                question: question, nextOrder: detail.questions.length));
     if (input == null) return;
     await _run(() async {
       await ref.read(questionnaireCatalogAdminRepositoryProvider).saveQuestion(
@@ -594,13 +1108,13 @@ class _QuestionnaireCatalogEditorPageState
   Future<bool> _confirm(String title, String body) async =>
       await showDialog<bool>(
           context: context,
-          builder: (_) =>
+          builder: (ctx) =>
               AlertDialog(title: Text(title), content: Text(body), actions: [
                 TextButton(
-                    onPressed: () => Navigator.pop(context, false),
+                    onPressed: () => Navigator.pop(ctx, false),
                     child: const Text('Cancelar')),
                 FilledButton(
-                    onPressed: () => Navigator.pop(context, true),
+                    onPressed: () => Navigator.pop(ctx, true),
                     child: const Text('Confirmar'))
               ])) ??
       false;
@@ -649,7 +1163,11 @@ class _QuestionInput {
 }
 
 class _QuestionDialog extends StatefulWidget {
-  const _QuestionDialog({this.question, required this.nextOrder});
+  const _QuestionDialog(
+      {this.question, required this.nextOrder, this.embedded = false});
+
+  /// true = dentro do painel lateral do desktop (sem moldura de diálogo).
+  final bool embedded;
   final QuestionnaireCatalogQuestion? question;
   final int nextOrder;
   @override
@@ -676,111 +1194,139 @@ class _QuestionDialogState extends State<_QuestionDialog> {
   }
 
   @override
-  Widget build(BuildContext context) => AlertDialog(
+  Widget build(BuildContext context) {
+    final form = Form(
+                      key: keyForm,
+                      child: SingleChildScrollView(
+                          child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        TextFormField(
+                            controller: text,
+                            maxLines: 3,
+                            decoration:
+                                const InputDecoration(labelText: 'Enunciado *'),
+                            validator: _req),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                            controller: code,
+                            decoration:
+                                const InputDecoration(labelText: 'Código *'),
+                            validator: _req),
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<QuestionAnswerType>(
+                            initialValue: type,
+                            decoration: const InputDecoration(
+                                labelText: 'Tipo de resposta'),
+                            items: QuestionAnswerType.values
+                                .where((e) => e.supportsNumericSubmission)
+                                .map((e) => DropdownMenuItem(
+                                    value: e, child: Text(_typeLabel(e))))
+                                .toList(),
+                            onChanged: (v) => setState(() => type = v!)),
+                        const SizedBox(height: 12),
+                        Row(children: [
+                          Expanded(
+                              child: TextFormField(
+                                  controller: min,
+                                  keyboardType: TextInputType.number,
+                                  decoration:
+                                      const InputDecoration(labelText: 'Mínimo'),
+                                  validator: _num)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                              child: TextFormField(
+                                  controller: max,
+                                  keyboardType: TextInputType.number,
+                                  decoration:
+                                      const InputDecoration(labelText: 'Máximo'),
+                                  validator: _num))
+                        ]),
+                        const SizedBox(height: 12),
+                        Row(children: [
+                          Expanded(
+                              child: TextFormField(
+                                  controller: order,
+                                  keyboardType: TextInputType.number,
+                                  decoration:
+                                      const InputDecoration(labelText: 'Ordem'),
+                                  validator: _num)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                              child: TextFormField(
+                                  controller: weight,
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                          decimal: true),
+                                  decoration:
+                                      const InputDecoration(labelText: 'Peso'),
+                                  validator: (v) => double.tryParse(
+                                              (v ?? '').replaceAll(',', '.')) ==
+                                          null
+                                      ? 'Número inválido'
+                                      : null))
+                        ]),
+                        SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: const Text('Pontuação invertida'),
+                            subtitle:
+                                const Text('Inverte a escala antes de calcular.'),
+                            value: reverse,
+                            onChanged: (v) => setState(() => reverse = v))
+                      ])));
+    if (widget.embedded) {
+      final t = DesktopAdminTokens.of(context);
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+              child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(22), child: form)),
+          Container(
+            padding: const EdgeInsets.fromLTRB(22, 12, 22, 12),
+            decoration:
+                BoxDecoration(border: Border(top: BorderSide(color: t.bd))),
+            child: Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+              DaButton(
+                  kind: DaButtonKind.ghost,
+                  label: 'Cancelar',
+                  onPressed: () => Navigator.pop(context)),
+              const SizedBox(width: 8),
+              DaButton(
+                  kind: DaButtonKind.primary,
+                  label: 'Salvar',
+                  onPressed: _submit),
+            ]),
+          ),
+        ],
+      );
+    }
+    return AlertDialog(
           title: Text(
               widget.question == null ? 'Nova pergunta' : 'Editar pergunta'),
-          content: SizedBox(
-              width: 520,
-              child: Form(
-                  key: keyForm,
-                  child: SingleChildScrollView(
-                      child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    TextFormField(
-                        controller: text,
-                        maxLines: 3,
-                        decoration:
-                            const InputDecoration(labelText: 'Enunciado *'),
-                        validator: _req),
-                    const SizedBox(height: 12),
-                    TextFormField(
-                        controller: code,
-                        decoration:
-                            const InputDecoration(labelText: 'Código *'),
-                        validator: _req),
-                    const SizedBox(height: 12),
-                    DropdownButtonFormField<QuestionAnswerType>(
-                        initialValue: type,
-                        decoration: const InputDecoration(
-                            labelText: 'Tipo de resposta'),
-                        items: QuestionAnswerType.values
-                            .where((e) => e.supportsNumericSubmission)
-                            .map((e) => DropdownMenuItem(
-                                value: e, child: Text(_typeLabel(e))))
-                            .toList(),
-                        onChanged: (v) => setState(() => type = v!)),
-                    const SizedBox(height: 12),
-                    Row(children: [
-                      Expanded(
-                          child: TextFormField(
-                              controller: min,
-                              keyboardType: TextInputType.number,
-                              decoration:
-                                  const InputDecoration(labelText: 'Mínimo'),
-                              validator: _num)),
-                      const SizedBox(width: 8),
-                      Expanded(
-                          child: TextFormField(
-                              controller: max,
-                              keyboardType: TextInputType.number,
-                              decoration:
-                                  const InputDecoration(labelText: 'Máximo'),
-                              validator: _num))
-                    ]),
-                    const SizedBox(height: 12),
-                    Row(children: [
-                      Expanded(
-                          child: TextFormField(
-                              controller: order,
-                              keyboardType: TextInputType.number,
-                              decoration:
-                                  const InputDecoration(labelText: 'Ordem'),
-                              validator: _num)),
-                      const SizedBox(width: 8),
-                      Expanded(
-                          child: TextFormField(
-                              controller: weight,
-                              keyboardType:
-                                  const TextInputType.numberWithOptions(
-                                      decimal: true),
-                              decoration:
-                                  const InputDecoration(labelText: 'Peso'),
-                              validator: (v) => double.tryParse(
-                                          (v ?? '').replaceAll(',', '.')) ==
-                                      null
-                                  ? 'Número inválido'
-                                  : null))
-                    ]),
-                    SwitchListTile(
-                        contentPadding: EdgeInsets.zero,
-                        title: const Text('Pontuação invertida'),
-                        subtitle:
-                            const Text('Inverte a escala antes de calcular.'),
-                        value: reverse,
-                        onChanged: (v) => setState(() => reverse = v))
-                  ])))),
+          content: SizedBox(width: 520, child: form),
           actions: [
             TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: const Text('Cancelar')),
-            FilledButton(
-                onPressed: () {
-                  if (!keyForm.currentState!.validate()) return;
-                  final lo = int.parse(min.text), hi = int.parse(max.text);
-                  if (lo > hi) return;
-                  Navigator.pop(
-                      context,
-                      _QuestionInput(
-                          code.text.trim(),
-                          text.text.trim(),
-                          int.parse(order.text),
-                          type,
-                          lo,
-                          hi,
-                          double.parse(weight.text.replaceAll(',', '.')),
-                          reverse));
-                },
-                child: const Text('Salvar'))
+            FilledButton(onPressed: _submit, child: const Text('Salvar'))
           ]);
+  }
+
+  void _submit() {
+    if (!keyForm.currentState!.validate()) return;
+    final lo = int.parse(min.text), hi = int.parse(max.text);
+    if (lo > hi) return;
+    Navigator.pop(
+        context,
+        _QuestionInput(
+            code.text.trim(),
+            text.text.trim(),
+            int.parse(order.text),
+            type,
+            lo,
+            hi,
+            double.parse(weight.text.replaceAll(',', '.')),
+            reverse));
+  }
   String? _req(String? v) =>
       v == null || v.trim().isEmpty ? 'Campo obrigatório' : null;
   String? _num(String? v) =>
@@ -831,3 +1377,136 @@ String _typeLabel(QuestionAnswerType type) => switch (type) {
     };
 String _message(Object error) =>
     error.toString().replaceFirst(RegExp(r'^AppException\([^)]*\):\s*'), '');
+
+
+class _IndexItem extends StatefulWidget {
+  const _IndexItem(
+      {required this.label, required this.active, required this.onTap});
+
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  State<_IndexItem> createState() => _IndexItemState();
+}
+
+class _IndexItemState extends State<_IndexItem> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = DesktopAdminTokens.of(context);
+    return MouseRegion(
+      cursor: SystemMouseCursors.click,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.onTap,
+        child: AnimatedContainer(
+          duration: daHoverDuration(context),
+          height: 36,
+          alignment: Alignment.centerLeft,
+          margin: const EdgeInsets.only(bottom: 2),
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: widget.active
+                ? t.rz
+                : (_hover ? t.hov2 : daClear(t.hov2)),
+            border:
+                Border.all(color: widget.active ? t.bd2 : daClear(t.bd2)),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(widget.label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: daText(context, t,
+                  weight: widget.active ? FontWeight.w600 : FontWeight.w500,
+                  color: widget.active ? t.tx : t.tx2)),
+        ),
+      ),
+    );
+  }
+}
+
+class _QuestionRow extends StatefulWidget {
+  const _QuestionRow({
+    required this.question,
+    required this.minHeight,
+    required this.editable,
+    required this.onOpen,
+    required this.onDelete,
+  });
+
+  final QuestionnaireCatalogQuestion question;
+  final double minHeight;
+  final bool editable;
+  final VoidCallback onOpen;
+  final VoidCallback onDelete;
+
+  @override
+  State<_QuestionRow> createState() => _QuestionRowState();
+}
+
+class _QuestionRowState extends State<_QuestionRow> {
+  bool _hover = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = DesktopAdminTokens.of(context);
+    final q = widget.question;
+    return MouseRegion(
+      cursor: widget.editable
+          ? SystemMouseCursors.click
+          : SystemMouseCursors.basic,
+      onEnter: (_) => setState(() => _hover = true),
+      onExit: (_) => setState(() => _hover = false),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: widget.editable ? widget.onOpen : null,
+        child: AnimatedContainer(
+          duration: daHoverDuration(context),
+          constraints: BoxConstraints(minHeight: widget.minHeight),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          decoration: BoxDecoration(
+            color: _hover && widget.editable ? t.hov : daClear(t.hov),
+            border: Border(bottom: BorderSide(color: t.bd)),
+          ),
+          child: Row(children: [
+            Container(
+              width: 30,
+              height: 30,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(color: t.sel, shape: BoxShape.circle),
+              child: Text('${q.orderIndex + 1}',
+                  style: daText(context, t,
+                      size: 12.5, weight: FontWeight.w600, color: t.tq)),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(q.text,
+                      style: daText(context, t, weight: FontWeight.w600)),
+                  Text(
+                      '${q.code} • ${q.scaleMin}–${q.scaleMax} • peso ${q.weight}${q.reverseScore ? ' • invertida' : ''}',
+                      style: daText(context, t, size: 12, color: t.tx3)),
+                ],
+              ),
+            ),
+            if (widget.editable)
+              DaButton(
+                kind: DaButtonKind.ghost,
+                icon: Icons.delete_outline,
+                danger: true,
+                tooltip: 'Excluir',
+                onPressed: widget.onDelete,
+              ),
+          ]),
+        ),
+      ),
+    );
+  }
+}

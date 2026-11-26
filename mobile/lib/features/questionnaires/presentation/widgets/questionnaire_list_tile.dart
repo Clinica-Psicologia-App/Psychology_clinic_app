@@ -65,7 +65,8 @@ class QuestionnaireListTile extends StatelessWidget {
       if (questionnaire.referencePeriod != ReferencePeriod.unspecified)
         _MetaChip(
           icon: Icons.schedule_outlined,
-          label: _referencePeriodLabel(questionnaire.referencePeriod),
+          label: questionnaireReferencePeriodLabel(
+              questionnaire.referencePeriod),
         ),
       if (questionnaire.isParentalStyles)
         const _MetaChip(
@@ -303,7 +304,8 @@ class _MetaChip extends StatelessWidget {
   }
 }
 
-String _referencePeriodLabel(ReferencePeriod period) {
+/// Rótulo do período de referência (cartão e tabela de desktop).
+String questionnaireReferencePeriodLabel(ReferencePeriod period) {
   return switch (period) {
     ReferencePeriod.lastMonth => 'Último mês',
     ReferencePeriod.lastYear => 'Últimos 12 meses',

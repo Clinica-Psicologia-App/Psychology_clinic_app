@@ -8,6 +8,8 @@ import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_page_header.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/clinical_module_card.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_home.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_kit.dart';
 import '../../../shared/widgets/neural_header_background.dart';
 import '../../../shared/widgets/responsive_content.dart';
 import '../../auth/providers/auth_providers.dart';
@@ -36,6 +38,79 @@ class PlatformAdminHomePage extends ConsumerWidget {
     final patientsCount = usersList
         ?.where((u) => u.role == ProfileRole.psychologist)
         .fold<int>(0, (sum, u) => sum + u.assignedPatientsCount);
+
+    // A partir de 768 px: painel de trabalho em linguagem de desktop (mesmos
+    // textos e destinos). Abaixo disso, a tela do celular, sem alteração.
+    if (isDesktopAdminWidth(context)) {
+      final h = DateTime.now().hour;
+      return DesktopAdminHome(
+        name: profile?.fullName ?? 'Administrador',
+        greeting: h < 12 ? 'BOM DIA' : (h < 18 ? 'BOA TARDE' : 'BOA NOITE'),
+        clinicsCount: clinicsCount,
+        usersCount: usersCount,
+        patientsCount: patientsCount,
+        attendance: [
+          DesktopAdminShortcut(
+            icon: Icons.people_outline,
+            color: const Color(0xFF00A39B),
+            title: 'Pacientes',
+            subtitle: 'Visualizar, inativar e reativar pacientes.',
+            onTap: () => context.push('/platform/patient-overview'),
+          ),
+          DesktopAdminShortcut(
+            icon: Icons.groups_outlined,
+            color: AppColors.blue,
+            title: 'Usuários',
+            subtitle: 'Psicólogos e administradores, separados por abas.',
+            onTap: () => context.push(UserManagementRoutes.platformList),
+          ),
+        ],
+        structure: [
+          DesktopAdminShortcut(
+            icon: Icons.apartment_outlined,
+            color: AppColors.blue,
+            title: 'Clínicas',
+            subtitle: 'Ver clínicas, individuais, status e volumes.',
+            onTap: () => context.push(ClinicRoutes.platformList),
+          ),
+          DesktopAdminShortcut(
+            icon: Icons.library_books_outlined,
+            color: AppColors.purple,
+            title: 'Catálogo de questionários',
+            subtitle: 'Criar, revisar, publicar e arquivar.',
+            onTap: () => context.push(QuestionnaireRoutes.adminCatalog),
+          ),
+          DesktopAdminShortcut(
+            icon: Icons.fact_check_outlined,
+            color: AppColors.cyan,
+            title: 'Acesso a questionários',
+            subtitle: 'Liberar instrumentos por psicólogo.',
+            onTap: () => context.push(QuestionnaireRoutes.adminAccess),
+          ),
+          DesktopAdminShortcut(
+            icon: Icons.movie_filter_outlined,
+            color: AppColors.turquoise,
+            title: 'Catálogo da Biblioteca',
+            subtitle: 'Curar filmes e séries e liberar aos psicólogos.',
+            onTap: () => context.push(AdminLibraryRoutes.catalog),
+          ),
+          DesktopAdminShortcut(
+            icon: Icons.auto_stories_outlined,
+            color: AppColors.purple,
+            title: 'Psicoeducação',
+            subtitle: 'Curar os módulos da Biblioteca e liberar.',
+            onTap: () => context.push(PsychoeducationRoutes.adminCatalog),
+          ),
+          DesktopAdminShortcut(
+            icon: Icons.tune_outlined,
+            color: AppColors.blue,
+            title: 'Planos e permissões',
+            subtitle: 'Liberar módulos por clínica, fora do plano.',
+            onTap: () => context.push(AdminPlansPage.route),
+          ),
+        ],
+      );
+    }
 
     return AppCanopyScaffold(
       body: ListView(

@@ -446,6 +446,9 @@ verify_jwt = false
 [functions.review-questionnaire-response]
 verify_jwt = true
 
+[functions.revoke-patient-invitation]
+verify_jwt = true
+
 # set-questionnaire-access: produção hoje: false. Local com true: sem login 401 do gateway; JWT válido igual a antes.
 [functions.set-questionnaire-access]
 verify_jwt = true

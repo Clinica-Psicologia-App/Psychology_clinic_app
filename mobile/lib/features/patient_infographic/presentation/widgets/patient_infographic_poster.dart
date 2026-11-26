@@ -32,6 +32,16 @@ class PatientInfographicPoster extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // É um documento de largura fixa: o tamanho (e o negrito) de fonte do
+    // aparelho não entram, senão datas partem e textos saem cortados.
+    final media = MediaQuery.maybeOf(context) ?? const MediaQueryData();
+    return MediaQuery(
+      data: media.copyWith(textScaler: TextScaler.noScaling, boldText: false),
+      child: _page(),
+    );
+  }
+
+  Widget _page() {
     return Container(
       width: width,
       color: _bg,
@@ -542,24 +552,30 @@ class PatientInfographicPoster extends StatelessWidget {
                   color: AppColors.cyan,
                 ),
                 const SizedBox(width: 6),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      m.name,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.w700,
-                          fontSize: 12,
-                          color: AppColors.navy),
-                    ),
-                    if (m.relationship != null)
+                Flexible(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
                       Text(
-                        m.relationship!,
+                        m.name,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                            fontSize: 10, color: AppColors.textMuted),
+                            fontWeight: FontWeight.w700,
+                            fontSize: 12,
+                            color: AppColors.navy),
                       ),
-                  ],
+                      if (m.relationship != null)
+                        Text(
+                          m.relationship!,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontSize: 10, color: AppColors.textMuted),
+                        ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -916,7 +932,8 @@ class _TimelineBlock extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   SizedBox(
-                    width: 92,
+                    // Cabe "Adolescência" numa linha só.
+                    width: 106,
                     child: Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(entries[i].periodLabel,

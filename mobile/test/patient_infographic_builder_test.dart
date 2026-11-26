@@ -361,7 +361,7 @@ void main() {
     expect(rich.isSparse, isFalse);
   });
 
-  test('seções respeitam o limite máximo de itens', () {
+  test('seções respeitam o limite de itens; a linha do tempo mostra todos', () {
     final data = build(
       dashboard: _dashboardWith(
         [for (var i = 0; i < 20; i++) _schema('Esquema $i', 5)],
@@ -371,6 +371,6 @@ void main() {
     );
     expect(data.schemas.length, 6);
     expect(data.plan.length, 6);
-    expect(data.timeline.length, 8);
+    expect(data.timeline.length, 20);
   });
 }

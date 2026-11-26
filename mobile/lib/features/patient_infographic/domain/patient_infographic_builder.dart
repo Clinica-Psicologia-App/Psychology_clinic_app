@@ -43,7 +43,7 @@ PatientInfographicData buildPatientInfographic({
   final impressions = assessment?.clinicalImpressions;
 
   // Limites por seção — mantêm o pôster legível mesmo com muito conteúdo.
-  const maxTimeline = 8;
+  // A linha do tempo não tem limite: mostra todos os acontecimentos.
   const maxSection = 6;
 
   return PatientInfographicData(
@@ -53,8 +53,7 @@ PatientInfographicData buildPatientInfographic({
     demands: _cap(_buildDemands(problems), maxSection),
     lifeWheel: _buildLifeWheel(assessment),
     personality: _buildPersonalityDomains(personalityAssessments),
-    timeline:
-        _cap(_buildTimeline(timelineEvents, patient.birthDate), maxTimeline),
+    timeline: _buildTimeline(timelineEvents, patient.birthDate),
     genogram: _withoutSensitive(genogramData),
     genogramMembers: _cap(_buildGenogramMembers(genogramData), 10),
     schemas: _cap(_buildSchemas(dashboard, concept), maxSection),

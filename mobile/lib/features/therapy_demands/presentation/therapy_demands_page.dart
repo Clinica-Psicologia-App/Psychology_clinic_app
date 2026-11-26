@@ -9,6 +9,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../../shared/widgets/error_banner.dart';
+import '../../../shared/widgets/leave_guard.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../mental_map/domain/case_conceptualization.dart';
 import '../../mental_map/domain/demands_text_history.dart';
@@ -354,7 +355,7 @@ class _TherapyDemandsPageState extends ConsumerState<TherapyDemandsPage>
         ? AsyncValue<CaseConceptualization>.data(_loaded!)
         : async;
 
-    return PopScope(
+    final page = PopScope(
       canPop: _leaving || !_anyDirty,
       onPopInvokedWithResult: (didPop, _) async {
         if (didPop) return;
@@ -387,6 +388,11 @@ class _TherapyDemandsPageState extends ConsumerState<TherapyDemandsPage>
           ],
         ),
       ),
+    );
+    return LeaveGuard(
+      // Menu lateral (desktop): mesma pergunta; quem perguntou navega.
+      confirmLeave: () async => !_anyDirty || await _confirmDiscard(),
+      child: page,
     );
   }
 

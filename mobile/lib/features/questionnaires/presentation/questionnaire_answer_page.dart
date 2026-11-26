@@ -14,6 +14,7 @@ import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/desktop_admin/desktop_admin_kit.dart';
 import '../../../shared/widgets/error_banner.dart';
 import '../../../shared/widgets/gradient_progress_indicator.dart';
+import '../../../shared/widgets/leave_guard.dart';
 import '../../profile/domain/profile_role.dart';
 import '../domain/parental_contexts.dart';
 import '../domain/questionnaire_question.dart';
@@ -109,7 +110,7 @@ class _QuestionnaireAnswerPageState
       return _buildDesktopPreview(question, progress, isLast);
     }
 
-    return PopScope(
+    final page = PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
@@ -358,6 +359,11 @@ class _QuestionnaireAnswerPageState
           ],
         ),
       ),
+    );
+    return LeaveGuard(
+      // Menu lateral (desktop): mesma pergunta; quem perguntou navega.
+      confirmLeave: _confirmLeave,
+      child: page,
     );
   }
 

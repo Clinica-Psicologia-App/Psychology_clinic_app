@@ -41,24 +41,6 @@ class PatientListTile extends StatelessWidget {
   /// Ação rápida contextual (liberar resultado, abrir avaliação…).
   final VoidCallback? onQuickAction;
 
-  int get _filledDays {
-    if (!patient.isActive) return 0;
-    final missing = checkinMissingDays ?? 0;
-    return (7 - missing).clamp(0, 7);
-  }
-
-  String _lastAccessLabel() {
-    if (!patient.isActive) return 'Acompanhamento encerrado';
-    if (patient.accessStatus == PatientAccessStatus.noAppAccess) {
-      return 'Sem acesso ao app';
-    }
-    final missing = checkinMissingDays;
-    if (missing == null) return 'Sem check-ins ainda';
-    if (missing == 0) return 'Check-in hoje';
-    if (missing == 1) return 'Último check-in ontem';
-    return 'Último check-in há $missing dias';
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -145,7 +127,8 @@ class PatientListTile extends StatelessWidget {
                             ? email
                             : a != null
                                 ? a.label
-                                : _lastAccessLabel(),
+                                : patientCheckInLabel(
+                                    patient, checkinMissingDays),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: theme.textTheme.bodySmall?.copyWith(
@@ -159,7 +142,10 @@ class PatientListTile extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           if (active)
-                            _DotCalendar(filled: _filledDays, color: accent),
+                            _DotCalendar(
+                                filled: patientFilledDays(
+                                    patient, checkinMissingDays),
+                                color: accent),
                           const Spacer(),
                           if (completion != null && active)
                             CompletionRing(completion: completion),
@@ -201,14 +187,16 @@ Color attentionColor(PatientAttentionKind kind) => switch (kind) {
       PatientAttentionKind.fewCheckins => AppColors.warning,
     };
 
-IconData _stateIcon(PatientAttentionKind kind) => switch (kind) {
+/// Selo do estado no avatar.
+IconData attentionStateIcon(PatientAttentionKind kind) => switch (kind) {
       PatientAttentionKind.noCheckin => Icons.event_busy_rounded,
       PatientAttentionKind.pendingRelease => Icons.lock_rounded,
       PatientAttentionKind.emptyData => Icons.assignment_late_rounded,
       PatientAttentionKind.fewCheckins => Icons.schedule_rounded,
     };
 
-IconData _actionIcon(PatientAttentionKind kind) => switch (kind) {
+/// Ícone do botão de ação.
+IconData attentionActionIcon(PatientAttentionKind kind) => switch (kind) {
       PatientAttentionKind.noCheckin => Icons.phone_rounded,
       PatientAttentionKind.pendingRelease => Icons.lock_open_rounded,
       PatientAttentionKind.emptyData => Icons.edit_rounded,
@@ -221,6 +209,61 @@ String actionLabelFor(PatientAttentionKind kind) => switch (kind) {
       PatientAttentionKind.emptyData => 'Abrir avaliação inicial',
       PatientAttentionKind.fewCheckins => 'Ligar para o paciente',
     };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Regras compartilhadas com a tabela de desktop
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Dias preenchidos no calendário da semana.
+int patientFilledDays(Patient patient, int? checkinMissingDays) {
+  if (!patient.isActive) return 0;
+  final missing = checkinMissingDays ?? 0;
+  return (7 - missing).clamp(0, 7);
+}
+
+/// Situação de check-in, quando não há um motivo de atenção.
+String patientCheckInLabel(Patient patient, int? checkinMissingDays) {
+  if (!patient.isActive) return 'Acompanhamento encerrado';
+  if (patient.accessStatus == PatientAccessStatus.noAppAccess) {
+    return 'Sem acesso ao app';
+  }
+  final missing = checkinMissingDays;
+  if (missing == null) return 'Sem check-ins ainda';
+  if (missing == 0) return 'Check-in hoje';
+  if (missing == 1) return 'Último check-in ontem';
+  return 'Último check-in há $missing dias';
+}
+
+const patientWeekLabels = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
+
+/// Cor do anel de preenchimento.
+Color completionColor(PatientDataCompletion completion) => completion.isComplete
+    ? AppColors.success
+    : completion.filledSections <= 2
+        ? AppColors.error
+        : AppColors.warning;
+
+/// Dica do anel de preenchimento.
+String completionTooltip(PatientDataCompletion completion) {
+  final missing =
+      completion.sections.where((s) => !s.done).map((s) => s.label).join(', ');
+  return completion.isComplete
+      ? 'Avaliação inicial completa'
+      : 'Falta: $missing';
+}
+
+/// Iniciais do paciente (primeiro e último nome).
+String patientInitials(String fullName) {
+  final parts = fullName
+      .trim()
+      .split(RegExp(r'\s+'))
+      .where((p) => p.isNotEmpty)
+      .toList();
+  if (parts.isEmpty) return '?';
+  if (parts.length == 1) return parts.first.characters.first.toUpperCase();
+  return (parts.first.characters.first + parts.last.characters.first)
+      .toUpperCase();
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -253,7 +296,8 @@ class _QuickActionButton extends StatelessWidget {
             child: SizedBox(
               width: 32,
               height: 32,
-              child: Icon(_actionIcon(kind), size: 16, color: Colors.white),
+              child: Icon(attentionActionIcon(kind),
+                  size: 16, color: Colors.white),
             ),
           ),
         ),
@@ -303,8 +347,6 @@ class _DotCalendar extends StatelessWidget {
   final int filled;
   final Color color;
 
-  static const _labels = ['S', 'T', 'Q', 'Q', 'S', 'S', 'D'];
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -327,7 +369,7 @@ class _DotCalendar extends StatelessWidget {
               ),
               const SizedBox(height: 3),
               Text(
-                _labels[i],
+                patientWeekLabels[i],
                 style: TextStyle(
                   fontSize: 9,
                   fontWeight: FontWeight.w700,
@@ -356,18 +398,10 @@ class CompletionRing extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final color = completion.isComplete
-        ? AppColors.success
-        : completion.filledSections <= 2
-            ? AppColors.error
-            : AppColors.warning;
-    final missing =
-        completion.sections.where((s) => !s.done).map((s) => s.label).join(', ');
+    final color = completionColor(completion);
 
     return Tooltip(
-      message: completion.isComplete
-          ? 'Avaliação inicial completa'
-          : 'Falta: $missing',
+      message: completionTooltip(completion),
       child: SizedBox(
         width: size,
         height: size,
@@ -559,7 +593,7 @@ class _AvatarWithBadge extends StatelessWidget {
               padding: const EdgeInsets.all(2),
               child: UserAvatar.parts(
                 fullName: patient.fullName,
-                initials: _initials(patient.fullName),
+                initials: patientInitials(patient.fullName),
                 role: ProfileRole.patient,
                 avatarType: patient.avatarType,
                 photoUrl: patient.photoUrl,
@@ -584,23 +618,12 @@ class _AvatarWithBadge extends StatelessWidget {
                     width: 2,
                   ),
                 ),
-                child: Icon(_stateIcon(a.kind), size: 10, color: Colors.white),
+                child: Icon(attentionStateIcon(a.kind),
+                    size: 10, color: Colors.white),
               ),
             ),
         ],
       ),
     );
-  }
-
-  static String _initials(String fullName) {
-    final parts = fullName
-        .trim()
-        .split(RegExp(r'\s+'))
-        .where((p) => p.isNotEmpty)
-        .toList();
-    if (parts.isEmpty) return '?';
-    if (parts.length == 1) return parts.first.characters.first.toUpperCase();
-    return (parts.first.characters.first + parts.last.characters.first)
-        .toUpperCase();
   }
 }

@@ -12,6 +12,7 @@ import '../../../shared/widgets/app_motion.dart';
 import '../../../shared/widgets/app_scaffold.dart';
 import '../../../shared/widgets/async_state_body.dart';
 import '../../../shared/widgets/brand_loading.dart';
+import '../../../shared/widgets/desktop_admin/desktop_admin_kit.dart';
 import '../../auth/providers/auth_providers.dart';
 import '../../initial_assessment/presentation/initial_assessment_routes.dart';
 import '../../patients/domain/psychologist_alert.dart';
@@ -22,6 +23,7 @@ import '../domain/patient_data_completion.dart';
 import '../domain/patient_attention.dart';
 import '../providers/patients_providers.dart';
 import 'patient_routes.dart';
+import 'widgets/desktop_patients_view.dart';
 import 'widgets/patient_list_tile.dart';
 
 class PatientsPage extends ConsumerStatefulWidget {
@@ -97,6 +99,55 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
     final isStaff = widget.role.isStaff;
 
     void doRefresh() => ref.read(patientsListProvider.notifier).refresh();
+
+    // Psicóloga a partir de 768 px: a carteira em tabela.
+    if (widget.role == ProfileRole.psychologist &&
+        isDesktopAdminWidth(context)) {
+      final sorted = _sorted(
+        patients: filtered,
+        pendingReleaseIds: pendingReleaseIds,
+        checkinMissingMap: checkinMissingMap,
+        dataCompletionMap: dataCompletionMap,
+      );
+      return DesktopPatientsView(
+        totalActive: totalActive,
+        totalAll: totalAll,
+        alertCount: alertCount,
+        showActions: profile != null && isStaff,
+        onInvite: () =>
+            context.push(PatientRoutes.invitationCreate(widget.role)),
+        onNew: () => context.push(PatientRoutes.create(widget.role)),
+        onRefresh: doRefresh,
+        filters: [for (final f in _PatientFilter.values) f.label],
+        filterIndex: _filter.index,
+        onFilter: (i) => setState(() => _filter = _PatientFilter.values[i]),
+        sorts: [for (final m in _SortMode.values) (m.icon, m.label)],
+        sortIndex: _sortMode.index,
+        onSort: (i) => setState(() => _sortMode = _SortMode.values[i]),
+        searchController: _searchController,
+        onSearch: (v) => setState(() => _query = v),
+        onClearSearch: () {
+          _searchController.clear();
+          setState(() => _query = '');
+        },
+        onClearAll: _clearSearchAndFilters,
+        loading: listState.isLoading,
+        failed: !listState.isLoading && listState.hasError,
+        hasPatients: patients.isNotEmpty,
+        rows: [
+          for (final patient in sorted.patients)
+            DesktopPatientRow(
+              patient: patient,
+              attention: sorted.attentions[patient.id],
+              checkinMissingDays: checkinMissingMap[patient.id],
+              completion: dataCompletionMap?[patient.id],
+              onOpen: () => _openPatient(context, patient),
+              onQuickAction: _quickActionFor(
+                  context, patient, sorted.attentions[patient.id]),
+            ),
+        ],
+      );
+    }
 
     return AppCanopyScaffold(
       body: RefreshIndicator(
@@ -229,13 +280,7 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
                       message:
                           'Nenhum paciente corresponde à busca ou aos filtros.',
                       action: TextButton.icon(
-                        onPressed: () {
-                          _searchController.clear();
-                          setState(() {
-                            _query = '';
-                            _filter = _PatientFilter.all;
-                          });
-                        },
+                        onPressed: _clearSearchAndFilters,
                         icon: const Icon(Icons.filter_alt_off_outlined),
                         label: const Text('Limpar busca e filtros'),
                       ),
@@ -275,14 +320,20 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
     );
   }
 
-  /// Lista plana ordenada pelo modo selecionado (sem agrupamentos).
-  List<Widget> _flatSortedSlivers({
-    required BuildContext context,
+  void _clearSearchAndFilters() {
+    _searchController.clear();
+    setState(() {
+      _query = '';
+      _filter = _PatientFilter.all;
+    });
+  }
+
+  /// Motivos de atenção e a lista na ordem do modo selecionado.
+  ({List<Patient> patients, Map<String, PatientAttention> attentions}) _sorted({
     required List<Patient> patients,
     required Set<String>? pendingReleaseIds,
     required Map<String, int> checkinMissingMap,
     required Map<String, PatientDataCompletion>? dataCompletionMap,
-    required bool showEmail,
   }) {
     final attentions = <String, PatientAttention>{};
     for (final p in patients) {
@@ -319,6 +370,40 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
         });
     }
 
+    return (patients: sorted, attentions: attentions);
+  }
+
+  void _openPatient(BuildContext context, Patient patient) =>
+      context.push(PatientRoutes.detail(widget.role, patient.id));
+
+  /// Ação direta do motivo; nulo quando a linha só leva à ficha.
+  VoidCallback? _quickActionFor(
+    BuildContext context,
+    Patient patient,
+    PatientAttention? attention,
+  ) =>
+      attention != null &&
+              attention.kind.hasDirectAction &&
+              widget.role == ProfileRole.psychologist
+          ? () => _runQuickAction(context, patient, attention)
+          : null;
+
+  /// Lista plana ordenada pelo modo selecionado (sem agrupamentos).
+  List<Widget> _flatSortedSlivers({
+    required BuildContext context,
+    required List<Patient> patients,
+    required Set<String>? pendingReleaseIds,
+    required Map<String, int> checkinMissingMap,
+    required Map<String, PatientDataCompletion>? dataCompletionMap,
+    required bool showEmail,
+  }) {
+    final (patients: sorted, :attentions) = _sorted(
+      patients: patients,
+      pendingReleaseIds: pendingReleaseIds,
+      checkinMissingMap: checkinMissingMap,
+      dataCompletionMap: dataCompletionMap,
+    );
+
     return [
       SliverList.builder(
         itemCount: sorted.length,
@@ -333,14 +418,8 @@ class _PatientsPageState extends ConsumerState<PatientsPage> {
               checkinMissingDays: checkinMissingMap[patient.id],
               dataCompletion: dataCompletionMap?[patient.id],
               showEmail: showEmail,
-              onQuickAction: attention != null &&
-                      attention.kind.hasDirectAction &&
-                      widget.role == ProfileRole.psychologist
-                  ? () => _runQuickAction(context, patient, attention)
-                  : null,
-              onTap: () => context.push(
-                PatientRoutes.detail(widget.role, patient.id),
-              ),
+              onQuickAction: _quickActionFor(context, patient, attention),
+              onTap: () => _openPatient(context, patient),
             ),
           );
         },

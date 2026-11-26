@@ -12,6 +12,7 @@ class DesktopAdminShortcut {
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.count,
   });
 
   final IconData icon;
@@ -19,7 +20,13 @@ class DesktopAdminShortcut {
   final String title;
   final String subtitle;
   final VoidCallback onTap;
+
+  /// Contador antes da seta (Início da psicóloga).
+  final int? count;
 }
+
+/// Um número do painel do Início: ícone, cor, valor ("—" sem valor) e rótulo.
+typedef DesktopKpi = (IconData, Color, int?, String);
 
 /// Início do admin em desktop: saudação, 3 números e atalhos em grade plana.
 class DesktopAdminHome extends StatelessWidget {
@@ -61,22 +68,44 @@ class DesktopAdminHome extends StatelessWidget {
               children: [
                 MotionReveal(
                   delay: staggerDelay(0),
-                  child: _Greeting(name: name, greeting: greeting, big: big),
+                  child: DesktopGreeting(
+                    name: name,
+                    greeting: greeting,
+                    subtitle: 'Administrador da plataforma',
+                    big: big,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 MotionReveal(
                   delay: staggerDelay(1),
-                  child: _Kpis(
+                  child: DesktopKpis(
                     big: big,
-                    clinics: clinicsCount,
-                    users: usersCount,
-                    patients: patientsCount,
+                    cells: [
+                      (
+                        Icons.apartment_outlined,
+                        DesktopAdminTokens.blue,
+                        clinicsCount,
+                        'clínicas'
+                      ),
+                      (
+                        Icons.badge_outlined,
+                        DesktopAdminTokens.purple,
+                        usersCount,
+                        'usuários'
+                      ),
+                      (
+                        Icons.people_outline,
+                        const Color(0xFF00A39B),
+                        patientsCount,
+                        'pacientes'
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 26),
                 MotionReveal(
                   delay: staggerDelay(2),
-                  child: _Section(
+                  child: DesktopShortcutSection(
                     title: 'Atendimento',
                     subtitle:
                         'Fluxos ligados diretamente ao cuidado dos pacientes.',
@@ -88,7 +117,7 @@ class DesktopAdminHome extends StatelessWidget {
                 const SizedBox(height: 24),
                 MotionReveal(
                   delay: staggerDelay(3),
-                  child: _Section(
+                  child: DesktopShortcutSection(
                     title: 'Estrutura da plataforma',
                     subtitle:
                         'Configurações globais, acessos administrativos e instrumentos.',
@@ -106,12 +135,23 @@ class DesktopAdminHome extends StatelessWidget {
   }
 }
 
-class _Greeting extends StatelessWidget {
-  const _Greeting({required this.name, required this.greeting, required this.big});
+/// Saudação do Início: avatar (iniciais, se [leading] não vier), período do
+/// dia, nome em degradê e uma linha de contexto.
+class DesktopGreeting extends StatelessWidget {
+  const DesktopGreeting({
+    super.key,
+    required this.name,
+    required this.greeting,
+    required this.subtitle,
+    required this.big,
+    this.leading,
+  });
 
   final String name;
   final String greeting;
+  final String subtitle;
   final bool big;
+  final Widget? leading;
 
   @override
   Widget build(BuildContext context) {
@@ -126,7 +166,7 @@ class _Greeting extends StatelessWidget {
       padding: const EdgeInsets.only(top: 6),
       child: Row(
         children: [
-          DaInitials(initials, size: 44),
+          leading ?? DaInitials(initials, size: 44),
           const SizedBox(width: 16),
           Flexible(
             child: Column(
@@ -155,8 +195,7 @@ class _Greeting extends StatelessWidget {
                               color: Colors.white)
                           .copyWith(letterSpacing: -0.6, height: 1.15)),
                 ),
-                Text('Administrador da plataforma',
-                    style: daText(context, t, color: t.tx2)),
+                Text(subtitle, style: daText(context, t, color: t.tx2)),
               ],
             ),
           ),
@@ -166,27 +205,16 @@ class _Greeting extends StatelessWidget {
   }
 }
 
-class _Kpis extends StatelessWidget {
-  const _Kpis({
-    required this.big,
-    required this.clinics,
-    required this.users,
-    required this.patients,
-  });
+/// Três números lado a lado, com divisórias.
+class DesktopKpis extends StatelessWidget {
+  const DesktopKpis({super.key, required this.big, required this.cells});
 
   final bool big;
-  final int? clinics;
-  final int? users;
-  final int? patients;
+  final List<DesktopKpi> cells;
 
   @override
   Widget build(BuildContext context) {
     final t = DesktopAdminTokens.of(context);
-    final cells = [
-      (Icons.apartment_outlined, DesktopAdminTokens.blue, clinics, 'clínicas'),
-      (Icons.badge_outlined, DesktopAdminTokens.purple, users, 'usuários'),
-      (Icons.people_outline, const Color(0xFF00A39B), patients, 'pacientes'),
-    ];
     return Container(
       decoration: BoxDecoration(
         color: t.rz,
@@ -213,7 +241,8 @@ class _Kpis extends StatelessWidget {
                       const SizedBox(width: 14),
                       Flexible(
                         child: Text(cells[i].$4,
-                            maxLines: 1,
+                            // Rótulo longo quebra no tablet em vez de sumir.
+                            maxLines: 2,
                             overflow: TextOverflow.ellipsis,
                             style: daText(context, t,
                                 weight: FontWeight.w500, color: t.tx2)),
@@ -250,20 +279,26 @@ class _Count extends StatelessWidget {
     if (v == null) return Text('—', style: style);
     return TweenAnimationBuilder<int>(
       tween: IntTween(begin: 0, end: v),
-      duration: const Duration(milliseconds: 600),
+      duration: MediaQuery.disableAnimationsOf(context)
+          ? Duration.zero
+          : const Duration(milliseconds: 600),
       curve: Curves.easeOutCubic,
       builder: (_, n, __) => Text('$n', style: style),
     );
   }
 }
 
-class _Section extends StatelessWidget {
-  const _Section({
+/// Título, subtítulo e atalhos em grade plana de [columns] colunas. [compact]
+/// usa linhas mais baixas (coluna lateral do Início da psicóloga).
+class DesktopShortcutSection extends StatelessWidget {
+  const DesktopShortcutSection({
+    super.key,
     required this.title,
     required this.subtitle,
     required this.items,
     required this.columns,
     required this.big,
+    this.compact = false,
   });
 
   final String title;
@@ -271,6 +306,7 @@ class _Section extends StatelessWidget {
   final List<DesktopAdminShortcut> items;
   final int columns;
   final bool big;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -295,6 +331,14 @@ class _Section extends StatelessWidget {
             border: Border.all(color: t.bd2),
             borderRadius: BorderRadius.circular(12),
           ),
+          // Na coluna da psicóloga a borda é redesenhada por cima, para os
+          // cantos arredondados não ficarem cobertos pelas linhas.
+          foregroundDecoration: compact
+              ? BoxDecoration(
+                  border: Border.all(color: t.bd2),
+                  borderRadius: BorderRadius.circular(12),
+                )
+              : null,
           clipBehavior: Clip.antiAlias,
           child: Column(
             children: [
@@ -309,7 +353,10 @@ class _Section extends StatelessWidget {
                         Expanded(
                           child: rows[r][c] == null
                               ? ColoredBox(color: t.rz)
-                              : _ShortcutCell(item: rows[r][c]!, big: big),
+                              : _ShortcutCell(
+                                  item: rows[r][c]!,
+                                  big: big,
+                                  compact: compact),
                         ),
                       ],
                     ],
@@ -325,10 +372,15 @@ class _Section extends StatelessWidget {
 }
 
 class _ShortcutCell extends StatefulWidget {
-  const _ShortcutCell({required this.item, required this.big});
+  const _ShortcutCell({
+    required this.item,
+    required this.big,
+    required this.compact,
+  });
 
   final DesktopAdminShortcut item;
   final bool big;
+  final bool compact;
 
   @override
   State<_ShortcutCell> createState() => _ShortcutCellState();
@@ -353,9 +405,13 @@ class _ShortcutCellState extends State<_ShortcutCell> {
           onTap: it.onTap,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 150),
-            constraints: BoxConstraints(minHeight: widget.big ? 88 : 72),
+            constraints: BoxConstraints(
+                minHeight: widget.compact
+                    ? (widget.big ? 64 : 56)
+                    : (widget.big ? 88 : 72)),
             padding: EdgeInsets.symmetric(
-                horizontal: widget.big ? 22 : 16, vertical: widget.big ? 20 : 14),
+                horizontal: widget.big ? 22 : 16,
+                vertical: widget.compact ? 9 : (widget.big ? 20 : 14)),
             color: _hover ? t.hov : t.rz,
             child: Row(
               children: [
@@ -374,6 +430,22 @@ class _ShortcutCellState extends State<_ShortcutCell> {
                     ],
                   ),
                 ),
+                if (it.count != null) ...[
+                  Container(
+                    margin: const EdgeInsets.only(left: 8),
+                    padding: const EdgeInsets.symmetric(horizontal: 9),
+                    decoration: BoxDecoration(
+                      color: _hover ? t.hov2 : t.hov,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text('${it.count}',
+                        style: daText(context, t,
+                            size: 12,
+                            weight: FontWeight.w600,
+                            color: t.tx2)),
+                  ),
+                  const SizedBox(width: 12),
+                ],
                 AnimatedSlide(
                   duration: const Duration(milliseconds: 150),
                   offset: _hover ? const Offset(0.2, 0) : Offset.zero,

@@ -520,12 +520,21 @@ class DaSwitch extends StatelessWidget {
 }
 
 
-/// Campo de busca de desktop (lupa, foco turquesa).
+/// Campo de busca de desktop (lupa, foco turquesa). Com [onClear] e
+/// [controller], mostra "Limpar busca" quando há texto (Esc também limpa).
 class DaSearchField extends StatefulWidget {
-  const DaSearchField({super.key, required this.onChanged, required this.hint});
+  const DaSearchField({
+    super.key,
+    required this.onChanged,
+    required this.hint,
+    this.controller,
+    this.onClear,
+  });
 
   final ValueChanged<String> onChanged;
   final String hint;
+  final TextEditingController? controller;
+  final VoidCallback? onClear;
 
   @override
   State<DaSearchField> createState() => _DaSearchFieldState();
@@ -552,7 +561,9 @@ class _DaSearchFieldState extends State<DaSearchField> {
     final t = DesktopAdminTokens.of(context);
     final m = DesktopAdminMetrics.of(MediaQuery.sizeOf(context).width);
     final focused = _focus.hasFocus;
-    return MouseRegion(
+    final controller = widget.controller;
+    final onClear = widget.onClear;
+    final Widget field = MouseRegion(
       onEnter: (_) => setState(() => _hover = true),
       onExit: (_) => setState(() => _hover = false),
       child: AnimatedContainer(
@@ -574,6 +585,7 @@ class _DaSearchFieldState extends State<DaSearchField> {
             const SizedBox(width: 10),
             Expanded(
               child: TextField(
+                controller: controller,
                 focusNode: _focus,
                 onChanged: widget.onChanged,
                 style: daText(context, t),
@@ -589,12 +601,137 @@ class _DaSearchFieldState extends State<DaSearchField> {
                 ),
               ),
             ),
+            if (controller != null && onClear != null)
+              ValueListenableBuilder<TextEditingValue>(
+                valueListenable: controller,
+                builder: (context, value, _) => value.text.isEmpty
+                    ? const SizedBox.shrink()
+                    : IconButton(
+                        tooltip: 'Limpar busca',
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints.tightFor(
+                            width: 28, height: 28),
+                        iconSize: 16,
+                        color: t.tx3,
+                        onPressed: () {
+                          onClear();
+                          _focus.requestFocus();
+                        },
+                        icon: const Icon(Icons.close),
+                      ),
+              ),
           ],
         ),
       ),
     );
+    if (onClear == null) return field;
+    return CallbackShortcuts(
+      bindings: {const SingleActivator(LogicalKeyboardKey.escape): onClear},
+      child: field,
+    );
   }
 }
+
+/// Uma opção do [DaSegmented].
+class DaSegment<T> {
+  const DaSegment(this.value, this.label, {this.count, this.icon});
+
+  final T value;
+  final String label;
+  final int? count;
+  final IconData? icon;
+}
+
+/// Controle segmentado: a opção marcada ganha fundo e borda.
+class DaSegmented<T> extends StatelessWidget {
+  const DaSegmented({
+    super.key,
+    required this.value,
+    required this.items,
+    required this.onChanged,
+  });
+
+  final T value;
+  final List<DaSegment<T>> items;
+  final ValueChanged<T> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final t = DesktopAdminTokens.of(context);
+    final m = DesktopAdminMetrics.of(MediaQuery.sizeOf(context).width);
+    return Container(
+      height: m.ctl,
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: t.hov,
+        border: Border.all(color: t.bd2),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final it in items)
+            Semantics(
+              button: true,
+              selected: it.value == value,
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => onChanged(it.value),
+                child: MouseRegion(
+                  cursor: SystemMouseCursors.click,
+                  child: AnimatedContainer(
+                    duration: daHoverDuration(context),
+                    padding: const EdgeInsets.symmetric(horizontal: 14),
+                    decoration: BoxDecoration(
+                      color: it.value == value ? t.rz : daClear(t.rz),
+                      border: Border.all(
+                          color: it.value == value ? t.bd2 : daClear(t.bd2)),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Row(
+                      children: [
+                        if (it.icon != null) ...[
+                          Icon(it.icon,
+                              size: 16,
+                              color: it.value == value ? t.tx : t.tx2),
+                          const SizedBox(width: 8),
+                        ],
+                        Text(it.label,
+                            style: daText(context, t,
+                                weight: it.value == value
+                                    ? FontWeight.w600
+                                    : FontWeight.w500,
+                                color: it.value == value ? t.tx : t.tx2)),
+                        if (it.count != null) ...[
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 7),
+                            height: 18,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: it.value == value ? t.sel : t.hov2,
+                              borderRadius: BorderRadius.circular(9),
+                            ),
+                            child: Text('${it.count}',
+                                style: daText(context, t,
+                                    size: 11,
+                                    weight: FontWeight.w600,
+                                    color: it.value == value ? t.tq : t.tx3)),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
 
 
 

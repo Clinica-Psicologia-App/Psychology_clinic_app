@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'desktop_admin_kit.dart';
 import 'desktop_admin_menu.dart';
 
+export 'desktop_side_menu.dart' show desktopAdminMenuCollapsed;
+
 /// Localizações do admin que já usam a casca de desktop. O [AppNavShell]
 /// antigo não desenha o próprio menu nelas (a casca tem o seu). As demais
 /// telas entram aqui nas etapas seguintes.
@@ -46,9 +48,6 @@ class DaCrumb {
   final String label;
   final String route;
 }
-
-/// Menu recolhido (só ≥ 1024). Vive na sessão para não "pular" ao navegar.
-final ValueNotifier<bool> desktopAdminMenuCollapsed = ValueNotifier(false);
 
 enum DesktopAdminNav { home, clinics, users, patients }
 
@@ -109,7 +108,7 @@ class DesktopAdminShell extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        _TopBar(
+                        DesktopTopBar(
                           m: m,
                           title: title,
                           subtitle: subtitle,
@@ -119,7 +118,7 @@ class DesktopAdminShell extends ConsumerWidget {
                         ),
                         if (tabs != null) tabs!,
                         Expanded(
-                            child: _ContentEntrance(
+                            child: DesktopContentEntrance(
                                 child: Material(
                                     type: MaterialType.transparency,
                                     child: body))),
@@ -143,22 +142,22 @@ class DesktopAdminShell extends ConsumerWidget {
         ),
       ),
     );
-    return _HideWhileLeaving(child: shell);
+    return DesktopHideWhileLeaving(child: shell);
   }
 }
 
 /// Anima só o conteúdo: ao montar a tela e quando ela volta a aparecer porque
 /// a de cima saiu (voltar). Sem animação com [MediaQuery.disableAnimations].
-class _ContentEntrance extends StatefulWidget {
-  const _ContentEntrance({required this.child});
+class DesktopContentEntrance extends StatefulWidget {
+  const DesktopContentEntrance({super.key, required this.child});
 
   final Widget child;
 
   @override
-  State<_ContentEntrance> createState() => _ContentEntranceState();
+  State<DesktopContentEntrance> createState() => _DesktopContentEntranceState();
 }
 
-class _ContentEntranceState extends State<_ContentEntrance>
+class _DesktopContentEntranceState extends State<DesktopContentEntrance>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller =
       AnimationController(vsync: this, duration: kDaContentEntranceDuration);
@@ -222,8 +221,8 @@ class _ContentEntranceState extends State<_ContentEntrance>
 /// A rota não tem transição de página (a casca fica parada), mas ao voltar a
 /// tela que sai ainda ficaria por cima até o fim da rota. Ela some na hora,
 /// para a de baixo aparecer já entrando, e deixa de receber toques.
-class _HideWhileLeaving extends StatelessWidget {
-  const _HideWhileLeaving({required this.child});
+class DesktopHideWhileLeaving extends StatelessWidget {
+  const DesktopHideWhileLeaving({super.key, required this.child});
 
   final Widget child;
 
@@ -246,15 +245,21 @@ class _HideWhileLeaving extends StatelessWidget {
   }
 }
 
-class _TopBar extends StatelessWidget {
-  const _TopBar({
+/// Barra superior da casca: trilha, título, subtítulo e ações.
+class DesktopTopBar extends StatelessWidget {
+  const DesktopTopBar({
+    super.key,
     required this.m,
     required this.title,
-    required this.subtitle,
-    required this.actions,
-    required this.showCrumb,
-    required this.crumbs,
+    this.subtitle,
+    this.actions = const [],
+    this.showCrumb = false,
+    this.crumbs = const [],
+    this.titleTrailing,
   });
+
+  /// Selo logo depois do título (opcional).
+  final Widget? titleTrailing;
 
   final List<DaCrumb> crumbs;
   final DesktopAdminMetrics m;
@@ -285,6 +290,10 @@ class _TopBar extends StatelessWidget {
                 size: m.size == DesktopAdminSize.desktop ? 18 : 16,
                 weight: FontWeight.w600),
           ),
+          if (titleTrailing != null) ...[
+            const SizedBox(width: 10),
+            titleTrailing!,
+          ],
           if (subtitle != null && !m.tablet)
             Expanded(
               child: Align(

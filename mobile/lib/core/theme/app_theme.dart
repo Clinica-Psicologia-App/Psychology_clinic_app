@@ -6,6 +6,7 @@ import 'app_animations.dart';
 import 'app_radius.dart';
 import 'app_spacing.dart';
 import 'app_typography.dart';
+import '../../shared/widgets/desktop_psychologist/desktop_psychologist_shell.dart';
 
 // Superfícies dark — tom slate-azul (menos navy/preto, mais cinza-azulado)
 abstract final class _Dark {
@@ -621,6 +622,11 @@ class _AppPageTransitionsBuilder extends PageTransitionsBuilder {
     Animation<double> secondaryAnimation,
     Widget child,
   ) {
+    // Psicóloga em desktop (telas dentro da casca): o menu fica parado e só o
+    // conteúdo entra; vale também com "reduzir movimento" (sem animação).
+    final psychologist = desktopPsychologistTransition(route, context, child);
+    if (psychologist != null) return psychologist;
+
     if (route.settings.name == Navigator.defaultRouteName ||
         !AppAnimations.shouldAnimate(context)) {
       return child;

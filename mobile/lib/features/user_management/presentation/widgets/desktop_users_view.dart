@@ -225,12 +225,12 @@ class _DesktopUsersViewState extends State<DesktopUsersView> {
           const SizedBox(height: 14),
           Row(
             children: [
-              _Segmented(
+              DaSegmented<_Filter>(
                 value: _filter,
                 items: [
-                  (_Filter.all, 'Todos', users.length),
-                  (_Filter.psychologists, 'Psicólogos', psy),
-                  (_Filter.admins, 'Admins', adm),
+                  DaSegment(_Filter.all, 'Todos', count: users.length),
+                  DaSegment(_Filter.psychologists, 'Psicólogos', count: psy),
+                  DaSegment(_Filter.admins, 'Admins', count: adm),
                 ],
                 onChanged: (f) => setState(() => _filter = f),
               ),
@@ -286,85 +286,6 @@ class _DesktopUsersViewState extends State<DesktopUsersView> {
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Segmented extends StatelessWidget {
-  const _Segmented({
-    required this.value,
-    required this.items,
-    required this.onChanged,
-  });
-
-  final _Filter value;
-  final List<(_Filter, String, int)> items;
-  final ValueChanged<_Filter> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = DesktopAdminTokens.of(context);
-    final m = DesktopAdminMetrics.of(MediaQuery.sizeOf(context).width);
-    return Container(
-      height: m.ctl,
-      padding: const EdgeInsets.all(3),
-      decoration: BoxDecoration(
-        color: t.hov,
-        border: Border.all(color: t.bd2),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (final it in items)
-            Semantics(
-              button: true,
-              selected: it.$1 == value,
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => onChanged(it.$1),
-                child: MouseRegion(
-                  cursor: SystemMouseCursors.click,
-                  child: AnimatedContainer(
-                    duration: daHoverDuration(context),
-                    padding: const EdgeInsets.symmetric(horizontal: 14),
-                    decoration: BoxDecoration(
-                      color: it.$1 == value ? t.rz : daClear(t.rz),
-                      border: Border.all(
-                          color: it.$1 == value ? t.bd2 : daClear(t.bd2)),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Row(
-                      children: [
-                        Text(it.$2,
-                            style: daText(context, t,
-                                weight: it.$1 == value
-                                    ? FontWeight.w600
-                                    : FontWeight.w500,
-                                color: it.$1 == value ? t.tx : t.tx2)),
-                        const SizedBox(width: 8),
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 7),
-                          height: 18,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(
-                            color: it.$1 == value ? t.sel : t.hov2,
-                            borderRadius: BorderRadius.circular(9),
-                          ),
-                          child: Text('${it.$3}',
-                              style: daText(context, t,
-                                  size: 11,
-                                  weight: FontWeight.w600,
-                                  color: it.$1 == value ? t.tq : t.tx3)),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );

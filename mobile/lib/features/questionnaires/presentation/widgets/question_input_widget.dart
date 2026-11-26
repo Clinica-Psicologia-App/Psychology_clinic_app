@@ -445,7 +445,8 @@ class _BinaryCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: 20),
           decoration: BoxDecoration(
             color: selected
-                ? scheme.primary.withValues(alpha: 0.10)
+                ? Color.alphaBlend(
+                    scheme.primary.withValues(alpha: 0.10), scheme.surface)
                 : scheme.surface,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(

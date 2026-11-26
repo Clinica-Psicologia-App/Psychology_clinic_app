@@ -15,6 +15,7 @@ import 'package:terapia_esquema/features/patient_invitations/presentation/patien
 import 'package:terapia_esquema/features/patient_invitations/providers/patient_invitations_providers.dart';
 import 'package:terapia_esquema/features/patients/domain/patient.dart';
 import 'package:terapia_esquema/features/patients/domain/patient_data_completion.dart';
+import 'package:terapia_esquema/features/patients/domain/patient_vitals.dart';
 import 'package:terapia_esquema/features/patients/domain/psychologist_alert.dart';
 import 'package:terapia_esquema/features/patients/presentation/patients_page.dart';
 import 'package:terapia_esquema/features/patients/providers/patients_providers.dart';
@@ -169,6 +170,41 @@ class _FakeInvitations extends PatientInvitationsListNotifier {
   }
 }
 
+/// A paciente fictícia da ficha.
+Patient psiMarina({
+  bool active = true,
+  PatientAccessStatus? access = PatientAccessStatus.active,
+  String? relationship,
+  String occupation = 'Designer',
+  String name = 'Marina Exemplo',
+}) =>
+    Patient(
+      id: 'p3',
+      fullName: name,
+      email: 'usuario3@example.com',
+      birthDate: DateTime(1992, 4, 12),
+      occupation: occupation,
+      relationshipStatus: relationship,
+      responsiblePsychologistName: 'Dra. Helena Exemplo',
+      accessStatus: access,
+      isActive: active,
+    );
+
+const psiVitals = PatientVitals(
+    lastCheckinDays: 2, activeGoals: 3, pendingQuestionnaires: 1);
+
+/// Plano que bloqueia questionários, relatórios e recursos.
+const psiBlocked = ClinicFeatureEntitlements({
+  'questionnaires': ClinicFeatureEntitlement(
+      featureKey: 'questionnaires',
+      featureName: 'Questionários',
+      isEnabled: false),
+  'reports': ClinicFeatureEntitlement(
+      featureKey: 'reports', featureName: 'Relatórios', isEnabled: false),
+  'resources': ClinicFeatureEntitlement(
+      featureKey: 'resources', featureName: 'Recursos', isEnabled: false),
+});
+
 /// Destinos da psicóloga (os do app_router).
 const psiDestinations = [
   AppNavDestination(
@@ -202,6 +238,8 @@ GoRouter psiRouter(
   GoRouterWidgetBuilder? newPatient,
   GoRouterWidgetBuilder? newInvitation,
   List<RouteBase> patientRoutes = const [],
+  GoRouterWidgetBuilder? ficha,
+  List<RouteBase> outside = const [],
 }) =>
     GoRouter(
       initialLocation: location,
@@ -241,8 +279,9 @@ GoRouter psiRouter(
                             (_, __) => _stub('Cadastro fictício')),
                     GoRoute(
                       path: ':patientId',
-                      builder: (_, state) => _stub(
-                          'Ficha ${state.pathParameters['patientId']}'),
+                      builder: ficha ??
+                          (_, state) => _stub(
+                              'Ficha ${state.pathParameters['patientId']}'),
                       routes: [
                         ...patientRoutes,
                         GoRoute(
@@ -262,6 +301,7 @@ GoRouter psiRouter(
           ],
         ),
         GoRoute(path: '/profile', builder: (_, __) => _stub('Perfil fictício')),
+        ...outside,
       ],
     );
 
@@ -275,6 +315,7 @@ Widget psiApp(
   Future<List<Patient>> Function()? patients,
   Map<String, PatientDataCompletion> completion = const {},
   Set<String> pendingRelease = const {'p5'},
+  Future<ClinicFeatureEntitlements> Function()? entitlements,
   List<Override> overrides = const [],
 }) {
   final count = loads ?? PsiLoads();
@@ -305,8 +346,10 @@ Widget psiApp(
       patientsPendingResultsReleaseProvider
           .overrideWith((ref) async => pendingRelease),
       patientsDataCompletionProvider.overrideWith((ref) async => completion),
-      currentClinicEntitlementsProvider
-          .overrideWith((ref) async => ClinicFeatureEntitlements.empty),
+      currentClinicEntitlementsProvider.overrideWith((ref) =>
+          entitlements == null
+              ? Future.value(ClinicFeatureEntitlements.empty)
+              : entitlements()),
       ...overrides,
     ],
     child: MaterialApp.router(

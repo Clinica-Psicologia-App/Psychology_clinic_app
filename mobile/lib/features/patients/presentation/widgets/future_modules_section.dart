@@ -25,8 +25,9 @@ import '../../../therapy_goals/presentation/therapy_goal_routes.dart';
 import '../../../healthy_resources/presentation/healthy_resources_routes.dart';
 import '../../../therapy_resources/presentation/therapy_resource_routes.dart';
 
-class _ModuleSpec {
-  const _ModuleSpec({
+/// Um módulo da ficha. [onTap] nulo = bloqueado (plano) ou em espera.
+class PatientModuleSpec {
+  const PatientModuleSpec({
     required this.icon,
     required this.title,
     required this.subtitle,
@@ -41,8 +42,9 @@ class _ModuleSpec {
   final VoidCallback? onTap;
 }
 
-class _ModuleGroup {
-  const _ModuleGroup({
+/// Um dos cinco grupos de módulos da ficha.
+class PatientModuleGroup {
+  const PatientModuleGroup({
     required this.title,
     required this.subtitle,
     required this.accentColor,
@@ -52,7 +54,7 @@ class _ModuleGroup {
   final String title;
   final String subtitle;
   final Color accentColor;
-  final List<_ModuleSpec> modules;
+  final List<PatientModuleSpec> modules;
 }
 
 /// Seção de módulos clínicos do paciente (visão do psicólogo).
@@ -62,10 +64,15 @@ class FutureModulesSection extends ConsumerStatefulWidget {
     super.key,
     required this.role,
     required this.patientId,
+    this.layout,
   });
 
   final ProfileRole role;
   final String patientId;
+
+  /// Outra apresentação dos mesmos grupos (ficha de desktop). Nulo = a grade
+  /// do celular.
+  final Widget Function(List<PatientModuleGroup> groups)? layout;
 
   @override
   ConsumerState<FutureModulesSection> createState() =>
@@ -110,14 +117,14 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
       return subtitle;
     }
 
-    final groups = <_ModuleGroup>[
+    final groups = <PatientModuleGroup>[
       // ── 1. Conhecer meu paciente ──────────────────────────────────────────
-      _ModuleGroup(
+      PatientModuleGroup(
         title: 'Conhecer meu paciente',
         subtitle: 'História, vínculos e contexto de vida.',
         accentColor: AppColors.cyan,
         modules: [
-          _ModuleSpec(
+          PatientModuleSpec(
             icon: Icons.assignment_ind_outlined,
             title: 'Dados Iniciais',
             subtitle: 'Motivo, funcionamento e impressões.',
@@ -126,7 +133,7 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
               InitialAssessmentRoutes.staff(role: role, patientId: patientId),
             ),
           ),
-          _ModuleSpec(
+          PatientModuleSpec(
             icon: Icons.donut_large_outlined,
             title: 'Contexto de Vida',
             subtitle: 'Mapa da Vida e funcionamento atual.',
@@ -138,7 +145,7 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
               ),
             ),
           ),
-          _ModuleSpec(
+          PatientModuleSpec(
             icon: Icons.record_voice_over_outlined,
             title: 'Demandas Terapêuticas',
             subtitle: 'Motivos, impressões e perspectiva diagnóstica.',
@@ -147,7 +154,7 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
               TherapyDemandsRoutes.staff(role: role, patientId: patientId),
             ),
           ),
-          _ModuleSpec(
+          PatientModuleSpec(
             icon: Icons.timeline_outlined,
             title: 'Linha do Tempo',
             subtitle: 'Eventos da história terapêutica.',
@@ -159,7 +166,7 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
               ),
             ),
           ),
-          _ModuleSpec(
+          PatientModuleSpec(
             icon: Icons.family_restroom_outlined,
             title: 'Genograma',
             subtitle: 'Pessoas e relações familiares.',
@@ -168,7 +175,7 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
               LifeStoryRoutes.genogramPanelFor(patientId),
             ),
           ),
-          _ModuleSpec(
+          PatientModuleSpec(
             icon: Icons.spa_outlined,
             title: 'Recursos Saudáveis',
             subtitle: 'Capacidades e apoios presentes no paciente.',
@@ -184,12 +191,12 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
       ),
 
       // ── 2. Avaliar ────────────────────────────────────────────────────────
-      _ModuleGroup(
+      PatientModuleGroup(
         title: 'Avaliar',
         subtitle: 'Instrumentos psicológicos e resultados.',
         accentColor: AppColors.blue,
         modules: [
-          _ModuleSpec(
+          PatientModuleSpec(
             icon: Icons.schema_outlined,
             title: 'Esquemas',
             subtitle: gatedSubtitle(
@@ -204,7 +211,7 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
               ),
             ),
           ),
-          _ModuleSpec(
+          PatientModuleSpec(
             icon: Icons.psychology_alt_outlined,
             title: 'Personalidade',
             subtitle: 'Registro de resultados (NEO PI-R), perfil e facetas.',
@@ -216,7 +223,7 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
               ),
             ),
           ),
-          _ModuleSpec(
+          PatientModuleSpec(
             icon: Icons.handshake_outlined,
             title: 'Apego',
             subtitle: gatedSubtitle(
@@ -236,12 +243,12 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
       ),
 
       // ── 3. Compreender ────────────────────────────────────────────────────
-      _ModuleGroup(
+      PatientModuleGroup(
         title: 'Compreender',
         subtitle: 'Formulação e visão integrada do caso.',
         accentColor: AppColors.purple,
         modules: [
-          _ModuleSpec(
+          PatientModuleSpec(
             icon: Icons.summarize_outlined,
             title: 'Conceitualização de Caso',
             subtitle: 'Formulação clínica integrada.',
@@ -253,7 +260,7 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
               ),
             ),
           ),
-          _ModuleSpec(
+          PatientModuleSpec(
             icon: Icons.hub_outlined,
             title: 'Mapa Mental',
             subtitle: 'Visão integrada dos dados clínicos.',
@@ -262,7 +269,7 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
               MentalMapRoutes.staffList(role: role, patientId: patientId),
             ),
           ),
-          _ModuleSpec(
+          PatientModuleSpec(
             icon: Icons.auto_graph_outlined,
             title: 'Infográficos',
             subtitle: gatedSubtitle(
@@ -284,12 +291,12 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
       ),
 
       // ── 4. Intervir ───────────────────────────────────────────────────────
-      _ModuleGroup(
+      PatientModuleGroup(
         title: 'Intervir',
         subtitle: 'Planejamento e recursos de intervenção.',
         accentColor: AppColors.purple,
         modules: [
-          _ModuleSpec(
+          PatientModuleSpec(
             icon: Icons.flag_outlined,
             title: 'Plano Terapêutico',
             subtitle: 'Metas e objetivos da terapia.',
@@ -298,7 +305,7 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
               TherapyGoalRoutes.staffList(role: role, patientId: patientId),
             ),
           ),
-          _ModuleSpec(
+          PatientModuleSpec(
             icon: Icons.menu_book_outlined,
             title: 'Recursos Terapêuticos',
             subtitle: gatedSubtitle(
@@ -316,7 +323,7 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
               ),
             ),
           ),
-          _ModuleSpec(
+          PatientModuleSpec(
             icon: Icons.movie_filter_outlined,
             title: 'Biblioteca de filmes',
             subtitle: gatedSubtitle(
@@ -334,7 +341,7 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
               ),
             ),
           ),
-          _ModuleSpec(
+          PatientModuleSpec(
             icon: Icons.auto_stories_outlined,
             title: 'Psicoeducação',
             subtitle: gatedSubtitle(
@@ -351,12 +358,12 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
       ),
 
       // ── 5. Acompanhar ─────────────────────────────────────────────────────
-      _ModuleGroup(
+      PatientModuleGroup(
         title: 'Acompanhar',
         subtitle: 'Monitoramento contínuo entre sessões.',
         accentColor: AppColors.moduleCheckIn,
         modules: [
-          _ModuleSpec(
+          PatientModuleSpec(
             icon: Icons.fact_check_outlined,
             title: 'Check-in',
             subtitle: 'Humor, modos e esquemas em linha do tempo.',
@@ -365,7 +372,7 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
               PatientCheckInRoutes.staffList(role: role, patientId: patientId),
             ),
           ),
-          _ModuleSpec(
+          PatientModuleSpec(
             icon: Icons.monitor_heart_outlined,
             title: 'Diário',
             subtitle: 'Acompanhamentos do paciente.',
@@ -374,7 +381,7 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
               DailyMonitorRoutes.staffHistory(role: role, patientId: patientId),
             ),
           ),
-          _ModuleSpec(
+          PatientModuleSpec(
             icon: Icons.task_outlined,
             title: 'Exercícios e Tarefas',
             subtitle: 'Respostas da Biblioteca Praticar.',
@@ -386,6 +393,9 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
         ],
       ),
     ];
+
+    final layout = widget.layout;
+    if (layout != null) return layout(groups);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -404,7 +414,7 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
     );
   }
 
-  List<Widget> _buildGroupRows(_ModuleGroup group) {
+  List<Widget> _buildGroupRows(PatientModuleGroup group) {
     final rows = <Widget>[];
     final modules = group.modules;
     for (var i = 0; i < modules.length; i += 2) {
@@ -440,7 +450,7 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
     return rows;
   }
 
-  Widget _buildCard(_ModuleSpec spec) {
+  Widget _buildCard(PatientModuleSpec spec) {
     return ModuleGridCard(
       icon: spec.icon,
       title: spec.title,
@@ -455,7 +465,7 @@ class _FutureModulesSectionState extends ConsumerState<FutureModulesSection> {
 class _GroupHeader extends StatelessWidget {
   const _GroupHeader({required this.group});
 
-  final _ModuleGroup group;
+  final PatientModuleGroup group;
 
   @override
   Widget build(BuildContext context) {

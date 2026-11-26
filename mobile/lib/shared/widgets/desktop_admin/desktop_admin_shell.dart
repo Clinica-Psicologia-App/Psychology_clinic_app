@@ -256,10 +256,15 @@ class DesktopTopBar extends StatelessWidget {
     this.showCrumb = false,
     this.crumbs = const [],
     this.titleTrailing,
+    this.heading,
   });
 
   /// Selo logo depois do título (opcional).
   final Widget? titleTrailing;
+
+  /// Identidade própria no lugar de título, selo e subtítulo; ocupa o espaço
+  /// até as ações.
+  final Widget? heading;
 
   final List<DaCrumb> crumbs;
   final DesktopAdminMetrics m;
@@ -284,34 +289,38 @@ class DesktopTopBar extends StatelessWidget {
               Icon(Icons.chevron_right, size: 15, color: t.tx3),
               const SizedBox(width: 4),
             ],
-          Text(
-            title,
-            style: daText(context, t,
-                size: m.size == DesktopAdminSize.desktop ? 18 : 16,
-                weight: FontWeight.w600),
-          ),
-          if (titleTrailing != null) ...[
-            const SizedBox(width: 10),
-            titleTrailing!,
-          ],
-          if (subtitle != null && !m.tablet)
-            Expanded(
-              child: Align(
-                alignment: Alignment.centerLeft,
-                child: Container(
-                  margin: const EdgeInsets.only(left: 16),
-                  padding: const EdgeInsets.only(left: 12),
-                  decoration: BoxDecoration(
-                      border: Border(left: BorderSide(color: t.bd2))),
-                  child: Text(subtitle!,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: daText(context, t, color: t.tx3)),
+          if (heading != null)
+            Expanded(child: heading!)
+          else ...[
+            Text(
+              title,
+              style: daText(context, t,
+                  size: m.size == DesktopAdminSize.desktop ? 18 : 16,
+                  weight: FontWeight.w600),
+            ),
+            if (titleTrailing != null) ...[
+              const SizedBox(width: 10),
+              titleTrailing!,
+            ],
+            if (subtitle != null && !m.tablet)
+              Expanded(
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Container(
+                    margin: const EdgeInsets.only(left: 16),
+                    padding: const EdgeInsets.only(left: 12),
+                    decoration: BoxDecoration(
+                        border: Border(left: BorderSide(color: t.bd2))),
+                    child: Text(subtitle!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: daText(context, t, color: t.tx3)),
+                  ),
                 ),
-              ),
-            )
-          else
-            const Spacer(),
+              )
+            else
+              const Spacer(),
+          ],
           for (var i = 0; i < actions.length; i++) ...[
             if (i > 0) const SizedBox(width: 10),
             actions[i],

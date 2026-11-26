@@ -176,6 +176,32 @@ class PatientRegistrationDataCard extends StatelessWidget {
   }
 }
 
+/// Idade, nascimento, ocupação e estado civil (só os preenchidos), para a
+/// ficha do celular e a de desktop.
+List<(IconData, String, String)> patientIdentificationItems(
+  BuildContext context,
+  Patient patient, {
+  DateTime? now,
+}) {
+  final localizations = MaterialLocalizations.of(context);
+  final birth = patient.birthDate;
+  final age =
+      birth == null ? null : patientAgeYears(birth, now ?? DateTime.now());
+  return [
+    if (age != null) (Icons.hourglass_bottom_outlined, 'Idade', '$age anos'),
+    if (birth != null)
+      (Icons.cake_outlined, 'Nascimento', localizations.formatShortDate(birth)),
+    if ((patient.occupation ?? '').trim().isNotEmpty)
+      (Icons.work_outline, 'Ocupação', patient.occupation!.trim()),
+    if ((patient.displayRelationshipStatus ?? '').trim().isNotEmpty)
+      (
+        Icons.favorite_border,
+        'Estado civil',
+        patient.displayRelationshipStatus!.trim()
+      ),
+  ];
+}
+
 /// Identificação resumida do paciente, na abertura da ficha: idade, data de
 /// nascimento, profissão e estado civil. O nome e a situação (ativo ou
 /// inativo) já aparecem no cabeçalho.
@@ -193,24 +219,7 @@ class PatientIdentificationSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final localizations = MaterialLocalizations.of(context);
-    final birth = patient.birthDate;
-    final age =
-        birth == null ? null : patientAgeYears(birth, now ?? DateTime.now());
-    final items = <(IconData, String, String)>[
-      if (age != null)
-        (Icons.hourglass_bottom_outlined, 'Idade', '$age anos'),
-      if (birth != null)
-        (Icons.cake_outlined, 'Nascimento', localizations.formatShortDate(birth)),
-      if ((patient.occupation ?? '').trim().isNotEmpty)
-        (Icons.work_outline, 'Ocupação', patient.occupation!.trim()),
-      if ((patient.displayRelationshipStatus ?? '').trim().isNotEmpty)
-        (
-          Icons.favorite_border,
-          'Estado civil',
-          patient.displayRelationshipStatus!.trim()
-        ),
-    ];
+    final items = patientIdentificationItems(context, patient, now: now);
     if (items.isEmpty) return const SizedBox.shrink();
 
     final theme = Theme.of(context);

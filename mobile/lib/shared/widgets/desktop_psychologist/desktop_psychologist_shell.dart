@@ -17,9 +17,14 @@ const desktopPsychologistFramedLocations = <String>{
   '$kPsychologistHomeLocation/patients',
 };
 
+/// Ficha de um paciente (`/psychologist/patients/<id>`); "new" é o cadastro.
+final _patientFileLocation =
+    RegExp('^$kPsychologistHomeLocation/patients/(?!new\$)[^/]+\$');
+
 /// A tela aberta em [state] tem a barra própria? A escolha de paciente (a
 /// lista aberta por um atalho, com intenção) continua sendo a do celular.
 bool isDesktopPsychologistFramed(GoRouterState state) {
+  if (_patientFileLocation.hasMatch(state.matchedLocation)) return true;
   final extra = state.extra;
   return desktopPsychologistFramedLocations.contains(state.matchedLocation) &&
       (extra == null || extra == PatientSelectionIntent.none);
@@ -194,14 +199,22 @@ Widget? desktopPsychologistTransition(
 class DesktopPsychologistFrame extends StatelessWidget {
   const DesktopPsychologistFrame({
     super.key,
-    required this.title,
+    this.title = '',
     required this.body,
     this.actions = const [],
     this.subtitle,
     this.titleTrailing,
+    this.crumbs = const [],
+    this.heading,
   });
 
   final String title;
+
+  /// Trilha antes do título.
+  final List<DaCrumb> crumbs;
+
+  /// Ver [DesktopTopBar.heading].
+  final Widget? heading;
   final String? subtitle;
   final Widget? titleTrailing;
   final List<Widget> actions;
@@ -224,6 +237,9 @@ class DesktopPsychologistFrame extends StatelessWidget {
                 title: title,
                 subtitle: subtitle,
                 titleTrailing: titleTrailing,
+                heading: heading,
+                showCrumb: crumbs.isNotEmpty,
+                crumbs: crumbs,
                 actions: actions,
               ),
               Expanded(

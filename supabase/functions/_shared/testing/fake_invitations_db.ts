@@ -120,9 +120,24 @@ export function makeDb(invitations: Row[] = [pendingInvitation()]) {
     let payload: Row | Row[] = {};
     let returning = false;
     let single = false;
+    let headCount = false;
+    let max: number | undefined;
     // deno-lint-ignore no-explicit-any
     const b: any = {
-      select: () => (returning = true, b),
+      select: (_cols?: string, opts?: { head?: boolean }) => (
+        returning = true, headCount = !!opts?.head, b
+      ),
+      limit: (n: number) => (max = n, b),
+      ilike: (k: string, pattern: string) => {
+        const source = pattern.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+          .replace(/%/g, ".*").replace(/_/g, ".");
+        const re = new RegExp(`^${source}$`, "i");
+        filters.push((r) => re.test(String(r[k])));
+        return b;
+      },
+      lte: (k: string, v: string) => (
+        filters.push((r) => Date.parse(String(r[k])) <= Date.parse(v)), b
+      ),
       insert: (p: Row | Row[]) => (op = "insert", payload = p, b),
       upsert: (p: Row) => (op = "upsert", payload = p, b),
       update: (p: Row) => (op = "update", payload = p, b),
@@ -185,7 +200,8 @@ export function makeDb(invitations: Row[] = [pendingInvitation()]) {
         rows.forEach((r) => Object.assign(r, payload));
         if (!returning) return { data: null, error: null };
       }
-      const out = rows.map((r) => ({ ...r }));
+      if (headCount) return { data: null, count: rows.length, error: null };
+      const out = rows.slice(0, max).map((r) => ({ ...r }));
       return { data: single ? (out[0] ?? null) : out, error: null };
     }
     return b;
